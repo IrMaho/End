@@ -1,0 +1,18 @@
+// End Standard Library: std.mem
+// High Performance Region & Allocator Primitives
+
+pub st ArenaAllocator {
+    capacity: u64,
+    used: u64,
+}
+
+pub fn create_arena(cap: u64) ArenaAllocator {
+    ret ArenaAllocator {
+        capacity: cap,
+        used: 0,
+    }
+}
+
+pub fn reset_arena(mut arena: ArenaAllocator) void {
+    arena.used = 0
+}

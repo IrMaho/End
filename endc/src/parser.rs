@@ -271,6 +271,10 @@ impl Parser {
                     "u64" => Type::U64,
                     "f32" | "float" => Type::F32,
                     "f64" => Type::F64,
+                    "f32x4" => Type::Simd(Box::new(Type::F32), 4),
+                    "f32x8" => Type::Simd(Box::new(Type::F32), 8),
+                    "i32x4" => Type::Simd(Box::new(Type::I32), 4),
+                    "i32x8" => Type::Simd(Box::new(Type::I32), 8),
                     "str" | "string" => Type::Str,
                     "Allocator" => Type::Allocator,
                     "region" => {
@@ -286,7 +290,6 @@ impl Parser {
                         }
                     }
                     other => {
-                        // Check for Generic arguments: `List<User>`
                         if self.match_token(&TokenKind::Less) {
                             let mut params = Vec::new();
                             while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
@@ -551,6 +554,23 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::Parallel => {
+                self.advance();
+                self.expect(TokenKind::For)?;
+                let item_name = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected item name after 'parallel for', found {:?}", other)),
+                };
+                self.expect(TokenKind::In)?;
+                let iterable = self.parse_expression()?;
+                let body = self.parse_block()?;
+                Ok(Statement::ParallelFor {
+                    item_name,
+                    iterable,
+                    body,
+                    span,
+                })
+            }
             TokenKind::For => {
                 self.advance();
                 let item_name = match self.advance().kind {
@@ -588,6 +608,48 @@ impl Parser {
                 let body = self.parse_block()?;
                 Ok(Statement::RegionBlock {
                     name: reg_name,
+                    body,
+                    span,
+                })
+            }
+            TokenKind::Asm => {
+                self.advance();
+                let arch = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected target architecture for asm, found {:?}", other)),
+                };
+                self.expect(TokenKind::LBrace)?;
+                let mut asm_code = String::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    match self.peek_kind() {
+                        TokenKind::StringLit(s) => {
+                            asm_code.push_str(s);
+                            asm_code.push('\n');
+                            self.advance();
+                        }
+                        _ => {
+                            self.advance();
+                        }
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::AsmBlock {
+                    arch,
+                    code: asm_code,
+                    span,
+                })
+            }
+            TokenKind::Target => {
+                self.advance();
+                let target_name = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected target name after 'target', found {:?}", other)),
+                };
+                let body = self.parse_block()?;
+                Ok(Statement::TargetBlock {
+                    target: target_name,
                     body,
                     span,
                 })
@@ -960,7 +1022,6 @@ impl Parser {
         let span = self.current_span();
 
         if self.match_token(&TokenKind::Dot) {
-            // Enum variant literal: `.Pending` or `.Success("ok")`
             let vname = match self.advance().kind {
                 TokenKind::Ident(n) => n,
                 other => return Err(format!("Expected variant name after '.', found {:?}", other)),
@@ -1014,7 +1075,7 @@ impl Parser {
 
                 // Check for Struct Initialization: `User { id: 1, name: "Ali" }`
                 if self.check(&TokenKind::LBrace) && id.chars().next().map_or(false, |c| c.is_uppercase()) {
-                    self.advance(); // consume '{'
+                    self.advance();
                     let mut fields = Vec::new();
                     while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                         let fname = match self.advance().kind {
@@ -1038,8 +1099,8 @@ impl Parser {
                     });
                 }
 
-                // Check for Enum Qualified Init: `Status.Pending` or `Status.Failed("network")`
-                if self.match_token(&TokenKind::Dot) {
+                // Check for Enum Qualified Init: `Status.Pending` or `Status.Failed("error")`
+                if id.chars().next().map_or(false, |c| c.is_uppercase()) && self.match_token(&TokenKind::Dot) {
                     let vname = match self.advance().kind {
                         TokenKind::Ident(n) => n,
                         other => return Err(format!("Expected enum variant name, found {:?}", other)),

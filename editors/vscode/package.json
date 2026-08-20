@@ -1,0 +1,37 @@
+{
+  "name": "end-lang",
+  "displayName": "End Programming Language",
+  "description": "Official IDE & Language Support for the End Programming Language",
+  "version": "0.1.0",
+  "publisher": "EndLanguage",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "end",
+        "aliases": [
+          "End",
+          "end"
+        ],
+        "extensions": [
+          ".end"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "end",
+        "scopeName": "source.end",
+        "path": "./syntaxes/end.tmLanguage.json"
+      }
+    ]
+  }
+}

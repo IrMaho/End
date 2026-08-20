@@ -36,6 +36,7 @@ pub enum Type {
     Pointer(Box<Type>),
     Slice(Box<Type>),
     Array(Box<Type>, usize),
+    Simd(Box<Type>, usize), // e.g. f32x4, i32x8
     Tuple(Vec<Type>),
     Generic(String, Vec<Type>),
     Result(Box<Type>, Option<Box<Type>>), // Result<T, E> or !T
@@ -63,6 +64,7 @@ impl std::fmt::Display for Type {
             Type::Pointer(inner) => write!(f, "*{}", inner),
             Type::Slice(inner) => write!(f, "[]{}", inner),
             Type::Array(inner, size) => write!(f, "[{}]{}", size, inner),
+            Type::Simd(inner, lanes) => write!(f, "{}x{}", inner, lanes),
             Type::Tuple(types) => {
                 write!(f, "(")?;
                 for (i, t) in types.iter().enumerate() {
@@ -229,6 +231,12 @@ pub enum Statement {
         body: Block,
         span: Span,
     },
+    ParallelFor {
+        item_name: String,
+        iterable: Expression,
+        body: Block,
+        span: Span,
+    },
     Match {
         expr: Expression,
         arms: Vec<MatchArm>,
@@ -236,6 +244,16 @@ pub enum Statement {
     },
     RegionBlock {
         name: String,
+        body: Block,
+        span: Span,
+    },
+    AsmBlock {
+        arch: String,
+        code: String,
+        span: Span,
+    },
+    TargetBlock {
+        target: String,
         body: Block,
         span: Span,
     },

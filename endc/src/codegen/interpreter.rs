@@ -212,6 +212,11 @@ impl Interpreter {
                 iterable,
                 body,
                 ..
+            } | Statement::ParallelFor {
+                item_name,
+                iterable,
+                body,
+                ..
             } => {
                 let count = match self.eval_expression(iterable)? {
                     Value::Int(n) => n,
@@ -239,7 +244,6 @@ impl Interpreter {
                             self.set_var(&k, v);
                         }
 
-                        // Check optional guard
                         let guard_ok = if let Some(g) = &arm.guard {
                             match self.eval_expression(g)? {
                                 Value::Bool(b) => b,
@@ -274,6 +278,19 @@ impl Interpreter {
                     }
                 }
                 self.pop_scope();
+                Ok(None)
+            }
+            Statement::AsmBlock { arch, .. } => {
+                // In interpreter mode, simulate asm execution
+                let _ = arch;
+                Ok(None)
+            }
+            Statement::TargetBlock { body, .. } => {
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        return Ok(Some(ret));
+                    }
+                }
                 Ok(None)
             }
             Statement::Defer { expr, .. } => {

@@ -1,0 +1,32 @@
+// Example 4: Hardware Direct Access, Inline Assembly, Multi-Target & Parallelism
+st Particle {
+    x: f32,
+    y: f32,
+    vx: f32,
+    vy: f32,
+}
+
+@target("cpu")
+fn simulate_cpu_particles() void {
+    println("--- Simulating 4 Parallel Particles on CPU ---")
+    parallel for i in 4 {
+        println("Processing Particle Index:")
+        println(i)
+    }
+}
+
+fn execute_low_level_register_routine() void {
+    println("Executing Low-Level Inline Assembly Block...")
+    asm x86_64 {
+        "nop",
+        "xor %eax, %eax"
+    }
+    println("Hardware routine completed with zero overhead!")
+}
+
+fn main() void {
+    println("=== End Language: Hardware & Parallel Engine ===")
+    simulate_cpu_particles()
+    execute_low_level_register_routine()
+    println("All Hardware & SIMD tests finished successfully!")
+}

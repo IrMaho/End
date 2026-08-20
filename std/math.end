@@ -1,0 +1,27 @@
+// End Standard Library: std.math
+// Math utilities and vector helpers
+
+pub st Vec2 {
+    x: f32,
+    y: f32,
+}
+
+pub st Vec3 {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+pub fn vec2_add(a: Vec2, b: Vec2) Vec2 {
+    ret Vec2 {
+        x: a.x + b.x,
+        y: a.y + b.y,
+    }
+}
+
+pub fn vec2_scale(v: Vec2, s: f32) Vec2 {
+    ret Vec2 {
+        x: v.x * s,
+        y: v.y * s,
+    }
+}

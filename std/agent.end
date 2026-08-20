@@ -1,0 +1,23 @@
+// End Standard Library: std.agent
+// Directives, Capability Reflection & Machine Metadata
+
+pub enum AgentPermission {
+    ReadOnly,
+    FileSystem(str),
+    Network(str),
+    FullControl,
+}
+
+pub st AgentContext {
+    agent_id: str,
+    confidence_score: f32,
+    permission: AgentPermission,
+}
+
+pub fn is_allowed(ctx: AgentContext) bool {
+    match ctx.permission {
+        .FullControl => ret true,
+        .ReadOnly => ret true,
+        _ => ret false,
+    }
+}

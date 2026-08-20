@@ -8,12 +8,14 @@ mod agent_api;
 mod ast;
 mod codegen;
 mod lexer;
+mod lsp;
 mod parser;
 mod semantic;
 
 use agent_api::AgentApi;
 use codegen::{CBackend, Interpreter};
 use lexer::Lexer;
+use lsp::LanguageServer;
 use parser::Parser as EndParser;
 use semantic::SemanticAnalyzer;
 
@@ -51,6 +53,8 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         json: bool,
     },
+    /// Start Language Server Protocol (LSP) for VS Code and IDE integrations
+    Lsp,
     /// Inspect a specific line for symbols, data-flow and side-effects (Agent Protocol)
     Inspect {
         /// Target in format <file.end>:<line_number>
@@ -95,6 +99,10 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Lsp => {
+            let mut lsp_server = LanguageServer::new();
+            lsp_server.run_stdio();
+        }
         Commands::Run { file } => {
             let (module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,

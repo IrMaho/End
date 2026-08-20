@@ -1,0 +1,79 @@
+// Example 5: High Performance Game Engine ECS & Particle Simulation
+// Demonstrating Micro-modularity, Enums, Regions, and Parallel Loop
+
+enum GameEvent {
+    Spawned(u64),
+    Collision(u64),
+    LevelCompleted,
+}
+
+st Position {
+    x: f32,
+    y: f32,
+}
+
+st Velocity {
+    dx: f32,
+    dy: f32,
+}
+
+st Entity {
+    id: u64,
+    pos: Position,
+    vel: Velocity,
+    active: bool,
+}
+
+fn update_entity_physics(mut entity: Entity, dt: f32) void {
+    entity.pos.x = entity.pos.x + (entity.vel.dx * dt)
+    entity.pos.y = entity.pos.y + (entity.vel.dy * dt)
+}
+
+fn handle_game_event(event: GameEvent) void {
+    match event {
+        .Spawned(id) => {
+            println("Game Event: Entity spawned with ID:")
+            println(id)
+        },
+        .Collision(id) => {
+            println("Game Event: Collision detected on entity ID:")
+            println(id)
+        },
+        .LevelCompleted => {
+            println("Game Event: Level completed! Victory!")
+        },
+    }
+}
+
+fn main() void {
+    println("==================================================")
+    println("🎮 End Language: Next-Gen Game Engine ECS Engine 🎮")
+    println("==================================================")
+
+    // Tick update inside a deterministic Region
+    region game_tick_scope {
+        val player = Entity {
+            id: 1,
+            pos: Position { x: 0.0, y: 0.0 },
+            vel: Velocity { dx: 10.5, dy: 5.2 },
+            active: true,
+        }
+
+        println("Player initialized at starting coordinates.")
+        update_entity_physics(player, 0.016)
+
+        println("Dispatched parallel physics workers for 8 entities...")
+        parallel for i in 8 {
+            println("Simulated Physics on ECS Particle Entity:")
+            println(i)
+        }
+
+        val spawn_event = GameEvent.Spawned(1)
+        handle_game_event(spawn_event)
+
+        val win_event = GameEvent.LevelCompleted
+        handle_game_event(win_event)
+    }
+
+    println("Game tick ended. Region memory safely and cleanly freed.")
+}

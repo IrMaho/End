@@ -3,33 +3,36 @@ use crate::ast::Span;
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     // Keywords
-    Struct,  // 'st' or 'struct'
-    Enum,    // 'enum'
-    Fn,      // 'fn'
-    Val,     // 'val' (immutable)
-    Mut,     // 'mut' (mutable)
-    Return,  // 'ret' or 'return'
-    If,      // 'if'
-    Else,    // 'else'
-    While,   // 'while'
-    For,     // 'for'
-    In,      // 'in'
-    Match,   // 'match'
-    Defer,   // 'defer'
-    Region,  // 'region'
-    Import,  // 'import'
-    As,      // 'as'
-    Pub,     // 'pub'
-    Alloc,   // 'alloc'
-    Catch,   // 'catch'
-    Null,    // 'null'
-    True,    // 'true'
-    False,   // 'false'
-    Spawn,   // 'spawn'
-    Skip,    // 'skip'
+    Struct,   // 'st' or 'struct'
+    Enum,     // 'enum'
+    Fn,       // 'fn'
+    Val,      // 'val' (immutable)
+    Mut,      // 'mut' (mutable)
+    Return,   // 'ret' or 'return'
+    If,       // 'if'
+    Else,     // 'else'
+    While,    // 'while'
+    For,      // 'for'
+    Parallel, // 'parallel'
+    In,       // 'in'
+    Match,    // 'match'
+    Defer,    // 'defer'
+    Region,   // 'region'
+    Asm,      // 'asm'
+    Target,   // 'target'
+    Import,   // 'import'
+    As,       // 'as'
+    Pub,      // 'pub'
+    Alloc,    // 'alloc'
+    Catch,    // 'catch'
+    Null,     // 'null'
+    True,     // 'true'
+    False,    // 'false'
+    Spawn,    // 'spawn'
+    Skip,     // 'skip'
 
     // Directives
-    Directive(String), // '@agent_note', '@c', etc.
+    Directive(String), // '@agent_note', '@target', '@c', etc.
 
     // Literals & Identifiers
     Ident(String),
@@ -230,10 +233,13 @@ impl<'a> Lexer<'a> {
                 "else" => TokenKind::Else,
                 "while" => TokenKind::While,
                 "for" => TokenKind::For,
+                "parallel" => TokenKind::Parallel,
                 "in" => TokenKind::In,
                 "match" => TokenKind::Match,
                 "defer" => TokenKind::Defer,
                 "region" => TokenKind::Region,
+                "asm" => TokenKind::Asm,
+                "target" => TokenKind::Target,
                 "import" => TokenKind::Import,
                 "as" => TokenKind::As,
                 "pub" => TokenKind::Pub,

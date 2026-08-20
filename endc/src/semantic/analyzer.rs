@@ -100,6 +100,9 @@ impl SemanticAnalyzer {
                 if dir.name == "@alloc_bound" {
                     effect_list.push(format!("alloc_bound({})", dir.args.join(", ")));
                 }
+                if dir.name == "@target" {
+                    effect_list.push(format!("target({})", dir.args.join(", ")));
+                }
             }
 
             let info = SymbolInfo {
@@ -357,6 +360,18 @@ impl SemanticAnalyzer {
                 self.analyze_block(body);
                 self.pop_scope();
             }
+            Statement::ParallelFor {
+                item_name,
+                iterable,
+                body,
+                span,
+            } => {
+                self.analyze_expression(iterable);
+                self.push_scope();
+                self.declare_var(item_name, Type::I32, span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
+            }
             Statement::Match { expr, arms, span } => {
                 let match_type = self.analyze_expression(expr);
                 let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
@@ -368,7 +383,6 @@ impl SemanticAnalyzer {
                 let mut from_symbols = Vec::new();
                 self.extract_symbols_from_expr(expr, &mut from_symbols);
 
-                // Analyze each match arm
                 for arm in arms {
                     self.push_scope();
                     if let Pattern::Variant { binding: Some(b), .. } = &arm.pattern {
@@ -412,6 +426,34 @@ impl SemanticAnalyzer {
                 );
                 self.analyze_block(body);
                 self.pop_scope();
+            }
+            Statement::AsmBlock { arch, span, .. } => {
+                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
+                    self.source_lines[span.line - 1].trim().to_string()
+                } else {
+                    format!("asm {} {{ ... }}", arch)
+                };
+                let line_sem = LineSemantics {
+                    line: span.line,
+                    code: raw_code,
+                    flow: DataFlow {
+                        from: Vec::new(),
+                        to: Vec::new(),
+                    },
+                    side_effects: SideEffects {
+                        memory_allocated: false,
+                        allocator_used: None,
+                        io_performed: false,
+                        can_panic: false,
+                        possible_errors: Vec::new(),
+                        effects: vec![format!("asm({})", arch)],
+                    },
+                };
+                self.graph.add_line(span.line, line_sem);
+            }
+            Statement::TargetBlock { target, body, .. } => {
+                self.analyze_block(body);
+                let _ = target;
             }
             Statement::Defer { expr, .. } => {
                 self.analyze_expression(expr);
