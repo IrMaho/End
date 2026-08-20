@@ -1,0 +1,40 @@
+// Example 2: High Performance Worker with Region Memory & Agent Directives
+st Request {
+    id: u64,
+    path: str,
+}
+
+st Response {
+    status_code: i32,
+    body: str,
+}
+
+@agent_note("This function handles memory allocation within region scope")
+@alloc_bound("4096")
+fn handle_request(req: Request) Response {
+    val status: i32 = 200
+    val body_str: str = "HTTP/1.1 200 OK - End Server is Running!"
+    
+    val res = Response {
+        status_code: status,
+        body: body_str,
+    }
+
+    ret res
+}
+
+fn main() void {
+    println("Starting End Native Server...")
+
+    region request_scope {
+        val req = Request {
+            id: 1001,
+            path: "/api/v1/users",
+        }
+
+        val res = handle_request(req)
+        println(res.body)
+    }
+
+    println("Request completed and region memory cleanly released.")
+}

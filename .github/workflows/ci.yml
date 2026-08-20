@@ -1,0 +1,33 @@
+name: End CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    name: Build & Test Toolchain
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build End Compiler (endc)
+      run: |
+        cd endc
+        cargo build --verbose
+
+    - name: Run End Examples
+      run: |
+        cd endc
+        cargo run -- run ../examples/hello.end
+        cargo run -- check ../examples/server.end --json
+        cargo run -- inspect ../examples/server.end:18

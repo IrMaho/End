@@ -1,0 +1,36 @@
+// Example 1: Hello World and Basic Logic in End Language
+st User {
+    id: u64,
+    name: str,
+    active: bool,
+}
+
+fn calculate_bonus(score: i32, multiplier: i32) i32 {
+    val base: i32 = 100
+    val total: i32 = (score * multiplier) + base
+    ret total
+}
+
+fn main() void {
+    println("--- Welcome to End Language v0.1 ---")
+
+    val u = User {
+        id: 101,
+        name: "Ali",
+        active: true,
+    }
+
+    println("User created: ")
+    println(u.name)
+
+    val bonus = calculate_bonus(25, 4)
+    println("Calculated Bonus:")
+    println(bonus)
+
+    println("Testing Loops:")
+    for i in 5 {
+        println(i)
+    }
+
+    println("All End features verified successfully!")
+}

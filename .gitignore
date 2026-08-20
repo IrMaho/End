@@ -1,0 +1,22 @@
+# Build directories
+target/
+endc/target/
+**/target/
+
+# Binaries and intermediate files
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.obj
+*.o
+examples/*.c
+examples/*.exe
+
+# IDE & system
+/ide
+.idea/
+.vscode/
+*.swp
+.DS_Store
