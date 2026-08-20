@@ -4,7 +4,7 @@ use crate::lexer::{Token, TokenKind};
 pub struct Parser {
     tokens: Vec<Token>,
     cursor: usize,
-    filename: String,
+    pub filename: String,
 }
 
 impl Parser {
@@ -69,6 +69,7 @@ impl Parser {
 
     pub fn parse_module(&mut self, module_name: &str) -> Result<Module, String> {
         let mut imports = Vec::new();
+        let mut enums = Vec::new();
         let mut structs = Vec::new();
         let mut functions = Vec::new();
         let start_span = self.current_span();
@@ -116,6 +117,9 @@ impl Parser {
                 TokenKind::Import => {
                     imports.push(self.parse_import()?);
                 }
+                TokenKind::Enum => {
+                    enums.push(self.parse_enum(false, pending_directives)?);
+                }
                 TokenKind::Struct => {
                     structs.push(self.parse_struct(false, pending_directives)?);
                 }
@@ -125,6 +129,9 @@ impl Parser {
                 TokenKind::Pub => {
                     self.advance();
                     match self.peek_kind() {
+                        TokenKind::Enum => {
+                            enums.push(self.parse_enum(true, pending_directives)?);
+                        }
                         TokenKind::Struct => {
                             structs.push(self.parse_struct(true, pending_directives)?);
                         }
@@ -133,7 +140,7 @@ impl Parser {
                         }
                         other => {
                             return Err(format!(
-                                "Expected struct or fn after 'pub', found {:?} at line {}",
+                                "Expected enum, struct or fn after 'pub', found {:?} at line {}",
                                 other,
                                 self.current_span().line
                             ))
@@ -158,6 +165,7 @@ impl Parser {
         Ok(Module {
             name: module_name.to_string(),
             imports,
+            enums,
             structs,
             functions,
             span: start_span,
@@ -234,9 +242,16 @@ impl Parser {
         }
 
         if self.match_token(&TokenKind::LBracket) {
-            self.expect(TokenKind::RBracket)?;
-            let inner = self.parse_type()?;
-            return Ok(Type::Slice(Box::new(inner)));
+            if self.match_token(&TokenKind::RBracket) {
+                let inner = self.parse_type()?;
+                return Ok(Type::Slice(Box::new(inner)));
+            } else if let TokenKind::IntLit(n) = self.peek_kind() {
+                let size = *n as usize;
+                self.advance();
+                self.expect(TokenKind::RBracket)?;
+                let inner = self.parse_type()?;
+                return Ok(Type::Array(Box::new(inner), size));
+            }
         }
 
         match self.peek_kind() {
@@ -270,12 +285,72 @@ impl Parser {
                             Type::Region("default".into())
                         }
                     }
-                    other => Type::Custom(other.to_string()),
+                    other => {
+                        // Check for Generic arguments: `List<User>`
+                        if self.match_token(&TokenKind::Less) {
+                            let mut params = Vec::new();
+                            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                                params.push(self.parse_type()?);
+                                if !self.match_token(&TokenKind::Comma) {
+                                    break;
+                                }
+                            }
+                            self.expect(TokenKind::Greater)?;
+                            Type::Generic(other.to_string(), params)
+                        } else {
+                            Type::Custom(other.to_string())
+                        }
+                    }
                 };
                 Ok(ty)
             }
             other => Err(format!("Expected type, found {:?} at line {}", other, self.current_span().line)),
         }
+    }
+
+    fn parse_enum(&mut self, is_pub: bool, directives: Vec<Directive>) -> Result<EnumDef, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::Enum)?;
+
+        let name = match self.advance().kind {
+            TokenKind::Ident(n) => n,
+            other => return Err(format!("Expected enum name, found {:?} at line {}", other, span.line)),
+        };
+
+        self.expect(TokenKind::LBrace)?;
+        let mut variants = Vec::new();
+
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            let vspan = self.current_span();
+            let vname = match self.advance().kind {
+                TokenKind::Ident(n) => n,
+                other => return Err(format!("Expected variant name, found {:?}", other)),
+            };
+
+            let mut payload = None;
+            if self.match_token(&TokenKind::LParen) {
+                payload = Some(self.parse_type()?);
+                self.expect(TokenKind::RParen)?;
+            }
+
+            self.match_token(&TokenKind::Comma);
+
+            variants.push(EnumVariant {
+                name: vname,
+                payload,
+                span: vspan,
+            });
+        }
+
+        self.expect(TokenKind::RBrace)?;
+
+        Ok(EnumDef {
+            name,
+            is_pub,
+            variants,
+            directives,
+            span,
+        })
     }
 
     fn parse_struct(&mut self, is_pub: bool, directives: Vec<Directive>) -> Result<StructDef, String> {
@@ -366,6 +441,7 @@ impl Parser {
         } else if self.check(&TokenKind::Bang)
             || matches!(self.peek_kind(), TokenKind::Ident(_))
             || self.check(&TokenKind::Star)
+            || self.check(&TokenKind::LBracket)
         {
             self.parse_type()?
         } else {
@@ -491,6 +567,18 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::Match => {
+                self.advance();
+                let expr = self.parse_expression()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut arms = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    arms.push(self.parse_match_arm()?);
+                    self.match_token(&TokenKind::Comma);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::Match { expr, arms, span })
+            }
             TokenKind::Region => {
                 self.advance();
                 let reg_name = match self.advance().kind {
@@ -525,6 +613,108 @@ impl Parser {
                     Ok(Statement::Expression(expr))
                 }
             }
+        }
+    }
+
+    fn parse_match_arm(&mut self) -> Result<MatchArm, String> {
+        let span = self.current_span();
+        let pattern = self.parse_pattern()?;
+
+        let mut guard = None;
+        if self.match_token(&TokenKind::If) {
+            guard = Some(self.parse_expression()?);
+        }
+
+        self.expect(TokenKind::FatArrow)?;
+
+        let body = if self.check(&TokenKind::LBrace) {
+            self.parse_block()?
+        } else {
+            let stmt = self.parse_statement()?;
+            Block {
+                statements: vec![stmt],
+                span: span.clone(),
+            }
+        };
+
+        Ok(MatchArm {
+            pattern,
+            guard,
+            body,
+            span,
+        })
+    }
+
+    fn parse_pattern(&mut self) -> Result<Pattern, String> {
+        if self.match_token(&TokenKind::Underscore) {
+            return Ok(Pattern::Wildcard);
+        }
+
+        if self.match_token(&TokenKind::Dot) {
+            let variant_name = match self.advance().kind {
+                TokenKind::Ident(n) => n,
+                other => return Err(format!("Expected variant name after '.', found {:?}", other)),
+            };
+
+            let mut binding = None;
+            if self.match_token(&TokenKind::LParen) {
+                if let TokenKind::Ident(b) = self.advance().kind {
+                    binding = Some(b);
+                }
+                self.expect(TokenKind::RParen)?;
+            }
+
+            return Ok(Pattern::Variant {
+                enum_name: None,
+                variant_name,
+                binding,
+            });
+        }
+
+        match self.peek_kind() {
+            TokenKind::IntLit(n) => {
+                let val = *n;
+                self.advance();
+                Ok(Pattern::Literal(Literal::Int(val)))
+            }
+            TokenKind::StringLit(s) => {
+                let val = s.clone();
+                self.advance();
+                Ok(Pattern::Literal(Literal::String(val)))
+            }
+            TokenKind::True => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Bool(true)))
+            }
+            TokenKind::False => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Bool(false)))
+            }
+            TokenKind::Ident(name) => {
+                let id = name.clone();
+                self.advance();
+                if self.match_token(&TokenKind::Dot) {
+                    let vname = match self.advance().kind {
+                        TokenKind::Ident(n) => n,
+                        other => return Err(format!("Expected variant name, found {:?}", other)),
+                    };
+                    let mut binding = None;
+                    if self.match_token(&TokenKind::LParen) {
+                        if let TokenKind::Ident(b) = self.advance().kind {
+                            binding = Some(b);
+                        }
+                        self.expect(TokenKind::RParen)?;
+                    }
+                    Ok(Pattern::Variant {
+                        enum_name: Some(id),
+                        variant_name: vname,
+                        binding,
+                    })
+                } else {
+                    Ok(Pattern::Ident(id))
+                }
+            }
+            other => Err(format!("Invalid pattern syntax: {:?} at line {}", other, self.current_span().line)),
         }
     }
 
@@ -758,10 +948,6 @@ impl Parser {
                     args,
                     span,
                 };
-            } else if self.match_token(&TokenKind::Bang) {
-                // error unwrap / try operator in call: func()!
-                // Can be represented as Call or wrapped
-                break;
             } else {
                 break;
             }
@@ -772,6 +958,27 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<Expression, String> {
         let span = self.current_span();
+
+        if self.match_token(&TokenKind::Dot) {
+            // Enum variant literal: `.Pending` or `.Success("ok")`
+            let vname = match self.advance().kind {
+                TokenKind::Ident(n) => n,
+                other => return Err(format!("Expected variant name after '.', found {:?}", other)),
+            };
+
+            let mut payload = None;
+            if self.match_token(&TokenKind::LParen) {
+                payload = Some(Box::new(self.parse_expression()?));
+                self.expect(TokenKind::RParen)?;
+            }
+
+            return Ok(Expression::EnumInit {
+                enum_name: None,
+                variant_name: vname,
+                payload,
+                span,
+            });
+        }
 
         match self.peek_kind() {
             TokenKind::IntLit(n) => {
@@ -827,6 +1034,25 @@ impl Parser {
                     return Ok(Expression::StructInit {
                         name: id,
                         fields,
+                        span,
+                    });
+                }
+
+                // Check for Enum Qualified Init: `Status.Pending` or `Status.Failed("network")`
+                if self.match_token(&TokenKind::Dot) {
+                    let vname = match self.advance().kind {
+                        TokenKind::Ident(n) => n,
+                        other => return Err(format!("Expected enum variant name, found {:?}", other)),
+                    };
+                    let mut payload = None;
+                    if self.match_token(&TokenKind::LParen) {
+                        payload = Some(Box::new(self.parse_expression()?));
+                        self.expect(TokenKind::RParen)?;
+                    }
+                    return Ok(Expression::EnumInit {
+                        enum_name: Some(id),
+                        variant_name: vname,
+                        payload,
                         span,
                     });
                 }

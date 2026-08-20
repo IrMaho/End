@@ -56,6 +56,25 @@ enum Commands {
         /// Target in format <file.end>:<line_number>
         target: String,
     },
+    /// Explain a specific line with human & agent-friendly semantic breakdown
+    Explain {
+        /// Target in format <file.end>:<line_number>
+        target: String,
+    },
+    /// Trace timeline and data-flow of a symbol across its entire lifecycle
+    Trace {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Symbol to trace
+        symbol: String,
+    },
+    /// Query side-effects and capabilities for a symbol
+    Effects {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Symbol name
+        symbol: String,
+    },
     /// Perform impact analysis before modifying a symbol (Agent Protocol)
     Impact {
         /// Path to .end source file
@@ -210,6 +229,7 @@ fn main() {
                             "status": "passed",
                             "file": file_str,
                             "structs_count": module.structs.len(),
+                            "enums_count": module.enums.len(),
                             "functions_count": module.functions.len(),
                             "errors": []
                         }));
@@ -235,15 +255,7 @@ fn main() {
             }
         }
         Commands::Inspect { target } => {
-            let parts: Vec<&str> = target.split(':').collect();
-            if parts.len() != 2 {
-                eprintln!("{} Target must be in format <file.end>:<line_number>", "Error:".red().bold());
-                std::process::exit(1);
-            }
-
-            let file = PathBuf::from(parts[0]);
-            let line: usize = parts[1].parse().unwrap_or(0);
-
+            let (file, line) = parse_file_line(&target);
             let (_, analyzer) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
@@ -254,6 +266,46 @@ fn main() {
 
             let api = AgentApi::new(&analyzer.graph);
             let result = api.inspect_line(line);
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+        }
+        Commands::Explain { target } => {
+            let (file, line) = parse_file_line(&target);
+            let (_, analyzer) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let api = AgentApi::new(&analyzer.graph);
+            let result = api.explain_line(line);
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+        }
+        Commands::Trace { file, symbol } => {
+            let (_, analyzer) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let api = AgentApi::new(&analyzer.graph);
+            let result = api.trace_symbol(&symbol);
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+        }
+        Commands::Effects { file, symbol } => {
+            let (_, analyzer) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let api = AgentApi::new(&analyzer.graph);
+            let result = api.query_effects(&symbol);
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
         Commands::Impact { file, symbol } => {
@@ -283,6 +335,15 @@ fn main() {
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
     }
+}
+
+fn parse_file_line(target: &str) -> (PathBuf, usize) {
+    let parts: Vec<&str> = target.split(':').collect();
+    if parts.len() != 2 {
+        eprintln!("{} Target must be in format <file.end>:<line_number>", "Error:".red().bold());
+        std::process::exit(1);
+    }
+    (PathBuf::from(parts[0]), parts[1].parse().unwrap_or(0))
 }
 
 fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), String> {

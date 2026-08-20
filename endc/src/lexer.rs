@@ -4,6 +4,7 @@ use crate::ast::Span;
 pub enum TokenKind {
     // Keywords
     Struct,  // 'st' or 'struct'
+    Enum,    // 'enum'
     Fn,      // 'fn'
     Val,     // 'val' (immutable)
     Mut,     // 'mut' (mutable)
@@ -58,6 +59,7 @@ pub enum TokenKind {
     Dot,       // '.'
     Ampersand, // '&'
     Pipe,      // '|'
+    Underscore,// '_'
     LParen,    // '('
     RParen,    // ')'
     LBrace,    // '{'
@@ -75,12 +77,12 @@ pub struct Token {
 }
 
 pub struct Lexer<'a> {
-    source: &'a str,
-    chars: Vec<char>,
-    cursor: usize,
-    line: usize,
-    col: usize,
-    filename: String,
+    pub source: &'a str,
+    pub chars: Vec<char>,
+    pub cursor: usize,
+    pub line: usize,
+    pub col: usize,
+    pub filename: String,
 }
 
 impl<'a> Lexer<'a> {
@@ -198,6 +200,14 @@ impl<'a> Lexer<'a> {
             });
         }
 
+        if ch == '_' && !self.peek_next().map_or(false, |c| c.is_alphanumeric() || c == '_') {
+            self.advance();
+            return Ok(Token {
+                kind: TokenKind::Underscore,
+                span,
+            });
+        }
+
         if ch.is_alphabetic() || ch == '_' {
             let mut ident = String::new();
             while let Some(c) = self.peek() {
@@ -211,6 +221,7 @@ impl<'a> Lexer<'a> {
 
             let kind = match ident.as_str() {
                 "st" | "struct" => TokenKind::Struct,
+                "enum" => TokenKind::Enum,
                 "fn" => TokenKind::Fn,
                 "val" => TokenKind::Val,
                 "mut" | "var" => TokenKind::Mut,

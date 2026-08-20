@@ -1,7 +1,7 @@
 use crate::ast::*;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Void,
     Int(i64),
@@ -9,6 +9,7 @@ pub enum Value {
     String(String),
     Bool(bool),
     Struct(String, HashMap<String, Value>),
+    Enum(Option<String>, String, Option<Box<Value>>),
     Pointer(usize),
 }
 
@@ -26,6 +27,17 @@ impl std::fmt::Display for Value {
                     write!(f, "{}: {}, ", k, v)?;
                 }
                 write!(f, "}}")
+            }
+            Value::Enum(ename, vname, payload) => {
+                if let Some(en) = ename {
+                    write!(f, "{}.{}", en, vname)?;
+                } else {
+                    write!(f, ".{}", vname)?;
+                }
+                if let Some(p) = payload {
+                    write!(f, "({})", p)?;
+                }
+                Ok(())
             }
             Value::Pointer(p) => write!(f, "*0x{:x}", p),
         }
@@ -218,6 +230,40 @@ impl Interpreter {
                 self.pop_scope();
                 Ok(None)
             }
+            Statement::Match { expr, arms, .. } => {
+                let target_val = self.eval_expression(expr)?;
+                for arm in arms {
+                    if let Some(bindings) = self.matches_pattern(&target_val, &arm.pattern) {
+                        self.push_scope();
+                        for (k, v) in bindings {
+                            self.set_var(&k, v);
+                        }
+
+                        // Check optional guard
+                        let guard_ok = if let Some(g) = &arm.guard {
+                            match self.eval_expression(g)? {
+                                Value::Bool(b) => b,
+                                _ => false,
+                            }
+                        } else {
+                            true
+                        };
+
+                        if guard_ok {
+                            for s in &arm.body.statements {
+                                if let Some(ret) = self.eval_statement(s)? {
+                                    self.pop_scope();
+                                    return Ok(Some(ret));
+                                }
+                            }
+                            self.pop_scope();
+                            break;
+                        }
+                        self.pop_scope();
+                    }
+                }
+                Ok(None)
+            }
             Statement::RegionBlock { name, body, .. } => {
                 self.push_scope();
                 self.set_var(&format!("region_{}", name), Value::String(format!("Region<{}>", name)));
@@ -231,9 +277,41 @@ impl Interpreter {
                 Ok(None)
             }
             Statement::Defer { expr, .. } => {
-                // Evaluated on block exit in strict mode
                 let _ = expr;
                 Ok(None)
+            }
+        }
+    }
+
+    fn matches_pattern(&self, target: &Value, pattern: &Pattern) -> Option<Vec<(String, Value)>> {
+        match pattern {
+            Pattern::Wildcard => Some(Vec::new()),
+            Pattern::Ident(id) => Some(vec![(id.clone(), target.clone())]),
+            Pattern::Literal(lit) => {
+                let lit_val = match lit {
+                    Literal::Int(n) => Value::Int(*n),
+                    Literal::Float(f) => Value::Float(*f),
+                    Literal::String(s) => Value::String(s.clone()),
+                    Literal::Bool(b) => Value::Bool(*b),
+                    Literal::Null => Value::Pointer(0),
+                };
+                if *target == lit_val {
+                    Some(Vec::new())
+                } else {
+                    None
+                }
+            }
+            Pattern::Variant { variant_name, binding, .. } => {
+                if let Value::Enum(_, vname, payload) = target {
+                    if vname == variant_name {
+                        let mut out = Vec::new();
+                        if let (Some(b), Some(p)) = (binding, payload) {
+                            out.push((b.clone(), *p.clone()));
+                        }
+                        return Some(out);
+                    }
+                }
+                None
             }
         }
     }
@@ -332,11 +410,39 @@ impl Interpreter {
                 }
                 Ok(Value::Struct(name.clone(), map))
             }
+            Expression::EnumInit { enum_name, variant_name, payload, .. } => {
+                let payload_val = if let Some(p) = payload {
+                    Some(Box::new(self.eval_expression(p)?))
+                } else {
+                    None
+                };
+                Ok(Value::Enum(enum_name.clone(), variant_name.clone(), payload_val))
+            }
             Expression::Alloc { .. } => {
                 Ok(Value::Pointer(0x1000))
             }
             Expression::Catch { expr, .. } => {
                 self.eval_expression(expr)
+            }
+            Expression::Match { expr, arms, .. } => {
+                let target_val = self.eval_expression(expr)?;
+                for arm in arms {
+                    if let Some(bindings) = self.matches_pattern(&target_val, &arm.pattern) {
+                        self.push_scope();
+                        for (k, v) in bindings {
+                            self.set_var(&k, v);
+                        }
+                        for s in &arm.body.statements {
+                            if let Some(ret) = self.eval_statement(s)? {
+                                self.pop_scope();
+                                return Ok(ret);
+                            }
+                        }
+                        self.pop_scope();
+                        break;
+                    }
+                }
+                Ok(Value::Void)
             }
             Expression::Block(_) => Ok(Value::Void),
         }

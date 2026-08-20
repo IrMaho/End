@@ -66,11 +66,37 @@ impl CBackend {
         }
         self.output.push('\n');
 
-        // Forward declarations of structs
+        // Forward declarations of Enums and Structs
+        for e in &module.enums {
+            self.output.push_str(&format!("typedef struct {} {};\n", e.name, e.name));
+        }
         for s in &module.structs {
             self.output.push_str(&format!("typedef struct {} {};\n", s.name, s.name));
         }
         self.output.push('\n');
+
+        // Enum Definitions (Tagged Unions)
+        for e in &module.enums {
+            self.output.push_str(&format!("typedef enum {{\n"));
+            for v in &e.variants {
+                self.output.push_str(&format!("    {}_{},\n", e.name, v.name));
+            }
+            self.output.push_str(&format!("}} {}_Tag;\n\n", e.name));
+
+            self.output.push_str(&format!("struct {} {{\n", e.name));
+            self.output.push_str(&format!("    {}_Tag tag;\n", e.name));
+            let has_payload = e.variants.iter().any(|v| v.payload.is_some());
+            if has_payload {
+                self.output.push_str("    union {\n");
+                for v in &e.variants {
+                    if let Some(pty) = &v.payload {
+                        self.output.push_str(&format!("        {} {};\n", self.map_type(pty), v.name));
+                    }
+                }
+                self.output.push_str("    } data;\n");
+            }
+            self.output.push_str("};\n\n");
+        }
 
         // Struct Definitions
         for s in &module.structs {
@@ -126,6 +152,9 @@ impl CBackend {
             Type::Custom(name) => name.clone(),
             Type::Pointer(inner) => format!("{}*", self.map_type(inner)),
             Type::Slice(inner) => format!("{}*", self.map_type(inner)),
+            Type::Array(inner, size) => format!("{}[{}]", self.map_type(inner), size),
+            Type::Tuple(_) => "void*".to_string(),
+            Type::Generic(name, _) => name.clone(),
             Type::Result(inner, _) => self.map_type(inner),
             Type::Region(_) => "EndArena*".to_string(),
             Type::Allocator => "EndAllocator*".to_string(),
@@ -280,6 +309,42 @@ impl CBackend {
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
+            Statement::Match { expr, arms, .. } => {
+                let expr_str = self.gen_expression(expr);
+                self.output.push_str(&format!("{}switch (({}).tag) {{\n", self.indent(), expr_str));
+                self.indent_level += 1;
+                for arm in arms {
+                    match &arm.pattern {
+                        Pattern::Variant { variant_name, enum_name, binding } => {
+                            let en = enum_name.clone().unwrap_or_else(|| "Status".to_string());
+                            self.output.push_str(&format!("{}case {}_{}: {{\n", self.indent(), en, variant_name));
+                            self.indent_level += 1;
+                            if let Some(b) = binding {
+                                self.output.push_str(&format!("{}__{} = ({})({}).data.{};\n", self.indent(), b, "auto", expr_str, variant_name));
+                            }
+                            for s in &arm.body.statements {
+                                self.gen_statement(s);
+                            }
+                            self.output.push_str(&format!("{}break;\n", self.indent()));
+                            self.indent_level -= 1;
+                            self.output.push_str(&format!("{}}}\n", self.indent()));
+                        }
+                        Pattern::Wildcard => {
+                            self.output.push_str(&format!("{}default: {{\n", self.indent()));
+                            self.indent_level += 1;
+                            for s in &arm.body.statements {
+                                self.gen_statement(s);
+                            }
+                            self.output.push_str(&format!("{}break;\n", self.indent()));
+                            self.indent_level -= 1;
+                            self.output.push_str(&format!("{}}}\n", self.indent()));
+                        }
+                        _ => {}
+                    }
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
             Statement::RegionBlock { name, body, .. } => {
                 self.output.push_str(&format!(
                     "{}/* Enter Region: {} */\n",
@@ -359,7 +424,6 @@ impl CBackend {
                             let unquoted = &arg_str[1..arg_str.len() - 1];
                             return format!("printf(\"{}\\n\")", unquoted);
                         } else {
-                            // Print dynamic value
                             return format!("printf(\"%s\\n\", (const char*){})", arg_str);
                         }
                     }
@@ -382,12 +446,21 @@ impl CBackend {
                 }
                 format!("({}){{ {} }}", name, field_inits.join(", "))
             }
+            Expression::EnumInit { enum_name, variant_name, payload, .. } => {
+                let en = enum_name.clone().unwrap_or_else(|| "Status".to_string());
+                if let Some(p) = payload {
+                    format!("({}){{ .tag = {}_{}, .data.{} = {} }}", en, en, variant_name, variant_name, self.gen_expression(p))
+                } else {
+                    format!("({}){{ .tag = {}_{} }}", en, en, variant_name)
+                }
+            }
             Expression::Alloc { target_type, .. } => {
                 format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type))
             }
             Expression::Catch { expr, .. } => {
                 self.gen_expression(expr)
             }
+            Expression::Match { .. } => "0".to_string(),
             Expression::Block(_) => "0".to_string(),
         }
     }

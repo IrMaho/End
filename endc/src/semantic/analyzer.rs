@@ -1,12 +1,12 @@
 use crate::ast::*;
-use crate::semantic::effects::Effect;
 use crate::semantic::graph::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct SemanticAnalyzer {
     pub graph: SemanticGraph,
     pub source_lines: Vec<String>,
     pub errors: Vec<DiagnosticError>,
+    pub enums: HashMap<String, EnumDef>,
     current_function: Option<String>,
     var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
 }
@@ -27,6 +27,7 @@ impl SemanticAnalyzer {
             graph: SemanticGraph::new(filename),
             source_lines: source.lines().map(|s| s.to_string()).collect(),
             errors: Vec::new(),
+            enums: HashMap::new(),
             current_function: None,
             var_scopes: vec![HashMap::new()],
         }
@@ -56,6 +57,25 @@ impl SemanticAnalyzer {
     }
 
     pub fn analyze_module(&mut self, module: &Module) -> Result<(), Vec<DiagnosticError>> {
+        // Register Enums
+        for e in &module.enums {
+            self.enums.insert(e.name.clone(), e.clone());
+            let variant_names = e.variants.iter().map(|v| v.name.clone()).collect::<Vec<_>>();
+            let info = SymbolInfo {
+                name: e.name.clone(),
+                kind: "enum".to_string(),
+                type_signature: format!("enum {} {{ {} }}", e.name, variant_names.join(", ")),
+                file: e.span.file.clone(),
+                defined_at_line: e.span.line,
+                callers: Vec::new(),
+                callees: Vec::new(),
+                effects: Vec::new(),
+                is_pure: true,
+                memory_region: None,
+            };
+            self.graph.symbols.insert(e.name.clone(), info);
+        }
+
         // Register Structs
         for s in &module.structs {
             let info = SymbolInfo {
@@ -159,7 +179,6 @@ impl SemanticAnalyzer {
                 let ty = var_type.clone().unwrap_or(inferred_ty);
                 self.declare_var(name, ty.clone(), span.line, *is_mut);
 
-                // Build line semantics for AI agent inspection
                 let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
                     self.source_lines[span.line - 1].trim().to_string()
                 } else {
@@ -338,6 +357,51 @@ impl SemanticAnalyzer {
                 self.analyze_block(body);
                 self.pop_scope();
             }
+            Statement::Match { expr, arms, span } => {
+                let match_type = self.analyze_expression(expr);
+                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
+                    self.source_lines[span.line - 1].trim().to_string()
+                } else {
+                    "match ...".to_string()
+                };
+
+                let mut from_symbols = Vec::new();
+                self.extract_symbols_from_expr(expr, &mut from_symbols);
+
+                // Analyze each match arm
+                for arm in arms {
+                    self.push_scope();
+                    if let Pattern::Variant { binding: Some(b), .. } = &arm.pattern {
+                        self.declare_var(b, Type::Custom("VariantPayload".into()), arm.span.line, false);
+                    } else if let Pattern::Ident(id) = &arm.pattern {
+                        self.declare_var(id, match_type.clone(), arm.span.line, false);
+                    }
+
+                    if let Some(g) = &arm.guard {
+                        self.analyze_expression(g);
+                    }
+                    self.analyze_block(&arm.body);
+                    self.pop_scope();
+                }
+
+                let line_sem = LineSemantics {
+                    line: span.line,
+                    code: raw_code,
+                    flow: DataFlow {
+                        from: from_symbols,
+                        to: Vec::new(),
+                    },
+                    side_effects: SideEffects {
+                        memory_allocated: false,
+                        allocator_used: None,
+                        io_performed: false,
+                        can_panic: false,
+                        possible_errors: Vec::new(),
+                        effects: vec!["match".into()],
+                    },
+                };
+                self.graph.add_line(span.line, line_sem);
+            }
             Statement::RegionBlock { name, body, span } => {
                 self.push_scope();
                 self.declare_var(
@@ -364,7 +428,7 @@ impl SemanticAnalyzer {
                 Literal::Bool(_) => Type::Bool,
                 Literal::Null => Type::Pointer(Box::new(Type::Void)),
             },
-            Expression::Ident(name, span) => {
+            Expression::Ident(name, _) => {
                 if let Some((ty, _, _)) = self.lookup_var(name) {
                     ty
                 } else if self.graph.symbols.contains_key(name) {
@@ -411,8 +475,28 @@ impl SemanticAnalyzer {
                 }
                 Type::Custom(name.clone())
             }
+            Expression::EnumInit { enum_name, variant_name, payload, .. } => {
+                if let Some(p) = payload {
+                    self.analyze_expression(p);
+                }
+                Type::Custom(enum_name.clone().unwrap_or_else(|| variant_name.clone()))
+            }
             Expression::Alloc { target_type, .. } => Type::Pointer(Box::new(target_type.clone())),
             Expression::Catch { expr, .. } => self.analyze_expression(expr),
+            Expression::Match { expr, arms, .. } => {
+                let match_type = self.analyze_expression(expr);
+                for arm in arms {
+                    self.push_scope();
+                    if let Pattern::Variant { binding: Some(b), .. } = &arm.pattern {
+                        self.declare_var(b, Type::Custom("VariantPayload".into()), arm.span.line, false);
+                    } else if let Pattern::Ident(id) = &arm.pattern {
+                        self.declare_var(id, match_type.clone(), arm.span.line, false);
+                    }
+                    self.analyze_block(&arm.body);
+                    self.pop_scope();
+                }
+                Type::Void
+            }
             Expression::Block(b) => {
                 self.analyze_block(b);
                 Type::Void
@@ -456,6 +540,11 @@ impl SemanticAnalyzer {
             Expression::StructInit { fields, .. } => {
                 for (_, fval) in fields {
                     self.extract_symbols_from_expr(fval, out);
+                }
+            }
+            Expression::EnumInit { payload, .. } => {
+                if let Some(p) = payload {
+                    self.extract_symbols_from_expr(p, out);
                 }
             }
             _ => {}

@@ -1,0 +1,57 @@
+// Example 3: Tagged Unions (Enums) and Exhaustive Pattern Matching in End
+enum TaskStatus {
+    Pending,
+    InProgress,
+    Failed(str),
+    Done,
+}
+
+st Task {
+    id: u64,
+    status: TaskStatus,
+}
+
+fn process_task(task: Task) void {
+    println("Processing task ID:")
+    println(task.id)
+
+    match task.status {
+        .Pending => {
+            println("Status is: PENDING (Dispatching worker...)")
+        },
+        .InProgress => {
+            println("Status is: IN PROGRESS (Working...)")
+        },
+        .Failed(err) => {
+            println("Status is: FAILED with reason:")
+            println(err)
+        },
+        .Done => {
+            println("Status is: COMPLETED successfully!")
+        },
+    }
+}
+
+fn main() void {
+    println("--- End Language: Enum & Pattern Matching Demo ---")
+
+    val t1 = Task {
+        id: 101,
+        status: TaskStatus.Pending,
+    }
+    process_task(t1)
+
+    val t2 = Task {
+        id: 102,
+        status: TaskStatus.Failed("Database timeout error"),
+    }
+    process_task(t2)
+
+    val t3 = Task {
+        id: 103,
+        status: TaskStatus.Done,
+    }
+    process_task(t3)
+
+    println("All Pattern Matching tests executed with 100% precision!")
+}

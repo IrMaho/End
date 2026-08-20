@@ -40,6 +40,107 @@ impl<'a> AgentApi<'a> {
         }
     }
 
+    pub fn explain_line(&self, line: usize) -> serde_json::Value {
+        if let Some(line_sem) = self.graph.inspect_line(line) {
+            let mut summary_parts = Vec::new();
+            if !line_sem.flow.from.is_empty() {
+                let inputs = line_sem
+                    .flow
+                    .from
+                    .iter()
+                    .map(|f| format!("{}: {}", f.symbol, f.symbol_type))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                summary_parts.push(format!("Consumes input values [{}]", inputs));
+            }
+            if !line_sem.flow.to.is_empty() {
+                let outputs = line_sem
+                    .flow
+                    .to
+                    .iter()
+                    .map(|t| format!("{}: {} (lifetime: {})", t.symbol, t.symbol_type, t.lifetime))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                summary_parts.push(format!("Produces outputs [{}]", outputs));
+            }
+            if line_sem.side_effects.memory_allocated {
+                summary_parts.push("Allocates dynamic memory".to_string());
+            }
+            if line_sem.side_effects.io_performed {
+                summary_parts.push("Performs I/O operations".to_string());
+            }
+
+            let explanation = if summary_parts.is_empty() {
+                format!("Executes pure expression '{}'", line_sem.code)
+            } else {
+                summary_parts.join(" | ")
+            };
+
+            json!({
+                "status": "success",
+                "line": line,
+                "code": line_sem.code,
+                "semantic_explanation": explanation,
+                "is_pure": !line_sem.side_effects.memory_allocated && !line_sem.side_effects.io_performed,
+                "can_panic": line_sem.side_effects.can_panic
+            })
+        } else {
+            json!({
+                "status": "not_found",
+                "line": line,
+                "message": format!("Line {} has no registered AST facts", line)
+            })
+        }
+    }
+
+    pub fn trace_symbol(&self, symbol_name: &str) -> serde_json::Value {
+        let mut occurrences = Vec::new();
+        for (line, sem) in &self.graph.lines {
+            let from_match = sem.flow.from.iter().any(|f| f.symbol == symbol_name);
+            let to_match = sem.flow.to.iter().any(|t| t.symbol == symbol_name);
+            if from_match || to_match {
+                occurrences.push(json!({
+                    "line": line,
+                    "code": sem.code,
+                    "role": if to_match { "definition / assignment" } else { "usage / operand" },
+                }));
+            }
+        }
+
+        occurrences.sort_by_key(|a| a["line"].as_u64().unwrap_or(0));
+
+        json!({
+            "status": "success",
+            "symbol": symbol_name,
+            "trace_count": occurrences.len(),
+            "timeline": occurrences
+        })
+    }
+
+    pub fn query_effects(&self, symbol_name: &str) -> serde_json::Value {
+        if let Some(info) = self.graph.get_symbol(symbol_name) {
+            json!({
+                "status": "success",
+                "symbol": symbol_name,
+                "kind": info.kind,
+                "effects": {
+                    "declared_effects": info.effects,
+                    "is_pure": info.is_pure,
+                    "allocates_memory": info.effects.iter().any(|e| e.contains("alloc")),
+                    "io_access": info.effects.iter().any(|e| e.contains("io")),
+                    "network_access": info.effects.iter().any(|e| e.contains("net")),
+                    "db_access": info.effects.iter().any(|e| e.contains("db")),
+                }
+            })
+        } else {
+            json!({
+                "status": "not_found",
+                "symbol": symbol_name,
+                "message": format!("Symbol '{}' not found", symbol_name)
+            })
+        }
+    }
+
     pub fn impact_analysis(&self, symbol: &str) -> serde_json::Value {
         let report = self.graph.impact_analysis(symbol);
         json!({

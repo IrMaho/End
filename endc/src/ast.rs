@@ -35,6 +35,9 @@ pub enum Type {
     Custom(String),
     Pointer(Box<Type>),
     Slice(Box<Type>),
+    Array(Box<Type>, usize),
+    Tuple(Vec<Type>),
+    Generic(String, Vec<Type>),
     Result(Box<Type>, Option<Box<Type>>), // Result<T, E> or !T
     Region(String),                       // Region reference
     Allocator,
@@ -59,6 +62,27 @@ impl std::fmt::Display for Type {
             Type::Custom(name) => write!(f, "{}", name),
             Type::Pointer(inner) => write!(f, "*{}", inner),
             Type::Slice(inner) => write!(f, "[]{}", inner),
+            Type::Array(inner, size) => write!(f, "[{}]{}", size, inner),
+            Type::Tuple(types) => {
+                write!(f, "(")?;
+                for (i, t) in types.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", t)?;
+                }
+                write!(f, ")")
+            }
+            Type::Generic(name, params) => {
+                write!(f, "{}<", name)?;
+                for (i, p) in params.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", p)?;
+                }
+                write!(f, ">")
+            }
             Type::Result(inner, None) => write!(f, "!{}", inner),
             Type::Result(inner, Some(err)) => write!(f, "Result<{}, {}>", inner, err),
             Type::Region(name) => write!(f, "region<{}>", name),
@@ -87,6 +111,22 @@ pub struct StructDef {
     pub name: String,
     pub is_pub: bool,
     pub fields: Vec<StructField>,
+    pub directives: Vec<Directive>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EnumVariant {
+    pub name: String,
+    pub payload: Option<Type>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EnumDef {
+    pub name: String,
+    pub is_pub: bool,
+    pub variants: Vec<EnumVariant>,
     pub directives: Vec<Directive>,
     pub span: Span,
 }
@@ -134,6 +174,26 @@ pub struct Block {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Pattern {
+    Variant {
+        enum_name: Option<String>,
+        variant_name: String,
+        binding: Option<String>,
+    },
+    Literal(Literal),
+    Ident(String),
+    Wildcard,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MatchArm {
+    pub pattern: Pattern,
+    pub guard: Option<Expression>,
+    pub body: Block,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Statement {
     VarDecl {
         name: String,
@@ -167,6 +227,11 @@ pub enum Statement {
         item_name: String,
         iterable: Expression,
         body: Block,
+        span: Span,
+    },
+    Match {
+        expr: Expression,
+        arms: Vec<MatchArm>,
         span: Span,
     },
     RegionBlock {
@@ -244,6 +309,12 @@ pub enum Expression {
         fields: Vec<(String, Expression)>,
         span: Span,
     },
+    EnumInit {
+        enum_name: Option<String>,
+        variant_name: String,
+        payload: Option<Box<Expression>>,
+        span: Span,
+    },
     Alloc {
         allocator: Box<Expression>,
         target_type: Type,
@@ -253,6 +324,11 @@ pub enum Expression {
         expr: Box<Expression>,
         error_name: String,
         handler: Box<Statement>,
+        span: Span,
+    },
+    Match {
+        expr: Box<Expression>,
+        arms: Vec<MatchArm>,
         span: Span,
     },
     Block(Block),
@@ -268,8 +344,10 @@ impl Expression {
             Expression::Call { span, .. } => span,
             Expression::FieldAccess { span, .. } => span,
             Expression::StructInit { span, .. } => span,
+            Expression::EnumInit { span, .. } => span,
             Expression::Alloc { span, .. } => span,
             Expression::Catch { span, .. } => span,
+            Expression::Match { span, .. } => span,
             Expression::Block(b) => &b.span,
         }
     }
@@ -279,6 +357,7 @@ impl Expression {
 pub struct Module {
     pub name: String,
     pub imports: Vec<ImportStmt>,
+    pub enums: Vec<EnumDef>,
     pub structs: Vec<StructDef>,
     pub functions: Vec<FunctionDef>,
     pub span: Span,
