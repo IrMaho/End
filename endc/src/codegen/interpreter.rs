@@ -123,6 +123,10 @@ impl Interpreter {
         for (param, arg) in func.params.iter().zip(args.into_iter()) {
             self.set_var(&param.name, arg);
         }
+        
+        if func.directives.iter().any(|d| d.name == "@telemetry") {
+            println!("[TELEMETRY] Executing {}", func.name);
+        }
 
         let mut ret_val = Value::Void;
         for stmt in &func.body.statements {
@@ -329,10 +333,18 @@ impl Interpreter {
             }
             Statement::AtomicOp { target, value, .. } => {
                 let add_val = self.eval_expression(value)?;
-                if let Some(Value::Int(curr)) = self.get_var(target) {
-                    if let Value::Int(inc) = add_val {
-                        let _ = self.update_var(target, Value::Int(curr + inc));
+                let mut is_updated = false;
+                // VM Atomic Simulation Block
+                {
+                    if let Some(Value::Int(curr)) = self.get_var(target) {
+                        if let Value::Int(inc) = add_val {
+                            let _ = self.update_var(target, Value::Int(curr + inc));
+                            is_updated = true;
+                        }
                     }
+                }
+                if !is_updated {
+                    return Err(format!("AtomicOp failed: target '{}' is not an integer", target));
                 }
                 Ok(None)
             }
