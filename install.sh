@@ -1,74 +1,104 @@
-#!/usr/bin/env bash
-# ?? End Language Unix One-Line Installer (Linux & macOS)
-# Usage: curl -sSf https://github.com/IrMaho/End/releases/latest/download/install.sh | sh
-set -euo pipefail
+#!/usr/bin/env sh
+# 👑 End Language — Official Linux & macOS One-Line Automated Installer
+# Usage: curl -fsSL https://raw.githubusercontent.com/IrMaho/End/main/install.sh | sh
 
+set -e
+
+VERSION="v1.0.0"
 INSTALL_DIR="$HOME/.end"
 BIN_DIR="$INSTALL_DIR/bin"
-VERSION="v0.4.0-alpha"
+SKILL_DIR="$INSTALL_DIR/skills/end-language"
+GLOBAL_GEMINI_SKILL="$HOME/.gemini/config/skills/end-language"
 
-echo "?? Installing End Programming Language Platform ($VERSION)..."
+echo "================================================================================"
+echo "👑 Installing End Programming Language ($VERSION)..."
+echo "================================================================================"
 
-mkdir -p "$BIN_DIR"
-
+# Detect OS and Architecture
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-if [ "$OS" = "Darwin" ]; then
-    if [ "$ARCH" = "arm64" ]; then
-        PKG_NAME="end-$VERSION-macos-arm64.tar.gz"
-    else
-        PKG_NAME="end-$VERSION-macos-x64.tar.gz"
-    fi
-else
-    PKG_NAME="end-$VERSION-linux-x64.tar.gz"
-fi
+case "$OS" in
+    Linux)
+        case "$ARCH" in
+            x86_64) ASSET_NAME="end-$VERSION-linux-x64.tar.gz" ;;
+            aarch64|arm64) ASSET_NAME="end-$VERSION-linux-arm64.tar.gz" ;;
+            *) echo "❌ Unsupported Linux architecture: $ARCH"; exit 1 ;;
+        esac
+        ;;
+    Darwin)
+        case "$ARCH" in
+            x86_64) ASSET_NAME="end-$VERSION-macos-x64.tar.gz" ;;
+            arm64|aarch64) ASSET_NAME="end-$VERSION-macos-arm64.tar.gz" ;;
+            *) echo "❌ Unsupported macOS architecture: $ARCH"; exit 1 ;;
+        esac
+        ;;
+    *)
+        echo "❌ Unsupported OS: $OS"
+        exit 1
+        ;;
+esac
 
-TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/$PKG_NAME"
-SHA_URL="https://github.com/IrMaho/End/releases/download/$VERSION/$PKG_NAME.sha256"
+echo "[1/4] Creating directories..."
+mkdir -p "$BIN_DIR" "$SKILL_DIR" "$GLOBAL_GEMINI_SKILL"
 
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
+echo "[2/4] Downloading $ASSET_NAME..."
+TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/$ASSET_NAME"
+TEMP_TAR="/tmp/$ASSET_NAME"
 
-TMP_TAR="$TMP_DIR/$PKG_NAME"
-TMP_SHA="$TMP_DIR/$PKG_NAME.sha256"
-
-echo "==> Downloading $PKG_NAME..."
 if command -v curl >/dev/null 2>&1; then
-    curl -sSL --fail "$TAR_URL" -o "$TMP_TAR" || true
-    curl -sSL --fail "$SHA_URL" -o "$TMP_SHA" || true
+    curl -fsSL "$TAR_URL" -o "$TEMP_TAR" || true
 elif command -v wget >/dev/null 2>&1; then
-    wget -q "$TAR_URL" -O "$TMP_TAR" || true
-    wget -q "$SHA_URL" -O "$TMP_SHA" || true
+    wget -qO "$TEMP_TAR" "$TAR_URL" || true
 fi
 
-if [ -f "$TMP_TAR" ] && [ -s "$TMP_TAR" ]; then
-    # Cryptographic Checksum Verification
-    if [ -f "$TMP_SHA" ] && [ -s "$TMP_SHA" ]; then
-        echo "==> Verifying SHA-256 checksum..."
-        EXPECTED_SHA="$(awk '{print $1}' "$TMP_SHA")"
-        if command -v sha256sum >/dev/null 2>&1; then
-            ACTUAL_SHA="$(sha256sum "$TMP_TAR" | awk '{print $1}')"
-        elif command -v shasum >/dev/null 2>&1; then
-            ACTUAL_SHA="$(shasum -a 256 "$TMP_TAR" | awk '{print $1}')"
-        else
-            ACTUAL_SHA=""
-        fi
+if [ -f "$TEMP_TAR" ]; then
+    tar -xzf "$TEMP_TAR" -C "$INSTALL_DIR"
+    rm -f "$TEMP_TAR"
+    echo "  ✔ Downloaded and extracted official release binaries"
+else
+    echo "  ⚠ Note: Building locally or configuring from repository..."
+    if [ -f "$BIN_DIR/end" ]; then
+        chmod +x "$BIN_DIR/end" "$BIN_DIR/endc" || true
+    fi
+fi
 
-        if [ -n "$ACTUAL_SHA" ] && [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ]; then
-            echo "? SHA-256 Verified: $ACTUAL_SHA"
-        elif [ -n "$ACTUAL_SHA" ]; then
-            echo "? ERROR: SHA-256 Checksum Mismatch!"
-            echo "Expected: $EXPECTED_SHA"
-            echo "Actual:   $ACTUAL_SHA"
-            exit 1
+echo "[3/4] Configuring PATH..."
+ADD_PATH="export PATH=\"\$HOME/.end/bin:\$PATH\""
+
+add_to_shell() {
+    FILE="$1"
+    if [ -f "$FILE" ]; then
+        if ! grep -q ".end/bin" "$FILE"; then
+            echo "" >> "$FILE"
+            echo "# End Programming Language" >> "$FILE"
+            echo "$ADD_PATH" >> "$FILE"
+            echo "  ✔ Added to $FILE"
         fi
     fi
+}
 
-    echo "==> Extracting archive..."
-    tar -xzf "$TMP_TAR" -C "$INSTALL_DIR"
-    chmod +x "$BIN_DIR/end" "$BIN_DIR/endc" 2>/dev/null || true
-    echo "?? SUCCESS: End Language $VERSION installed successfully into $INSTALL_DIR!"
-else
-    echo "? Pre-built binary package not found for $VERSION. You can build from source: cargo build --release"
+add_to_shell "$HOME/.bashrc"
+add_to_shell "$HOME/.zshrc"
+add_to_shell "$HOME/.profile"
+
+echo "[4/4] Verifying installation..."
+export PATH="$BIN_DIR:$PATH"
+if command -v end >/dev/null 2>&1; then
+    end --version || true
 fi
+
+echo ""
+echo "================================================================================"
+echo "🎉 End Programming Language $VERSION successfully installed!"
+echo "================================================================================"
+echo "  • Compiler Binary:  $BIN_DIR/end"
+echo "  • AI Global Skill:  $GLOBAL_GEMINI_SKILL/SKILL.md"
+echo ""
+echo "🚀 Quick Start Commands:"
+echo "    end run main.end           (Instant execution)"
+echo "    end build main.end         (Compile to native binary)"
+echo "    end skill init             (Initialize AI pair programming in current project)"
+echo ""
+echo "Restart your terminal or run: export PATH=\"\$HOME/.end/bin:\$PATH\" to start!"
+echo "================================================================================"

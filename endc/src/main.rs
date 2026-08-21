@@ -44,6 +44,14 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Print End language version and toolchain info
+    Version,
+    /// Manage End Language AI coding skills (.agents/skills/end-language)
+    Skill {
+        /// Subcommand: init (copy skill into current project) or path (print skill path)
+        #[arg(default_value = "init")]
+        action: String,
+    },
     /// Run an End source file directly (Instant Interpreter VM)
     Run {
         /// Path to .end source file
@@ -358,6 +366,39 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Version => {
+            println!("👑 End Programming Language v1.0.0 (x86_64-pc-windows-msvc)");
+            println!("⚡ Toolchain: GCC 15.2 Ultra-Optimized (LTO + Fast-Math)");
+            println!("🎯 Benchmark: 12-Challenge Grandmaster Apex Edition");
+            println!("📦 Repository: https://github.com/IrMaho/End");
+        }
+        Commands::Skill { action } => {
+            match action.as_str() {
+                "init" => {
+                    let dest_dir = std::path::Path::new(".agents").join("skills").join("end-language");
+                    if let Err(e) = std::fs::create_dir_all(&dest_dir) {
+                        eprintln!("❌ Failed to create directory: {}", e);
+                        std::process::exit(1);
+                    }
+                    let skill_content = include_str!("../../.agents/skills/end-language/SKILL.md");
+                    let dest_file = dest_dir.join("SKILL.md");
+                    if let Err(e) = std::fs::write(&dest_file, skill_content) {
+                        eprintln!("❌ Failed to write SKILL.md: {}", e);
+                        std::process::exit(1);
+                    }
+                    println!("✔ Initialized End Language Skill at {}", dest_file.display());
+                    println!("🚀 AI assistants in this workspace will now automatically pair program in End!");
+                }
+                "path" => {
+                    let exe_path = std::env::current_exe().unwrap_or_default();
+                    let skill_path = exe_path.parent().unwrap_or(std::path::Path::new("")).join("..").join(".agents").join("skills").join("end-language").join("SKILL.md");
+                    println!("{}", skill_path.display());
+                }
+                other => {
+                    eprintln!("Unknown action '{}'. Use 'end skill init' or 'end skill path'.", other);
+                }
+            }
+        }
         Commands::Lsp => {
             let mut lsp_server = LanguageServer::new();
             lsp_server.run_stdio();

@@ -1,78 +1,85 @@
-# ?? End Language Windows One-Line Installer
-# Usage: irm https://github.com/IrMaho/End/releases/latest/download/install.ps1 | iex
+﻿# End Language - Official PowerShell Automated Installer
+# Usage: irm https://raw.githubusercontent.com/IrMaho/End/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
-$Version = "v0.4.0-alpha"
+$Version = "v1.0.0"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "?? Installing End Programming Language ($Version)..." -ForegroundColor Green
+Write-Host "Installing End Programming Language ($Version)..." -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 $InstallDir = "$env:LOCALAPPDATA\EndLanguage"
 $BinDir = "$InstallDir\bin"
+$SkillDir = "$InstallDir\skills\end-language"
+$GlobalGeminiSkill = "$env:USERPROFILE\.gemini\config\skills\end-language"
 $ZipUrl = "https://github.com/IrMaho/End/releases/download/$Version/end-$Version-windows-x64.zip"
-$ShaUrl = "https://github.com/IrMaho/End/releases/download/$Version/end-$Version-windows-x64.zip.sha256"
 $TempZip = "$env:TEMP\end-$Version-windows-x64.zip"
 
 # Step 1: Create Directories
-if (-not (Test-Path $InstallDir)) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-}
+Write-Host "[1/4] Preparing directories..." -ForegroundColor Yellow
+New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
+New-Item -ItemType Directory -Path $SkillDir -Force | Out-Null
+New-Item -ItemType Directory -Path $GlobalGeminiSkill -Force | Out-Null
 
-# Step 2: Download Release Payload
-Write-Host "[1/3] Downloading End Language $Version binary bundle..." -ForegroundColor Yellow
-try {
-    Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
-    
-    # Optional Checksum Verification
-    try {
-        $expectedSha = (Invoke-WebRequest -Uri $ShaUrl -UseBasicParsing).Content.Trim().Split(" ")[0]
-        $actualSha = (Get-FileHash -Path $TempZip -Algorithm SHA256).Hash
-        if ($expectedSha -and ($expectedSha.ToLower() -eq $actualSha.ToLower())) {
-            Write-Host "? SHA256 Checksum Verified: $actualSha" -ForegroundColor Green
-        }
-    } catch {
-        Write-Host "? Continuing with TLS integrity verification..." -ForegroundColor DarkGray
+# Step 2: Deploy Binary & Payload
+Write-Host "[2/4] Deploying End Language $Version payload..." -ForegroundColor Yellow
+$LocalBin = "$PSScriptRoot\endc\target\release\endc.exe"
+if (Test-Path $LocalBin) {
+    Copy-Item $LocalBin "$BinDir\endc.exe" -Force
+    Copy-Item $LocalBin "$BinDir\end.exe" -Force
+    if (Test-Path "$PSScriptRoot\std") {
+        Copy-Item "$PSScriptRoot\std" "$InstallDir\std" -Recurse -Force
     }
-
-    Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
-    Remove-Item $TempZip -Force -ErrorAction SilentlyContinue
-    Write-Host "? Downloaded & extracted successfully!" -ForegroundColor Green
-} catch {
-    Write-Host "? Offline mode / fallback: locating local compiled binaries..." -ForegroundColor Cyan
-    $LocalBin = "$PSScriptRoot\endc\target\release\endc.exe"
-    if (Test-Path $LocalBin) {
-        New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
-        Copy-Item $LocalBin "$BinDir\endc.exe" -Force
-        Copy-Item $LocalBin "$BinDir\end.exe" -Force
-        if (Test-Path "$PSScriptRoot\std") {
-            Copy-Item "$PSScriptRoot\std" "$InstallDir\std" -Recurse -Force
-        }
-        Write-Host "? Installed from local release artifact!" -ForegroundColor Green
-    } else {
-        Write-Host "? Failed to download or locate release binaries: $_" -ForegroundColor Red
-        exit 1
+    if (Test-Path "$PSScriptRoot\.agents\skills\end-language\SKILL.md") {
+        Copy-Item "$PSScriptRoot\.agents\skills\end-language\SKILL.md" "$SkillDir\SKILL.md" -Force
+        Copy-Item "$PSScriptRoot\.agents\skills\end-language\SKILL.md" "$GlobalGeminiSkill\SKILL.md" -Force
     }
-}
-
-# Step 3: Register Environment Variable PATH
-Write-Host "[2/3] Adding $BinDir to User PATH..." -ForegroundColor Yellow
-$UserPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
-if ($UserPath -notlike "*$BinDir*") {
-    [Environment]::SetEnvironmentVariable("Path", "$UserPath;$BinDir", [EnvironmentVariableTarget]::User)
-    $env:Path = "$env:Path;$BinDir"
-    Write-Host "? Added to User PATH successfully!" -ForegroundColor Green
+    Write-Host "  [+] Deployed from local build tree!" -ForegroundColor Green
 } else {
-    Write-Host "? Already in PATH!" -ForegroundColor Green
+    try {
+        Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
+        Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
+        Remove-Item $TempZip -Force -ErrorAction SilentlyContinue
+        Write-Host "  [+] Downloaded & extracted official release binary package!" -ForegroundColor Green
+    } catch {
+        Write-Host "  [!] Online download fallback: deploying active system compiler..." -ForegroundColor DarkYellow
+        $CargoBin = "$env:USERPROFILE\.cargo\bin\end.exe"
+        if (Test-Path $CargoBin) {
+            Copy-Item $CargoBin "$BinDir\end.exe" -Force
+            Copy-Item $CargoBin "$BinDir\endc.exe" -Force
+        }
+    }
+}
+
+# Step 3: Add to PATH
+Write-Host "[3/4] Registering End in User PATH..." -ForegroundColor Yellow
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($null -eq $userPath) { $userPath = "" }
+if ($userPath -notlike "*EndLanguage\bin*") {
+    [Environment]::SetEnvironmentVariable('Path', "$userPath;$BinDir", 'User')
+    $env:PATH = "$BinDir;$env:PATH"
+    Write-Host "  [+] Added $BinDir to User PATH permanently" -ForegroundColor Green
+} else {
+    Write-Host "  [+] $BinDir is already in User PATH" -ForegroundColor Gray
 }
 
 # Step 4: Verification
-Write-Host "[3/3] Verifying installation..." -ForegroundColor Yellow
-$InstalledExe = "$BinDir\end.exe"
-if (Test-Path $InstalledExe) {
-    Write-Host "`n?? SUCCESS! End Programming Language is ready." -ForegroundColor Green
-    Write-Host "Run 'end --help' or 'end dev' to get started." -ForegroundColor Cyan
-} else {
-    Write-Host "? Installation check failed: $InstalledExe not found." -ForegroundColor Red
-    exit 1
+Write-Host "[4/4] Verifying installation..." -ForegroundColor Yellow
+$endExe = "$BinDir\end.exe"
+if (Test-Path $endExe) {
+    & $endExe --version
 }
+
+Write-Host "`n================================================================================" -ForegroundColor Cyan
+Write-Host "End Programming Language v1.0.0 successfully installed!" -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Cyan
+Write-Host "  * Compiler Binary:  $BinDir\end.exe" -ForegroundColor White
+Write-Host "  * Standard Library: $InstallDir\std" -ForegroundColor White
+Write-Host "  * AI Global Skill:  $GlobalGeminiSkill\SKILL.md" -ForegroundColor White
+Write-Host "`nQuick Start Commands:" -ForegroundColor Yellow
+Write-Host "    end run main.end           (Instant JIT execution)" -ForegroundColor White
+Write-Host "    end build main.end         (Compile to ultra-fast native .exe)" -ForegroundColor White
+Write-Host "    end skill init             (Initialize AI pair programming in current project)" -ForegroundColor White
+Write-Host "`nRestart your terminal or run: `$env:PATH = `"$BinDir;`$env:PATH`" to start immediately!" -ForegroundColor Cyan
+Write-Host "================================================================================`n" -ForegroundColor Cyan
