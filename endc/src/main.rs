@@ -497,10 +497,16 @@ fn main() {
             // Build compiler args
             let mut zig_args: Vec<String> = vec![
                 "cc".to_string(),
+                #[cfg(windows)]
+                "-target".to_string(),
+                #[cfg(windows)]
+                "x86_64-windows-gnu".to_string(),
                 c_file_path.to_str().unwrap().to_string(),
                 "-O3".to_string(),
+                "-march=native".to_string(),
                 "-funroll-loops".to_string(),
                 "-fomit-frame-pointer".to_string(),
+                "-fwrapv".to_string(),
             ];
 
             if is_library_mode {
@@ -510,7 +516,6 @@ fn main() {
 
             if strip {
                 zig_args.push("-s".to_string());
-                zig_args.push("-flto".to_string());
                 zig_args.push("-ffunction-sections".to_string());
                 zig_args.push("-fdata-sections".to_string());
             }
@@ -528,12 +533,15 @@ fn main() {
                     zig_args.push("-lws2_32".to_string());
                 }
             } else {
-                zig_args.push("-march=native".to_string());
                 #[cfg(windows)]
                 {
                     zig_args.push("-lgdi32".to_string());
                     zig_args.push("-luser32".to_string());
                     zig_args.push("-lws2_32".to_string());
+                }
+                #[cfg(not(windows))]
+                {
+                    zig_args.push("-march=native".to_string());
                 }
             }
 

@@ -266,21 +266,21 @@ struct Request {
     int64_t checksum;
 };
 
-static inline Request process_request(uint64_t id, int32_t size);
+static inline __attribute__((always_inline)) Request process_request(uint64_t id, int32_t size);
 int main(void);
 
 #line 8 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-static inline Request process_request(uint64_t id, int32_t size) {
+static inline __attribute__((always_inline)) Request process_request(uint64_t id, int32_t size) {
     #line 9 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-    int64_t hash = 17;
+    uint64_t hash = 17;
     #line 10 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-    #pragma clang loop vectorize(enable) unroll(enable)
-    for (int32_t j = 0; j < 50; j++) {
+    #pragma GCC unroll 8
+    for (int64_t j = 0; j < 50; j++) {
         #line 11 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
         hash = (((hash * 31) + id) + j);
     }
     #line 14 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-    __auto_type req = (Request){ .id = id, .payload_size = size, .checksum = hash };
+    __auto_type req = (Request){ .id = id, .payload_size = size, .checksum = ((int64_t)(hash)) };
     #line 19 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
     return req;
 }
@@ -288,7 +288,7 @@ static inline Request process_request(uint64_t id, int32_t size) {
 #line 22 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
 int main(void) {
     #line 23 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-    int32_t iterations = 1000000;
+    uint64_t iterations = 1000000;
     #line 24 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
     int64_t total_checksum = 0;
     #line 26 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
@@ -298,8 +298,8 @@ int main(void) {
     EndArena* region_bench_scope = end_arena_create(512 * 1024);
     {
         #line 29 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-        #pragma clang loop vectorize(enable) unroll(enable)
-        for (int32_t i = 0; i < iterations; i++) {
+        #pragma GCC unroll 8
+        for (int64_t i = 0; i < iterations; i++) {
             #line 30 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
             __auto_type req = process_request(i, 256);
             #line 31 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"

@@ -95,6 +95,34 @@ impl TreeShaker {
                     Self::visit_statement(s, reachable_fn, reachable_st, module);
                 }
             }
+            Statement::ForIn { iterable, body, .. } | Statement::ParallelFor { iterable, body, .. } => {
+                Self::visit_expression(iterable, reachable_fn, reachable_st, module);
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
+            Statement::RegionBlock { body, .. } => {
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
+            Statement::Match { expr, arms, .. } => {
+                Self::visit_expression(expr, reachable_fn, reachable_st, module);
+                for arm in arms {
+                    if let Some(guard) = &arm.guard {
+                        Self::visit_expression(guard, reachable_fn, reachable_st, module);
+                    }
+                    for s in &arm.body.statements {
+                        Self::visit_statement(s, reachable_fn, reachable_st, module);
+                    }
+                }
+            }
+            Statement::Defer { expr, .. } => {
+                Self::visit_expression(expr, reachable_fn, reachable_st, module);
+            }
+            Statement::Spawn { call, .. } => {
+                Self::visit_expression(call, reachable_fn, reachable_st, module);
+            }
             _ => {}
         }
     }

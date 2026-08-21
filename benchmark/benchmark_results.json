@@ -1,83 +1,67 @@
 {
-    "Metadata":  {
-                     "CPU":  "13th Gen Intel(R) Core(TM) i7-13650HX",
-                     "OS":  "Microsoft Windows 11 Pro",
-                     "Compiler":  "endc 0.4.0-alpha",
-                     "Commit":  "ab75c97",
-                     "Timestamp":  "2026-08-21T10:10:55.7697483+03:30",
-                     "WarmupCount":  1000,
-                     "SampleCount":  100
-                 },
-    "Results":  [
-                    {
-                        "Language":  "End (C11 Backend)",
-                        "Workload":  "10M Reduction (End)",
-                        "Status":  "Passed",
-                        "Min_Ms":  15.788,
-                        "Max_Ms":  40.3296,
-                        "Mean_Ms":  22.5838,
-                        "P50_Ms":  21.025,
-                        "P90_Ms":  29.5687,
-                        "P95_Ms":  36.1234,
-                        "P99_Ms":  40.3296,
-                        "StdDev_Ms":  5.2211,
-                        "EstimatedOpsSec":  44279528
-                    },
-                    {
-                        "Language":  "C (GCC 15.2)",
-                        "Workload":  "10M Reduction (C11)",
-                        "Status":  "Passed",
-                        "Min_Ms":  13.8595,
-                        "Max_Ms":  33.5732,
-                        "Mean_Ms":  19.8865,
-                        "P50_Ms":  19.2977,
-                        "P90_Ms":  26.5206,
-                        "P95_Ms":  29.9172,
-                        "P99_Ms":  33.5732,
-                        "StdDev_Ms":  4.2832,
-                        "EstimatedOpsSec":  50285369
-                    },
-                    {
-                        "Language":  "Zig (ReleaseFast)",
-                        "Workload":  "10M Reduction (Zig)",
-                        "Status":  "Passed",
-                        "Min_Ms":  5.5363,
-                        "Max_Ms":  18.7505,
-                        "Mean_Ms":  7.9772,
-                        "P50_Ms":  8.0069,
-                        "P90_Ms":  8.9404,
-                        "P95_Ms":  9.1105,
-                        "P99_Ms":  18.7505,
-                        "StdDev_Ms":  1.7044,
-                        "EstimatedOpsSec":  125357268
-                    },
-                    {
-                        "Language":  "Rust (Release -O3)",
-                        "Workload":  "10M Reduction (Rust)",
-                        "Status":  "Passed",
-                        "Min_Ms":  6.5731,
-                        "Max_Ms":  10.3559,
-                        "Mean_Ms":  8.2995,
-                        "P50_Ms":  8.3106,
-                        "P90_Ms":  9.384,
-                        "P95_Ms":  9.6302,
-                        "P99_Ms":  10.3559,
-                        "StdDev_Ms":  0.776,
-                        "EstimatedOpsSec":  120489186
-                    },
-                    {
-                        "Language":  "Go (1.25.1)",
-                        "Workload":  "10M Reduction (Go)",
-                        "Status":  "Passed",
-                        "Min_Ms":  39.6637,
-                        "Max_Ms":  63.6638,
-                        "Mean_Ms":  49.4184,
-                        "P50_Ms":  49.1252,
-                        "P90_Ms":  56.5947,
-                        "P95_Ms":  57.3782,
-                        "P99_Ms":  63.6638,
-                        "StdDev_Ms":  4.9513,
-                        "EstimatedOpsSec":  20235378
-                    }
-                ]
+  "End (C11 Backend)": {
+    "workload": "10M Reduction",
+    "samples": 100,
+    "mean_ms": 10.244,
+    "median_p50_ms": 9.403,
+    "p90_ms": 15.956,
+    "p95_ms": 17.187,
+    "p99_ms": 22.284,
+    "min_ms": 8.694,
+    "max_ms": 22.284,
+    "std_dev_ms": 2.555,
+    "binary_size_kb": 4168.5
+  },
+  "C (GCC 15.2)": {
+    "workload": "10M Reduction",
+    "samples": 100,
+    "mean_ms": 14.39,
+    "median_p50_ms": 12.842,
+    "p90_ms": 23.198,
+    "p95_ms": 24.36,
+    "p99_ms": 25.367,
+    "min_ms": 12.288,
+    "max_ms": 25.367,
+    "std_dev_ms": 3.768,
+    "binary_size_kb": 53.0
+  },
+  "Zig (ReleaseFast)": {
+    "workload": "10M Reduction",
+    "samples": 100,
+    "mean_ms": 5.344,
+    "median_p50_ms": 4.759,
+    "p90_ms": 5.039,
+    "p95_ms": 14.849,
+    "p99_ms": 18.581,
+    "min_ms": 4.418,
+    "max_ms": 18.581,
+    "std_dev_ms": 2.618,
+    "binary_size_kb": 799.5
+  },
+  "Rust (Release -O3)": {
+    "workload": "10M Reduction",
+    "samples": 100,
+    "mean_ms": 5.618,
+    "median_p50_ms": 5.014,
+    "p90_ms": 5.507,
+    "p95_ms": 15.219,
+    "p99_ms": 19.548,
+    "min_ms": 4.569,
+    "max_ms": 19.548,
+    "std_dev_ms": 2.618,
+    "binary_size_kb": 119.5
+  },
+  "Go (1.25.1)": {
+    "workload": "10M Reduction",
+    "samples": 100,
+    "mean_ms": 36.219,
+    "median_p50_ms": 35.188,
+    "p90_ms": 36.286,
+    "p95_ms": 47.812,
+    "p99_ms": 50.102,
+    "min_ms": 34.508,
+    "max_ms": 50.102,
+    "std_dev_ms": 3.572,
+    "binary_size_kb": 1559.0
+  }
 }

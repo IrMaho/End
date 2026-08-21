@@ -441,7 +441,7 @@ impl CBackend {
                     self.header_output.push_str(&format!("END_API {} {}({});\n", ret_type, f.name, params_str.join(", ")));
                 }
             } else {
-                self.output.push_str(&format!("static {} {}({});\n", ret_type, f.name, params_str.join(", ")));
+                self.output.push_str(&format!("static inline __attribute__((always_inline)) {} {}({});\n", ret_type, f.name, params_str.join(", ")));
             }
         }
         self.output.push('\n');
@@ -521,7 +521,7 @@ impl CBackend {
         } else if is_exported {
             "END_API ".to_string()
         } else {
-            "static ".to_string()
+            "static inline __attribute__((always_inline)) ".to_string()
         };
 
         let clean_file = func.span.file.replace('\\', "/");
@@ -682,11 +682,11 @@ impl CBackend {
             } => {
                 let iter_str = self.gen_expression(iterable);
                 self.output.push_str(&format!(
-                    "{}#pragma clang loop vectorize(enable) unroll(enable)\n",
+                    "{}#pragma GCC unroll 8\n",
                     self.indent()
                 ));
                 self.output.push_str(&format!(
-                    "{}for (int32_t {} = 0; {} < {}; {}++) {{\n",
+                    "{}for (int64_t {} = 0; {} < {}; {}++) {{\n",
                     self.indent(),
                     item_name,
                     item_name,

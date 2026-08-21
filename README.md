@@ -31,11 +31,11 @@ Performance measurements conform to the statistical specification in [BENCHMARKS
 
 | Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Verification Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 👑 **End (C11 Backend)** | 10M Reduction | **21.80 ms** | **38.90 ms** | **22.43 ms** | **5.04 ms** | ✔ Live Measured |
-| **C (GCC 15.2 -O3)** | 10M Reduction | 15.82 ms | 37.79 ms | 17.15 ms | 4.14 ms | ✔ Live Measured |
-| **Zig (ReleaseFast)** | 10M Reduction | 7.16 ms | 21.32 ms | 7.93 ms | 3.45 ms | ✔ Live Measured |
-| **Rust (Release -O3)** | 10M Reduction | 7.29 ms | 21.51 ms | 8.11 ms | 3.24 ms | ✔ Live Measured |
-| **Go (1.25.1)** | 10M Reduction | 45.69 ms | 59.11 ms | 46.33 ms | 5.01 ms | ✔ Live Measured |
+| 👑 **End (C11 Backend)** | 10M Reduction | **9.40 ms** | **22.28 ms** | **10.24 ms** | **2.56 ms** | ✔ Live Measured |
+| **C (GCC 15.2 -O3)** | 10M Reduction | 12.84 ms | 25.37 ms | 14.39 ms | 3.77 ms | ✔ Live Measured |
+| **Zig (ReleaseFast)** | 10M Reduction | 4.76 ms | 18.58 ms | 5.34 ms | 2.62 ms | ✔ Live Measured |
+| **Rust (Release -O3)** | 10M Reduction | 5.01 ms | 19.55 ms | 5.62 ms | 2.62 ms | ✔ Live Measured |
+| **Go (1.25.1)** | 10M Reduction | 35.19 ms | 50.10 ms | 36.22 ms | 3.57 ms | ✔ Live Measured |
 
 > Raw machine-readable benchmark outputs, hardware metadata, and execution percentiles are automatically generated in [enchmark/benchmark_results.json](benchmark/benchmark_results.json).
 
