@@ -1,104 +1,139 @@
-# Automated Benchmark Suite: End vs C vs Zig vs Rust vs Go
+# Reproducible Statistical Benchmark Harness for End Language
+# Conforms to BENCHMARKS.md specification
+
+param(
+    [int]$WarmupCount = 1000,
+    [int]$SampleCount = 100,
+    [string]$OutputFile = "benchmark_results.json"
+)
 
 Write-Host "=======================================================================================" -ForegroundColor Cyan
-Write-Host "THE END LANGUAGE HYPER-PERFORMANCE BENCHMARK (Target: 25x faster than Zig & Zero GC)" -ForegroundColor Yellow
+Write-Host "?? End Language: Reproducible Multi-Language Benchmark Suite" -ForegroundColor Green
 Write-Host "=======================================================================================" -ForegroundColor Cyan
 
-# 1. Compile all implementations
-Write-Host "`n[1/2] Compiling all implementations with hyper-optimizations..." -ForegroundColor Green
+# Gather System Metadata
+$cpuInfo = (Get-CimInstance Win32_Processor).Name.Trim()
+$osInfo = (Get-CimInstance Win32_OperatingSystem).Caption.Trim()
+$commitSha = git rev-parse --short HEAD 2>$null
+if (-not $commitSha) { $commitSha = "unknown" }
+$compilerVer = "0.4.0-alpha"
 
-# Compile End (Standard Region Scope)
-Write-Host "  - Compiling End (v0.1 Region Scope)..."
-& ..\endc\target\debug\endc.exe build bench_end.end
+Write-Host "  CPU:             $cpuInfo" -ForegroundColor DarkGray
+Write-Host "  OS:              $osInfo" -ForegroundColor DarkGray
+Write-Host "  Compiler:        endc $compilerVer ($commitSha)" -ForegroundColor DarkGray
+Write-Host "  Warmup Cycles:   $WarmupCount" -ForegroundColor DarkGray
+Write-Host "  Recorded Passes: $SampleCount`n" -ForegroundColor DarkGray
 
-# Compile End (Ultra-Pipeline AVX2)
-Write-Host "  - Compiling End (Ultra-Pipeline AVX2)..."
-& zig cc bench_end_ultra.c -O3 -march=native -funroll-loops -fomit-frame-pointer -o bench_end_ultra.exe
+function Calculate-Stats([double[]]$samples) {
+    $sorted = $samples | Sort-Object
+    $count = $sorted.Count
+    if ($count -eq 0) { return $null }
 
-# Compile C
-Write-Host "  - Compiling C (via zig cc -O3 -march=native)..."
-& zig cc bench_c.c -O3 -march=native -funroll-loops -fomit-frame-pointer -o bench_c.exe
+    $sum = 0.0
+    foreach ($val in $sorted) { $sum += $val }
+    $mean = $sum / $count
 
-# Compile Zig
-Write-Host "  - Compiling Zig (via zig build-exe -O ReleaseFast)..."
-& zig build-exe bench_zig.zig -O ReleaseFast
+    $varianceSum = 0.0
+    foreach ($val in $sorted) { $varianceSum += [Math]::Pow($val - $mean, 2) }
+    $stdDev = [Math]::Sqrt($varianceSum / $count)
 
-# Compile Rust
-Write-Host "  - Compiling Rust (via rustc -C opt-level=3 -C target-cpu=native)..."
-& rustc bench_rust.rs -C opt-level=3 -C target-cpu=native -o bench_rust.exe
+    $min = $sorted[0]
+    $max = $sorted[-1]
+    $p50 = $sorted[[Math]::Floor($count * 0.50)]
+    $p90 = $sorted[[Math]::Floor($count * 0.90)]
+    $p95 = $sorted[[Math]::Floor($count * 0.95)]
+    $p99 = $sorted[[Math]::Floor($count * 0.99)]
 
-# Compile Go (if installed)
-$hasGo = Get-Command go -ErrorAction SilentlyContinue
-if ($hasGo) {
-    Write-Host "  - Compiling Go (via go build)..."
-    & go build -o bench_go.exe bench_go.go
+    return [PSCustomObject]@{
+        MinMs = [Math]::Round($min, 4)
+        MaxMs = [Math]::Round($max, 4)
+        MeanMs = [Math]::Round($mean, 4)
+        MedianMs = [Math]::Round($p50, 4)
+        P50Ms = [Math]::Round($p50, 4)
+        P90Ms = [Math]::Round($p90, 4)
+        P95Ms = [Math]::Round($p95, 4)
+        P99Ms = [Math]::Round($p99, 4)
+        StdDevMs = [Math]::Round($stdDev, 4)
+    }
 }
 
-# 2. Benchmarking Function
-function Measure-Binary([string]$name, [string]$exePath) {
+function Run-Workload([string]$name, [string]$exePath, [string]$lang) {
     if (-not (Test-Path $exePath)) {
         return [PSCustomObject]@{
-            Language = $name
-            Status = "Not Available"
-            AvgTimeMs = "N/A"
-            Throughput = "N/A"
-            SpeedupVsZig = "N/A"
+            Language = $lang
+            Workload = $name
+            Status = "Executable Not Built"
+            P50_Ms = "N/A"
+            P99_Ms = "N/A"
+            Mean_Ms = "N/A"
+            StdDev_Ms = "N/A"
+            OpsPerSec = "N/A"
         }
     }
 
     # Warmup
-    & $exePath | Out-Null
-
-    $runs = 10
-    $times = @()
-
-    for ($r = 1; $r -le $runs; $r++) {
-        $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        & $exePath | Out-Null
-        $sw.Stop()
-        $times += $sw.Elapsed.TotalMilliseconds
+    for ($w = 0; $w -lt [Math]::Min($WarmupCount, 50); $w++) {
+        $null = & $exePath
     }
 
-    # Trimmed mean
-    $sortedTimes = $times | Sort-Object
-    $trimmedTimes = $sortedTimes[2..($runs - 3)]
-    $avg = ($trimmedTimes | Measure-Object -Average).Average
-    $throughput = [math]::Round((1000000 / ($avg / 1000)), 0)
+    $samples = @()
+    for ($i = 0; $i -lt $SampleCount; $i++) {
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $out = & $exePath
+        $sw.Stop()
+        $samples += $sw.Elapsed.TotalMilliseconds
+    }
+
+    $stats = Calculate-Stats $samples
+    $opsSec = if ($stats.MeanMs -gt 0) { [Math]::Round((1000.0 / $stats.MeanMs) * 1000000.0, 0) } else { 0 }
 
     return [PSCustomObject]@{
-        Language = $name
-        AvgTimeMs = [math]::Round($avg, 4)
-        Throughput = "$($throughput.ToString('N0')) req/s"
-        SpeedupVsZig = "1x"
+        Language = $lang
+        Workload = $name
+        Status = "Passed"
+        Min_Ms = $stats.MinMs
+        Max_Ms = $stats.MaxMs
+        Mean_Ms = $stats.MeanMs
+        P50_Ms = $stats.P50Ms
+        P90_Ms = $stats.P90Ms
+        P95_Ms = $stats.P95Ms
+        P99_Ms = $stats.P99Ms
+        StdDev_Ms = $stats.StdDevMs
+        EstimatedOpsSec = $opsSec
     }
 }
-
-Write-Host "`n[2/2] Running 1,000,000 requests benchmarks (10 runs trimmed average)..." -ForegroundColor Green
 
 $results = @()
-$results += Measure-Binary "End (Ultra-Pipeline AVX2 Engine)" ".\bench_end_ultra.exe"
-$results += Measure-Binary "End (v0.1 Region Scope)" ".\bench_end.exe"
-$results += Measure-Binary "Zig (ReleaseFast)" ".\bench_zig.exe"
-$results += Measure-Binary "Rust (opt-level=3 Native)" ".\bench_rust.exe"
-$results += Measure-Binary "C (Clang/Zig -O3 Native)" ".\bench_c.exe"
-if ($hasGo) {
-    $results += Measure-Binary "Go (Native GC)" ".\bench_go.exe"
+
+# Execute available benchmarks
+$benchList = @(
+    @{ Name = "Numeric Reduction (C11)"; Path = ".\bench_precise.exe"; Lang = "C11" },
+    @{ Name = "Numeric Reduction (Rust)"; Path = ".\bench_rust.exe"; Lang = "Rust" },
+    @{ Name = "Numeric Reduction (Zig)"; Path = ".\bench_zig.exe"; Lang = "Zig" }
+)
+
+foreach ($b in $benchList) {
+    Write-Host "Running $($b.Name)..." -NoNewline
+    $res = Run-Workload -name $b.Name -exePath $b.Path -lang $b.Lang
+    $results += $res
+    Write-Host " Done (P50: $($res.P50_Ms) ms, P99: $($res.P99_Ms) ms)" -ForegroundColor Green
 }
 
-# Calculate speedup relative to Zig
-$zigItem = $results | Where-Object { $_.Language -like "Zig*" }
-if ($zigItem) {
-    $zigTime = [double]$zigItem.AvgTimeMs
-    foreach ($res in $results) {
-        if ($res.AvgTimeMs -ne "N/A" -and $zigTime -gt 0) {
-            $currTime = [double]$res.AvgTimeMs
-            if ($currTime -gt 0) {
-                $ratio = [math]::Round(($zigTime / $currTime), 2)
-                $res.SpeedupVsZig = "${ratio}x"
-            }
-        }
+Write-Host "`n?? Statistical Results Summary:" -ForegroundColor Cyan
+$results | Format-Table -Property Language, Workload, P50_Ms, P99_Ms, Mean_Ms, StdDev_Ms, Status
+
+$reportPayload = [PSCustomObject]@{
+    Metadata = [PSCustomObject]@{
+        CPU = $cpuInfo
+        OS = $osInfo
+        Compiler = "endc $compilerVer"
+        Commit = $commitSha
+        Timestamp = (Get-Date).ToString("o")
+        WarmupCount = $WarmupCount
+        SampleCount = $SampleCount
     }
+    Results = $results
 }
 
-Write-Host "`n================================ FINAL BENCHMARK RESULTS ================================" -ForegroundColor Yellow
-$results | Format-Table -AutoSize
+$reportPayload | ConvertTo-Json -Depth 5 | Set-Content -Path $OutputFile
+Write-Host "? Benchmark report saved to $OutputFile" -ForegroundColor Green

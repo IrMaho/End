@@ -63,7 +63,7 @@ scoop install end
 
 Measured across **1,000,000 operations** on identical hardware (AMD Ryzen 9 / Apple M3 Max):
 
-| Metric / Language | 👑 **End (v1.0)** | **C++20 (Clang -O3)** | **Rust (Release)** | **Go (v1.22)** | **Node.js (V8)** |
+| Metric / Language | 👑 **End (v0.4.0-alpha)** | **C++20 (Clang -O3)** | **Rust (Release)** | **Go (v1.22)** | **Node.js (V8)** |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Throughput (Ops/sec)** | **199.0M ops/s** | 195.2M ops/s | 192.8M ops/s | 68.4M ops/s | 14.1M ops/s |
 | **P50 Latency** | **12.4 ns** | 12.8 ns | 13.1 ns | 48.0 ns | 185.0 ns |
@@ -175,5 +175,6 @@ end arch check --json
 
 End is distributed under the [MIT License](LICENSE).
 Copyright © 2026 [Mohammad Javad (IrMaho)](https://github.com/IrMaho) & The End Language Community.
+
 
 

@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  build-release:
-    name: Build (${{ matrix.target }})
+  build-and-release:
+    name: Build & Release (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,19 +18,24 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: end-v1.0.0-windows-x64.zip
+            platform: windows-x64
+            archive_ext: zip
             binary_name: endc.exe
-            use_zip: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            artifact_name: end-v1.0.0-linux-x64.tar.gz
+            platform: linux-x64
+            archive_ext: tar.gz
             binary_name: endc
-            use_zip: false
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: end-v1.0.0-macos-arm64.tar.gz
+            platform: macos-arm64
+            archive_ext: tar.gz
             binary_name: endc
-            use_zip: false
+          - os: macos-13
+            target: x86_64-apple-darwin
+            platform: macos-x64
+            archive_ext: tar.gz
+            binary_name: endc
 
     steps:
       - name: Checkout Repository
@@ -52,7 +57,10 @@ jobs:
 
       - name: Stage Artifacts (Windows)
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
+          $ver = "${{ github.ref_name }}"
+          $pkgName = "end-$ver-${{ matrix.platform }}.zip"
           mkdir staging\bin
           copy endc\target\${{ matrix.target }}\release\endc.exe staging\bin\endc.exe
           copy endc\target\${{ matrix.target }}\release\endc.exe staging\bin\end.exe
@@ -60,45 +68,29 @@ jobs:
           copy README.md staging\
           copy LICENSE staging\
           copy Architecture.toml staging\
-          Compress-Archive -Path staging\* -DestinationPath ${{ matrix.artifact_name }}
+          Compress-Archive -Path staging\* -DestinationPath $pkgName
+          (Get-FileHash -Path $pkgName -Algorithm SHA256).Hash + "  $pkgName" | Out-File -FilePath "$pkgName.sha256" -Encoding utf8
 
       - name: Stage Artifacts (Unix)
         if: matrix.os != 'windows-latest'
         run: |
+          ver="${{ github.ref_name }}"
+          pkgName="end-$ver-${{ matrix.platform }}.tar.gz"
           mkdir -p staging/bin
           cp endc/target/${{ matrix.target }}/release/endc staging/bin/endc
           cp endc/target/${{ matrix.target }}/release/endc staging/bin/end
           cp -r std staging/std
           cp README.md LICENSE Architecture.toml staging/
-          cd staging && tar -czf ../${{ matrix.artifact_name }} *
+          tar -czf "$pkgName" -C staging .
+          shasum -a 256 "$pkgName" > "$pkgName.sha256"
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Release Asset
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ matrix.artifact_name }}
-          asset_name: ${{ matrix.artifact_name }}
-          asset_content_type: application/octet-stream
-
-  publish-github-release:
-    name: Create GitHub Release Hub
-    runs-on: ubuntu-latest
-    needs: build-release
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: "👑 End Language ${{ github.ref_name }} Global Release"
-          body_path: RELEASE_NOTES_v1.0.0.md
-          draft: false
-          prerelease: false
           files: |
-            dist/*
+            end-${{ github.ref_name }}-*.zip
+            end-${{ github.ref_name }}-*.tar.gz
+            end-${{ github.ref_name }}-*.sha256
             install.ps1
             install.sh
         env:

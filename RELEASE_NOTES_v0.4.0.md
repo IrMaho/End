@@ -1,10 +1,10 @@
-# 👑 End Language v1.0.0 Official Global Release Notes
+# 👑 End Language v0.4.0-alpha Official Global Release Notes
 
-We are thrilled to announce the official release of **The End Programming Language (v1.0.0)** — the AI-First, Zero-GC Systems & Game Programming Language!
+We are thrilled to announce the official release of **The End Programming Language (v0.4.0-alpha)** — the AI-First, Zero-GC Systems & Game Programming Language!
 
 ---
 
-## 🚀 What's New in v1.0.0
+## 🚀 What's New in v0.4.0-alpha
 
 ### 1. ⚡ Extreme Bare-Metal Performance & Zero-GC Regions
 - **Zero-GC Memory Scopes:** Instant pointer bump allocation with 0 ns deallocation cost at frame and scope boundaries.
@@ -41,12 +41,13 @@ We are thrilled to announce the official release of **The End Programming Langua
 
 | Platform / Asset | File Name | Format |
 | :--- | :--- | :---: |
-| **Windows x86_64** | `end-v1.0.0-windows-x64.zip` | `.zip` |
-| **Linux x86_64** | `end-v1.0.0-linux-x64.tar.gz` | `.tar.gz` |
-| **macOS Apple Silicon** | `end-v1.0.0-macos-arm64.tar.gz` | `.tar.gz` |
-| **macOS Intel** | `end-v1.0.0-macos-x64.tar.gz` | `.tar.gz` |
+| **Windows x86_64** | `end-v0.4.0-alpha-windows-x64.zip` | `.zip` |
+| **Linux x86_64** | `end-v0.4.0-alpha-linux-x64.tar.gz` | `.tar.gz` |
+| **macOS Apple Silicon** | `end-v0.4.0-alpha-macos-arm64.tar.gz` | `.tar.gz` |
+| **macOS Intel** | `end-v0.4.0-alpha-macos-x64.tar.gz` | `.tar.gz` |
 | **SHA256 Checksums** | `SHA256SUMS.txt` | Plain Text |
 
 ### ⚡ One-Line Install:
 - **Windows:** `irm https://github.com/IrMaho/End/releases/latest/download/install.ps1 | iex`
 - **Unix:** `curl -sSf https://github.com/IrMaho/End/releases/latest/download/install.sh | sh`
+

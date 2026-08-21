@@ -42,10 +42,10 @@ scoop install end
 ## 3. Manual Installation from Binaries
 
 1. Download the archive for your operating system from the [Releases Page](https://github.com/IrMaho/End/releases):
-   - **Windows:** `end-v1.0.0-windows-x64.zip`
-   - **Linux:** `end-v1.0.0-linux-x64.tar.gz`
-   - **macOS Apple Silicon:** `end-v1.0.0-macos-arm64.tar.gz`
-   - **macOS Intel:** `end-v1.0.0-macos-x64.tar.gz`
+   - **Windows:** `end-v0.4.0-alpha-windows-x64.zip`
+   - **Linux:** `end-v0.4.0-alpha-linux-x64.tar.gz`
+   - **macOS Apple Silicon:** `end-v0.4.0-alpha-macos-arm64.tar.gz`
+   - **macOS Intel:** `end-v0.4.0-alpha-macos-x64.tar.gz`
 
 2. Extract to your desired directory (e.g. `C:\Program Files\EndLanguage` or `/opt/end`).
 3. Add the `bin/` directory to your system `PATH`.
@@ -82,3 +82,4 @@ cd End/endc
 cargo build --release
 ```
 The compiled binary will be in `endc/target/release/endc`.
+

@@ -10,98 +10,121 @@ impl SemanticCodeSlicer {
         types_only: bool,
         budget: Option<usize>,
     ) -> String {
+        let max_chars = budget.map(|b| b * 4).unwrap_or(usize::MAX);
         let mut out = String::new();
 
         out.push_str(&format!("// ?? End Semantic Skeletal Slice: {}\n\n", module.name));
 
         // 1. Imports
         if !types_only && !module.imports.is_empty() {
-            out.push_str("// --- Imports ---\n");
+            let mut imp_block = String::from("// --- Imports ---\n");
             for imp in &module.imports {
                 match &imp.kind {
-                    ImportKind::Standard => {
-                        out.push_str(&format!("import \"{}\"", imp.path));
-                    }
-                    ImportKind::C(h) => {
-                        out.push_str(&format!("@import_c(\"{}\")", h));
-                    }
-                    ImportKind::Zig(z) => {
-                        out.push_str(&format!("@import_zig(\"{}\")", z));
-                    }
-                    ImportKind::Rust(r) => {
-                        out.push_str(&format!("@import_rust(\"{}\")", r));
-                    }
-                    ImportKind::Go(g) => {
-                        out.push_str(&format!("@import_go(\"{}\")", g));
-                    }
+                    ImportKind::Standard => imp_block.push_str(&format!("import \"{}\"", imp.path)),
+                    ImportKind::C(h) => imp_block.push_str(&format!("@import_c(\"{}\")", h)),
+                    ImportKind::Zig(z) => imp_block.push_str(&format!("@import_zig(\"{}\")", z)),
+                    ImportKind::Rust(r) => imp_block.push_str(&format!("@import_rust(\"{}\")", r)),
+                    ImportKind::Go(g) => imp_block.push_str(&format!("@import_go(\"{}\")", g)),
                 }
                 if let Some(ref alias) = imp.alias {
-                    out.push_str(&format!(" as {}", alias));
+                    imp_block.push_str(&format!(" as {}", alias));
                 }
-                out.push('\n');
+                imp_block.push('\n');
             }
-            out.push('\n');
+            imp_block.push('\n');
+            if out.len() + imp_block.len() <= max_chars {
+                out.push_str(&imp_block);
+            }
         }
 
         // 2. Enums
         if !module.enums.is_empty() {
-            out.push_str("// --- Type Definitions: Enums ---\n");
+            let mut enum_header_added = false;
             for e in &module.enums {
+                let mut enum_str = String::new();
+                if !enum_header_added {
+                    enum_str.push_str("// --- Type Definitions: Enums ---\n");
+                }
                 for dir in &e.directives {
-                    out.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
+                    enum_str.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
                     if !dir.args.is_empty() {
-                        out.push_str(&format!("({})", dir.args.join(", ")));
+                        enum_str.push_str(&format!("({})", dir.args.join(", ")));
                     }
-                    out.push('\n');
+                    enum_str.push('\n');
                 }
                 let pub_prefix = if e.is_pub { "pub " } else { "" };
-                out.push_str(&format!("{}enum {} {{\n", pub_prefix, e.name));
+                enum_str.push_str(&format!("{}enum {} {{\n", pub_prefix, e.name));
                 for v in &e.variants {
                     if let Some(ref payload) = v.payload {
-                        out.push_str(&format!("    {}({}),\n", v.name, payload));
+                        enum_str.push_str(&format!("    {}({}),\n", v.name, payload));
                     } else {
-                        out.push_str(&format!("    {},\n", v.name));
+                        enum_str.push_str(&format!("    {},\n", v.name));
                     }
                 }
-                out.push_str("}\n\n");
+                enum_str.push_str("}\n\n");
+
+                if out.len() + enum_str.len() <= max_chars {
+                    out.push_str(&enum_str);
+                    enum_header_added = true;
+                } else {
+                    out.push_str("// ... [Remaining enums omitted to fit token budget]\n\n");
+                    break;
+                }
             }
         }
 
         // 3. Structs
         if !module.structs.is_empty() {
-            out.push_str("// --- Type Definitions: Structs ---\n");
+            let mut struct_header_added = false;
             for s in &module.structs {
+                let mut struct_str = String::new();
+                if !struct_header_added {
+                    struct_str.push_str("// --- Type Definitions: Structs ---\n");
+                }
                 for dir in &s.directives {
-                    out.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
+                    struct_str.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
                     if !dir.args.is_empty() {
-                        out.push_str(&format!("({})", dir.args.join(", ")));
+                        struct_str.push_str(&format!("({})", dir.args.join(", ")));
                     }
-                    out.push('\n');
+                    struct_str.push('\n');
                 }
                 let pub_prefix = if s.is_pub { "pub " } else { "" };
-                out.push_str(&format!("{}st {} {{\n", pub_prefix, s.name));
+                struct_str.push_str(&format!("{}st {} {{\n", pub_prefix, s.name));
                 for f in &s.fields {
                     let field_pub = if f.is_pub { "pub " } else { "" };
-                    out.push_str(&format!("    {}{}: {},\n", field_pub, f.name, f.field_type));
+                    struct_str.push_str(&format!("    {}{}: {},\n", field_pub, f.name, f.field_type));
                 }
-                out.push_str("}\n\n");
+                struct_str.push_str("}\n\n");
+
+                if out.len() + struct_str.len() <= max_chars {
+                    out.push_str(&struct_str);
+                    struct_header_added = true;
+                } else {
+                    out.push_str("// ... [Remaining structs omitted to fit token budget]\n\n");
+                    break;
+                }
             }
         }
 
         // 4. Function Signatures (Skeletal)
         if !types_only && !module.functions.is_empty() {
-            out.push_str("// --- Functional Interface & Capability Contracts ---\n");
+            let mut fn_header_added = false;
             for f in &module.functions {
                 if interface_only && !f.is_pub && !f.directives.iter().any(|d| d.name == "@test") {
                     continue;
                 }
 
+                let mut fn_str = String::new();
+                if !fn_header_added {
+                    fn_str.push_str("// --- Functional Interface & Capability Contracts ---\n");
+                }
+
                 for dir in &f.directives {
-                    out.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
+                    fn_str.push_str(&format!("@{}", dir.name.trim_start_matches('@')));
                     if !dir.args.is_empty() {
-                        out.push_str(&format!("({})", dir.args.join(", ")));
+                        fn_str.push_str(&format!("({})", dir.args.join(", ")));
                     }
-                    out.push('\n');
+                    fn_str.push('\n');
                 }
 
                 let pub_prefix = if f.is_pub { "pub " } else { "" };
@@ -112,16 +135,15 @@ impl SemanticCodeSlicer {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                out.push_str(&format!("{}fn {}({}) {};\n\n", pub_prefix, f.name, params, f.return_type));
-            }
-        }
+                fn_str.push_str(&format!("{}fn {}({}) {};\n\n", pub_prefix, f.name, params, f.return_type));
 
-        if let Some(token_budget) = budget {
-            let max_chars = token_budget * 4;
-            if out.len() > max_chars {
-                let mut truncated = out[..max_chars].to_string();
-                truncated.push_str("\n// ... [Truncated to fit token budget]\n");
-                return truncated;
+                if out.len() + fn_str.len() <= max_chars {
+                    out.push_str(&fn_str);
+                    fn_header_added = true;
+                } else {
+                    out.push_str("// ... [Remaining functions omitted to fit token budget cleanly]\n");
+                    break;
+                }
             }
         }
 
