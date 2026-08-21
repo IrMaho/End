@@ -8,16 +8,36 @@
 ## 1. The Core Paradigm: Zero-GC ≠ Unsafe
 
 A common misconception in systems programming is equating *Zero-GC* with raw, unchecked memory access.  
-In End, memory safety is achieved through a **3-Tier Formal Memory Architecture**:
+In End, memory safety is achieved through a **4-Tier Formal Memory Architecture**:
 
 ```
 +---------------------------------------------------------------+
-|  Tier 1: Deterministic Region Arenas (region frame { ... })   |  <- Safe, Zero-Cost Lifetimes
+|  Tier 0: Ephemeral Leasing (lease / borrow / during)          |  <- JIT Scoped Lifecycles & 0 Idle Overhead
++---------------------------------------------------------------+
+|  Tier 1: Deterministic Region Arenas (region frame { ... })   |  <- Safe, Zero-Cost Bulk Allocations
 +---------------------------------------------------------------+
 |  Tier 2: Static Borrow Checker & Exclusivity (&mut T)         |  <- Compile-time aliasing & race guard
 +---------------------------------------------------------------+
 |  Tier 3: Isolated Unsafe Pointers (*T)                        |  <- Explicit FFI & bare-metal low-level
 +---------------------------------------------------------------+
+```
+
+---
+
+## 1.5 Tier 0: Ephemeral Leasing Engine (`lease` & `borrow`)
+
+While Regions manage groups of allocations, **Ephemeral Leasing** manages single variables, memory buffers, and hardware resources bound strictly to a block or conditional lifecycle:
+
+```rust
+// Memory leased on-demand, freed automatically on scope exit:
+lease val image_buffer = alloc_buffer(4096) {
+    process_image(image_buffer);
+} // <- 0ns instant reclamation
+
+// Conditional lease tied to component visibility:
+lease val cache = load_heavy_data() while is_visible {
+    render(cache);
+}
 ```
 
 ---

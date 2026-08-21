@@ -129,3 +129,45 @@ The compiler generates idiomatic, zero-copy FFI bindings for:
 - **TypeScript / Node.js:** Native N-API and `bun:ffi` bindings.
 - **Dart / Flutter:** `dart:ffi` bindings for mobile and desktop apps.
 - **C# / Unity:** `P/Invoke` native shared libraries (.dll/.dylib/.so).
+
+---
+
+## 6. Pillar F: Ephemeral Resource Leasing Engine
+
+End provides universal just-in-time leasing for all hardware and runtime resources:
+
+### 6.1 Ephemeral Memory Leasing (`lease` / `borrow` / `during`)
+- `lease val buffer = alloc(size) { ... }`: Leased buffer is automatically recycled at scope exit in 0 nanoseconds.
+- `lease val cache = data while condition { ... }`: Memory remains alive only as long as condition evaluates to `true`.
+- `borrow factor = 999 during { ... }`: Transient stack/register value discarded immediately after computation span.
+
+### 6.2 CPU Burst Leasing (`lease cpu`)
+- `lease cpu(8, "realtime") { ... }`: Spawns and locks multi-threaded OpenMP worker pools for high-intensity bursts and immediately returns cores to the OS, reducing idle thermal draw.
+
+### 6.3 Ephemeral Event Lifecycle Leasing (`lease listen`)
+- `lease listen("event") while condition { ... }`: Auto-registers event listeners when active and auto-unregisters them when the condition terminates, mathematically eliminating event listener memory leaks.
+
+### 6.4 Budget-Constrained Loops (`lease loop`)
+- `lease loop(4) for item in queue { ... }`: Hardware monotonic clock monitored loop enforcing sub-millisecond execution budgets to prevent frame drops in 120 FPS UI and games.
+- `lease for i in 1000 { ... }`: Zero-allocation fused loops running entirely within CPU registers.
+
+---
+
+## 7. Pillar G: Architectural Invariants & Compiler Configuration
+
+### 7.1 `end.config.toml` & Strict Linter Pass
+The End toolchain enforces team and enterprise architectural rules directly at compile-time:
+- **Modularity Limits:** `max_lines` (e.g. 200), `max_functions_per_file`, `max_function_lines` (e.g. 50), `max_params`.
+- **Comment Policy:** `allowed = true/false`, `language = "en" | "fa" | "any"`, `require_doc_comments`.
+- **Naming Conventions:** `struct_style = "PascalCase"`, `function_style = "snake_case"`.
+- **Quality Metrics:** `max_cyclomatic_complexity = 10`, unused code elimination.
+- **CLI Commands:** `end config-init`, `end lint [path]`, `end lint --json`.
+
+---
+
+## 8. Pillar H: Native AI Tensors & GGUF Neural Engine
+
+- **`std/ai/tensor.end`:** Hardware-accelerated SIMD GEMM matrix multiplication engines.
+- **`std/ai/gguf.end`:** Zero-dependency GGUF v3 model binary parser supporting Q4_0, Q4_K, Q8_0, F16, and F32 quantized LLM weights.
+- **`std/consensus/raft.end`:** Zero-dependency Raft distributed consensus protocol with leader election and log replication.
+

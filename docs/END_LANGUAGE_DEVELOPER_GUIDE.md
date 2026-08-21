@@ -72,6 +72,14 @@ end stress server.end --iterations 1000000           # Simulate 1,000,000 ops wi
 end new my_enterprise_app                             # Create scaffold with end.toml
 end build main.end -o app.exe                         # Bare-metal ultra-optimized binary (.exe)
 end build lib.end --dll -o lib.dll                    # Shared library (.dll / .so / .dylib) with C-ABI header (.h)
+
+# 13. Compiler Architecture Configuration & Code Quality Linter
+end config-init                                       # Generate end.config.toml for modularity & style rules
+end lint .                                            # Run compiler linter pass across project files
+end lint . --json                                     # Machine-readable JSON output for AI Coding Agents
+
+# 14. Universal C-Bindgen
+end cbindgen include/sqlite3.h -o sqlite3.end         # Generate typed End bindings directly from C headers
 ```
 
 ---
@@ -80,6 +88,13 @@ end build lib.end --dll -o lib.dll                    # Shared library (.dll / .
 
 | Module | Path | Description |
 | :--- | :--- | :--- |
+| **🧠 Ephemeral Memory Lease** | `std/mem/lease.end` | JIT scoped memory pool statistics, allocation tracking, and recycling. |
+| **⚡ CPU Burst Leasing** | `std/cpu/burst.end` | Dynamic core allocation, real-time priority bursting, and idle thermal power reduction. |
+| **📡 Event Lifecycle Leasing** | `std/event/lifecycle.end` | Automatic listener registration/unregistration with zero memory leaks. |
+| **🔄 Budgeted Loops** | `std/loop/budget.end` | Real-time hardware clock monitored loop budgeting and throughput calculation. |
+| **🤖 SIMD AI Tensors** | `std/ai/tensor.end` | Hardware-accelerated SIMD GEMM matrix multiplication engines. |
+| **🤖 GGUF Model Parser** | `std/ai/gguf.end` | Pure End binary GGUF v3 LLM weight parser (Q4_0, Q4_K, Q8_0, F16, F32). |
+| **🌐 Distributed Raft** | `std/consensus/raft.end` | Zero-dependency Raft consensus engine (Leader Election, Quorum, Log Replication). |
 | **🛡️ Socket Guard** | `std/nexus/socket_guard.end` | Dual-Check socket validation, exponential backoff (1ms -> 10ms -> 50ms) to ensure < 2% CPU during idle. |
 | **🛡️ Circuit Breaker** | `std/nexus/circuit_breaker.end` | Software thermal fuse and CPU load throttle protecting servers against cascade failure. |
 | **⚡ Hot Reload** | `std/nexus/hot_reload.end` | Persistent memory state arena preserving session stores and counters across dynamic reloads. |
