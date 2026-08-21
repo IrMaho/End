@@ -1,7 +1,6 @@
 // ?? End High-Level Intermediate Representation (HIR)
-// Typed AST with fully resolved types, scope bindings, and capability invariants
+// Fully resolved Typed AST with strict region boundaries and capability invariants
 
-use crate::ast::Type;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,8 +25,13 @@ impl std::fmt::Display for HirType {
         match self {
             HirType::Void => write!(f, "void"),
             HirType::Bool => write!(f, "bool"),
+            HirType::I8 => write!(f, "i8"),
+            HirType::I16 => write!(f, "i16"),
             HirType::I32 => write!(f, "i32"),
             HirType::I64 => write!(f, "i64"),
+            HirType::U8 => write!(f, "u8"),
+            HirType::U16 => write!(f, "u16"),
+            HirType::U32 => write!(f, "u32"),
             HirType::U64 => write!(f, "u64"),
             HirType::F32 => write!(f, "f32"),
             HirType::F64 => write!(f, "f64"),
@@ -42,7 +46,6 @@ impl std::fmt::Display for HirType {
                 write!(f, "{}<{}>", name, args_str)
             }
             HirType::Custom(name) => write!(f, "{}", name),
-            _ => write!(f, "{:?}", self),
         }
     }
 }
@@ -100,6 +103,11 @@ pub enum HirStatement {
         body: Vec<HirStatement>,
         line: usize,
     },
+    RegionBlock {
+        name: String,
+        body: Vec<HirStatement>,
+        line: usize,
+    },
     RegionEnter {
         name: String,
         line: usize,
@@ -110,6 +118,14 @@ pub enum HirStatement {
     },
     Drop {
         var_name: String,
+        line: usize,
+    },
+    Defer {
+        expr: HirExpression,
+        line: usize,
+    },
+    Spawn {
+        call: HirExpression,
         line: usize,
     },
 }

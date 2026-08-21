@@ -1,8 +1,8 @@
-// ?? Lowering AST -> HIR -> MIR
+// ?? Semantic AST -> Typed HIR Lowering
 
 use crate::ast::*;
 use crate::ir::hir::*;
-use crate::ir::mir::*;
+use std::collections::HashMap;
 
 pub struct AstLowering;
 
@@ -46,14 +46,22 @@ impl AstLowering {
 
         let mut functions = Vec::new();
         for f in &module.functions {
-            let params = f.params.iter().map(|p| (p.name.clone(), Self::lower_type(&p.param_type), p.is_mut)).collect();
+            let mut var_ctx = HashMap::new();
+            let mut params = Vec::new();
+
+            for p in &f.params {
+                let h_ty = Self::lower_type(&p.param_type);
+                var_ctx.insert(p.name.clone(), h_ty.clone());
+                params.push((p.name.clone(), h_ty, p.is_mut));
+            }
+
             let return_type = Self::lower_type(&f.return_type);
             let is_pure = f.directives.iter().any(|d| d.name == "@pure");
             let is_async = f.directives.iter().any(|d| d.name == "@async");
 
             let mut body = Vec::new();
             for stmt in &f.body.statements {
-                body.push(Self::lower_statement(stmt));
+                body.push(Self::lower_statement(stmt, &mut var_ctx));
             }
 
             functions.push(HirFunction {
@@ -73,11 +81,20 @@ impl AstLowering {
         }
     }
 
-    fn lower_statement(stmt: &Statement) -> HirStatement {
+    fn lower_statement(stmt: &Statement, var_ctx: &mut HashMap<String, HirType>) -> HirStatement {
         match stmt {
             Statement::VarDecl { name, var_type, is_mut, initializer, span } => {
-                let ty = var_type.as_ref().map(Self::lower_type).unwrap_or(HirType::I64);
-                let init = initializer.as_ref().map(Self::lower_expr);
+                let init = initializer.as_ref().map(|i| Self::lower_expr(i, var_ctx));
+                let ty = if let Some(v_ty) = var_type {
+                    Self::lower_type(v_ty)
+                } else if let Some(ref in_expr) = init {
+                    in_expr.get_type()
+                } else {
+                    HirType::I64
+                };
+
+                var_ctx.insert(name.clone(), ty.clone());
+
                 HirStatement::VarDecl {
                     name: name.clone(),
                     ty,
@@ -93,68 +110,106 @@ impl AstLowering {
                 };
                 HirStatement::Assign {
                     target: name,
-                    value: Self::lower_expr(value),
+                    value: Self::lower_expr(value, var_ctx),
                     line: span.line,
                 }
             }
             Statement::Return { value, span } => {
                 HirStatement::Return {
-                    val: value.as_ref().map(Self::lower_expr),
+                    val: value.as_ref().map(|v| Self::lower_expr(v, var_ctx)),
                     line: span.line,
                 }
             }
-            Statement::Expression(e) => HirStatement::Expression(Self::lower_expr(e)),
+            Statement::Expression(e) => HirStatement::Expression(Self::lower_expr(e, var_ctx)),
             Statement::If { condition, then_block, else_block, span } => {
-                let then_branch = then_block.statements.iter().map(Self::lower_statement).collect();
-                let else_branch = else_block.as_ref().map(|eb| eb.statements.iter().map(Self::lower_statement).collect());
+                let mut then_ctx = var_ctx.clone();
+                let then_branch = then_block.statements.iter().map(|s| Self::lower_statement(s, &mut then_ctx)).collect();
+                let else_branch = else_block.as_ref().map(|eb| {
+                    let mut else_ctx = var_ctx.clone();
+                    eb.statements.iter().map(|s| Self::lower_statement(s, &mut else_ctx)).collect()
+                });
                 HirStatement::If {
-                    cond: Self::lower_expr(condition),
+                    cond: Self::lower_expr(condition, var_ctx),
                     then_branch,
                     else_branch,
                     line: span.line,
                 }
             }
             Statement::While { condition, body, span } => {
-                let b = body.statements.iter().map(Self::lower_statement).collect();
+                let mut body_ctx = var_ctx.clone();
+                let b = body.statements.iter().map(|s| Self::lower_statement(s, &mut body_ctx)).collect();
                 HirStatement::While {
-                    cond: Self::lower_expr(condition),
+                    cond: Self::lower_expr(condition, var_ctx),
                     body: b,
                     line: span.line,
                 }
             }
             Statement::RegionBlock { name, body, span } => {
-                let mut b = Vec::new();
-                b.push(HirStatement::RegionEnter { name: name.clone(), line: span.line });
-                for s in &body.statements {
-                    b.push(Self::lower_statement(s));
+                let mut reg_ctx = var_ctx.clone();
+                let inner_stmts = body.statements.iter().map(|s| Self::lower_statement(s, &mut reg_ctx)).collect();
+                HirStatement::RegionBlock {
+                    name: name.clone(),
+                    body: inner_stmts,
+                    line: span.line,
                 }
-                b.push(HirStatement::RegionExit { name: name.clone(), line: span.line });
-                HirStatement::Expression(HirExpression::LitBool(true))
+            }
+            Statement::Defer { expr, span } => {
+                HirStatement::Defer {
+                    expr: Self::lower_expr(expr, var_ctx),
+                    line: span.line,
+                }
+            }
+            Statement::Spawn { call, span } => {
+                HirStatement::Spawn {
+                    call: Self::lower_expr(call, var_ctx),
+                    line: span.line,
+                }
             }
             _ => HirStatement::Expression(HirExpression::LitBool(true)),
         }
     }
 
-    fn lower_expr(expr: &Expression) -> HirExpression {
+    fn lower_expr(expr: &Expression, var_ctx: &HashMap<String, HirType>) -> HirExpression {
         match expr {
             Expression::Lit(Literal::Int(n), _) => HirExpression::LitInt(*n, HirType::I64),
             Expression::Lit(Literal::Float(f), _) => HirExpression::LitFloat(*f, HirType::F64),
             Expression::Lit(Literal::String(s), _) => HirExpression::LitStr(s.clone()),
             Expression::Lit(Literal::Bool(b), _) => HirExpression::LitBool(*b),
-            Expression::Ident(name, _) => HirExpression::Var(name.clone(), HirType::Custom("inferred".into())),
+            Expression::Ident(name, _) => {
+                let ty = var_ctx.get(name).cloned().unwrap_or(HirType::Custom(name.clone()));
+                HirExpression::Var(name.clone(), ty)
+            }
             Expression::Binary { left, op, right, .. } => {
+                let l_lowered = Box::new(Self::lower_expr(left, var_ctx));
+                let r_lowered = Box::new(Self::lower_expr(right, var_ctx));
+                let res_type = match op {
+                    BinaryOp::Equal | BinaryOp::NotEqual | BinaryOp::LessThan | BinaryOp::LessEqual | BinaryOp::GreaterThan | BinaryOp::GreaterEqual | BinaryOp::And | BinaryOp::Or => HirType::Bool,
+                    _ => {
+                        if l_lowered.get_type() == HirType::F64 || r_lowered.get_type() == HirType::F64 {
+                            HirType::F64
+                        } else {
+                            HirType::I64
+                        }
+                    }
+                };
                 HirExpression::Binary {
                     op: format!("{:?}", op),
-                    left: Box::new(Self::lower_expr(left)),
-                    right: Box::new(Self::lower_expr(right)),
-                    result_type: HirType::I64,
+                    left: l_lowered,
+                    right: r_lowered,
+                    result_type: res_type,
                 }
             }
             Expression::Unary { expr, op, .. } => {
+                let inner = Box::new(Self::lower_expr(expr, var_ctx));
+                let res_type = match op {
+                    UnaryOp::Not => HirType::Bool,
+                    UnaryOp::AddressOf => HirType::Pointer(Box::new(inner.get_type())),
+                    _ => inner.get_type(),
+                };
                 HirExpression::Unary {
                     op: format!("{:?}", op),
-                    expr: Box::new(Self::lower_expr(expr)),
-                    result_type: HirType::I64,
+                    expr: inner,
+                    result_type: res_type,
                 }
             }
             Expression::Call { callee, args, .. } => {
@@ -162,7 +217,7 @@ impl AstLowering {
                     Expression::Ident(n, _) => n.clone(),
                     _ => "callee".to_string(),
                 };
-                let h_args = args.iter().map(Self::lower_expr).collect();
+                let h_args = args.iter().map(|a| Self::lower_expr(a, var_ctx)).collect();
                 HirExpression::Call {
                     callee: c_name,
                     args: h_args,
@@ -172,14 +227,13 @@ impl AstLowering {
             Expression::Alloc { target_type, allocator, .. } => {
                 let el_ty = Self::lower_type(target_type);
                 HirExpression::Alloc {
-                    element_type: el_ty,
-                    count: Box::new(Self::lower_expr(allocator)),
+                    element_type: el_ty.clone(),
+                    count: Box::new(Self::lower_expr(allocator, var_ctx)),
                     region_name: None,
-                    result_type: HirType::Pointer(Box::new(HirType::Void)),
+                    result_type: HirType::Pointer(Box::new(el_ty)),
                 }
             }
             _ => HirExpression::LitBool(true),
         }
     }
 }
-

@@ -7,8 +7,22 @@ pub enum OwnershipState {
     Uninitialized,
     Owned,
     Moved { to: String, at_line: usize },
-    BorrowedShared(usize), // borrow count
+    BorrowedShared(usize), // count
     BorrowedMut(usize),    // line where &mut was taken
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum LoanKind {
+    Shared,
+    Mutable,
+}
+
+#[derive(Debug, Clone)]
+pub struct ActiveLoan {
+    pub place: String,
+    pub kind: LoanKind,
+    pub borrowed_at: usize,
+    pub holder: String,
 }
 
 pub struct SemanticAnalyzer {
@@ -25,6 +39,7 @@ pub struct SemanticAnalyzer {
     region_allocations: Vec<HashSet<String>>, // track pointers allocated inside each region depth
     var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
     ownership_scopes: Vec<HashMap<String, OwnershipState>>,
+    active_loans: Vec<ActiveLoan>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -53,6 +68,7 @@ impl SemanticAnalyzer {
             region_allocations: vec![HashSet::new()],
             var_scopes: vec![HashMap::new()],
             ownership_scopes: vec![HashMap::new()],
+            active_loans: Vec::new(),
         }
     }
 
@@ -212,6 +228,7 @@ impl SemanticAnalyzer {
 
     fn analyze_function(&mut self, func: &FunctionDef) {
         self.current_function = Some(func.name.clone());
+        self.active_loans.clear();
         self.push_scope();
 
         for p in &func.params {
@@ -244,9 +261,33 @@ impl SemanticAnalyzer {
                 let ty = var_type.clone().unwrap_or(inferred_ty);
                 self.declare_var(name, ty.clone(), span.line, *is_mut);
 
-                // Check move from initializer
+                // Check borrow creation from initializer (e.g. val r = &x)
                 if let Some(init) = initializer {
-                    if let Expression::Ident(src_name, _) = init {
+                    if let Expression::Unary { expr, op, .. } = init {
+                        if *op == UnaryOp::AddressOf {
+                            if let Expression::Ident(place_name, _) = expr.as_ref() {
+                                // Check if already mutably borrowed
+                                if let Some(existing_loan) = self.active_loans.iter().find(|l| l.place == *place_name && l.kind == LoanKind::Mutable) {
+                                    self.errors.push(DiagnosticError {
+                                        code: "E0907".to_string(),
+                                        message: format!("BorrowConflict: cannot borrow '{}' at line {} because it is already mutably borrowed by '{}' at line {}", place_name, span.line, existing_loan.holder, existing_loan.borrowed_at),
+                                        line: span.line,
+                                        col: span.col,
+                                        kind: "BorrowConflictError".to_string(),
+                                        repair_suggestion: Some("release previous mutable reference before borrowing again".to_string()),
+                                    });
+                                } else {
+                                    self.active_loans.push(ActiveLoan {
+                                        place: place_name.clone(),
+                                        kind: LoanKind::Shared,
+                                        borrowed_at: span.line,
+                                        holder: name.clone(),
+                                    });
+                                }
+                            }
+                        }
+                    } else if let Expression::Ident(src_name, _) = init {
+                        // Check Move State
                         if let Some(OwnershipState::Moved { to, at_line }) = self.get_ownership_state(src_name) {
                             self.errors.push(DiagnosticError {
                                 code: "E0906".to_string(),
@@ -257,7 +298,6 @@ impl SemanticAnalyzer {
                                 repair_suggestion: Some(format!("clone '{}' or reinitialize before transferring ownership", src_name)),
                             });
                         } else {
-                            // Transfer ownership for non-primitive types
                             if !matches!(ty, Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::U8 | Type::U16 | Type::U32 | Type::U64 | Type::F32 | Type::F64 | Type::Bool) {
                                 self.set_ownership_state(src_name, OwnershipState::Moved { to: name.clone(), at_line: span.line });
                             }
@@ -282,6 +322,24 @@ impl SemanticAnalyzer {
                         kind: "MemoryLeakError".to_string(),
                         repair_suggestion: Some("wrap in 'region arena { ... }' to guarantee zero memory leak".to_string()),
                     });
+                }
+            }
+            Statement::Assignment { target, value, span } => {
+                self.analyze_expression(target);
+                self.analyze_expression(value);
+
+                // Check mutation while actively borrowed
+                if let Expression::Ident(target_name, _) = target {
+                    if let Some(loan) = self.active_loans.iter().find(|l| l.place == *target_name && l.holder != *target_name) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0907".to_string(),
+                            message: format!("BorrowConflict: cannot mutate '{}' at line {} because it is currently borrowed by '{}' (borrowed at line {})", target_name, span.line, loan.holder, loan.borrowed_at),
+                            line: span.line,
+                            col: span.col,
+                            kind: "BorrowConflictError".to_string(),
+                            repair_suggestion: Some(format!("ensure borrow '{}' goes out of scope before modifying '{}'", loan.holder, target_name)),
+                        });
+                    }
                 }
             }
             Statement::Return { value, span } => {
@@ -317,12 +375,22 @@ impl SemanticAnalyzer {
                 self.region_allocations.pop();
                 self.region_depth = self.region_depth.saturating_sub(1);
             }
+            Statement::Spawn { call, span } => {
+                self.analyze_expression(call);
+                // In Thread Spawn: capture variables transfer ownership to spawn
+                if let Expression::Call { args, .. } = call {
+                    for arg in args {
+                        if let Expression::Ident(var_name, _) = arg {
+                            self.set_ownership_state(var_name, OwnershipState::Moved {
+                                to: "thread_spawn".to_string(),
+                                at_line: span.line,
+                            });
+                        }
+                    }
+                }
+            }
             Statement::Expression(expr) => {
                 self.analyze_expression(expr);
-            }
-            Statement::Assignment { target, value, span } => {
-                self.analyze_expression(target);
-                self.analyze_expression(value);
             }
             Statement::If { condition, then_block, else_block, .. } => {
                 self.analyze_expression(condition);
@@ -366,9 +434,6 @@ impl SemanticAnalyzer {
             Statement::Defer { expr, .. } => {
                 self.analyze_expression(expr);
             }
-            Statement::Spawn { call, .. } => {
-                self.analyze_expression(call);
-            }
             _ => {}
         }
     }
@@ -402,22 +467,8 @@ impl SemanticAnalyzer {
                 self.analyze_expression(right);
                 Type::I64
             }
-            Expression::Unary { expr, op, span } => {
+            Expression::Unary { expr, op, .. } => {
                 let inner = self.analyze_expression(expr);
-                if *op == UnaryOp::AddressOf {
-                    if let Expression::Ident(name, _) = expr.as_ref() {
-                        if let Some(OwnershipState::BorrowedMut(prev_line)) = self.get_ownership_state(name) {
-                            self.errors.push(DiagnosticError {
-                                code: "E0907".to_string(),
-                                message: format!("BorrowConflict: cannot borrow '{}' at line {} because it is already mutably borrowed at line {}", name, span.line, prev_line),
-                                line: span.line,
-                                col: span.col,
-                                kind: "BorrowConflictError".to_string(),
-                                repair_suggestion: Some("release previous mutable reference before borrowing again".to_string()),
-                            });
-                        }
-                    }
-                }
                 match op {
                     UnaryOp::AddressOf => Type::Pointer(Box::new(inner)),
                     UnaryOp::Deref => match inner {
@@ -465,7 +516,6 @@ impl SemanticAnalyzer {
     }
 
     fn verify_transitive_effects_and_purity(&mut self) {
-        // Propagate effects along call graph
         let mut changed = true;
         while changed {
             changed = false;
@@ -485,8 +535,7 @@ impl SemanticAnalyzer {
             }
         }
 
-        // Verify @pure contracts
-        for (func_name, (params, ret, is_pure)) in &self.function_signatures {
+        for (func_name, (_params, _ret, is_pure)) in &self.function_signatures {
             if *is_pure {
                 if let Some(effects) = self.function_effects.get(func_name) {
                     let impure_effects: Vec<&String> = effects.iter().filter(|e| *e == "network" || *e == "io" || *e == "database" || *e == "filesystem").collect();
@@ -521,5 +570,3 @@ impl SemanticAnalyzer {
         }
     }
 }
-
-
