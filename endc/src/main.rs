@@ -29,19 +29,31 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Run an End source file directly
+    /// Run an End source file directly (Instant Interpreter VM)
     Run {
         /// Path to .end source file
         file: PathBuf,
     },
-    /// Compile an End source file to C and native binary
+    /// Compile an End source file to an ultra-optimized native binary, DLL, or cross-platform target
     Build {
         /// Path to .end source file
         file: PathBuf,
-        /// Output executable binary path
+        /// Output binary or library path (e.g. -o mylib.dll or -o app.exe)
         #[arg(short, long)]
         output: Option<PathBuf>,
-        /// Emit C code only
+        /// Target architecture & OS triple (e.g. x86_64-windows, x86_64-linux, aarch64-macos, aarch64-linux, wasm32-wasi)
+        #[arg(short, long)]
+        target: Option<String>,
+        /// Compile as a shared library / dynamic library (.dll, .so, .dylib) with C-ABI header
+        #[arg(long, default_value_t = false)]
+        dll: bool,
+        /// Compile as a library (alias for --dll / shared library)
+        #[arg(long, default_value_t = false)]
+        lib: bool,
+        /// Strip all debug symbols for absolute minimum bare-metal binary size
+        #[arg(long, default_value_t = true)]
+        strip: bool,
+        /// Emit generated C code and header only
         #[arg(long)]
         emit_c: bool,
     },
@@ -118,7 +130,16 @@ fn main() {
                 std::process::exit(1);
             }
         }
-        Commands::Build { file, output, emit_c } => {
+        Commands::Build {
+            file,
+            output,
+            target,
+            dll,
+            lib,
+            strip,
+            emit_c,
+        } => {
+            let is_library_mode = dll || lib;
             let (module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
@@ -128,61 +149,136 @@ fn main() {
             };
 
             let mut backend = CBackend::new();
-            let c_code = backend.generate(&module);
+            let (c_code, header_code) = backend.generate_with_options(&module, is_library_mode);
 
             let c_file_path = file.with_extension("c");
             if let Err(e) = fs::write(&c_file_path, &c_code) {
                 eprintln!("{} Failed to write C code: {}", "Error:".red().bold(), e);
                 std::process::exit(1);
             }
+            println!("{} Generated C source at {:?}", "✔".green().bold(), c_file_path);
 
-            println!("{} Generated intermediate C code at {:?}", "✔".green().bold(), c_file_path);
+            if let Some(hdr) = header_code {
+                let h_file_path = file.with_extension("h");
+                if let Err(e) = fs::write(&h_file_path, &hdr) {
+                    eprintln!("{} Failed to write C header: {}", "Error:".red().bold(), e);
+                } else {
+                    println!("{} Generated C Header (FFI API) at {:?}", "✔".green().bold(), h_file_path);
+                }
+            }
 
             if emit_c {
                 return;
             }
 
-            // Try compiling with clang or zig cc or gcc
-            let bin_path = output.unwrap_or_else(|| file.with_extension("exe"));
+            // Determine default output extension
+            let default_ext = if is_library_mode {
+                if let Some(ref t) = target {
+                    if t.contains("windows") {
+                        "dll"
+                    } else if t.contains("macos") || t.contains("darwin") {
+                        "dylib"
+                    } else {
+                        "so"
+                    }
+                } else {
+                    #[cfg(target_os = "windows")]
+                    let ext = "dll";
+                    #[cfg(target_os = "macos")]
+                    let ext = "dylib";
+                    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+                    let ext = "so";
+                    ext
+                }
+            } else {
+                #[cfg(target_os = "windows")]
+                let ext = "exe";
+                #[cfg(not(target_os = "windows"))]
+                let ext = "";
+                ext
+            };
+
+            let bin_path = output.unwrap_or_else(|| {
+                if default_ext.is_empty() {
+                    file.with_extension("")
+                } else {
+                    file.with_extension(default_ext)
+                }
+            });
+
+            // Build compiler args
+            let mut zig_args: Vec<String> = vec![
+                "cc".to_string(),
+                c_file_path.to_str().unwrap().to_string(),
+                "-O3".to_string(),
+                "-funroll-loops".to_string(),
+                "-fomit-frame-pointer".to_string(),
+            ];
+
+            if is_library_mode {
+                zig_args.push("-shared".to_string());
+                zig_args.push("-fPIC".to_string());
+            }
+
+            if strip {
+                zig_args.push("-s".to_string());
+            }
+
+            if let Some(ref t) = target {
+                zig_args.push("-target".to_string());
+                zig_args.push(t.clone());
+            } else {
+                zig_args.push("-march=native".to_string());
+            }
+
+            zig_args.push("-o".to_string());
+            zig_args.push(bin_path.to_str().unwrap().to_string());
+
             let mut compiled = false;
 
-            // Try Zig CC if available with hyper-optimization
-            if let Ok(status) = Command::new("zig")
-                .args([
-                    "cc",
-                    c_file_path.to_str().unwrap(),
-                    "-O3",
-                    "-march=native",
-                    "-funroll-loops",
-                    "-fomit-frame-pointer",
-                    "-o",
-                    bin_path.to_str().unwrap(),
-                ])
-                .status()
-            {
+            // Execute Zig CC for cross-platform bare-metal compilation
+            let zig_args_refs: Vec<&str> = zig_args.iter().map(|s| s.as_str()).collect();
+            if let Ok(status) = Command::new("zig").args(&zig_args_refs).status() {
                 if status.success() {
                     compiled = true;
-                    println!("{} Native binary compiled via Zig CC (Hyper-Optimized) at {:?}", "✔".green().bold(), bin_path);
+                    let target_name = target.as_deref().unwrap_or("Host Native");
+                    if is_library_mode {
+                        println!(
+                            "{} Shared Library / DLL compiled for [{}] at {:?}",
+                            "👑".green().bold(),
+                            target_name.cyan().bold(),
+                            bin_path
+                        );
+                    } else {
+                        println!(
+                            "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
+                            "👑".green().bold(),
+                            target_name.cyan().bold(),
+                            bin_path
+                        );
+                    }
                 }
             }
 
-            // Try Clang / GCC if Zig failed
+            // Fallback to Clang if Zig CC was not found
             if !compiled {
-                if let Ok(status) = Command::new("clang")
-                    .args([
-                        c_file_path.to_str().unwrap(),
-                        "-O3",
-                        "-march=native",
-                        "-funroll-loops",
-                        "-fomit-frame-pointer",
-                        "-o",
-                        bin_path.to_str().unwrap(),
-                    ])
-                    .status()
-                {
+                let mut clang_args = vec![
+                    c_file_path.to_str().unwrap().to_string(),
+                    "-O3".to_string(),
+                    "-funroll-loops".to_string(),
+                    "-fomit-frame-pointer".to_string(),
+                ];
+                if is_library_mode {
+                    clang_args.push("-shared".to_string());
+                }
+                clang_args.push("-o".to_string());
+                clang_args.push(bin_path.to_str().unwrap().to_string());
+
+                let clang_refs: Vec<&str> = clang_args.iter().map(|s| s.as_str()).collect();
+                if let Ok(status) = Command::new("clang").args(&clang_refs).status() {
                     if status.success() {
                         compiled = true;
-                        println!("{} Native binary compiled via Clang (Hyper-Optimized) at {:?}", "✔".green().bold(), bin_path);
+                        println!("{} Compiled via Clang at {:?}", "✔".green().bold(), bin_path);
                     }
                 }
             }

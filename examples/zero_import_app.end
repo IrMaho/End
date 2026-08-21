@@ -1,0 +1,50 @@
+// Zero-Import Standalone End Program
+// No imports needed: built-in standard prelude provides complete language capabilities
+
+st Player {
+    id: u64,
+    score: i32,
+    active: bool,
+}
+
+enum GameState {
+    Playing,
+    Paused,
+    GameOver,
+}
+
+fn calculate_bonus(base_score: i32, multiplier: i32) i32 {
+    ret (base_score * multiplier) + 500
+}
+
+fn main() void {
+    println("=== Zero-Import End Standalone App ===")
+
+    val p = Player {
+        id: 1001,
+        score: 1250,
+        active: true,
+    }
+
+    val state = GameState.Playing
+
+    match state {
+        .Playing => {
+            println("Status: Game is currently active!")
+        },
+        .Paused => {
+            println("Status: Game paused.")
+        },
+        .GameOver => {
+            println("Status: Game over.")
+        },
+    }
+
+    region memory_pool {
+        val total_score = calculate_bonus(p.score, 3)
+        println("Calculated Total Bonus Score:")
+        println(total_score)
+    }
+
+    println("Execution Finished with Zero Memory Leaks & Zero Imports!")
+}

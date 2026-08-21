@@ -1,0 +1,39 @@
+// End Shared Library Demo (mathlib.end)
+// Compiles into native .dll on Windows, .so on Linux, .dylib on macOS
+
+st CalcResult {
+    sum: i64,
+    product: i64,
+    is_valid: bool,
+}
+
+@export
+fn end_add(a: i64, b: i64) i64 {
+    ret a + b
+}
+
+@export
+fn end_multiply(a: i64, b: i64) i64 {
+    ret a * b
+}
+
+@export
+fn end_compute_hash(id: u64, iterations: i32) i64 {
+    mut hash: i64 = 17
+    for j in iterations {
+        hash = (hash * 31) + id + j
+    }
+    ret hash
+}
+
+@export
+fn end_process_batch(count: i32) i64 {
+    mut total: i64 = 0
+    region batch_scope {
+        for i in count {
+            val h = end_compute_hash(i, 16)
+            total = total + h
+        }
+    }
+    ret total
+}
