@@ -1,0 +1,37 @@
+// Benchmark: End Language with Parallel Multi-Core Processing & Region Scope
+st Request {
+    id: u64,
+    payload_size: i32,
+    checksum: i64,
+}
+
+fn process_request(id: u64, size: i32) Request {
+    mut hash: i64 = 17
+    for j in 50 {
+        hash = (hash * 31) + id + j
+    }
+
+    val req = Request {
+        id: id,
+        payload_size: size,
+        checksum: hash,
+    }
+    ret req
+}
+
+fn main() void {
+    val iterations: i32 = 1000000
+    mut total_checksum: i64 = 0
+
+    println("Running End Hyper-Optimized Parallel Backend Benchmark (1,000,000 requests)...")
+
+    region bench_scope {
+        parallel for i in iterations {
+            val req = process_request(i, 256)
+            total_checksum = total_checksum + req.checksum
+        }
+    }
+
+    println("End Parallel Benchmark Finished. Total Checksum:")
+    println(total_checksum)
+}

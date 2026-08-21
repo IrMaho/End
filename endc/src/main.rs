@@ -146,26 +146,43 @@ fn main() {
             let bin_path = output.unwrap_or_else(|| file.with_extension("exe"));
             let mut compiled = false;
 
-            // Try Zig CC if available
+            // Try Zig CC if available with hyper-optimization
             if let Ok(status) = Command::new("zig")
-                .args(["cc", c_file_path.to_str().unwrap(), "-O3", "-o", bin_path.to_str().unwrap()])
+                .args([
+                    "cc",
+                    c_file_path.to_str().unwrap(),
+                    "-O3",
+                    "-march=native",
+                    "-funroll-loops",
+                    "-fomit-frame-pointer",
+                    "-o",
+                    bin_path.to_str().unwrap(),
+                ])
                 .status()
             {
                 if status.success() {
                     compiled = true;
-                    println!("{} Native binary compiled via Zig CC at {:?}", "✔".green().bold(), bin_path);
+                    println!("{} Native binary compiled via Zig CC (Hyper-Optimized) at {:?}", "✔".green().bold(), bin_path);
                 }
             }
 
             // Try Clang / GCC if Zig failed
             if !compiled {
                 if let Ok(status) = Command::new("clang")
-                    .args([c_file_path.to_str().unwrap(), "-O3", "-o", bin_path.to_str().unwrap()])
+                    .args([
+                        c_file_path.to_str().unwrap(),
+                        "-O3",
+                        "-march=native",
+                        "-funroll-loops",
+                        "-fomit-frame-pointer",
+                        "-o",
+                        bin_path.to_str().unwrap(),
+                    ])
                     .status()
                 {
                     if status.success() {
                         compiled = true;
-                        println!("{} Native binary compiled via Clang at {:?}", "✔".green().bold(), bin_path);
+                        println!("{} Native binary compiled via Clang (Hyper-Optimized) at {:?}", "✔".green().bold(), bin_path);
                     }
                 }
             }

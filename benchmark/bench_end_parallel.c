@@ -66,18 +66,18 @@ static inline __attribute__((always_inline)) Request process_request(uint64_t id
 int main(void) {
     int32_t iterations = 1000000;
     int64_t total_checksum = 0;
-    end_println("Running End Backend Benchmark (1,000,000 requests)...");
+    end_println("Running End Hyper-Optimized Parallel Backend Benchmark (1,000,000 requests)...");
     /* Enter Region: bench_scope */
     EndArena* region_bench_scope = end_arena_create(64 * 1024);
     {
-        #pragma clang loop vectorize(enable) unroll(enable)
+        #pragma omp parallel for
         for (int32_t i = 0; i < iterations; i++) {
             __auto_type req = process_request(i, 256);
             total_checksum = (total_checksum + req.checksum);
         }
     }
     end_arena_destroy(region_bench_scope);
-    end_println("End Benchmark Finished. Total Checksum:");
+    end_println("End Parallel Benchmark Finished. Total Checksum:");
     end_println(total_checksum);
     return 0;
 }
