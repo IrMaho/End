@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ?? End Language Unix One-Line Installer (Linux & macOS)
 # Usage: curl -sSf https://github.com/IrMaho/End/releases/latest/download/install.sh | sh
-set -e
+set -euo pipefail
 
 INSTALL_DIR="$HOME/.end"
 BIN_DIR="$INSTALL_DIR/bin"
@@ -16,42 +16,59 @@ ARCH="$(uname -m)"
 
 if [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "arm64" ]; then
-        TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/end-$VERSION-macos-arm64.tar.gz"
+        PKG_NAME="end-$VERSION-macos-arm64.tar.gz"
     else
-        TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/end-$VERSION-macos-x64.tar.gz"
+        PKG_NAME="end-$VERSION-macos-x64.tar.gz"
     fi
 else
-    TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/end-$VERSION-linux-x64.tar.gz"
+    PKG_NAME="end-$VERSION-linux-x64.tar.gz"
 fi
 
-TMP_TAR="/tmp/end-$VERSION.tar.gz"
+TAR_URL="https://github.com/IrMaho/End/releases/download/$VERSION/$PKG_NAME"
+SHA_URL="https://github.com/IrMaho/End/releases/download/$VERSION/$PKG_NAME.sha256"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
+
+TMP_TAR="$TMP_DIR/$PKG_NAME"
+TMP_SHA="$TMP_DIR/$PKG_NAME.sha256"
+
+echo "==> Downloading $PKG_NAME..."
 if command -v curl >/dev/null 2>&1; then
-    curl -sSL "$TAR_URL" -o "$TMP_TAR"
+    curl -sSL --fail "$TAR_URL" -o "$TMP_TAR" || true
+    curl -sSL --fail "$SHA_URL" -o "$TMP_SHA" || true
 elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$TMP_TAR" "$TAR_URL"
+    wget -q "$TAR_URL" -O "$TMP_TAR" || true
+    wget -q "$SHA_URL" -O "$TMP_SHA" || true
 fi
 
-if [ -f "$TMP_TAR" ]; then
+if [ -f "$TMP_TAR" ] && [ -s "$TMP_TAR" ]; then
+    # Cryptographic Checksum Verification
+    if [ -f "$TMP_SHA" ] && [ -s "$TMP_SHA" ]; then
+        echo "==> Verifying SHA-256 checksum..."
+        EXPECTED_SHA="$(awk '{print $1}' "$TMP_SHA")"
+        if command -v sha256sum >/dev/null 2>&1; then
+            ACTUAL_SHA="$(sha256sum "$TMP_TAR" | awk '{print $1}')"
+        elif command -v shasum >/dev/null 2>&1; then
+            ACTUAL_SHA="$(shasum -a 256 "$TMP_TAR" | awk '{print $1}')"
+        else
+            ACTUAL_SHA=""
+        fi
+
+        if [ -n "$ACTUAL_SHA" ] && [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ]; then
+            echo "? SHA-256 Verified: $ACTUAL_SHA"
+        elif [ -n "$ACTUAL_SHA" ]; then
+            echo "? ERROR: SHA-256 Checksum Mismatch!"
+            echo "Expected: $EXPECTED_SHA"
+            echo "Actual:   $ACTUAL_SHA"
+            exit 1
+        fi
+    fi
+
+    echo "==> Extracting archive..."
     tar -xzf "$TMP_TAR" -C "$INSTALL_DIR"
-    rm -f "$TMP_TAR"
-    echo "?? SUCCESS: End Language $VERSION installed successfully!"
+    chmod +x "$BIN_DIR/end" "$BIN_DIR/endc" 2>/dev/null || true
+    echo "?? SUCCESS: End Language $VERSION installed successfully into $INSTALL_DIR!"
 else
     echo "? Pre-built binary package not found for $VERSION. You can build from source: cargo build --release"
 fi
-
-# PATH Export Configuration
-PROFILE_FILE=""
-if [ -n "$ZSH_VERSION" ] || [ -f "$HOME/.zshrc" ]; then
-    PROFILE_FILE="$HOME/.zshrc"
-elif [ -n "$BASH_VERSION" ] || [ -f "$HOME/.bashrc" ]; then
-    PROFILE_FILE="$HOME/.bashrc"
-else
-    PROFILE_FILE="$HOME/.profile"
-fi
-
-if ! grep -q "$BIN_DIR" "$PROFILE_FILE" 2>/dev/null; then
-    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$PROFILE_FILE"
-    echo "? Added '$BIN_DIR' to $PROFILE_FILE"
-fi
-
-echo "Restart your terminal or run: source $PROFILE_FILE"

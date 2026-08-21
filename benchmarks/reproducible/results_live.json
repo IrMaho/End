@@ -1,0 +1,55 @@
+{
+    "Metadata":  {
+                     "CPU":  "13th Gen Intel(R) Core(TM) i7-13650HX",
+                     "OS":  "Microsoft Windows 11 Pro",
+                     "Compiler":  "endc 0.4.0-alpha",
+                     "Commit":  "ba6cf43",
+                     "Timestamp":  "2026-08-21T08:51:35.0279601+03:30",
+                     "WarmupCount":  1000,
+                     "SampleCount":  20
+                 },
+    "Results":  [
+                    {
+                        "Language":  "C11",
+                        "Workload":  "Numeric Reduction (C11)",
+                        "Status":  "Passed",
+                        "Min_Ms":  6.8848,
+                        "Max_Ms":  22.546,
+                        "Mean_Ms":  9.4919,
+                        "P50_Ms":  8.3303,
+                        "P90_Ms":  21.9341,
+                        "P95_Ms":  22.546,
+                        "P99_Ms":  22.546,
+                        "StdDev_Ms":  4.3312,
+                        "EstimatedOpsSec":  105352985
+                    },
+                    {
+                        "Language":  "Rust",
+                        "Workload":  "Numeric Reduction (Rust)",
+                        "Status":  "Passed",
+                        "Min_Ms":  5.3519,
+                        "Max_Ms":  17.3853,
+                        "Mean_Ms":  7.7824,
+                        "P50_Ms":  6.989,
+                        "P90_Ms":  14.8862,
+                        "P95_Ms":  17.3853,
+                        "P99_Ms":  17.3853,
+                        "StdDev_Ms":  2.9814,
+                        "EstimatedOpsSec":  128495066
+                    },
+                    {
+                        "Language":  "Zig",
+                        "Workload":  "Numeric Reduction (Zig)",
+                        "Status":  "Passed",
+                        "Min_Ms":  4.7779,
+                        "Max_Ms":  20.3577,
+                        "Mean_Ms":  7.1454,
+                        "P50_Ms":  6.7683,
+                        "P90_Ms":  7.8328,
+                        "P95_Ms":  20.3577,
+                        "P99_Ms":  20.3577,
+                        "StdDev_Ms":  3.1788,
+                        "EstimatedOpsSec":  139950178
+                    }
+                ]
+}

@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # 👑 The End Programming Language
 
@@ -25,52 +25,18 @@
 
 </div>
 
-## 🌟 What is End?
+## 📊 Multi-Language Performance Matrix
 
-**End** is a next-generation systems programming language engineered from the ground up for **extreme execution speed, deterministic zero-garbage-collection memory safety, and native AI-Agent comprehension on 100M+ line codebases**.
+Performance measurements conform to the statistical specification in [BENCHMARKS.md](BENCHMARKS.md) and can be reproduced locally via powershell -File .\benchmark\run_benchmarks.ps1.
 
-Whether you are building high-throughput financial backends, 120 FPS game physics simulation engines, hardware-safe networking servers, or shared native libraries (`.dll` / `.so`), End gives you C-speed performance with modern declarative ergonomics.
+| Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Verification Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 👑 **End (C11 Backend)** | 10M Reduction | **8.33 ms** | **22.54 ms** | **9.49 ms** | **4.33 ms** | ✔ Live Measured |
+| **Rust (Release -O3)** | 10M Reduction | 6.98 ms | 17.38 ms | 7.78 ms | 2.98 ms | ✔ Live Measured |
+| **Zig (ReleaseFast)** | 10M Reduction | 6.76 ms | 20.35 ms | 7.14 ms | 3.17 ms | ✔ Live Measured |
 
----
+> Raw machine-readable benchmark outputs, hardware metadata, and execution percentiles are automatically generated in [enchmark/benchmark_results.json](benchmark/benchmark_results.json).
 
-## ⚡ Quick Install
-
-### Windows (PowerShell)
-```powershell
-irm https://github.com/IrMaho/End/releases/latest/download/install.ps1 | iex
-```
-
-### Linux & macOS (Bash / Zsh)
-```bash
-curl -sSf https://github.com/IrMaho/End/releases/latest/download/install.sh | sh
-```
-
-### Homebrew (macOS & Linux)
-```bash
-brew install IrMaho/tap/end-lang
-```
-
-### WinGet & Scoop (Windows)
-```powershell
-winget install EndLanguage.End
-# or
-scoop install end
-```
-
----
-
-## 📊 Benchmark Matrix
-
-Measured across **1,000,000 operations** on identical hardware (AMD Ryzen 9 / Apple M3 Max):
-
-| Metric / Language | 👑 **End (v0.4.0-alpha)** | **C++20 (Clang -O3)** | **Rust (Release)** | **Go (v1.22)** | **Node.js (V8)** |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Throughput (Ops/sec)** | **199.0M ops/s** | 195.2M ops/s | 192.8M ops/s | 68.4M ops/s | 14.1M ops/s |
-| **P50 Latency** | **12.4 ns** | 12.8 ns | 13.1 ns | 48.0 ns | 185.0 ns |
-| **P99 Latency** | **24.1 ns** | 25.0 ns | 26.4 ns | 1,200.0 ns | 4,500.0 ns |
-| **Garbage Collector Pauses** | **0.00 ms (Zero-GC)** | 0.00 ms | 0.00 ms | 1.80 ms | 12.50 ms |
-| **Idle CPU Spin-Locking** | **< 0.5% (Safe Guard)** | Manual | Manual | ~1.5% | ~2.5% |
-| **Cold Start Time** | **< 1.0 ms** | 1.2 ms | 1.5 ms | 18.0 ms | 65.0 ms |
 
 ---
 
@@ -175,6 +141,7 @@ end arch check --json
 
 End is distributed under the [MIT License](LICENSE).
 Copyright © 2026 [Mohammad Javad (IrMaho)](https://github.com/IrMaho) & The End Language Community.
+
 
 
 
