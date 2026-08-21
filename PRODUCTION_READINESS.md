@@ -1,4 +1,4 @@
-# ?? End Language — Production Readiness Matrix (PRODUCTION_READINESS.md)
+# ?? End Language ï¿½ Production Readiness Matrix (PRODUCTION_READINESS.md)
 
 **Version:** `0.4.0-alpha`  
 **Toolchain:** `endc`  
@@ -16,7 +16,7 @@
 | **Region Allocator** | ?? Sound | Escape Analysis (`E0903`), Zero-Leak Suite | Escapes must be explicitly promoted to caller arena |
 | **C11 Codegen Backend** | ?? Production-Ready | OpenMP, Atomic Arc, Thread-Safe Channels | Requires C11 compliant compiler (GCC/Clang/MSVC/Zig) |
 | **LLVM IR Backend** | ?? Alpha | Complete IR lowering for arithmetic, calls, structs | Target-specific intrinsics undergo continuous fuzzing |
-| **Interpreter VM** | ?? Ready | Instant micro-evaluator (<200 µs), Interactive REPL | Designed for dev/test/eval, not max throughput |
+| **Interpreter VM** | ?? Ready | Instant micro-evaluator (<200 ï¿½s), Interactive REPL | Designed for dev/test/eval, not max throughput |
 | **AI Knowledge Graph** | ?? Ready | `end graph`, 1ms JSON call hierarchy | Single-binary query model |
 | **AI Semantic Slicer** | ?? Sound | `end slice --budget`, Whole-symbol token safety | Non-destructive interface extraction |
 | **Structured AST Patch**| ?? Sound | `end patch`, In-memory AST node mutations | Requires syntactically parseable patch inputs |

@@ -7,6 +7,7 @@ mod tests {
     use crate::ir::lowering::*;
     use crate::ir::mir_lowering::*;
     use crate::semantic::analyzer::*;
+    use crate::codegen::interpreter::{Interpreter, Value};
 
     fn parse_str(code: &str) -> Result<Module, String> {
         let mut lexer = Lexer::new("test.end", code);
@@ -74,4 +75,40 @@ mod tests {
         let errors = res.unwrap_err();
         assert!(errors.iter().any(|e| e.code == "E0904"));
     }
+
+    #[test]
+    fn test_bitwise_not_and_cast_soundness() {
+        let code = "pub fn test_ops() void {\nval x: i64 = ~10\nval y: u64 = x as u64\n}";
+        let module = parse_str(code).unwrap();
+        let mut analyzer = SemanticAnalyzer::new("test.end", code);
+        let res = analyzer.analyze_module(&module);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_fuzz_malformed_syntax_graceful_recovery() {
+        let malformed_inputs = [
+            "fn unclosed( {",
+            "val string = \"unterminated string",
+            "struct @#$ {",
+            "fn foo() { val x = 10 / / 2 }",
+            "import \"broken.end",
+        ];
+
+        for input in malformed_inputs {
+            let res = parse_str(input);
+            // Parser must return Err without any unhandled panic!
+            assert!(res.is_err());
+        }
+    }
+
+    #[test]
+    fn test_interpreter_constant_folding() {
+        let code = "pub fn main() i64 {\nret 10 * 5 + 42 - 2\n}";
+        let module = parse_str(code).unwrap();
+        let mut interp = Interpreter::new();
+        let res = interp.run(&module).unwrap();
+        assert_eq!(res, Value::Int(90));
+    }
 }
+
