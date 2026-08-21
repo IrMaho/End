@@ -1,4 +1,4 @@
-name: End CI
+name: End Compiler CI
 
 on:
   push:
@@ -17,17 +17,39 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Rust
+    - name: Set up Rust Toolchain
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Build End Compiler (endc)
+    - name: Build End Compiler (Release)
       run: |
         cd endc
-        cargo build --verbose
+        cargo build --release --verbose
 
-    - name: Run End Examples
+    - name: Run Cargo Test Suite
       run: |
         cd endc
-        cargo run -- run ../examples/hello.end
-        cargo run -- check ../examples/server.end --json
-        cargo run -- inspect ../examples/server.end:18
+        cargo test --verbose
+
+    - name: Run End Language Enterprise Test Suites (34 Verification Tests)
+      run: |
+        cd endc
+        cargo run --release -- test ../examples/test_enterprise_platform.end
+        cargo run --release -- test ../examples/test_ai_agent_capabilities.end
+        cargo run --release -- test ../examples/test_leak_and_patrol.end
+        cargo run --release -- test ../examples/test_v2_platform.end
+        cargo run --release -- test ../examples/test_blindspots_v2.end
+        cargo run --release -- test ../examples/test_evolutionary_v2.end
+        cargo run --release -- test ../examples/test_patterns_and_arch_v2.end
+        cargo run --release -- test ../examples/test_reflection_and_meta_v2.end
+
+    - name: Verify Compiler Pass Suite
+      run: |
+        cd endc
+        cargo run --release -- test ./tests/compile_pass/test_ownership_and_regions.end
+
+    - name: Verify AI Protocol & Slicing
+      run: |
+        cd endc
+        cargo run --release -- graph ../examples/server.end
+        cargo run --release -- slice ../examples/server.end
+        cargo run --release -- arch check

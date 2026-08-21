@@ -1,3 +1,4 @@
+pub mod ir;
 use clap::{Parser, Subcommand};
 use colored::*;
 use std::fs;
@@ -1588,5 +1589,6 @@ fn load_module_recursive(
 
     Ok(())
 }
+
 
 

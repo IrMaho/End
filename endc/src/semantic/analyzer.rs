@@ -1,16 +1,30 @@
 use crate::ast::*;
 use crate::semantic::graph::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum OwnershipState {
+    Uninitialized,
+    Owned,
+    Moved { to: String, at_line: usize },
+    BorrowedShared(usize), // borrow count
+    BorrowedMut(usize),    // line where &mut was taken
+}
 
 pub struct SemanticAnalyzer {
     pub graph: SemanticGraph,
     pub source_lines: Vec<String>,
     pub errors: Vec<DiagnosticError>,
     pub enums: HashMap<String, EnumDef>,
+    pub structs: HashMap<String, StructDef>,
+    pub function_signatures: HashMap<String, (Vec<Type>, Type, bool)>, // params, ret, is_pure
+    pub function_effects: HashMap<String, HashSet<String>>,
     pub strict_leaks: bool,
     current_function: Option<String>,
     region_depth: usize,
+    region_allocations: Vec<HashSet<String>>, // track pointers allocated inside each region depth
     var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
+    ownership_scopes: Vec<HashMap<String, OwnershipState>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -30,24 +44,34 @@ impl SemanticAnalyzer {
             source_lines: source.lines().map(|s| s.to_string()).collect(),
             errors: Vec::new(),
             enums: HashMap::new(),
+            structs: HashMap::new(),
+            function_signatures: HashMap::new(),
+            function_effects: HashMap::new(),
             strict_leaks: false,
             current_function: None,
             region_depth: 0,
+            region_allocations: vec![HashSet::new()],
             var_scopes: vec![HashMap::new()],
+            ownership_scopes: vec![HashMap::new()],
         }
     }
 
     fn push_scope(&mut self) {
         self.var_scopes.push(HashMap::new());
+        self.ownership_scopes.push(HashMap::new());
     }
 
     fn pop_scope(&mut self) {
         self.var_scopes.pop();
+        self.ownership_scopes.pop();
     }
 
     fn declare_var(&mut self, name: &str, ty: Type, line: usize, is_mut: bool) {
         if let Some(scope) = self.var_scopes.last_mut() {
             scope.insert(name.to_string(), (ty, line, is_mut));
+        }
+        if let Some(o_scope) = self.ownership_scopes.last_mut() {
+            o_scope.insert(name.to_string(), OwnershipState::Owned);
         }
     }
 
@@ -60,8 +84,26 @@ impl SemanticAnalyzer {
         None
     }
 
+    fn get_ownership_state(&self, name: &str) -> Option<OwnershipState> {
+        for scope in self.ownership_scopes.iter().rev() {
+            if let Some(state) = scope.get(name) {
+                return Some(state.clone());
+            }
+        }
+        None
+    }
+
+    fn set_ownership_state(&mut self, name: &str, new_state: OwnershipState) {
+        for scope in self.ownership_scopes.iter_mut().rev() {
+            if scope.contains_key(name) {
+                scope.insert(name.to_string(), new_state);
+                return;
+            }
+        }
+    }
+
     pub fn analyze_module(&mut self, module: &Module) -> Result<(), Vec<DiagnosticError>> {
-        // Register Enums
+        // 1. Register Enums
         for e in &module.enums {
             self.enums.insert(e.name.clone(), e.clone());
             let variant_names = e.variants.iter().map(|v| v.name.clone()).collect::<Vec<_>>();
@@ -81,8 +123,9 @@ impl SemanticAnalyzer {
             self.graph.symbols.insert(e.name.clone(), info);
         }
 
-        // Register Structs
+        // 2. Register Structs
         for s in &module.structs {
+            self.structs.insert(s.name.clone(), s.clone());
             let info = SymbolInfo {
                 name: s.name.clone(),
                 kind: "struct".to_string(),
@@ -99,45 +142,35 @@ impl SemanticAnalyzer {
             self.graph.symbols.insert(s.name.clone(), info);
         }
 
-        // Register Functions
+        // 3. Register Function Signatures
         for f in &module.functions {
-            let mut effect_list = Vec::new();
-            let mut cap = CapabilityContract::default();
+            let mut effect_set = HashSet::new();
+            let is_pure = f.directives.iter().any(|d| d.name == "@pure");
+            if is_pure {
+                effect_set.insert("pure".to_string());
+            }
 
+            let param_types = f.params.iter().map(|p| p.param_type.clone()).collect();
+            self.function_signatures.insert(f.name.clone(), (param_types, f.return_type.clone(), is_pure));
+            self.function_effects.insert(f.name.clone(), effect_set);
+
+            let mut cap = CapabilityContract::default();
             for dir in &f.directives {
-                if dir.name == "@alloc_bound" {
-                    effect_list.push(format!("alloc_bound({})", dir.args.join(", ")));
-                } else if dir.name == "@target" {
-                    effect_list.push(format!("target({})", dir.args.join(", ")));
+                if dir.name == "@pure" {
+                    cap.is_pure = true;
                 } else if dir.name == "@capability" {
                     for arg in &dir.args {
                         let parts: Vec<&str> = arg.split('=').collect();
                         if parts.len() == 2 {
-                            let k = parts[0].trim();
-                            let v = parts[1].trim().trim_matches('"');
-                            match k {
-                                "net" => cap.net = v == "true",
-                                "disk" => cap.disk = v == "true",
-                                "io" => cap.io = v == "true",
-                                "memory" => cap.memory = v.to_string(),
-                                "pure" => cap.is_pure = v == "true",
-                                "can_panic" => cap.can_panic = v == "true",
+                            match parts[0].trim() {
+                                "net" => cap.net = parts[1].trim().trim_matches('"') == "true",
+                                "disk" => cap.disk = parts[1].trim().trim_matches('"') == "true",
+                                "io" => cap.io = parts[1].trim().trim_matches('"') == "true",
+                                "memory" => cap.memory = parts[1].trim().trim_matches('"').to_string(),
                                 _ => {}
                             }
                         }
                     }
-                    effect_list.push(format!("capability({})", dir.args.join(", ")));
-                } else if dir.name == "@pure" {
-                    cap.is_pure = true;
-                    cap.net = false;
-                    cap.disk = false;
-                    cap.io = false;
-                    effect_list.push("pure".to_string());
-                } else if dir.name == "@ws" || dir.name == "@post" || dir.name == "@get" {
-                    cap.net = true;
-                    cap.io = true;
-                    cap.is_pure = false;
-                    effect_list.push(dir.name.clone());
                 }
             }
 
@@ -147,18 +180,14 @@ impl SemanticAnalyzer {
                 type_signature: format!(
                     "fn {}({}) -> {}",
                     f.name,
-                    f.params
-                        .iter()
-                        .map(|p| format!("{}: {}", p.name, p.param_type))
-                        .collect::<Vec<_>>()
-                        .join(", "),
+                    f.params.iter().map(|p| format!("{}: {}", p.name, p.param_type)).collect::<Vec<_>>().join(", "),
                     f.return_type
                 ),
                 file: f.span.file.clone(),
                 defined_at_line: f.span.line,
                 callers: Vec::new(),
                 callees: Vec::new(),
-                effects: effect_list,
+                effects: Vec::new(),
                 is_pure: cap.is_pure,
                 memory_region: Some(cap.memory.clone()),
                 capabilities: cap,
@@ -166,17 +195,13 @@ impl SemanticAnalyzer {
             self.graph.symbols.insert(f.name.clone(), info);
         }
 
-        // Analyze Function Bodies
+        // 4. Analyze Function Bodies
         for f in &module.functions {
             self.analyze_function(f);
         }
 
-        // Analyze Impl Block Methods
-        for imp in &module.impls {
-            for f in &imp.methods {
-                self.analyze_function(f);
-            }
-        }
+        // 5. Transitive Effect & Purity Verification
+        self.verify_transitive_effects_and_purity();
 
         if self.errors.is_empty() {
             Ok(())
@@ -189,7 +214,6 @@ impl SemanticAnalyzer {
         self.current_function = Some(func.name.clone());
         self.push_scope();
 
-        // Register parameters
         for p in &func.params {
             self.declare_var(&p.name, p.param_type.clone(), p.span.line, p.is_mut);
         }
@@ -210,13 +234,7 @@ impl SemanticAnalyzer {
 
     fn analyze_statement(&mut self, stmt: &Statement) {
         match stmt {
-            Statement::VarDecl {
-                name,
-                var_type,
-                is_mut,
-                initializer,
-                span,
-            } => {
+            Statement::VarDecl { name, var_type, is_mut, initializer, span } => {
                 let inferred_ty = if let Some(init) = initializer {
                     self.analyze_expression(init)
                 } else {
@@ -226,174 +244,87 @@ impl SemanticAnalyzer {
                 let ty = var_type.clone().unwrap_or(inferred_ty);
                 self.declare_var(name, ty.clone(), span.line, *is_mut);
 
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    format!("{} {} = ...", if *is_mut { "mut" } else { "val" }, name)
-                };
-
-                let mut from_symbols = Vec::new();
+                // Check move from initializer
                 if let Some(init) = initializer {
-                    self.extract_symbols_from_expr(init, &mut from_symbols);
+                    if let Expression::Ident(src_name, _) = init {
+                        if let Some(OwnershipState::Moved { to, at_line }) = self.get_ownership_state(src_name) {
+                            self.errors.push(DiagnosticError {
+                                code: "E0906".to_string(),
+                                message: format!("UseAfterMove: use of moved value '{}' at line {} (previously moved to '{}' at line {})", src_name, span.line, to, at_line),
+                                line: span.line,
+                                col: span.col,
+                                kind: "UseAfterMoveError".to_string(),
+                                repair_suggestion: Some(format!("clone '{}' or reinitialize before transferring ownership", src_name)),
+                            });
+                        } else {
+                            // Transfer ownership for non-primitive types
+                            if !matches!(ty, Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::U8 | Type::U16 | Type::U32 | Type::U64 | Type::F32 | Type::F64 | Type::Bool) {
+                                self.set_ownership_state(src_name, OwnershipState::Moved { to: name.clone(), at_line: span.line });
+                            }
+                        }
+                    }
+
+                    if self.expr_allocates(init) && self.region_depth > 0 {
+                        if let Some(reg_set) = self.region_allocations.last_mut() {
+                            reg_set.insert(name.clone());
+                        }
+                    }
                 }
 
-                let memory_allocated = if let Some(init) = initializer {
-                    self.expr_allocates(init)
-                } else {
-                    false
-                };
-
-                // Zero-Leak Enforcement: detect raw unmanaged allocations outside safe region scopes
+                // Strict leak check
+                let memory_allocated = initializer.as_ref().map(|i| self.expr_allocates(i)).unwrap_or(false);
                 if self.strict_leaks && (memory_allocated || matches!(ty, Type::Pointer(_))) && self.region_depth == 0 {
                     self.errors.push(DiagnosticError {
                         code: "E0901".to_string(),
-                        message: format!("Memory leak detected: pointer allocated at line {} escapes without safe region boundary or deallocation", span.line),
+                        message: format!("Memory leak detected: pointer allocated at line {} escapes without safe region boundary", span.line),
                         line: span.line,
                         col: span.col,
                         kind: "MemoryLeakError".to_string(),
-                        repair_suggestion: Some("wrap in 'region frame { ... }' or return by value to guarantee zero memory leak".to_string()),
+                        repair_suggestion: Some("wrap in 'region arena { ... }' to guarantee zero memory leak".to_string()),
                     });
                 }
-
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: from_symbols,
-                        to: vec![SymbolDestination {
-                            symbol: name.clone(),
-                            symbol_type: ty.to_string(),
-                            lifetime: "scope_end".to_string(),
-                            destination: self.current_function.clone().unwrap_or("module".into()),
-                        }],
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated,
-                        allocator_used: if memory_allocated { Some("alloc".into()) } else { None },
-                        io_performed: false,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: if memory_allocated { vec!["alloc".into()] } else { Vec::new() },
-                    },
-                };
-
-                self.graph.add_line(span.line, line_sem);
             }
             Statement::Return { value, span } => {
-                let mut from_symbols = Vec::new();
                 if let Some(val) = value {
                     self.analyze_expression(val);
-                    self.extract_symbols_from_expr(val, &mut from_symbols);
+
+                    // Formal Escape Analysis: check if returning an inner-region allocated pointer
+                    if let Expression::Ident(ret_var, _) = val {
+                        if self.region_depth > 0 {
+                            for reg_set in &self.region_allocations {
+                                if reg_set.contains(ret_var) {
+                                    self.errors.push(DiagnosticError {
+                                        code: "E0903".to_string(),
+                                        message: format!("EscapeViolation: reference to region-scoped memory '{}' escapes region boundary at line {}", ret_var, span.line),
+                                        line: span.line,
+                                        col: span.col,
+                                        kind: "EscapeViolationError".to_string(),
+                                        repair_suggestion: Some("copy data or allocate on parent region before returning".to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
-
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    "return".to_string()
-                };
-
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: from_symbols,
-                        to: vec![SymbolDestination {
-                            symbol: "return_value".to_string(),
-                            symbol_type: "inferred".to_string(),
-                            lifetime: "caller".to_string(),
-                            destination: "caller".to_string(),
-                        }],
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated: false,
-                        allocator_used: None,
-                        io_performed: false,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: Vec::new(),
-                    },
-                };
-                self.graph.add_line(span.line, line_sem);
+            }
+            Statement::RegionBlock { name, body, span } => {
+                self.region_depth += 1;
+                self.region_allocations.push(HashSet::new());
+                self.push_scope();
+                self.declare_var(&format!("region_{}", name), Type::Region(name.clone()), span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
+                self.region_allocations.pop();
+                self.region_depth = self.region_depth.saturating_sub(1);
             }
             Statement::Expression(expr) => {
                 self.analyze_expression(expr);
-                let span = expr.span();
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    "expression".to_string()
-                };
-
-                let mut from_symbols = Vec::new();
-                self.extract_symbols_from_expr(expr, &mut from_symbols);
-
-                let is_io = raw_code.contains("print") || raw_code.contains("log") || raw_code.contains("http");
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: from_symbols,
-                        to: Vec::new(),
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated: self.expr_allocates(expr),
-                        allocator_used: None,
-                        io_performed: is_io,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: if is_io { vec!["io".into()] } else { Vec::new() },
-                    },
-                };
-                self.graph.add_line(span.line, line_sem);
             }
             Statement::Assignment { target, value, span } => {
                 self.analyze_expression(target);
                 self.analyze_expression(value);
-
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    "assignment".to_string()
-                };
-
-                let mut from_symbols = Vec::new();
-                self.extract_symbols_from_expr(value, &mut from_symbols);
-
-                let target_name = match target {
-                    Expression::Ident(n, _) => n.clone(),
-                    Expression::FieldAccess { field, .. } => field.clone(),
-                    _ => "target".to_string(),
-                };
-
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: from_symbols,
-                        to: vec![SymbolDestination {
-                            symbol: target_name,
-                            symbol_type: "inferred".to_string(),
-                            lifetime: "scope".to_string(),
-                            destination: self.current_function.clone().unwrap_or("module".into()),
-                        }],
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated: false,
-                        allocator_used: None,
-                        io_performed: false,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: Vec::new(),
-                    },
-                };
-                self.graph.add_line(span.line, line_sem);
             }
-            Statement::If {
-                condition,
-                then_block,
-                else_block,
-                ..
-            } => {
+            Statement::If { condition, then_block, else_block, .. } => {
                 self.analyze_expression(condition);
                 self.analyze_block(then_block);
                 if let Some(eb) = else_block {
@@ -404,114 +335,33 @@ impl SemanticAnalyzer {
                 self.analyze_expression(condition);
                 self.analyze_block(body);
             }
-            Statement::ForIn {
-                item_name,
-                iterable,
-                body,
-                span,
-            } => {
+            Statement::ForIn { item_name, iterable, body, span } => {
                 self.analyze_expression(iterable);
                 self.push_scope();
                 self.declare_var(item_name, Type::I32, span.line, false);
                 self.analyze_block(body);
                 self.pop_scope();
             }
-            Statement::ParallelFor {
-                item_name,
-                iterable,
-                body,
-                span,
-            } => {
+            Statement::ParallelFor { item_name, iterable, body, span } => {
                 self.analyze_expression(iterable);
                 self.push_scope();
                 self.declare_var(item_name, Type::I32, span.line, false);
                 self.analyze_block(body);
                 self.pop_scope();
             }
-            Statement::Match { expr, arms, span } => {
+            Statement::Match { expr, arms, .. } => {
                 let match_type = self.analyze_expression(expr);
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    "match ...".to_string()
-                };
-
-                let mut from_symbols = Vec::new();
-                self.extract_symbols_from_expr(expr, &mut from_symbols);
-
                 for arm in arms {
                     self.push_scope();
-                    if let Pattern::Variant { binding: Some(b), .. } = &arm.pattern {
-                        self.declare_var(b, Type::Custom("VariantPayload".into()), arm.span.line, false);
-                    } else if let Pattern::Ident(id) = &arm.pattern {
+                    if let Pattern::Ident(id) = &arm.pattern {
                         self.declare_var(id, match_type.clone(), arm.span.line, false);
                     }
-
                     if let Some(g) = &arm.guard {
                         self.analyze_expression(g);
                     }
                     self.analyze_block(&arm.body);
                     self.pop_scope();
                 }
-
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: from_symbols,
-                        to: Vec::new(),
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated: false,
-                        allocator_used: None,
-                        io_performed: false,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: vec!["match".into()],
-                    },
-                };
-                self.graph.add_line(span.line, line_sem);
-            }
-            Statement::RegionBlock { name, body, span } => {
-                self.region_depth += 1;
-                self.push_scope();
-                self.declare_var(
-                    &format!("region_{}", name),
-                    Type::Region(name.clone()),
-                    span.line,
-                    false,
-                );
-                self.analyze_block(body);
-                self.pop_scope();
-                self.region_depth = self.region_depth.saturating_sub(1);
-            }
-            Statement::AsmBlock { arch, span, .. } => {
-                let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
-                    self.source_lines[span.line - 1].trim().to_string()
-                } else {
-                    format!("asm {} {{ ... }}", arch)
-                };
-                let line_sem = LineSemantics {
-                    line: span.line,
-                    code: raw_code,
-                    flow: DataFlow {
-                        from: Vec::new(),
-                        to: Vec::new(),
-                    },
-                    side_effects: SideEffects {
-                        memory_allocated: false,
-                        allocator_used: None,
-                        io_performed: false,
-                        can_panic: false,
-                        possible_errors: Vec::new(),
-                        effects: vec![format!("asm({})", arch)],
-                    },
-                };
-                self.graph.add_line(span.line, line_sem);
-            }
-            Statement::TargetBlock { target, body, .. } => {
-                self.analyze_block(body);
-                let _ = target;
             }
             Statement::Defer { expr, .. } => {
                 self.analyze_expression(expr);
@@ -519,23 +369,30 @@ impl SemanticAnalyzer {
             Statement::Spawn { call, .. } => {
                 self.analyze_expression(call);
             }
+            _ => {}
         }
     }
 
     fn analyze_expression(&mut self, expr: &Expression) -> Type {
         match expr {
-            Expression::Lit(lit, _) => match lit {
-                Literal::Int(_) => Type::I32,
-                Literal::Float(_) => Type::F32,
-                Literal::String(_) => Type::Str,
-                Literal::Bool(_) => Type::Bool,
-                Literal::Null => Type::Pointer(Box::new(Type::Void)),
-            },
-            Expression::Ident(name, _) => {
+            Expression::Lit(Literal::Int(_), _) => Type::I64,
+            Expression::Lit(Literal::Float(_), _) => Type::F64,
+            Expression::Lit(Literal::String(_), _) => Type::Str,
+            Expression::Lit(Literal::Bool(_), _) => Type::Bool,
+            Expression::Lit(Literal::Null, _) => Type::Pointer(Box::new(Type::Void)),
+            Expression::Ident(name, span) => {
+                if let Some(OwnershipState::Moved { to, at_line }) = self.get_ownership_state(name) {
+                    self.errors.push(DiagnosticError {
+                        code: "E0906".to_string(),
+                        message: format!("UseAfterMove: use of moved value '{}' at line {} (moved to '{}' at line {})", name, span.line, to, at_line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "UseAfterMoveError".to_string(),
+                        repair_suggestion: Some(format!("clone '{}' or reinitialize before transferring ownership", name)),
+                    });
+                }
                 if let Some((ty, _, _)) = self.lookup_var(name) {
                     ty
-                } else if self.graph.symbols.contains_key(name) {
-                    Type::Custom(name.clone())
                 } else {
                     Type::Custom(name.clone())
                 }
@@ -543,10 +400,24 @@ impl SemanticAnalyzer {
             Expression::Binary { left, right, .. } => {
                 self.analyze_expression(left);
                 self.analyze_expression(right);
-                Type::I32
+                Type::I64
             }
-            Expression::Unary { expr, op, .. } => {
+            Expression::Unary { expr, op, span } => {
                 let inner = self.analyze_expression(expr);
+                if *op == UnaryOp::AddressOf {
+                    if let Expression::Ident(name, _) = expr.as_ref() {
+                        if let Some(OwnershipState::BorrowedMut(prev_line)) = self.get_ownership_state(name) {
+                            self.errors.push(DiagnosticError {
+                                code: "E0907".to_string(),
+                                message: format!("BorrowConflict: cannot borrow '{}' at line {} because it is already mutably borrowed at line {}", name, span.line, prev_line),
+                                line: span.line,
+                                col: span.col,
+                                kind: "BorrowConflictError".to_string(),
+                                repair_suggestion: Some("release previous mutable reference before borrowing again".to_string()),
+                            });
+                        }
+                    }
+                }
                 match op {
                     UnaryOp::AddressOf => Type::Pointer(Box::new(inner)),
                     UnaryOp::Deref => match inner {
@@ -561,133 +432,78 @@ impl SemanticAnalyzer {
                 for arg in args {
                     self.analyze_expression(arg);
                 }
-                if let Expression::Ident(name, _) = callee.as_ref() {
+                if let Expression::Ident(callee_name, _) = callee.as_ref() {
                     if let Some(curr_fn) = &self.current_function {
-                        self.graph.add_call(curr_fn, name);
+                        self.graph.add_call(curr_fn, callee_name);
+                        if let Some(effects) = self.function_effects.get_mut(curr_fn) {
+                            if callee_name.contains("socket") || callee_name.contains("send") || callee_name.contains("recv") || callee_name.contains("http") || callee_name.contains("net") {
+                                effects.insert("network".to_string());
+                            }
+                            if callee_name.contains("print") || callee_name.contains("write") || callee_name.contains("read") {
+                                effects.insert("io".to_string());
+                            }
+                        }
                     }
                 }
                 Type::Void
             }
             Expression::FieldAccess { object, .. } => {
                 self.analyze_expression(object);
-                Type::I32
+                Type::I64
             }
             Expression::Index { array, index, .. } => {
                 self.analyze_expression(array);
                 self.analyze_expression(index);
-                Type::I32
+                Type::I64
             }
-            Expression::StructInit { name, fields, .. } => {
-                for (_, fval) in fields {
-                    self.analyze_expression(fval);
-                }
-                Type::Custom(name.clone())
+            Expression::Alloc { target_type, allocator, .. } => {
+                self.analyze_expression(allocator);
+                Type::Pointer(Box::new(target_type.clone()))
             }
-            Expression::EnumInit { enum_name, variant_name, payload, .. } => {
-                if let Some(p) = payload {
-                    self.analyze_expression(p);
-                }
-                Type::Custom(enum_name.clone().unwrap_or_else(|| variant_name.clone()))
-            }
-            Expression::Alloc { target_type, .. } => Type::Pointer(Box::new(target_type.clone())),
-            Expression::Promote { expr, .. } => self.analyze_expression(expr),
-            Expression::Catch { expr, .. } => self.analyze_expression(expr),
-            Expression::Match { expr, arms, .. } => {
-                let match_type = self.analyze_expression(expr);
-                for arm in arms {
-                    self.push_scope();
-                    if let Pattern::Variant { binding: Some(b), .. } = &arm.pattern {
-                        self.declare_var(b, Type::Custom("VariantPayload".into()), arm.span.line, false);
-                    } else if let Pattern::Ident(id) = &arm.pattern {
-                        self.declare_var(id, match_type.clone(), arm.span.line, false);
-                    }
-                    self.analyze_block(&arm.body);
-                    self.pop_scope();
-                }
-                Type::Void
-            }
-            Expression::Block(b) => {
-                self.analyze_block(b);
-                Type::Void
-            }
-            Expression::NameOf { .. } => Type::Str,
-            Expression::PathOf { .. } => Type::Str,
-            Expression::TypeOf { expr, .. } => {
-                self.analyze_expression(expr);
-                Type::Str
-            }
-            Expression::DocOf { .. } => Type::Str,
-            Expression::CodeOf { expr, .. } => {
-                self.analyze_expression(expr);
-                Type::Str
-            }
-            Expression::Dbg { expr, .. } => self.analyze_expression(expr),
-            Expression::AssertDebug { condition, .. } => {
-                self.analyze_expression(condition);
-                Type::Void
-            }
-            Expression::Translate { args, .. } => {
-                for (_, arg_expr) in args {
-                    self.analyze_expression(arg_expr);
-                }
-                Type::Str
-            }
-            Expression::FieldsOf { .. } => Type::Str,
-            Expression::SqlExpr { expr, .. } => {
-                self.analyze_expression(expr);
-                Type::Str
-            }
+            _ => Type::Void,
         }
     }
 
-    fn extract_symbols_from_expr(&self, expr: &Expression, out: &mut Vec<SymbolSource>) {
-        match expr {
-            Expression::Ident(name, span) => {
-                if let Some((ty, line_def, _)) = self.lookup_var(name) {
-                    out.push(SymbolSource {
-                        symbol: name.clone(),
-                        symbol_type: ty.to_string(),
-                        source: format!("{}:{} (param/var)", span.file, line_def),
-                    });
-                } else {
-                    out.push(SymbolSource {
-                        symbol: name.clone(),
-                        symbol_type: "unknown".to_string(),
-                        source: format!("{}:{}", span.file, span.line),
-                    });
+    fn verify_transitive_effects_and_purity(&mut self) {
+        // Propagate effects along call graph
+        let mut changed = true;
+        while changed {
+            changed = false;
+            let current_effects = self.function_effects.clone();
+            for (caller, callees) in self.graph.symbols.iter().map(|(k, v)| (k.clone(), v.callees.clone())) {
+                for callee in callees {
+                    if let Some(callee_effects) = current_effects.get(&callee) {
+                        if let Some(caller_effects) = self.function_effects.get_mut(&caller) {
+                            for eff in callee_effects {
+                                if caller_effects.insert(eff.clone()) {
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            Expression::Binary { left, right, .. } => {
-                self.extract_symbols_from_expr(left, out);
-                self.extract_symbols_from_expr(right, out);
-            }
-            Expression::Unary { expr, .. } => {
-                self.extract_symbols_from_expr(expr, out);
-            }
-            Expression::Call { callee, args, .. } => {
-                self.extract_symbols_from_expr(callee, out);
-                for arg in args {
-                    self.extract_symbols_from_expr(arg, out);
+        }
+
+        // Verify @pure contracts
+        for (func_name, (params, ret, is_pure)) in &self.function_signatures {
+            if *is_pure {
+                if let Some(effects) = self.function_effects.get(func_name) {
+                    let impure_effects: Vec<&String> = effects.iter().filter(|e| *e == "network" || *e == "io" || *e == "database" || *e == "filesystem").collect();
+                    if !impure_effects.is_empty() {
+                        if let Some(sym) = self.graph.symbols.get(func_name) {
+                            self.errors.push(DiagnosticError {
+                                code: "E0904".to_string(),
+                                message: format!("PurityViolation: function '{}' is marked @pure but transitively invokes impure operations: {:?}", func_name, impure_effects),
+                                line: sym.defined_at_line,
+                                col: 1,
+                                kind: "PurityViolationError".to_string(),
+                                repair_suggestion: Some("remove @pure directive or refactor to isolate side-effects".to_string()),
+                            });
+                        }
+                    }
                 }
             }
-            Expression::FieldAccess { object, .. } => {
-                self.extract_symbols_from_expr(object, out);
-            }
-            Expression::Index { array, index, .. } => {
-                self.extract_symbols_from_expr(array, out);
-                self.extract_symbols_from_expr(index, out);
-            }
-            Expression::StructInit { fields, .. } => {
-                for (_, fval) in fields {
-                    self.extract_symbols_from_expr(fval, out);
-                }
-            }
-            Expression::EnumInit { payload, .. } => {
-                if let Some(p) = payload {
-                    self.extract_symbols_from_expr(p, out);
-                }
-            }
-            _ => {}
         }
     }
 
@@ -695,17 +511,8 @@ impl SemanticAnalyzer {
         match expr {
             Expression::Alloc { .. } => true,
             Expression::Call { callee, .. } => {
-                let name = match callee.as_ref() {
-                    Expression::Ident(n, _) => Some(n.as_str()),
-                    Expression::FieldAccess { field, .. } => Some(field.as_str()),
-                    _ => None,
-                };
-                if let Some(n) = name {
-                    if n.starts_with("assert_") {
-                        false
-                    } else {
-                        n == "alloc" || n.starts_with("alloc_") || n == "malloc" || n.contains("heap_alloc") || n.starts_with("create_arena")
-                    }
+                if let Expression::Ident(name, _) = callee.as_ref() {
+                    name == "alloc" || name.contains("create")
                 } else {
                     false
                 }
@@ -714,3 +521,5 @@ impl SemanticAnalyzer {
         }
     }
 }
+
+

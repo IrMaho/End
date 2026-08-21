@@ -1,0 +1,11 @@
+// Test: Region Escape Analysis (E0903)
+pub st Node {
+    val: i64,
+}
+
+pub fn test_escape_violation() *Node {
+    region arena {
+        val n: *Node = alloc [1]Node
+        ret n // ERROR E0903: Reference to region-scoped memory escapes region boundary!
+    }
+}

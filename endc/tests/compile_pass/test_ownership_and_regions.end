@@ -1,0 +1,21 @@
+// Test: Valid Ownership & Region Scopes
+import "std/test/assert.end"
+
+pub st Point {
+    x: i64,
+    y: i64,
+}
+
+pub fn make_point(x: i64, y: i64) Point {
+    val p = Point { x: x, y: y }
+    ret p
+}
+
+@test
+pub fn test_valid_region() void {
+    region arena {
+        val pt = make_point(10, 20)
+        assert_eq_i64(pt.x, 10)
+        assert_eq_i64(pt.y, 20)
+    }
+}

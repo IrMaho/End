@@ -1,0 +1,10 @@
+// Test: Purity Contract Enforcement (E0904)
+pub fn impure_network_call() void {
+    socket(2, 1, 6)
+}
+
+@pure
+pub fn pure_math_calculation(x: i64) i64 {
+    impure_network_call() // ERROR E0904: pure function calls impure operation transitively
+    ret x * 2
+}

@@ -1,0 +1,10 @@
+// Test: Use-After-Move Detection (E0906)
+pub st Resource {
+    handle: i64,
+}
+
+pub fn test_move_violation() void {
+    val a = Resource { handle: 42 }
+    val b = a // Ownership transferred to b
+    val c = a // ERROR E0906: Use of moved value 'a'
+}
