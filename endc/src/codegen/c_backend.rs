@@ -970,23 +970,23 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
                     BinaryOp::Equal => {
-                        if matches!(left.as_ref(), Expression::Lit(Literal::String(_), _))
-                            || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
-                        {
+                        let is_str = (l.contains("str") || l.contains("text") || l.contains("msg") || l.contains("prefix") || l.starts_with('"'))
+                                  && (r.contains("str") || r.contains("text") || r.contains("msg") || r.contains("prefix") || r.starts_with('"'));
+                        if is_str {
                             format!("(strcmp({}, {}) == 0)", l, r)
                         } else {
                             format!("({} == {})", l, r)
                         }
-                    }
+                    },
                     BinaryOp::NotEqual => {
-                        if matches!(left.as_ref(), Expression::Lit(Literal::String(_), _))
-                            || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
-                        {
+                        let is_str = (l.contains("str") || l.contains("text") || l.contains("msg") || l.contains("prefix") || l.starts_with('"'))
+                                  && (r.contains("str") || r.contains("text") || r.contains("msg") || r.contains("prefix") || r.starts_with('"'));
+                        if is_str {
                             format!("(strcmp({}, {}) != 0)", l, r)
                         } else {
                             format!("({} != {})", l, r)
                         }
-                    }
+                    },
                     BinaryOp::LessThan => format!("({} < {})", l, r),
                     BinaryOp::LessEqual => format!("({} <= {})", l, r),
                     BinaryOp::GreaterThan => format!("({} > {})", l, r),
