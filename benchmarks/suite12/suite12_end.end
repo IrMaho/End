@@ -12,8 +12,8 @@
 pub fn get_time_ns() u64 {
     mut freq: i64 = 0
     mut counter: i64 = 0
-    QueryPerformanceFrequency(&freq)
-    QueryPerformanceCounter(&counter)
+    QueryPerformanceFrequency((&freq) as *void)
+    QueryPerformanceCounter((&counter) as *void)
     ret ((counter as u64) * 1000000000) / (freq as u64)
 }
 
@@ -200,10 +200,11 @@ pub fn bench_3_hft_engine() i64 {
         } else if side == 0 {
             mut p: i32 = price
             while p >= 0 && qty > 0 {
-                if sell_depth[p] > 0 {
+                val s_p: i32 = sell_depth[p]
+                if s_p > 0 {
                     mut fill: i32 = qty
-                    if sell_depth[p] < fill { fill = sell_depth[p] }
-                    sell_depth[p] = sell_depth[p] - fill
+                    if s_p < fill { fill = s_p }
+                    sell_depth[p] = s_p - fill
                     qty = qty - fill
                     total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
                 }
@@ -213,10 +214,11 @@ pub fn bench_3_hft_engine() i64 {
         } else {
             mut p: i32 = price
             while p < 100 && qty > 0 {
-                if buy_depth[p] > 0 {
+                val b_p: i32 = buy_depth[p]
+                if b_p > 0 {
                     mut fill: i32 = qty
-                    if buy_depth[p] < fill { fill = buy_depth[p] }
-                    buy_depth[p] = buy_depth[p] - fill
+                    if b_p < fill { fill = b_p }
+                    buy_depth[p] = b_p - fill
                     qty = qty - fill
                     total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
                 }
@@ -233,6 +235,7 @@ pub fn bench_3_hft_engine() i64 {
 // -----------------------------------------------------------------------------
 // 4. SHA-256 (500,000 Blocks = 32 MB)
 // -----------------------------------------------------------------------------
+@inline
 pub fn rotr(x: u32, n: u32) u32 { ret (x >> n) | (x << (32 - n)) }
 
 pub fn bench_4_sha256() i64 {
@@ -274,10 +277,10 @@ pub fn bench_4_sha256() i64 {
 
         for i in 64 {
             val s1_rot: u32 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
-            val ch: u32 = (e & f) ^ ((~e) & g)
+            val ch: u32 = g ^ (e & (f ^ g))
             val temp1: u32 = h + s1_rot + ch + k_table[i] + w[i]
             val s0_rot: u32 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
-            val maj: u32 = (a & b) ^ (a & c) ^ (b & c)
+            val maj: u32 = (a & b) | (c & (a ^ b))
             val temp2: u32 = s0_rot + maj
 
             h = g; g = f; f = e; e = d + temp1
@@ -604,15 +607,17 @@ pub fn bench_11_monte_carlo() i64 {
     val drift: f64 = (r - 0.5 * sigma * sigma) * t_time
     val vol: f64 = sigma * sqrt(t_time)
     val discount: f64 = exp(-r * t_time)
+    val inv_scale: f64 = 1.0 / 9007199254740992.0
+    val two_pi: f64 = 6.28318530717958647692
 
     mut prng: u64 = 0xFEEDFACECAFE1234
     mut total_payoff: f64 = 0.0
 
     for pair in 1000000 {
-        val u1: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) / 9007199254740992.0
-        val u2: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) / 9007199254740992.0
+        val u1: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) * inv_scale
+        val u2: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) * inv_scale
         val radius: f64 = sqrt(-2.0 * log(u1))
-        val theta: f64 = 2.0 * 3.14159265358979323846 * u2
+        val theta: f64 = two_pi * u2
         val z1: f64 = radius * cos(theta)
         val z2: f64 = radius * sin(theta)
 

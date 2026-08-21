@@ -596,26 +596,76 @@ fn main() {
 
             let mut compiled = false;
 
-            // Execute Zig CC for cross-platform bare-metal compilation
-            let zig_args_refs: Vec<&str> = zig_args.iter().map(|s| s.as_str()).collect();
-            if let Ok(status) = Command::new("zig").args(&zig_args_refs).status() {
-                if status.success() {
-                    compiled = true;
-                    let target_name = target.as_deref().unwrap_or("Host Native");
-                    if is_library_mode {
-                        println!(
-                            "{} Shared Library / DLL compiled for [{}] at {:?}",
-                            "👑".green().bold(),
-                            target_name.cyan().bold(),
-                            bin_path
-                        );
-                    } else {
-                        println!(
-                            "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
-                            "👑".green().bold(),
-                            target_name.cyan().bold(),
-                            bin_path
-                        );
+            // 1. Try native GCC with whole-program LTO for peak bare-metal performance
+            if target.is_none() {
+                let mut gcc_args = vec![
+                    "-O3".to_string(),
+                    "-march=native".to_string(),
+                    "-flto".to_string(),
+                    "-funroll-loops".to_string(),
+                    "-fomit-frame-pointer".to_string(),
+                    "-finline-functions".to_string(),
+                    "-Wno-incompatible-pointer-types".to_string(),
+                    "-fno-math-errno".to_string(),
+                    "-ffast-math".to_string(),
+                    c_file_path.to_str().unwrap().to_string(),
+                ];
+                if is_library_mode {
+                    gcc_args.push("-shared".to_string());
+                    gcc_args.push("-fPIC".to_string());
+                }
+                if strip {
+                    gcc_args.push("-s".to_string());
+                }
+                gcc_args.push("-o".to_string());
+                gcc_args.push(bin_path.to_str().unwrap().to_string());
+
+                let gcc_refs: Vec<&str> = gcc_args.iter().map(|s| s.as_str()).collect();
+                if let Ok(status) = Command::new("gcc").args(&gcc_refs).status() {
+                    if status.success() {
+                        compiled = true;
+                        let target_name = "Host Native (GCC LTO)";
+                        if is_library_mode {
+                            println!(
+                                "{} Shared Library / DLL compiled for [{}] at {:?}",
+                                "👑".green().bold(),
+                                target_name.cyan().bold(),
+                                bin_path
+                            );
+                        } else {
+                            println!(
+                                "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
+                                "👑".green().bold(),
+                                target_name.cyan().bold(),
+                                bin_path
+                            );
+                        }
+                    }
+                }
+            }
+
+            // 2. Fallback to Zig CC for cross-platform bare-metal compilation
+            if !compiled {
+                let zig_args_refs: Vec<&str> = zig_args.iter().map(|s| s.as_str()).collect();
+                if let Ok(status) = Command::new("zig").args(&zig_args_refs).status() {
+                    if status.success() {
+                        compiled = true;
+                        let target_name = target.as_deref().unwrap_or("Host Native");
+                        if is_library_mode {
+                            println!(
+                                "{} Shared Library / DLL compiled for [{}] at {:?}",
+                                "👑".green().bold(),
+                                target_name.cyan().bold(),
+                                bin_path
+                            );
+                        } else {
+                            println!(
+                                "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
+                                "👑".green().bold(),
+                                target_name.cyan().bold(),
+                                bin_path
+                            );
+                        }
                     }
                 }
             }

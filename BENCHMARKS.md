@@ -30,19 +30,19 @@
 
 | Benchmark Challenge | 👑 **End (C11)** | ⚡ **Zig (0.16.0)** | ⚡ **Rust (1.89.0)** | ⚡ **C (GCC 15.2)** | ⚡ **Go (1.25.1)** | Checksum Verification |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. 3D SDF Raymarcher (250K Rays)** | **52.67 ms** | 53.45 ms | 55.91 ms | 45.21 ms | 29.81 ms 🥇 | `14694885` ✅ |
-| **2. Binary Trees (Depth 16 Dynamic)** | **83.12 ms** 🥇 | 317.76 ms | 478.54 ms | 429.56 ms | 356.13 ms | `407713` ✅ |
-| **3. HFT Limit Order Engine (1M Orders)** | **33.43 ms** | 21.51 ms 🥇 | 21.77 ms | 25.39 ms | 24.25 ms | `552829538` ✅ |
-| **4. SHA-256 Crypto Hashing (500K Blocks)** | **86.92 ms** | 85.85 ms | 89.00 ms | 85.74 ms 🥇 | 92.70 ms | `-4721506799343634759` ✅ |
-| **5. N-Body Gravity Orbit (1M Pairwise)** | **1736.10 ms** | 1967.69 ms | 1955.38 ms | 1640.28 ms 🥇 | 2820.77 ms | `1590160416` ✅ |
-| **6. SPSC Ring Buffer Queue (10M Items)** | **0.00 ms** 🥇 | 2.33 ms | 1.42 ms | 0.00 ms 🥇 | 7.63 ms | `1550000015000000` ✅ |
-| **7. DNA Levenshtein Matrix (1M Cells)** | **2662.35 ms** | 1911.55 ms | 2203.36 ms | 1088.14 ms 🥇 | 2176.02 ms | `525912` ✅ |
-| **8. JSON Microservice Serializer (100K)** | **2.04 ms** 🥇 | 7.56 ms | 19.15 ms | 50.28 ms | 36.89 ms | `5588438541400559045` ✅ |
-| **9. FSM Lexer Stream (10M Chars)** | **37.11 ms** | 10.34 ms | 13.32 ms | 7.73 ms 🥇 | 16.29 ms | `-6471218147204355511` ✅ |
-| **10. GEMM Matrix Multiplication (512x512)** | **15.46 ms** | 58.74 ms | 36.78 ms | 10.62 ms 🥇 | 67.95 ms | `6422836` ✅ |
-| **11. Monte Carlo Black-Scholes (2M Paths)** | **30.85 ms** | 28.29 ms 🥇 | 34.67 ms | 43.08 ms | 43.64 ms | `10440247` ✅ |
-| **12. Super-Scalar ALU Reduction (10M)** | **107.74 ms** 🥇 | 736.54 ms | 127.38 ms | 595.80 ms | 725.15 ms | `3370198876750320971` ✅ |
-| **📦 Binary Footprint (Executable Size)** | 🥇 **38.5 KB** | 834.0 KB | 184.5 KB | 76.9 KB | 1592.5 KB *(1.6MB)* | Smallest native binary |
+| **1. 3D SDF Raymarcher (250K Rays)** | **42.55 ms** | 56.50 ms | 56.97 ms | 51.34 ms | 33.54 ms 🥇 | `14694947` ✅ |
+| **2. Binary Trees (Depth 16 Dynamic)** | **40.97 ms** 🥇 | 339.94 ms | 580.61 ms | 554.73 ms | 447.87 ms | `407713` ✅ |
+| **3. HFT Limit Order Engine (1M Orders)** | **27.13 ms** | 25.74 ms | 24.77 ms 🥇 | 29.19 ms | 29.53 ms | `552829538` ✅ |
+| **4. SHA-256 Crypto Hashing (500K Blocks)** | **95.33 ms** | 94.99 ms 🥇 | 102.51 ms | 97.05 ms | 116.21 ms | `-4721506799343634759` ✅ |
+| **5. N-Body Gravity Orbit (1M Pairwise)** | **700.44 ms** 🥇 | 2221.10 ms | 2287.63 ms | 1878.68 ms | 3275.29 ms | `1645735788` ✅ |
+| **6. SPSC Ring Buffer Queue (10M Items)** | **3.80 ms** | 2.60 ms | 1.53 ms | 0.00 ms 🥇 | 8.73 ms | `1550000015000000` ✅ |
+| **7. DNA Levenshtein Matrix (1M Cells)** | **1047.25 ms** 🥇 | 2167.75 ms | 2236.03 ms | 1201.59 ms | 2196.40 ms | `525912` ✅ |
+| **8. JSON Microservice Serializer (100K)** | **2.12 ms** 🥇 | 8.03 ms | 22.53 ms | 54.81 ms | 41.33 ms | `5588438541400559045` ✅ |
+| **9. FSM Lexer Stream (10M Chars)** | **9.87 ms** | 11.81 ms | 13.42 ms | 8.88 ms 🥇 | 18.28 ms | `-6471218147204355511` ✅ |
+| **10. GEMM Matrix Multiplication (512x512)** | **10.57 ms** 🥇 | 63.98 ms | 37.00 ms | 10.88 ms | 83.10 ms | `6422836` ✅ |
+| **11. Monte Carlo Black-Scholes (2M Paths)** | **41.62 ms** | 29.86 ms 🥇 | 36.67 ms | 44.02 ms | 46.24 ms | `10440246` ✅ |
+| **12. Super-Scalar ALU Reduction (10M)** | **658.63 ms** | 797.74 ms | 148.01 ms 🥇 | 638.15 ms | 766.68 ms | `3370198876750320971` ✅ |
+| **📦 Binary Footprint (Executable Size)** | 🥇 **40.0 KB** | 835.0 KB | 193.0 KB | 77.4 KB | 1592.5 KB *(1.6MB)* | Smallest native binary |
 
 ---
 
