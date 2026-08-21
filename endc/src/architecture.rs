@@ -1,4 +1,3 @@
-use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -26,6 +25,14 @@ pub struct RuleInvariant {
     pub pure_math_only: Option<bool>,
     #[serde(default)]
     pub max_latency_ns: Option<u64>,
+    #[serde(default)]
+    pub max_file_lines: Option<usize>,
+    #[serde(default)]
+    pub max_cyclomatic_complexity: Option<usize>,
+    #[serde(default)]
+    pub forbidden_imports: Vec<String>,
+    #[serde(default)]
+    pub allowed_dependencies: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,12 +97,14 @@ impl ArchitectureEngine {
                         allowed_effects: None,
                         pure_math_only: None,
                         max_latency_ns: None,
+                        ..Default::default()
                     });
                     config.invariants.entry("**/controllers/**".to_string()).or_insert_with(|| RuleInvariant {
                         cannot_import: vec!["std/db/**".to_string()],
                         allowed_effects: None,
                         pure_math_only: None,
                         max_latency_ns: None,
+                        ..Default::default()
                     });
                 }
                 "game_ecs" | "ecs" => {
@@ -104,6 +113,7 @@ impl ArchitectureEngine {
                         allowed_effects: None,
                         pure_math_only: None,
                         max_latency_ns: None,
+                        ..Default::default()
                     });
                 }
                 "event_driven_microservice" => {
@@ -112,6 +122,7 @@ impl ArchitectureEngine {
                         allowed_effects: None,
                         pure_math_only: None,
                         max_latency_ns: None,
+                        ..Default::default()
                     });
                 }
                 _ => {}
@@ -204,7 +215,7 @@ impl ArchitectureEngine {
         }
     }
 
-    pub fn scaffold_feature(feature_name: &str, preset: &str, base_dir: &Path) -> Result<Vec<PathBuf>, String> {
+    pub fn scaffold_feature(feature_name: &str, _preset: &str, base_dir: &Path) -> Result<Vec<PathBuf>, String> {
         let mut created = Vec::new();
         let feat_dir = base_dir.join("src/features").join(feature_name);
 

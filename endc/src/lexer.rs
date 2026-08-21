@@ -118,6 +118,7 @@ pub struct Token {
     pub span: Span,
 }
 
+#[allow(dead_code)]
 pub struct Lexer<'a> {
     pub source: &'a str,
     pub chars: Vec<char>,

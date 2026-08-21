@@ -3,6 +3,7 @@ use crate::semantic::graph::*;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum OwnershipState {
     Uninitialized,
     Owned,

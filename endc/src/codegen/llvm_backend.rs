@@ -46,7 +46,27 @@ impl LlvmBackend {
         // Standard LLVM Declarations
         writeln!(self.output, "declare i32 @printf(i8*, ...)").unwrap();
         writeln!(self.output, "declare i8* @malloc(i64)").unwrap();
-        writeln!(self.output, "declare void @free(i8*)\n").unwrap();
+        writeln!(self.output, "declare void @free(i8*)").unwrap();
+        writeln!(self.output, "declare i32 @strcmp(i8*, i8*)").unwrap();
+        writeln!(self.output, "declare i64 @end_net_tcp_listen(i32, i32)").unwrap();
+        writeln!(self.output, "declare i64 @end_net_tcp_accept(i64)").unwrap();
+        writeln!(self.output, "declare i64 @end_net_tcp_connect(i8*, i32)").unwrap();
+        writeln!(self.output, "declare i64 @end_net_tcp_send(i64, i8*, i64)").unwrap();
+        writeln!(self.output, "declare i8* @end_net_tcp_recv(i64, i32)").unwrap();
+        writeln!(self.output, "declare void @end_net_tcp_close(i64)").unwrap();
+        writeln!(self.output, "declare i8* @end_crypto_sha256(i8*)").unwrap();
+        writeln!(self.output, "declare i8* @end_crypto_hmac_sha256(i8*, i8*)").unwrap();
+        writeln!(self.output, "declare i8* @end_base64_encode(i8*, i32)").unwrap();
+        writeln!(self.output, "declare i8* @end_base64_decode(i8*)").unwrap();
+        writeln!(self.output, "declare i8* @end_json_get_string(i8*, i8*)").unwrap();
+        writeln!(self.output, "declare i64 @end_json_get_int(i8*, i8*)").unwrap();
+        writeln!(self.output, "declare i64 @end_json_get_bool(i8*, i8*)").unwrap();
+        writeln!(self.output, "declare i64 @end_tensor_create(i32, i32)").unwrap();
+        writeln!(self.output, "declare i64 @end_tensor_matmul(i64, i64)").unwrap();
+        writeln!(self.output, "declare i64 @end_ui_canvas_create(i32, i32)").unwrap();
+        writeln!(self.output, "declare void @end_ui_canvas_clear(i64, i32)").unwrap();
+        writeln!(self.output, "declare void @end_ui_canvas_draw_rect(i64, i32, i32, i32, i32, i32)").unwrap();
+        writeln!(self.output, "declare i32 @end_ui_canvas_get_pixel(i64, i32, i32)\n").unwrap();
 
         // Struct Definitions
         for st in &module.structs {
@@ -125,7 +145,7 @@ impl LlvmBackend {
                 false
             }
             Statement::Assignment { target, value, .. } => {
-                let (val, val_ty) = self.generate_expression(value);
+                let (val, _val_ty) = self.generate_expression(value);
                 if let Expression::Ident(name, _) = target {
                     if let Some((ty, ptr_reg)) = self.variables.get(name) {
                         writeln!(self.output, "  store {} {}, {}* {}", ty, val, ty, ptr_reg).unwrap();
@@ -273,7 +293,7 @@ impl LlvmBackend {
                 (tmp, "i64".to_string())
             }
             Expression::NameOf { target, .. } => (format!("\"{}\"", target), "i8*".to_string()),
-            Expression::TypeOf { expr, .. } => ("\"i64\"".to_string(), "i8*".to_string()),
+            Expression::TypeOf { expr: _, .. } => ("\"i64\"".to_string(), "i8*".to_string()),
             _ => ("0".to_string(), "i64".to_string()),
         }
     }

@@ -2,6 +2,7 @@ use crate::ast::*;
 use crate::lexer::{Token, TokenKind};
 use std::collections::HashSet;
 
+#[allow(dead_code)]
 pub struct Parser {
     tokens: Vec<Token>,
     cursor: usize,
@@ -68,6 +69,37 @@ impl Parser {
 
     pub fn current_span(&self) -> Span {
         self.peek().span.clone()
+    }
+
+    pub fn parse_identifier_or_keyword(&mut self) -> Result<String, String> {
+        let tok = self.advance();
+        match tok.kind {
+            TokenKind::Ident(n) => Ok(n),
+            TokenKind::Struct => Ok("st".to_string()),
+            TokenKind::Val => Ok("val".to_string()),
+            TokenKind::Mut => Ok("mut".to_string()),
+            TokenKind::Target => Ok("target".to_string()),
+            TokenKind::Match => Ok("match".to_string()),
+            TokenKind::Fn => Ok("fn".to_string()),
+            TokenKind::In => Ok("in".to_string()),
+            TokenKind::Asm => Ok("asm".to_string()),
+            TokenKind::Region => Ok("region".to_string()),
+            TokenKind::Spawn => Ok("spawn".to_string()),
+            TokenKind::Defer => Ok("defer".to_string()),
+            TokenKind::Import => Ok("import".to_string()),
+            TokenKind::Pub => Ok("pub".to_string()),
+            TokenKind::As => Ok("as".to_string()),
+            TokenKind::Alloc => Ok("alloc".to_string()),
+            TokenKind::Catch => Ok("catch".to_string()),
+            TokenKind::Skip => Ok("skip".to_string()),
+            TokenKind::Trait => Ok("trait".to_string()),
+            TokenKind::Impl => Ok("impl".to_string()),
+            TokenKind::Async => Ok("async".to_string()),
+            TokenKind::Await => Ok("await".to_string()),
+            TokenKind::Mod => Ok("mod".to_string()),
+            TokenKind::With => Ok("with".to_string()),
+            other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
+        }
     }
 
     pub fn parse_module(&mut self, module_name: &str) -> Result<Module, String> {
@@ -497,19 +529,7 @@ impl Parser {
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             let field_span = self.current_span();
             let is_field_pub = self.match_token(&TokenKind::Pub);
-            let field_name = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                TokenKind::Struct => "st".to_string(),
-                TokenKind::Val => "val".to_string(),
-                TokenKind::Mut => "mut".to_string(),
-                TokenKind::Target => "target".to_string(),
-                TokenKind::Match => "match".to_string(),
-                TokenKind::Fn => "fn".to_string(),
-                TokenKind::In => "in".to_string(),
-                TokenKind::Asm => "asm".to_string(),
-                TokenKind::Region => "region".to_string(),
-                other => return Err(format!("Expected field name, found {:?}", other)),
-            };
+            let field_name = self.parse_identifier_or_keyword()?;
 
             self.expect(TokenKind::Colon)?;
             let field_type = self.parse_type()?;
@@ -573,19 +593,7 @@ impl Parser {
             let p_span = self.current_span();
             let is_ref = self.match_token(&TokenKind::Ampersand);
             let is_mut = self.match_token(&TokenKind::Mut);
-            let mut param_name = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                TokenKind::Struct => "st".to_string(),
-                TokenKind::Val => "val".to_string(),
-                TokenKind::Mut => "mut".to_string(),
-                TokenKind::Target => "target".to_string(),
-                TokenKind::Match => "match".to_string(),
-                TokenKind::Fn => "fn".to_string(),
-                TokenKind::In => "in".to_string(),
-                TokenKind::Asm => "asm".to_string(),
-                TokenKind::Region => "region".to_string(),
-                other => return Err(format!("Expected parameter name, found {:?}", other)),
-            };
+            let mut param_name = self.parse_identifier_or_keyword()?;
             if is_ref {
                 param_name = format!("&{}", param_name);
             }

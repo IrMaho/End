@@ -1,6 +1,7 @@
 use colored::*;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Diagnostic {
     pub code: String,
     pub message: String,
@@ -12,6 +13,7 @@ pub struct Diagnostic {
     pub suggestion: Option<(String, String)>, // (old_snippet, new_snippet)
 }
 
+#[allow(dead_code)]
 impl Diagnostic {
     pub fn error(code: &str, message: &str, filename: &str, line: usize, column: usize) -> Self {
         Self {

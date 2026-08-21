@@ -1,4 +1,3 @@
-use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::parser::Parser as EndParser;
 use crate::semantic::SemanticAnalyzer;
@@ -148,6 +147,34 @@ impl LanguageServer {
                     ("typeof", "fn typeof(expr) str", "Introspective type string query"),
                     ("db_open", "fn db_open(path: str) DbConnection", "Open embedded high-speed database"),
                     ("tcp_listener_bind", "fn tcp_listener_bind(port: i32) TcpListener", "Bind native TCP server"),
+                    ("tcp_listener_set_nonblocking", "fn tcp_listener_set_nonblocking(listener: TcpListener, nonblock: bool) bool", "Set socket non-blocking mode"),
+                    ("event_loop_create", "fn event_loop_create() EventLoop", "Create async non-blocking event loop"),
+                    ("event_loop_poll", "fn event_loop_poll(ev_loop: EventLoop, timeout_ms: i32) i32", "Poll ready socket descriptors"),
+                    ("mpsc_create", "fn mpsc_create(capacity: i32) MpscQueue", "Create thread-safe MPSC ring buffer channel"),
+                    ("mpsc_send", "fn mpsc_send(chan: MpscQueue, item: str) bool", "Send item to MPSC channel"),
+                    ("mpsc_recv", "fn mpsc_recv(chan: MpscQueue) str", "Receive item from MPSC channel"),
+                    ("json_parse", "fn json_parse(raw: str) JsonObject", "Parse RFC 8259 JSON string"),
+                    ("json_get_string", "fn json_get_string(json: str, key: str) str", "Query string key from JSON"),
+                    ("json_get_int", "fn json_get_int(json: str, key: str) i64", "Query int key from JSON"),
+                    ("sha256_hash", "fn sha256_hash(data: str) str", "Compute cryptographic SHA-256 hex digest"),
+                    ("hmac_sha256_sign", "fn hmac_sha256_sign(key: str, data: str) str", "Compute HMAC-SHA256 signature"),
+                    ("base64_encode", "fn base64_encode(data: str) str", "Encode data to standard Base64"),
+                    ("base64url_encode", "fn base64url_encode(data: str) str", "Encode data to URL-safe Base64"),
+                    ("jwt_sign_hs256", "fn jwt_sign_hs256(sub: str, exp: i64, secret: str) str", "Generate authentic HS256 JWT Token"),
+                    ("jwt_verify", "fn jwt_verify(token: str, secret: str) JwtValidationResult", "Verify and inspect JWT Token"),
+                    ("tls_connect", "fn tls_connect(stream: TcpStream, host: str) TlsSession", "Establish native TLS 1.3 Client session"),
+                    ("tls_accept", "fn tls_accept(stream: TcpStream, cert: str, key: str) TlsSession", "Accept native TLS 1.3 Server session"),
+                    ("acme_create_order", "fn acme_create_order(domain: str, tok: str, thumb: str) AcmeCertificateOrder", "Create automated ACME certificate order"),
+                    ("tensor_create", "fn tensor_create(rows: i32, cols: i32) Tensor", "Allocate hardware-accelerated 2D Tensor"),
+                    ("tensor_matmul", "fn tensor_matmul(a: Tensor, b: Tensor) Tensor", "SIMD cache-optimized matrix multiplication"),
+                    ("tensor_relu", "fn tensor_relu(t: Tensor) void", "In-place ReLU activation function"),
+                    ("gguf_parse_header", "fn gguf_parse_header(magic: i64, ver: i32, tensors: i64, kv: i64) GgufHeader", "Parse GGUF model header"),
+                    ("llm_format_request_json", "fn llm_format_request_json(model: str, prompt: str, tokens: i32, stream: bool) str", "Format streaming LLM JSON payload"),
+                    ("canvas_create", "fn canvas_create(width: i32, height: i32) Canvas", "Create 120 FPS direct canvas compositor"),
+                    ("canvas_draw_rect", "fn canvas_draw_rect(c: Canvas, r: Rect, col: Color) void", "Render filled rectangle on canvas"),
+                    ("canvas_draw_circle", "fn canvas_draw_circle(c: Canvas, cx: i32, cy: i32, radius: i32, col: Color) void", "Render anti-aliased circle on canvas"),
+                    ("gpu_create_buffer", "fn gpu_create_buffer(size_bytes: i64) GpuBuffer", "Allocate Vulkan/DX12 GPU buffer"),
+                    ("gpu_dispatch_compute", "fn gpu_dispatch_compute(pipeline: ComputePipeline, x: i32, y: i32, z: i32) i64", "Dispatch GPU compute workgroups"),
                     ("hyper_app_create", "fn hyper_app_create(name: str, ver: str) HyperApp", "Initialize EndHyper Web App"),
                 ];
 

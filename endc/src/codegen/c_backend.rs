@@ -1192,7 +1192,6 @@ impl CBackend {
         // Function Bodies
         // First pass: generate morphic concrete specializations
         let mut morphic_templates: Vec<FunctionDef> = Vec::new();
-        let mut morphic_calls: Vec<(String, String, String)> = Vec::new(); // (call_name, morphic_var, concrete_val)
         
         for f in &module.functions {
             if f.morphic_param.is_some() {
@@ -1358,7 +1357,7 @@ impl CBackend {
                             let mut inherited_fn = pf.clone();
                             inherited_fn.name = format!("{}_{}", m.name, pf.name);
                             let parent_fn_call = format!("{}_{}", parent_name, pf.name);
-                            let args_call = pf.params.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ");
+                            let _args_call = pf.params.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ");
                             inherited_fn.body = Block {
                                 statements: vec![
                                     Statement::Return {
@@ -1804,7 +1803,7 @@ Statement::Spawn { call, .. } => {
             Expression::Ident(name, _) => self.var_types.get(name).cloned().unwrap_or(Type::Void),
             Expression::Call { .. } => Type::Void,
             Expression::FieldAccess { .. } => Type::Void,
-            Expression::Binary { op, left, right, .. } => {
+            Expression::Binary { op, left, right: _, .. } => {
                 let l_ty = self.infer_type(left);
                 if matches!(op, BinaryOp::Add) && l_ty == Type::Str { Type::Str } else { l_ty }
             }

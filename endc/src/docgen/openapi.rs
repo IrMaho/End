@@ -1,6 +1,5 @@
-use super::passport::{ProjectPassport, ApiEndpointPassport, StructPassport};
+use super::passport::ProjectPassport;
 use serde_json::{json, Value};
-use std::collections::HashMap;
 
 pub struct OpenApiGenerator;
 

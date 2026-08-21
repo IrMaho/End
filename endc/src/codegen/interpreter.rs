@@ -2,6 +2,7 @@ use crate::ast::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum Value {
     Void,
     Int(i64),
