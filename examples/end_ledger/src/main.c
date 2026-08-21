@@ -465,12 +465,19 @@ static inline int32_t run_accounting_simulation(void) {
     #line 298 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
     end_println("==================================================================");
     #line 299 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
+    end_println("");
+    #line 300 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
+    end_println("👉 Press ENTER to close this window or launch GUI dashboard...");
+    #line 301 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
+    getchar();
+
+    #line 304 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
     return 0;
 }
 
-#line 302 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
+#line 307 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
 int main(void) {
-    #line 303 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
+    #line 308 "C:/Users/ASUS/Desktop/flutter_project/end/examples/end_ledger/src/main.end"
     return run_accounting_simulation();
     return 0;
 }

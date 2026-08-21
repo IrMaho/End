@@ -296,6 +296,11 @@ pub fn run_accounting_simulation() i32 {
     println("==================================================================")
     println("🎉 ENDLEDGER AUDIT PASSED 100% WITH ZERO FLOATING POINT DRIFT!")
     println("==================================================================")
+    println("")
+    println("👉 Press ENTER to close this window or launch GUI dashboard...")
+    inline_c {
+        "getchar();"
+    }
     ret 0
 }
 
