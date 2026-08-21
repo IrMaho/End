@@ -274,7 +274,8 @@ static inline __attribute__((always_inline)) Request process_request(uint64_t id
     #line 9 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
     uint64_t hash = 17;
     #line 10 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-    #pragma GCC unroll 8
+    #pragma unroll
+    #pragma GCC ivdep
     for (int64_t j = 0; j < 50; j++) {
         #line 11 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
         hash = (((hash * 31) + id) + j);
@@ -298,18 +299,35 @@ int main(void) {
     EndArena* region_bench_scope = end_arena_create(512 * 1024);
     {
         #line 29 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-        #pragma GCC unroll 8
-        for (int64_t i = 0; i < iterations; i++) {
-            #line 30 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-            __auto_type req = process_request(i, 256);
-            #line 31 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
-            total_checksum = (total_checksum + req.checksum);
+        int64_t sum0 = 0;
+        #line 30 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+        int64_t sum1 = 0;
+        #line 31 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+        int64_t sum2 = 0;
+        #line 32 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+        int64_t sum3 = 0;
+        #line 34 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+        #pragma unroll
+        #pragma GCC ivdep
+        for (int64_t i = 0; i < 250000; i++) {
+            #line 35 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+            uint64_t base = (((uint64_t)(i)) * 4);
+            #line 36 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+            sum0 = (sum0 + process_request(base, 256).checksum);
+            #line 37 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+            sum1 = (sum1 + process_request((base + 1), 256).checksum);
+            #line 38 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+            sum2 = (sum2 + process_request((base + 2), 256).checksum);
+            #line 39 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+            sum3 = (sum3 + process_request((base + 3), 256).checksum);
         }
+        #line 41 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+        total_checksum = (((sum0 + sum1) + sum2) + sum3);
     }
     end_arena_destroy(region_bench_scope);
-    #line 35 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+    #line 44 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
     end_println("End Benchmark Finished. Total Checksum:");
-    #line 36 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
+    #line 45 "C:/Users/ASUS/Desktop/flutter_project/end/benchmark/bench_end.end"
     end_println(total_checksum);
     return 0;
 }

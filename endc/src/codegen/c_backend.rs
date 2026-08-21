@@ -682,7 +682,8 @@ impl CBackend {
             } => {
                 let iter_str = self.gen_expression(iterable);
                 self.output.push_str(&format!(
-                    "{}#pragma GCC unroll 8\n",
+                    "{}#pragma unroll\n{}#pragma GCC ivdep\n",
+                    self.indent(),
                     self.indent()
                 ));
                 self.output.push_str(&format!(

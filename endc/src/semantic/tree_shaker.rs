@@ -142,10 +142,22 @@ impl TreeShaker {
                             Self::visit_function_body(called_fn, reachable_fn, reachable_st, module);
                         }
                     }
+                } else {
+                    Self::visit_expression(callee, reachable_fn, reachable_st, module);
                 }
                 for a in args {
                     Self::visit_expression(a, reachable_fn, reachable_st, module);
                 }
+            }
+            Expression::FieldAccess { object, .. } => {
+                Self::visit_expression(object, reachable_fn, reachable_st, module);
+            }
+            Expression::Index { array, index, .. } => {
+                Self::visit_expression(array, reachable_fn, reachable_st, module);
+                Self::visit_expression(index, reachable_fn, reachable_st, module);
+            }
+            Expression::Cast { expr, .. } => {
+                Self::visit_expression(expr, reachable_fn, reachable_st, module);
             }
             Expression::Binary { left, right, .. } => {
                 Self::visit_expression(left, reachable_fn, reachable_st, module);
@@ -159,6 +171,17 @@ impl TreeShaker {
                 for (_, fv) in fields {
                     Self::visit_expression(fv, reachable_fn, reachable_st, module);
                 }
+            }
+            Expression::EnumInit { payload, .. } => {
+                if let Some(p) = payload {
+                    Self::visit_expression(p, reachable_fn, reachable_st, module);
+                }
+            }
+            Expression::Alloc { allocator, .. } => {
+                Self::visit_expression(allocator, reachable_fn, reachable_st, module);
+            }
+            Expression::Promote { expr, .. } => {
+                Self::visit_expression(expr, reachable_fn, reachable_st, module);
             }
             _ => {}
         }

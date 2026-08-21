@@ -6,11 +6,7 @@ st Request {
 }
 
 fn process_request(id: u64, size: i32) Request {
-    mut hash: u64 = 17
-    for j in 50 {
-        hash = (hash * 31) + id + j
-    }
-
+    val hash: u64 = (id * 15888297662290895648) + 3596094924569029098
     val req = Request {
         id: id,
         payload_size: size,
