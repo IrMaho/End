@@ -535,6 +535,10 @@ impl CBackend {
         ));
 
         self.indent_level += 1;
+        self.var_types.clear();
+        for p in &func.params {
+            self.var_types.insert(p.name.clone(), p.param_type.clone());
+        }
         for stmt in &func.body.statements {
             self.gen_statement(stmt);
         }

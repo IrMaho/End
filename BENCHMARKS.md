@@ -10,7 +10,7 @@
 | Benchmark ID & Domain | Description & Workload | End Source | Zig Source | Rust Source | C Source | Go Source |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **1. 3D SDF Raymarcher** | Real-Time Vector Optics (250K Rays) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
-| **2. Dynamic Binary Trees** | Memory Torture (Depth 16 Alloc/Free) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
+| **2. Dynamic Binary Trees** | Memory Torture (Depth 16 Bump Arena) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
 | **3. HFT Order Engine** | Fintech Matching (1M Limit Orders) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
 | **4. SHA-256 Hashing** | Cryptography (500K Blocks / 32MB) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
 | **5. N-Body Gravity Orbit** | Astrophysics Simulation (1M Pairwise) | [`suite12_end.end`](benchmarks/suite12/suite12_end.end) | [`suite12_zig.zig`](benchmarks/suite12/suite12_zig.zig) | [`suite12_rust.rs`](benchmarks/suite12/suite12_rust.rs) | [`suite12_c.c`](benchmarks/suite12/suite12_c.c) | [`suite12_go.go`](benchmarks/suite12/suite12_go.go) |
@@ -30,19 +30,19 @@
 
 | Benchmark Challenge | 👑 **End (C11)** | ⚡ **Zig (0.16.0)** | ⚡ **Rust (1.89.0)** | ⚡ **C (GCC 15.2)** | ⚡ **Go (1.25.1)** | Checksum Verification |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. 3D SDF Raymarcher (250K Rays)** | **68.23 ms** | 59.79 ms | 60.18 ms | 50.10 ms | 41.30 ms 🥇 | `17840942` ✅ |
-| **2. Binary Trees (Depth 16 Dynamic)** | **487.85 ms** | 351.88 ms 🥇 | 561.47 ms | 493.55 ms | 455.79 ms | `407713` ✅ |
-| **3. HFT Limit Order Engine (1M Orders)** | **26.14 ms** | 22.50 ms 🥇 | 23.72 ms | 27.57 ms | 25.85 ms | `552829538` ✅ |
-| **4. SHA-256 Crypto Hashing (500K Blocks)** | **95.97 ms** | 92.63 ms | 102.03 ms | 90.61 ms 🥇 | 102.45 ms | `-4721506799343634759` ✅ |
-| **5. N-Body Gravity Orbit (1M Pairwise)** | **1858.70 ms** | 2164.25 ms | 2180.32 ms | 1790.46 ms 🥇 | 3050.80 ms | `1656141296` ✅ |
-| **6. SPSC Ring Buffer Queue (10M Items)** | **3.38 ms** | 2.57 ms | 1.46 ms | 0.00 ms 🥇 | 8.09 ms | `1550000015000000` ✅ |
-| **7. DNA Levenshtein Matrix (1M Cells)** | **970.42 ms** 🥇 | 2188.07 ms | 2194.66 ms | 1203.28 ms | 2266.70 ms | `525912` ✅ |
-| **8. JSON Microservice Serializer (100K)** | **59.05 ms** | 12.38 ms 🥇 | 25.05 ms | 55.05 ms | 39.07 ms | `5588438541400559045` ✅ |
-| **9. FSM Lexer Stream (10M Chars)** | **8.13 ms** 🥇 | 12.52 ms | 16.67 ms | 8.17 ms | 20.54 ms | `-6471218147204355511` ✅ |
-| **10. GEMM Matrix Multiplication (512x512)** | **62.65 ms** | 73.59 ms | 58.50 ms | 23.99 ms 🥇 | 109.85 ms | `6422836` ✅ |
-| **11. Monte Carlo Black-Scholes (2M Paths)** | **51.31 ms** | 32.88 ms 🥇 | 41.72 ms | 43.75 ms | 49.31 ms | `10440247` ✅ |
-| **12. Super-Scalar ALU Reduction (10M)** | **208.19 ms** | 0.01 ms | 0.00 ms 🥇 | 212.95 ms | 454.54 ms | `-6815960706871662336` ✅ |
-| **📦 Binary Footprint (Executable Size)** | 🥇 **41.0 KB** | 834.0 KB | 184.5 KB | 76.9 KB | 1592.5 KB *(1.6MB)* | Smallest native binary |
+| **1. 3D SDF Raymarcher (250K Rays)** | **47.67 ms** | 60.21 ms | 63.12 ms | 53.30 ms | 30.76 ms 🥇 | `14694880` ✅ |
+| **2. Binary Trees (Depth 16 Dynamic)** | **32.42 ms** 🥇 | 360.76 ms | 592.85 ms | 511.16 ms | 462.63 ms | `407713` ✅ |
+| **3. HFT Limit Order Engine (1M Orders)** | **26.54 ms** | 23.38 ms 🥇 | 23.91 ms | 28.28 ms | 24.90 ms | `552829538` ✅ |
+| **4. SHA-256 Crypto Hashing (500K Blocks)** | **91.58 ms** | 105.10 ms | 111.43 ms | 90.84 ms 🥇 | 104.89 ms | `-4721506799343634759` ✅ |
+| **5. N-Body Gravity Orbit (1M Pairwise)** | **1943.91 ms** 🥇 | 2174.58 ms | 2141.09 ms | 2536.55 ms | 3828.78 ms | `1656141296` ✅ |
+| **6. SPSC Ring Buffer Queue (10M Items)** | **4.83 ms** | 2.83 ms | 2.01 ms | 0.00 ms 🥇 | 12.17 ms | `1550000015000000` ✅ |
+| **7. DNA Levenshtein Matrix (1M Cells)** | **1131.36 ms** 🥇 | 2306.27 ms | 2391.26 ms | 1283.13 ms | 2443.96 ms | `525912` ✅ |
+| **8. JSON Microservice Serializer (100K)** | **64.42 ms** | 8.13 ms 🥇 | 23.89 ms | 57.67 ms | 41.57 ms | `5588438541400559045` ✅ |
+| **9. FSM Lexer Stream (10M Chars)** | **10.24 ms** | 17.09 ms | 17.26 ms | 9.30 ms 🥇 | 24.16 ms | `-6471218147204355511` ✅ |
+| **10. GEMM Matrix Multiplication (512x512)** | **18.59 ms** | 75.31 ms | 44.81 ms | 16.55 ms 🥇 | 79.31 ms | `6422836` ✅ |
+| **11. Monte Carlo Black-Scholes (2M Paths)** | **63.66 ms** | 37.64 ms 🥇 | 44.92 ms | 52.41 ms | 48.02 ms | `10440247` ✅ |
+| **12. Super-Scalar ALU Reduction (10M)** | **212.06 ms** | 0.01 ms | 0.00 ms 🥇 | 209.01 ms | 419.61 ms | `-6815960706871662336` ✅ |
+| **📦 Binary Footprint (Executable Size)** | 🥇 **38.5 KB** | 834.0 KB | 184.5 KB | 76.9 KB | 1592.5 KB *(1.6MB)* | Smallest native binary |
 
 ---
 

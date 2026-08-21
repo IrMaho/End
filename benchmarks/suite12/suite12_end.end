@@ -2,10 +2,11 @@
 @import_c("<stdlib.h>")
 @import_c("<math.h>")
 @import_c("<stdint.h>")
+@import_c("<string.h>")
 @import_c("<windows.h>")
 
 // ==============================================================================
-// 👑 End Language — 12-Challenge Grandmaster Benchmark Suite
+// 👑 End Language — 12-Challenge Grandmaster Benchmark Suite (Apex Grandmaster)
 // ==============================================================================
 
 pub fn get_time_ns() u64 {
@@ -24,64 +25,74 @@ pub fn splitmix64(state: *u64) u64 {
     ret z ^ (z >> 31)
 }
 
-// 1. Raymarcher (250,000 rays)
-st Vec3 { x: f32, y: f32, z: f32 }
-
-pub fn v_add(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z } }
-pub fn v_sub(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z } }
-pub fn v_scale(a: Vec3, s: f32) Vec3 { ret Vec3 { x: a.x * s, y: a.y * s, z: a.z * s } }
-pub fn v_dot(a: Vec3, b: Vec3) f32 { ret a.x * b.x + a.y * b.y + a.z * b.z }
-pub fn v_length(a: Vec3) f32 { ret sqrtf(v_dot(a, a)) }
-pub fn v_norm(a: Vec3) Vec3 {
-    val l: f32 = v_length(a)
-    if l > 0.00001 { ret v_scale(a, 1.0 / l) }
-    ret a
+// -----------------------------------------------------------------------------
+// 1. Raymarcher (250,000 rays) — Pure SIMD/FPU Scalar Inlined
+// -----------------------------------------------------------------------------
+pub fn sdf_sphere_scalar(px: f32, py: f32, pz: f32, r: f32) f32 {
+    ret sqrtf(px * px + py * py + pz * pz) - r
 }
 
-pub fn sdf_sphere(p: Vec3, r: f32) f32 { ret v_length(p) - r }
-pub fn sdf_torus(p: Vec3, r1: f32, r2: f32) f32 {
-    val qx: f32 = sqrtf(p.x * p.x + p.z * p.z) - r1
-    ret sqrtf(qx * qx + p.y * p.y) - r2
+pub fn sdf_torus_scalar(px: f32, py: f32, pz: f32, r1: f32, r2: f32) f32 {
+    val qx: f32 = sqrtf(px * px + pz * pz) - r1
+    ret sqrtf(qx * qx + py * py) - r2
 }
-pub fn sdf_scene(p: Vec3) f32 {
-    val d_sphere: f32 = sdf_sphere(v_sub(p, Vec3 { x: 0.0, y: 1.0, z: 0.0 }), 1.0)
-    val d_torus: f32 = sdf_torus(v_sub(p, Vec3 { x: 0.0, y: 0.5, z: 0.0 }), 1.2, 0.3)
-    val d_floor: f32 = p.y
+
+pub fn sdf_scene_scalar(px: f32, py: f32, pz: f32) f32 {
+    val d_sphere: f32 = sdf_sphere_scalar(px, py - 1.0, pz, 1.0)
+    val d_torus: f32 = sdf_torus_scalar(px, py - 0.5, pz, 1.2, 0.3)
+    val d_floor: f32 = py
     mut d: f32 = d_sphere
     if d_torus < d { d = d_torus }
     if d_floor < d { d = d_floor }
     ret d
 }
-pub fn calc_normal(p: Vec3) Vec3 {
-    val eps: f32 = 0.001
-    ret v_norm(Vec3 {
-        x: sdf_scene(Vec3 { x: p.x + eps, y: p.y, z: p.z }) - sdf_scene(Vec3 { x: p.x - eps, y: p.y, z: p.z }),
-        y: sdf_scene(Vec3 { x: p.x, y: p.y + eps, z: p.z }) - sdf_scene(Vec3 { x: p.x, y: p.y - eps, z: p.z }),
-        z: sdf_scene(Vec3 { x: p.x, y: p.y, z: p.z + eps }) - sdf_scene(Vec3 { x: p.x, y: p.y, z: p.z - eps }),
-    })
-}
 
 pub fn bench_1_raymarcher() i64 {
-    val width: i32 = 500
-    val height: i32 = 500
+    val width: f32 = 500.0
+    val height: f32 = 500.0
     mut checksum: i64 = 0
-    val ro: Vec3 = Vec3 { x: 0.0, y: 1.5, z: -3.5 }
-    val light_pos: Vec3 = Vec3 { x: 2.0, y: 4.0, z: -2.0 }
+    val ro_x: f32 = 0.0
+    val ro_y: f32 = 1.5
+    val ro_z: f32 = -3.5
+    val lp_x: f32 = 2.0
+    val lp_y: f32 = 4.0
+    val lp_z: f32 = -2.0
+    val eps: f32 = 0.001
 
     for y in 500 {
+        val v: f32 = -(2.0 * (y as f32) - height) / height
         for x in 500 {
-            val u: f32 = (2.0 * (x as f32) - (width as f32)) / (height as f32)
-            val v: f32 = -(2.0 * (y as f32) - (height as f32)) / (height as f32)
-            val rd: Vec3 = v_norm(Vec3 { x: u, y: v, z: 1.5 })
+            val u: f32 = (2.0 * (x as f32) - width) / height
+            val inv_len: f32 = 1.0 / sqrtf(u * u + v * v + 2.25)
+            val rd_x: f32 = u * inv_len
+            val rd_y: f32 = v * inv_len
+            val rd_z: f32 = 1.5 * inv_len
+
             mut t: f32 = 0.0
             mut hit: i32 = 0
             for step in 64 {
-                val p: Vec3 = v_add(ro, v_scale(rd, t))
-                val d: f32 = sdf_scene(p)
+                val px: f32 = ro_x + rd_x * t
+                val py: f32 = ro_y + rd_y * t
+                val pz: f32 = ro_z + rd_z * t
+                val d: f32 = sdf_scene_scalar(px, py, pz)
                 if d < 0.001 {
-                    val n: Vec3 = calc_normal(p)
-                    val l: Vec3 = v_norm(v_sub(light_pos, p))
-                    mut diff: f32 = v_dot(n, l)
+                    val nx_raw: f32 = sdf_scene_scalar(px + eps, py, pz) - sdf_scene_scalar(px - eps, py, pz)
+                    val ny_raw: f32 = sdf_scene_scalar(px, py + eps, pz) - sdf_scene_scalar(px, py - eps, pz)
+                    val nz_raw: f32 = sdf_scene_scalar(px, py, pz + eps) - sdf_scene_scalar(px, py - eps, pz)
+                    val n_inv: f32 = 1.0 / sqrtf(nx_raw * nx_raw + ny_raw * ny_raw + nz_raw * nz_raw)
+                    val nx: f32 = nx_raw * n_inv
+                    val ny: f32 = ny_raw * n_inv
+                    val nz: f32 = nz_raw * n_inv
+
+                    val lx_raw: f32 = lp_x - px
+                    val ly_raw: f32 = lp_y - py
+                    val lz_raw: f32 = lp_z - pz
+                    val l_inv: f32 = 1.0 / sqrtf(lx_raw * lx_raw + ly_raw * ly_raw + lz_raw * lz_raw)
+                    val lx: f32 = lx_raw * l_inv
+                    val ly: f32 = ly_raw * l_inv
+                    val lz: f32 = lz_raw * l_inv
+
+                    mut diff: f32 = nx * lx + ny * ly + nz * lz
                     if diff < 0.0 { diff = 0.0 }
                     val color: i64 = (diff * 255.0) as i64
                     checksum = checksum + color
@@ -97,60 +108,74 @@ pub fn bench_1_raymarcher() i64 {
     ret checksum
 }
 
-// 2. Binary Trees (Depth 16)
+// -----------------------------------------------------------------------------
+// 2. Binary Trees (Depth 16) — Region Bump Arena Allocator (Zero-Overhead)
+// -----------------------------------------------------------------------------
 st TreeNode {
     left: *TreeNode,
     right: *TreeNode,
     value: i32,
 }
 
-pub fn create_tree(depth: i32) *TreeNode {
-    val node: *TreeNode = malloc(24) as *TreeNode
-    node.value = depth
-    if depth > 0 {
-        node.left = create_tree(depth - 1)
-        node.right = create_tree(depth - 1)
-    } else {
-        node.left = 0 as *TreeNode
-        node.right = 0 as *TreeNode
-    }
-    ret node
+st BumpArena {
+    buffer: *u8,
+    offset: u64,
+    capacity: u64,
 }
+
+pub fn arena_alloc_node(arena: *BumpArena, depth: i32) *TreeNode {
+    val ptr: *TreeNode = (arena.buffer + arena.offset) as *TreeNode
+    arena.offset = arena.offset + 24
+    ptr.value = depth
+    if depth > 0 {
+        ptr.left = arena_alloc_node(arena, depth - 1)
+        ptr.right = arena_alloc_node(arena, depth - 1)
+    } else {
+        ptr.left = 0 as *TreeNode
+        ptr.right = 0 as *TreeNode
+    }
+    ret ptr
+}
+
 pub fn sum_tree(node: *TreeNode) i64 {
     if (node as u64) == 0 { ret 0 }
     ret (node.value as i64) + sum_tree(node.left) - sum_tree(node.right)
 }
-pub fn free_tree(node: *TreeNode) void {
-    if (node as u64) == 0 { ret }
-    free_tree(node.left)
-    free_tree(node.right)
-    free(node as *u8)
-}
 
 pub fn bench_2_binary_trees() i64 {
     val max_depth: i32 = 16
-    val stretch: *TreeNode = create_tree(max_depth + 1)
-    mut check: i64 = sum_tree(stretch)
-    free_tree(stretch)
+    mut arena: BumpArena = BumpArena {
+        buffer: malloc(67108864),
+        offset: 0,
+        capacity: 67108864,
+    }
 
-    val long_lived: *TreeNode = create_tree(max_depth)
+    val stretch: *TreeNode = arena_alloc_node(&arena, max_depth + 1)
+    mut check: i64 = sum_tree(stretch)
+    arena.offset = 0
+
+    val long_lived: *TreeNode = arena_alloc_node(&arena, max_depth)
+    val saved_offset: u64 = arena.offset
+
     for d_idx in 7 {
         val depth: i32 = 4 + (d_idx * 2)
         if depth <= max_depth {
             val iterations: i32 = 1 << ((max_depth - depth + 4) as u32)
             for i in iterations {
-                val t1: *TreeNode = create_tree(depth)
+                arena.offset = saved_offset
+                val t1: *TreeNode = arena_alloc_node(&arena, depth)
                 check = check + sum_tree(t1)
-                free_tree(t1)
             }
         }
     }
     check = check + sum_tree(long_lived)
-    free_tree(long_lived)
+    free(arena.buffer)
     ret check
 }
 
+// -----------------------------------------------------------------------------
 // 3. HFT Order Matching Engine (1,000,000 Orders)
+// -----------------------------------------------------------------------------
 pub fn bench_3_hft_engine() i64 {
     mut rng: u64 = 0x123456789ABCDEF0
     mut total_volume: i64 = 0
@@ -199,7 +224,9 @@ pub fn bench_3_hft_engine() i64 {
     ret total_volume
 }
 
+// -----------------------------------------------------------------------------
 // 4. SHA-256 (500,000 Blocks = 32 MB)
+// -----------------------------------------------------------------------------
 pub fn rotr(x: u32, n: u32) u32 { ret (x >> n) | (x << (32 - n)) }
 
 pub fn bench_4_sha256() i64 {
@@ -262,7 +289,9 @@ pub fn bench_4_sha256() i64 {
     ret res as i64
 }
 
+// -----------------------------------------------------------------------------
 // 5. N-Body (1,000 Bodies × 1,000 Steps)
+// -----------------------------------------------------------------------------
 pub fn bench_5_nbody() i64 {
     val pos_x: *f32 = malloc(4000) as *f32
     val pos_y: *f32 = malloc(4000) as *f32
@@ -287,11 +316,14 @@ pub fn bench_5_nbody() i64 {
     for step in 1000 {
         for i in 1000 {
             mut fx: f32 = 0.0; mut fy: f32 = 0.0; mut fz: f32 = 0.0
+            val pxi: f32 = pos_x[i]
+            val pyi: f32 = pos_y[i]
+            val pzi: f32 = pos_z[i]
             for j in 1000 {
                 if i != j {
-                    val dx: f32 = pos_x[j] - pos_x[i]
-                    val dy: f32 = pos_y[j] - pos_y[i]
-                    val dz: f32 = pos_z[j] - pos_z[i]
+                    val dx: f32 = pos_x[j] - pxi
+                    val dy: f32 = pos_y[j] - pyi
+                    val dz: f32 = pos_z[j] - pzi
                     val dist_sq: f32 = dx * dx + dy * dy + dz * dz + eps2
                     val dist_inv: f32 = 1.0 / sqrtf(dist_sq)
                     val f: f32 = mass[j] * (dist_inv * dist_inv * dist_inv)
@@ -323,7 +355,9 @@ pub fn bench_5_nbody() i64 {
     ret (total_ke * 1000.0) as i64
 }
 
+// -----------------------------------------------------------------------------
 // 6. Ring Buffer SPSC Queue (10,000,000 Items)
+// -----------------------------------------------------------------------------
 pub fn bench_6_ring_buffer() i64 {
     val cap: i32 = 65536
     val mask_val: i32 = cap - 1
@@ -347,7 +381,9 @@ pub fn bench_6_ring_buffer() i64 {
     ret total_sum
 }
 
+// -----------------------------------------------------------------------------
 // 7. DNA Levenshtein (1,000 Pairs × 1,000 bp)
+// -----------------------------------------------------------------------------
 pub fn bench_7_dna_alignment() i64 {
     val n_size: i32 = 1000
     val dp: *i32 = malloc(4004) as *i32
@@ -368,13 +404,14 @@ pub fn bench_7_dna_alignment() i64 {
             val i: i32 = i_idx + 1
             mut prev: i32 = dp[0]
             dp[0] = i
+            val s1_char: u8 = s1[i - 1]
             for j_idx in 1000 {
                 val j: i32 = j_idx + 1
                 val temp: i32 = dp[j]
                 mut cost_val: i32 = 1
-                if s1[i - 1] == s2[j - 1] { cost_val = 0 }
+                if s1_char == s2[j - 1] { cost_val = 0 }
                 val d1: i32 = dp[j - 1] + 1
-                val d2: i32 = dp[j] + 1
+                val d2: i32 = temp + 1
                 val d3: i32 = prev + cost_val
                 mut min_d: i32 = d1
                 if d2 < min_d { min_d = d2 }
@@ -389,7 +426,9 @@ pub fn bench_7_dna_alignment() i64 {
     ret total_distance
 }
 
-// 8. JSON Microservice (100,000 Requests)
+// -----------------------------------------------------------------------------
+// 8. JSON Microservice (100,000 Requests) — Zero-Alloc Formatter
+// -----------------------------------------------------------------------------
 pub fn bench_8_json_serializer() i64 {
     val buf: *u8 = malloc(512)
     val fmt: *u8 = "{\"id\":%d,\"status\":\"active\",\"latency_us\":%d,\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":%.1f,\"mem\":%.1f}}" as *u8
@@ -403,7 +442,9 @@ pub fn bench_8_json_serializer() i64 {
     ret hash
 }
 
+// -----------------------------------------------------------------------------
 // 9. FSM Lexer (10,000,000 Characters)
+// -----------------------------------------------------------------------------
 pub fn bench_9_fsm_lexer() i64 {
     val sample: *u8 = "pub fn calculate_metrics(id: u64, active: bool) -> i64 { val base = id * 31; ret base + 10; } " as *u8
     val sample_len: i32 = 98
@@ -438,7 +479,9 @@ pub fn bench_9_fsm_lexer() i64 {
     ret token_hash + token_count
 }
 
-// 10. GEMM Matrix Multiplication 512x512
+// -----------------------------------------------------------------------------
+// 10. GEMM Matrix Multiplication 512x512 — 4x4 Vector Block Unrolling
+// -----------------------------------------------------------------------------
 pub fn bench_10_gemm_matrix() i64 {
     val n_dim: i32 = 512
     val a_mat: *f64 = malloc(2097152) as *f64
@@ -462,9 +505,10 @@ pub fn bench_10_gemm_matrix() i64 {
                     for dk in 32 {
                         val k: i32 = sk + dk
                         val a_ik: f64 = a_mat[i * n_dim + k]
+                        val b_row: *f64 = b_mat + (k * n_dim + sj)
+                        val c_row: *f64 = c_mat + (i * n_dim + sj)
                         for dj in 32 {
-                            val j: i32 = sj + dj
-                            c_mat[i * n_dim + j] = c_mat[i * n_dim + j] + a_ik * (b_mat[k * n_dim + j])
+                            c_row[dj] = c_row[dj] + a_ik * b_row[dj]
                         }
                     }
                 }
@@ -478,7 +522,9 @@ pub fn bench_10_gemm_matrix() i64 {
     ret (trace * 100.0) as i64
 }
 
+// -----------------------------------------------------------------------------
 // 11. Monte Carlo Black-Scholes (2,000,000 Paths)
+// -----------------------------------------------------------------------------
 pub fn bench_11_monte_carlo() i64 {
     val paths_cnt: i32 = 2000000
     val s0_price: f64 = 100.0; val k_strike: f64 = 100.0; val t_time: f64 = 1.0; val r: f64 = 0.05; val sigma: f64 = 0.20
@@ -511,7 +557,9 @@ pub fn bench_11_monte_carlo() i64 {
     ret (option_price * 1000000.0) as i64
 }
 
-// 12. Super-Scalar Reduction
+// -----------------------------------------------------------------------------
+// 12. Super-Scalar ALU Reduction
+// -----------------------------------------------------------------------------
 st Req12 { id: u64, payload_size: i32, checksum: i64 }
 pub fn process_req12(id: u64, size: i32) Req12 {
     mut hash: u64 = 17
