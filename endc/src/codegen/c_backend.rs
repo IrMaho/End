@@ -939,6 +939,34 @@ Statement::Spawn { call, .. } => {
                 let call_str = self.gen_expression(call);
                 self.output.push_str(&format!("{}/* spawn */ (void){};\n", self.indent(), call_str));
             }
+            Statement::QuantumUnwrap { name, var_type, expr, fallback, .. } => {
+                let ty_str = if let Some(t) = var_type {
+                    self.map_type(t)
+                } else {
+                    "__auto_type".to_string()
+                };
+                let expr_str = self.gen_expression(expr);
+                let fallback_str = self.gen_expression(fallback);
+                self.output.push_str(&format!(
+                    "{}{} {} = ({}); if (!{}) {{ {} = ({}); }}\n",
+                    self.indent(),
+                    ty_str,
+                    name,
+                    expr_str,
+                    name,
+                    name,
+                    fallback_str
+                ));
+            }
+            Statement::AtomicOp { target, value, .. } => {
+                let val_str = self.gen_expression(value);
+                self.output.push_str(&format!(
+                    "{}__atomic_fetch_add(&{}, {}, __ATOMIC_SEQ_CST);\n",
+                    self.indent(),
+                    target,
+                    val_str
+                ));
+            }
         }
     }
 
@@ -1224,6 +1252,19 @@ Statement::Spawn { call, .. } => {
             }
             Expression::Await { expr, .. } => {
                 self.gen_expression(expr)
+            }
+            Expression::UnitLit { value, unit, .. } => {
+                match unit.as_str() {
+                    "km/h" => format!("((int64_t)({:.2} * 1000.0 / 3600.0))", value),
+                    "m/s" => format!("((int64_t){:.0})", value),
+                    "usd" | "eur" => format!("((int64_t)({:.2} * 100.0))", value),
+                    _ => format!("((int64_t){:.0})", value),
+                }
+            }
+            Expression::NullCollapse { left, right, .. } => {
+                let l = self.gen_expression(left);
+                let r = self.gen_expression(right);
+                format!("(({} != NULL) ? ({}) : NULL)", l, r)
             }
         }
     }

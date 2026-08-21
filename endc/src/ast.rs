@@ -160,6 +160,7 @@ pub struct FunctionDef {
     pub return_type: Type,
     pub body: Block,
     pub directives: Vec<Directive>,
+    pub morphic_param: Option<String>,
     pub span: Span,
 }
 
@@ -326,6 +327,19 @@ pub enum Statement {
     },
     InlineC {
         code: String,
+        span: Span,
+    },
+    QuantumUnwrap {
+        name: String,
+        var_type: Option<Type>,
+        expr: Expression,
+        fallback: Expression,
+        span: Span,
+    },
+    AtomicOp {
+        target: String,
+        op: BinaryOp,
+        value: Expression,
         span: Span,
     },
 }
@@ -495,6 +509,16 @@ pub enum Expression {
         code: String,
         span: Span,
     },
+    UnitLit {
+        value: f64,
+        unit: String,
+        span: Span,
+    },
+    NullCollapse {
+        left: Box<Expression>,
+        right: Box<Expression>,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -528,6 +552,8 @@ impl Expression {
             Expression::SqlExpr { span, .. } => span,
             Expression::Cast { span, .. } => span,
             Expression::Await { span, .. } => span,
+            Expression::UnitLit { span, .. } => span,
+            Expression::NullCollapse { span, .. } => span,
         }
     }
 }
@@ -551,6 +577,8 @@ impl Statement {
             Statement::Spawn { span, .. } => span,
             Statement::Skip { span, .. } => span,
             Statement::InlineC { span, .. } => span,
+            Statement::QuantumUnwrap { span, .. } => span,
+            Statement::AtomicOp { span, .. } => span,
         }
     }
 }

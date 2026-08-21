@@ -539,8 +539,17 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Fn)?;
 
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
+        let (name, morphic_param) = match self.advance().kind {
+            TokenKind::Ident(n) => (n, None),
+            TokenKind::MorphicIdent(m) => {
+                let p = if m.starts_with('{') && m.contains('}') {
+                    let end_brace = m.find('}').unwrap();
+                    Some(m[1..end_brace].to_string())
+                } else {
+                    None
+                };
+                (m, p)
+            }
             other => return Err(format!("Expected function name, found {:?} at line {}", other, span.line)),
         };
 
@@ -624,6 +633,7 @@ impl Parser {
             return_type,
             body,
             directives,
+            morphic_param,
             span,
         })
     }
@@ -906,6 +916,32 @@ impl Parser {
         let span = self.current_span();
 
         match self.peek_kind() {
+            TokenKind::ValBang => {
+                self.advance();
+                let name = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected variable name after val!, found {:?}", other)),
+                };
+                let mut var_type = None;
+                if self.match_token(&TokenKind::Colon) {
+                    var_type = Some(self.parse_type()?);
+                }
+                self.expect(TokenKind::Equal)?;
+                let expr = self.parse_expression()?;
+                let fallback = if self.match_token(&TokenKind::QuestionQuestion) {
+                    self.parse_expression()?
+                } else {
+                    Expression::Lit(Literal::Int(0), span.clone())
+                };
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::QuantumUnwrap {
+                    name,
+                    var_type,
+                    expr,
+                    fallback,
+                    span,
+                })
+            }
             TokenKind::Val | TokenKind::Mut => {
                 let is_mut = self.peek_kind() == &TokenKind::Mut;
                 self.advance();
@@ -1126,6 +1162,28 @@ impl Parser {
                         value,
                         span,
                     })
+                } else if self.match_token(&TokenKind::LessPlusEqual) {
+                    let value = self.parse_expression()?;
+                    self.match_token(&TokenKind::SemiColon);
+                    if let Expression::Ident(target_name, _) = &expr {
+                        Ok(Statement::AtomicOp {
+                            target: target_name.clone(),
+                            op: BinaryOp::Add,
+                            value,
+                            span,
+                        })
+                    } else {
+                        Ok(Statement::Assignment {
+                            target: expr.clone(),
+                            value: Expression::Binary {
+                                left: Box::new(expr),
+                                op: BinaryOp::Add,
+                                right: Box::new(value),
+                                span: span.clone(),
+                            },
+                            span,
+                        })
+                    }
                 } else {
                     self.match_token(&TokenKind::SemiColon);
                     Ok(Statement::Expression(expr))
@@ -1251,14 +1309,26 @@ impl Parser {
 
     fn parse_pipe_expr(&mut self) -> Result<Expression, String> {
         let mut expr = self.parse_catch_expr()?;
-        while self.match_token(&TokenKind::PipeGreater) {
+        while self.check(&TokenKind::PipeGreater) || self.check(&TokenKind::TildeArrow) {
+            let is_tilde = self.match_token(&TokenKind::TildeArrow);
+            if !is_tilde {
+                self.advance();
+            }
             let span = self.current_span();
             let rhs = self.parse_catch_expr()?;
-            expr = Expression::Pipe {
-                lhs: Box::new(expr),
-                rhs: Box::new(rhs),
-                span,
-            };
+            if is_tilde {
+                expr = Expression::NullCollapse {
+                    left: Box::new(expr),
+                    right: Box::new(rhs),
+                    span,
+                };
+            } else {
+                expr = Expression::Pipe {
+                    lhs: Box::new(expr),
+                    rhs: Box::new(rhs),
+                    span,
+                };
+            }
         }
         Ok(expr)
     }
@@ -1769,6 +1839,12 @@ impl Parser {
                 let val = *f;
                 self.advance();
                 Ok(Expression::Lit(Literal::Float(val), span))
+            }
+            TokenKind::UnitLit(val, unit) => {
+                let v = *val;
+                let u = unit.clone();
+                self.advance();
+                Ok(Expression::UnitLit { value: v, unit: u, span })
             }
             TokenKind::StringLit(s) => {
                 let val = s.clone();

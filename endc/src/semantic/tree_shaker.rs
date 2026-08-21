@@ -125,6 +125,13 @@ impl TreeShaker {
             Statement::Spawn { call, .. } => {
                 Self::visit_expression(call, reachable_fn, reachable_st, module);
             }
+            Statement::QuantumUnwrap { expr, fallback, .. } => {
+                Self::visit_expression(expr, reachable_fn, reachable_st, module);
+                Self::visit_expression(fallback, reachable_fn, reachable_st, module);
+            }
+            Statement::AtomicOp { value, .. } => {
+                Self::visit_expression(value, reachable_fn, reachable_st, module);
+            }
             _ => {}
         }
     }

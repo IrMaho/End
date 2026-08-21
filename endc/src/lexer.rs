@@ -42,6 +42,15 @@ pub enum TokenKind {
     With,     // 'with'
     InlineC,  // 'inline_c'
 
+    // Revolutionary Syntactic Tokens
+    ValBang,          // 'val!'
+    QuestionQuestion, // '??'
+    Question,         // '?'
+    TildeArrow,       // '~>'
+    LessPlusEqual,    // '<+='
+    UnitLit(f64, String), // e.g. 120[km/h]
+    MorphicIdent(String), // e.g. '{platform}_send'
+
     // Meta-Syntax & Reflection Macros
     NameOf,       // 'nameof!'
     PathOf,       // 'pathof!'
@@ -241,6 +250,32 @@ impl<'a> Lexer<'a> {
             });
         }
 
+        // Morphic Template Identifiers: e.g. {platform}_send or {target}_Client
+        if ch == '{' && self.peek_next().map_or(false, |c| c.is_alphabetic() || c == '_') {
+            self.advance(); // consume '{'
+            let mut morphic_str = String::from("{");
+            while let Some(c) = self.peek() {
+                morphic_str.push(c);
+                self.advance();
+                if c == '}' {
+                    break;
+                }
+            }
+            // Capture suffix like '_send' or '_Client'
+            while let Some(c) = self.peek() {
+                if c.is_alphanumeric() || c == '_' {
+                    morphic_str.push(c);
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            return Ok(Token {
+                kind: TokenKind::MorphicIdent(morphic_str),
+                span,
+            });
+        }
+
         if ch.is_alphabetic() || ch == '_' {
             let mut ident = String::new();
             while let Some(c) = self.peek() {
@@ -255,6 +290,7 @@ impl<'a> Lexer<'a> {
             let kind = if self.peek() == Some('!') && self.peek_next() != Some('=') {
                 self.advance();
                 match ident.as_str() {
+                    "val" => TokenKind::ValBang,
                     "nameof" => TokenKind::NameOf,
                     "pathof" => TokenKind::PathOf,
                     "typeof" => TokenKind::TypeOf,
@@ -367,6 +403,25 @@ impl<'a> Lexer<'a> {
                 }
             }
 
+            if self.peek() == Some('[') {
+                self.advance(); // consume '['
+                let mut unit_str = String::new();
+                while let Some(c) = self.peek() {
+                    if c == ']' {
+                        self.advance(); // consume ']'
+                        break;
+                    } else {
+                        unit_str.push(c);
+                        self.advance();
+                    }
+                }
+                let val_f: f64 = num_str.parse().unwrap_or(0.0);
+                return Ok(Token {
+                    kind: TokenKind::UnitLit(val_f, unit_str),
+                    span,
+                });
+            }
+
             let kind = if is_float {
                 let val: f64 = num_str.parse().map_err(|e| format!("Invalid float: {}", e))?;
                 TokenKind::FloatLit(val)
@@ -443,7 +498,11 @@ impl<'a> Lexer<'a> {
                 }
             }
             '<' => {
-                if self.peek() == Some('=') {
+                if self.peek() == Some('+') && self.peek_next() == Some('=') {
+                    self.advance(); // consume '+'
+                    self.advance(); // consume '='
+                    TokenKind::LessPlusEqual
+                } else if self.peek() == Some('=') {
                     self.advance();
                     TokenKind::LessEqual
                 } else if self.peek() == Some('<') {
@@ -488,7 +547,22 @@ impl<'a> Lexer<'a> {
                 }
             }
             '^' => TokenKind::Caret,
-            '~' => TokenKind::Tilde,
+            '~' => {
+                if self.peek() == Some('>') {
+                    self.advance();
+                    TokenKind::TildeArrow
+                } else {
+                    TokenKind::Tilde
+                }
+            }
+            '?' => {
+                if self.peek() == Some('?') {
+                    self.advance();
+                    TokenKind::QuestionQuestion
+                } else {
+                    TokenKind::Question
+                }
+            }
             '(' => TokenKind::LParen,
             ')' => TokenKind::RParen,
             '{' => TokenKind::LBrace,

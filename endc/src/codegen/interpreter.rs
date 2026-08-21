@@ -317,6 +317,25 @@ impl Interpreter {
                 let _ = self.eval_expression(call)?;
                 Ok(None)
             }
+            Statement::QuantumUnwrap { name, expr, fallback, .. } => {
+                let val = self.eval_expression(expr)?;
+                let final_val = match &val {
+                    Value::Void => self.eval_expression(fallback)?,
+                    Value::Int(0) => self.eval_expression(fallback)?,
+                    _ => val,
+                };
+                self.set_var(name, final_val);
+                Ok(None)
+            }
+            Statement::AtomicOp { target, value, .. } => {
+                let add_val = self.eval_expression(value)?;
+                if let Some(Value::Int(curr)) = self.get_var(target) {
+                    if let Value::Int(inc) = add_val {
+                        let _ = self.update_var(target, Value::Int(curr + inc));
+                    }
+                }
+                Ok(None)
+            }
         }
     }
 
@@ -581,6 +600,21 @@ impl Interpreter {
             Expression::Pipe { lhs, rhs, .. } => {
                 let _ = self.eval_expression(lhs)?;
                 self.eval_expression(rhs)
+            }
+            Expression::UnitLit { value, unit, .. } => {
+                match unit.as_str() {
+                    "km/h" => Ok(Value::Int((*value * 1000.0 / 3600.0) as i64)),
+                    "m/s" => Ok(Value::Int(*value as i64)),
+                    "usd" | "eur" => Ok(Value::Int((*value * 100.0) as i64)),
+                    _ => Ok(Value::Int(*value as i64)),
+                }
+            }
+            Expression::NullCollapse { left, right, .. } => {
+                let l_val = self.eval_expression(left)?;
+                match l_val {
+                    Value::Void => Ok(Value::Void),
+                    _ => self.eval_expression(right),
+                }
             }
         }
     }
