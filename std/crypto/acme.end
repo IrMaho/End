@@ -1,24 +1,37 @@
-// 🔒 End Language: std/crypto/acme.end
-// Automated ACME (Let's Encrypt) SSL Certificate Engine for Zero-Proxy HTTPS
+// End Standard Library: std/crypto/acme.end
+// Automated ACME (Let's Encrypt) Certificate & HTTP-01 Verification Engine
+import "std/crypto/sha256.end"
+import "std/crypto/base64.end"
 
-pub st AcmeCertificateOrder {
-    domain: str,
-    challenge_token: str,
-    is_validated: bool,
-    expires_in_days: i32,
-    auto_renew_enabled: bool,
+pub struct AcmeCertificateOrder {
+    pub domain: str,
+    pub token: str,
+    pub key_authorization: str,
+    pub is_validated: bool,
+    pub expires_days: i32,
 }
 
-pub fn acme_order_certificate(domain: str) AcmeCertificateOrder {
+pub fn acme_create_order(domain: str, token: str, account_thumbprint: str) AcmeCertificateOrder {
+    val key_auth = token + "." + account_thumbprint
     ret AcmeCertificateOrder {
         domain: domain,
-        challenge_token: "acme_v2_challenge_token_verified",
-        is_validated: true,
-        expires_in_days: 90,
-        auto_renew_enabled: true,
+        token: token,
+        key_authorization: key_auth,
+        is_validated: false,
+        expires_days: 90,
     }
 }
 
-pub fn acme_check_renewal_needed(order: AcmeCertificateOrder) bool {
-    ret order.expires_in_days <= 15
+pub fn acme_verify_challenge(order: AcmeCertificateOrder, received_payload: str) bool {
+    if received_payload == order.key_authorization {
+        ret true
+    }
+    ret false
+}
+
+pub fn acme_check_renewal_needed(order: AcmeCertificateOrder, threshold_days: i32) bool {
+    if order.expires_days <= threshold_days {
+        ret true
+    }
+    ret false
 }
