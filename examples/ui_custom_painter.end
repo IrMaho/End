@@ -1,5 +1,4 @@
-// End UI & CustomPainter Showcase: Cybernetic Futuristic Telemetry Dashboard
-// Clean Architecture: 100% Separation of Domain State from UI Painting & Frame Rendering
+// End UI & CustomPainter: Cyberpunk Telemetry HUD with Native Windows GUI & BMP Exporter
 
 st Color {
     r: i32,
@@ -133,7 +132,7 @@ fn canvas_draw_glass_panel(c: Canvas, r: Rect, bg: Color, border_glow: Color) vo
 
 fn canvas_draw_neon_circle(c: Canvas, cx: i32, cy: i32, radius: i32, col: Color) void {
     val r2 = radius * radius
-    val outer_r = radius + 6
+    val outer_r = radius + 8
     val outer_r2 = outer_r * outer_r
 
     for y in (outer_r * 2) {
@@ -150,7 +149,7 @@ fn canvas_draw_neon_circle(c: Canvas, cx: i32, cy: i32, radius: i32, col: Color)
                 if dist2 <= r2 {
                     canvas_set_pixel(c, px, py, col)
                 } else {
-                    val soft = color_rgba(col.r, col.g, col.b, 80)
+                    val soft = color_rgba(col.r, col.g, col.b, 60)
                     canvas_set_pixel(c, px, py, soft)
                 }
             }
@@ -175,51 +174,54 @@ fn paint_dashboard(canvas: Canvas, state: DashboardState, frame: i32) void {
     canvas_clear(canvas, color_dark_bg())
 
     // 2. Glassmorphism HUD Card Left (Core Telemetry)
-    val left_card = rect_new(20, 20, 280, 260)
+    val left_card = rect_new(30, 30, 340, 360)
     canvas_draw_glass_panel(canvas, left_card, color_card_glass(), color_cyan_neon())
 
-    // Gauge Indicators
-    canvas_draw_neon_circle(canvas, 70, 70, 25, color_cyan_neon())
-    canvas_draw_gauge_bar(canvas, 110, 60, 160, 16, state.battery_charge, color_cyan_neon())
+    // Gauge Indicators with glowing orbs
+    canvas_draw_neon_circle(canvas, 80, 90, 28, color_cyan_neon())
+    canvas_draw_gauge_bar(canvas, 130, 80, 210, 20, state.battery_charge, color_cyan_neon())
 
-    canvas_draw_neon_circle(canvas, 70, 140, 25, color_violet_neon())
-    canvas_draw_gauge_bar(canvas, 110, 130, 160, 16, 85, color_violet_neon())
+    canvas_draw_neon_circle(canvas, 80, 180, 28, color_violet_neon())
+    canvas_draw_gauge_bar(canvas, 130, 170, 210, 20, 85, color_violet_neon())
 
-    canvas_draw_neon_circle(canvas, 70, 210, 25, color_blue_laser())
-    canvas_draw_gauge_bar(canvas, 110, 200, 160, 16, 92, color_blue_laser())
+    canvas_draw_neon_circle(canvas, 80, 270, 28, color_blue_laser())
+    canvas_draw_gauge_bar(canvas, 130, 260, 210, 20, 94, color_blue_laser())
 
     // 3. Glassmorphism HUD Card Right (Waveform Visualizer)
-    val right_card = rect_new(320, 20, 300, 260)
+    val right_card = rect_new(400, 30, 370, 360)
     canvas_draw_glass_panel(canvas, right_card, color_card_glass(), color_violet_neon())
 
-    // Animated Neon Sine Waveform inside Right Card
-    for i in 260 {
-        val px = 340 + i
-        val wave_y = 150 + (((i + (frame * 6)) * 13) % 40) - 20
-        canvas_draw_neon_circle(canvas, px, wave_y, 2, color_cyan_neon())
+    // Animated Multi-layer Neon Waveform inside Right Card
+    for i in 320 {
+        val px = 425 + i
+        val wave_y1 = 180 + (((i * 4 + (frame * 5)) % 60) - 30)
+        canvas_draw_neon_circle(canvas, px, wave_y1, 2, color_cyan_neon())
+
+        val wave_y2 = 240 + (((i * 3 + (frame * 3)) % 40) - 20)
+        canvas_draw_neon_circle(canvas, px, wave_y2, 2, color_violet_neon())
     }
 
     // 4. Bottom Status HUD
-    val bottom_hud = rect_new(20, 300, 600, 80)
+    val bottom_hud = rect_new(30, 420, 740, 120)
     canvas_draw_glass_panel(canvas, bottom_hud, color_card_glass(), color_blue_laser())
-    canvas_draw_gauge_bar(canvas, 40, 335, 560, 12, 100, color_cyan_neon())
+    canvas_draw_gauge_bar(canvas, 60, 470, 680, 20, 100, color_cyan_neon())
 }
 
 // -------------------------------------------------------------
-// 4. Main Entry Point: 120 FPS Benchmark & Framebuffer Verification
+// 4. Main Entry Point: 800x600 Desktop Resolution
 // -------------------------------------------------------------
 fn main() void {
     println("=======================================================================")
-    println("👑 END UI & CUSTOMPAINTER HIGH-PERFORMANCE GRAPHICS ENGINE")
+    println("👑 END LANGUAGE - NATIVE HIGH-PERFORMANCE UI & GRAPHICS ENGINE")
     println("=======================================================================")
 
-    val screen_w: i32 = 640
-    val screen_h: i32 = 400
+    val screen_w: i32 = 800
+    val screen_h: i32 = 600
     val total_frames: i32 = 120
 
-    println("Initializing 640x400 32-bit RGBA Zero-GC Vector Framebuffer...")
+    println("Initializing 800x600 32-bit RGBA Zero-GC Vector Framebuffer...")
 
-    val raw_buffer: *u32 = alloc [256000]u32
+    val raw_buffer: *u32 = alloc [480000]u32
     val canvas = Canvas {
         width: screen_w,
         height: screen_h,
