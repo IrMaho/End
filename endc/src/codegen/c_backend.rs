@@ -72,6 +72,38 @@ impl CBackend {
         self.output.push_str("#include <string.h>\n");
         self.output.push_str("#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)\n    #include <immintrin.h>\n#elif defined(__aarch64__) || defined(_M_ARM64)\n    #include <arm_neon.h>\n#endif\n\n");
 
+        // Hardware Watchdog & CPU Throttling Hooks
+        self.output.push_str("/* End Hardware Watchdog & CPU Throttling Safety Hooks */\n");
+        self.output.push_str("#if defined(_WIN32)\n");
+        self.output.push_str("    #define WIN32_LEAN_AND_MEAN\n");
+        self.output.push_str("    #include <windows.h>\n");
+        self.output.push_str("    #define END_CPU_YIELD() SwitchToThread()\n");
+        self.output.push_str("    #define END_CPU_RELAX() YieldProcessor()\n");
+        self.output.push_str("    #define END_CPU_SLEEP(ms) Sleep(ms)\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("    #include <sched.h>\n");
+        self.output.push_str("    #include <unistd.h>\n");
+        self.output.push_str("    #include <time.h>\n");
+        self.output.push_str("    #define END_CPU_YIELD() sched_yield()\n");
+        self.output.push_str("    #define END_CPU_RELAX() __builtin_ia32_pause()\n");
+        self.output.push_str("    #define END_CPU_SLEEP(ms) usleep((ms) * 1000)\n");
+        self.output.push_str("#endif\n\n");
+        self.output.push_str("static inline void cpu_yield(void) { END_CPU_YIELD(); }\n");
+        self.output.push_str("static inline void cpu_relax(void) { END_CPU_RELAX(); }\n");
+        self.output.push_str("static inline void cpu_sleep_ms(int32_t ms) { END_CPU_SLEEP(ms); }\n");
+        self.output.push_str("static inline uint64_t high_res_time_ns(void) {\n");
+        self.output.push_str("#if defined(_WIN32)\n");
+        self.output.push_str("    LARGE_INTEGER count, freq;\n");
+        self.output.push_str("    QueryPerformanceCounter(&count);\n");
+        self.output.push_str("    QueryPerformanceFrequency(&freq);\n");
+        self.output.push_str("    return (uint64_t)((count.QuadPart * 1000000000ULL) / freq.QuadPart);\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("    struct timespec ts;\n");
+        self.output.push_str("    clock_gettime(CLOCK_MONOTONIC, &ts);\n");
+        self.output.push_str("    return (uint64_t)(ts.tv_sec * 1000000000ULL + ts.tv_nsec);\n");
+        self.output.push_str("#endif\n");
+        self.output.push_str("}\n\n");
+
         // Export macro for DLL / Shared Object support
         self.output.push_str("/* End Cross-Platform Export API Macro */\n");
         self.output.push_str("#if defined(_WIN32) || defined(__CYGWIN__)\n");

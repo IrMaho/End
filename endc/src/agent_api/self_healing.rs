@@ -1,5 +1,4 @@
 use std::fs;
-use colored::*;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::semantic::analyzer::SemanticAnalyzer;

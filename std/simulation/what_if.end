@@ -1,0 +1,44 @@
+// End Standard Library: std/simulation/what_if.end
+// 🧪 "What-If" Differential Mutation Engine & Variance Matrix
+
+pub st WhatIfParameter {
+    name: str,
+    baseline_value: f64,
+    mutated_value: f64,
+}
+
+pub st SimulationDiffResult {
+    scenario_name: str,
+    baseline_output: f64,
+    mutated_output: f64,
+    diff_delta: f64,
+    percentage_change: f64,
+    is_improved: bool,
+}
+
+pub fn simulation_param_create(name: str, baseline: f64, mutated: f64) WhatIfParameter {
+    ret WhatIfParameter {
+        name: name,
+        baseline_value: baseline,
+        mutated_value: mutated,
+    }
+}
+
+pub fn simulation_compare_outputs(scenario: str, baseline: f64, mutated: f64) SimulationDiffResult {
+    val delta = mutated - baseline
+    mut pct = 0.0
+    if baseline != 0.0 {
+        pct = (delta / baseline) * 100.0
+    }
+
+    val improved = mutated < baseline // lower latency or higher throughput
+
+    ret SimulationDiffResult {
+        scenario_name: scenario,
+        baseline_output: baseline,
+        mutated_output: mutated,
+        diff_delta: delta,
+        percentage_change: pct,
+        is_improved: improved,
+    }
+}

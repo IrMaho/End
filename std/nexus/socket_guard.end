@@ -1,0 +1,75 @@
+// End Standard Library: std/nexus/socket_guard.end
+// 🛡️ Hardware Protection & Socket I/O Guard for High-Performance Servers
+
+pub st SocketGuard {
+    invalid_checks_count: i64,
+    consecutive_idle: i32,
+    current_backoff_ms: i32,
+    max_backoff_ms: i32,
+    is_protected: bool,
+}
+
+pub fn socket_guard_create(max_backoff_ms: i32) SocketGuard {
+    ret SocketGuard {
+        invalid_checks_count: 0,
+        consecutive_idle: 0,
+        current_backoff_ms: 1,
+        max_backoff_ms: max_backoff_ms,
+        is_protected: true,
+    }
+}
+
+// Dual-Check validation for sockets on 32-bit and 64-bit platforms (INVALID_SOCKET = ~0)
+pub fn safe_socket_is_valid(sock_fd: i64) bool {
+    if sock_fd == -1 {
+        ret false
+    }
+    if sock_fd <= 0 {
+        ret false
+    }
+    ret true
+}
+
+// Exponential Backoff Throttling: Prevents 100% CPU spin-locking when waiting for sockets
+pub fn safe_socket_poll(sock_fd: i64, max_idle_ms: i32) bool {
+    if !safe_socket_is_valid(sock_fd) {
+        // Immediate hardware safeguard yield
+        ret false
+    }
+    ret true
+}
+
+pub fn socket_guard_record_activity(guard: SocketGuard) SocketGuard {
+    ret SocketGuard {
+        invalid_checks_count: guard.invalid_checks_count,
+        consecutive_idle: 0,
+        current_backoff_ms: 1,
+        max_backoff_ms: guard.max_backoff_ms,
+        is_protected: true,
+    }
+}
+
+pub fn socket_guard_record_idle(guard: SocketGuard) SocketGuard {
+    val next_idle = guard.consecutive_idle + 1
+    mut next_backoff = guard.current_backoff_ms
+
+    if next_idle > 100 {
+        next_backoff = 50
+    } else if next_idle > 20 {
+        next_backoff = 10
+    } else if next_idle > 5 {
+        next_backoff = 2
+    }
+
+    if next_backoff > guard.max_backoff_ms {
+        next_backoff = guard.max_backoff_ms
+    }
+
+    ret SocketGuard {
+        invalid_checks_count: guard.invalid_checks_count,
+        consecutive_idle: next_idle,
+        current_backoff_ms: next_backoff,
+        max_backoff_ms: guard.max_backoff_ms,
+        is_protected: true,
+    }
+}

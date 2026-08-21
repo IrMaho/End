@@ -69,6 +69,18 @@ impl Interpreter {
         }
     }
 
+    pub fn eval_named_function(&mut self, module: &Module, name: &str, args: Vec<Value>) -> Result<Value, String> {
+        for f in &module.functions {
+            self.functions.insert(f.name.clone(), f.clone());
+        }
+
+        if let Some(target_fn) = self.functions.get(name).cloned() {
+            self.eval_function(&target_fn, args)
+        } else {
+            Err(format!("Function '{}' not found in module", name))
+        }
+    }
+
     fn push_scope(&mut self) {
         self.variables.push(HashMap::new());
     }
@@ -358,6 +370,7 @@ impl Interpreter {
                 let r = self.eval_expression(right)?;
 
                 match (l, op, r) {
+                    // Int arithmetic
                     (Value::Int(a), BinaryOp::Add, Value::Int(b)) => Ok(Value::Int(a + b)),
                     (Value::Int(a), BinaryOp::Sub, Value::Int(b)) => Ok(Value::Int(a - b)),
                     (Value::Int(a), BinaryOp::Mul, Value::Int(b)) => Ok(Value::Int(a * b)),
@@ -368,10 +381,38 @@ impl Interpreter {
                             Ok(Value::Int(a / b))
                         }
                     }
+                    (Value::Int(a), BinaryOp::Mod, Value::Int(b)) => Ok(Value::Int(if b != 0 { a % b } else { 0 })),
+                    // Int comparisons
                     (Value::Int(a), BinaryOp::Equal, Value::Int(b)) => Ok(Value::Bool(a == b)),
+                    (Value::Int(a), BinaryOp::NotEqual, Value::Int(b)) => Ok(Value::Bool(a != b)),
                     (Value::Int(a), BinaryOp::LessThan, Value::Int(b)) => Ok(Value::Bool(a < b)),
+                    (Value::Int(a), BinaryOp::LessEqual, Value::Int(b)) => Ok(Value::Bool(a <= b)),
                     (Value::Int(a), BinaryOp::GreaterThan, Value::Int(b)) => Ok(Value::Bool(a > b)),
+                    (Value::Int(a), BinaryOp::GreaterEqual, Value::Int(b)) => Ok(Value::Bool(a >= b)),
+
+                    // Float arithmetic
+                    (Value::Float(a), BinaryOp::Add, Value::Float(b)) => Ok(Value::Float(a + b)),
+                    (Value::Float(a), BinaryOp::Sub, Value::Float(b)) => Ok(Value::Float(a - b)),
+                    (Value::Float(a), BinaryOp::Mul, Value::Float(b)) => Ok(Value::Float(a * b)),
+                    (Value::Float(a), BinaryOp::Div, Value::Float(b)) => Ok(Value::Float(if b != 0.0 { a / b } else { 0.0 })),
+                    // Float comparisons
+                    (Value::Float(a), BinaryOp::Equal, Value::Float(b)) => Ok(Value::Bool(a == b)),
+                    (Value::Float(a), BinaryOp::NotEqual, Value::Float(b)) => Ok(Value::Bool(a != b)),
+                    (Value::Float(a), BinaryOp::LessThan, Value::Float(b)) => Ok(Value::Bool(a < b)),
+                    (Value::Float(a), BinaryOp::LessEqual, Value::Float(b)) => Ok(Value::Bool(a <= b)),
+                    (Value::Float(a), BinaryOp::GreaterThan, Value::Float(b)) => Ok(Value::Bool(a > b)),
+                    (Value::Float(a), BinaryOp::GreaterEqual, Value::Float(b)) => Ok(Value::Bool(a >= b)),
+
+                    // Bool logical operations
+                    (Value::Bool(a), BinaryOp::And, Value::Bool(b)) => Ok(Value::Bool(a && b)),
+                    (Value::Bool(a), BinaryOp::Or, Value::Bool(b)) => Ok(Value::Bool(a || b)),
+                    (Value::Bool(a), BinaryOp::Equal, Value::Bool(b)) => Ok(Value::Bool(a == b)),
+                    (Value::Bool(a), BinaryOp::NotEqual, Value::Bool(b)) => Ok(Value::Bool(a != b)),
+
+                    // String operations
                     (Value::String(a), BinaryOp::Add, Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
+                    (Value::String(a), BinaryOp::Equal, Value::String(b)) => Ok(Value::Bool(a == b)),
+                    (Value::String(a), BinaryOp::NotEqual, Value::String(b)) => Ok(Value::Bool(a != b)),
                     _ => Ok(Value::Int(0)),
                 }
             }
@@ -379,6 +420,7 @@ impl Interpreter {
                 let v = self.eval_expression(expr)?;
                 match (op, v) {
                     (UnaryOp::Negate, Value::Int(n)) => Ok(Value::Int(-n)),
+                    (UnaryOp::Negate, Value::Float(f)) => Ok(Value::Float(-f)),
                     (UnaryOp::Not, Value::Bool(b)) => Ok(Value::Bool(!b)),
                     (_, other) => Ok(other),
                 }

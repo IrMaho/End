@@ -1,0 +1,41 @@
+// End Standard Library: std/nexus/hot_reload.end
+// ⚡ Zero-Downtime Hot-Reload, Shared State Hydration & Dynamic Arena Preservation
+
+pub st PersistentStateStore {
+    generation: i64,
+    active_connections: i32,
+    total_requests: i64,
+    state_payload: str,
+    checksum: u64,
+}
+
+pub fn hot_reload_store_create(initial_payload: str) PersistentStateStore {
+    ret PersistentStateStore {
+        generation: 1,
+        active_connections: 0,
+        total_requests: 0,
+        state_payload: initial_payload,
+        checksum: 1337,
+    }
+}
+
+pub fn hot_reload_preserve_state(store: PersistentStateStore, new_payload: str) PersistentStateStore {
+    ret PersistentStateStore {
+        generation: store.generation + 1,
+        active_connections: store.active_connections,
+        total_requests: store.total_requests,
+        state_payload: new_payload,
+        checksum: store.checksum + 1,
+    }
+}
+
+pub fn hot_reload_hydrate_state(previous_store: PersistentStateStore) PersistentStateStore {
+    // Re-hydrate session state and active socket counters from previous generation
+    ret PersistentStateStore {
+        generation: previous_store.generation,
+        active_connections: previous_store.active_connections,
+        total_requests: previous_store.total_requests,
+        state_payload: previous_store.state_payload,
+        checksum: previous_store.checksum,
+    }
+}

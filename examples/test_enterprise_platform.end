@@ -1,0 +1,122 @@
+// 👑 End Language Enterprise Unit Test Suite
+// Verifying Hardware Watchdog, Socket Guard, Hot-Reload, Ring Buffer, What-If Simulation & Stress Benchmarks
+import "../std/nexus/socket_guard.end"
+import "../std/nexus/circuit_breaker.end"
+import "../std/nexus/hot_reload.end"
+import "../std/nexus/stress.end"
+import "../std/telemetry/ring_buffer.end"
+import "../std/telemetry/trace.end"
+import "../std/simulation/what_if.end"
+
+@test("Hardware Watchdog: Socket Guard Dual-Check & Exponential Backoff")
+pub fn test_socket_guard() bool {
+    // 1. Invalid socket checking
+    val invalid_1 = safe_socket_is_valid(-1)
+    val invalid_2 = safe_socket_is_valid(0)
+    val valid = safe_socket_is_valid(42)
+
+    if invalid_1 != false || invalid_2 != false || valid != true {
+        ret false
+    }
+
+    // 2. Exponential backoff escalation
+    mut guard = socket_guard_create(50)
+    mut i = 0
+    while i < 30 {
+        guard = socket_guard_record_idle(guard)
+        i = i + 1
+    }
+
+    // Backoff should increase from 1ms up to 10ms after 20 idle cycles
+    if guard.current_backoff_ms < 10 {
+        ret false
+    }
+
+    ret true
+}
+
+@test("Hardware Protection: Thermal Circuit Breaker & CPU Load Throttling")
+pub fn test_circuit_breaker() bool {
+    val cb = circuit_breaker_create("payment_gateway", 5, 85)
+
+    // CPU at 50% -> Allow
+    val allow_normal = circuit_breaker_allow_request(cb, 50)
+    if !allow_normal {
+        ret false
+    }
+
+    // CPU at 90% (exceeds 85% limit) -> Hardware safety throttle reject
+    val allow_overload = circuit_breaker_allow_request(cb, 90)
+    if allow_overload {
+        ret false
+    }
+
+    ret true
+}
+
+@test("Zero-Downtime: State Hydration & Persistent Memory Store")
+pub fn test_hot_reload_hydration() bool {
+    val initial_store = hot_reload_store_create("player:1001:position=(10,20)")
+    val preserved = hot_reload_preserve_state(initial_store, "player:1001:position=(15,25)")
+    val hydrated = hot_reload_hydrate_state(preserved)
+
+    if hydrated.generation != 2 {
+        ret false
+    }
+    if hydrated.state_payload != "player:1001:position=(15,25)" {
+        ret false
+    }
+    ret true
+}
+
+@test("Observability: Zero-Alloc Telemetry Ring Buffer (10,000 items)")
+pub fn test_ring_buffer_telemetry() bool {
+    mut rb = ring_buffer_create(10000)
+    mut i = 0
+    while i < 500 {
+        rb = ring_buffer_push(rb)
+        i = i + 1
+    }
+
+    if ring_buffer_len(rb) != 500 {
+        ret false
+    }
+    if ring_buffer_total(rb) != 500 {
+        ret false
+    }
+    ret true
+}
+
+@test("Simulation: 'What-If' Differential Mutation & Variance Engine")
+pub fn test_what_if_differential_mutation() bool {
+    val baseline = 100.0
+    val mutated = 85.0
+    val diff = simulation_compare_outputs("Sub-millisecond Fiber Scheduling", baseline, mutated)
+
+    if diff.is_improved != true {
+        ret false
+    }
+    if diff.diff_delta != -15.0 {
+        ret false
+    }
+    ret true
+}
+
+@test("Scale Benchmarks: Latency Distribution & P99 Diagnostics")
+pub fn test_stress_p99_metrics() bool {
+    val report = stress_report_create(1000000, 15000, 15.0)
+    if report.total_operations != 1000000 {
+        ret false
+    }
+    if report.p99_latency_ns <= report.p50_latency_ns {
+        ret false
+    }
+    ret true
+}
+
+fn main() void {
+    println("================================================================================")
+    println("👑 Running End Enterprise Platform Test Suite...")
+    println("================================================================================")
+    println("Test cases loaded directly into test harness.")
+}

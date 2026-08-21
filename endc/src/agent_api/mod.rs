@@ -2,7 +2,7 @@ use crate::semantic::graph::SemanticGraph;
 use serde_json::json;
 
 pub mod self_healing;
-pub use self_healing::{SelfHealingEngine, FixReport};
+pub use self_healing::SelfHealingEngine;
 
 pub struct AgentApi<'a> {
     graph: &'a SemanticGraph,

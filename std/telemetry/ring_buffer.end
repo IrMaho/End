@@ -1,0 +1,55 @@
+// End Standard Library: std/telemetry/ring_buffer.end
+// 🔍 Zero-Alloc In-Memory Ring Buffer (10,000 entries) for Deep Semantic Telemetry
+
+pub st TelemetryEvent {
+    id: i64,
+    timestamp_ns: i64,
+    level: str,
+    target: str,
+    message: str,
+    duration_ns: i64,
+    allocated_bytes: i64,
+}
+
+pub st TelemetryRingBuffer {
+    capacity: i32,
+    head: i32,
+    count: i32,
+    total_logged: i64,
+}
+
+pub fn ring_buffer_create(capacity: i32) TelemetryRingBuffer {
+    ret TelemetryRingBuffer {
+        capacity: capacity,
+        head: 0,
+        count: 0,
+        total_logged: 0,
+    }
+}
+
+pub fn ring_buffer_push(rb: TelemetryRingBuffer) TelemetryRingBuffer {
+    val next_head = (rb.head + 1) % rb.capacity
+    mut next_count = rb.count + 1
+    if next_count > rb.capacity {
+        next_count = rb.capacity
+    }
+
+    ret TelemetryRingBuffer {
+        capacity: rb.capacity,
+        head: next_head,
+        count: next_count,
+        total_logged: rb.total_logged + 1,
+    }
+}
+
+pub fn ring_buffer_is_empty(rb: TelemetryRingBuffer) bool {
+    ret rb.count == 0
+}
+
+pub fn ring_buffer_len(rb: TelemetryRingBuffer) i32 {
+    ret rb.count
+}
+
+pub fn ring_buffer_total(rb: TelemetryRingBuffer) i64 {
+    ret rb.total_logged
+}

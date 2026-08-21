@@ -1,0 +1,75 @@
+// End Standard Library: std/nexus/circuit_breaker.end
+// 🛡️ Thermal Software Fuse, CPU/Memory Resource Quotas & Traffic Circuit Breaker
+
+pub st CircuitBreaker {
+    name: str,
+    failure_threshold: i32,
+    recovery_time_ms: i64,
+    failure_count: i32,
+    success_count: i32,
+    last_state_change: i64,
+    state: i32, // 0 = Closed (Normal), 1 = Open (Tripped), 2 = Half-Open (Testing)
+    cpu_limit_percent: i32,
+}
+
+pub fn circuit_breaker_create(name: str, failure_threshold: i32, cpu_limit_percent: i32) CircuitBreaker {
+    ret CircuitBreaker {
+        name: name,
+        failure_threshold: failure_threshold,
+        recovery_time_ms: 5000,
+        failure_count: 0,
+        success_count: 0,
+        last_state_change: 0,
+        state: 0,
+        cpu_limit_percent: cpu_limit_percent,
+    }
+}
+
+pub fn circuit_breaker_allow_request(cb: CircuitBreaker, current_cpu_percent: i32) bool {
+    // 1. Hardware load quota check
+    if current_cpu_percent >= cb.cpu_limit_percent {
+        // High CPU throttle
+        ret false
+    }
+
+    // 2. State check
+    if cb.state == 1 {
+        // Open (Tripped) - reject to protect system
+        ret false
+    }
+
+    ret true
+}
+
+pub fn circuit_breaker_record_success(cb: CircuitBreaker) CircuitBreaker {
+    ret CircuitBreaker {
+        name: cb.name,
+        failure_threshold: cb.failure_threshold,
+        recovery_time_ms: cb.recovery_time_ms,
+        failure_count: 0,
+        success_count: cb.success_count + 1,
+        last_state_change: cb.last_state_change,
+        state: 0,
+        cpu_limit_percent: cb.cpu_limit_percent,
+    }
+}
+
+pub fn circuit_breaker_record_failure(cb: CircuitBreaker) CircuitBreaker {
+    val new_failures = cb.failure_count + 1
+    mut new_state = cb.state
+
+    if new_failures >= cb.failure_threshold {
+        new_state = 1 // Trip circuit breaker
+    }
+
+    ret CircuitBreaker {
+        name: cb.name,
+        failure_threshold: cb.failure_threshold,
+        recovery_time_ms: cb.recovery_time_ms,
+        failure_count: new_failures,
+        success_count: cb.success_count,
+        last_state_change: cb.last_state_change,
+        state: new_state,
+        cpu_limit_percent: cb.cpu_limit_percent,
+    }
+}
