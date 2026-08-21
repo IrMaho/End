@@ -8,8 +8,8 @@ import shutil
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-SUITE_DIR = r"C:\Users\ASUS\Desktop\flutter_project\endApp\1\benchmarks\suite12"
-REPO_SUITE_DIR = r"C:\Users\ASUS\Desktop\flutter_project\end\benchmarks\suite12"
+SUITE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_SUITE_DIR = SUITE_DIR
 os.makedirs(REPO_SUITE_DIR, exist_ok=True)
 
 BENCHMARK_NAMES = [
@@ -33,14 +33,14 @@ LANGUAGES = [
         "icon": "👑",
         "file": "suite12_end.end",
         "exe": "suite12_end.exe",
-        "compile": ["end.exe", "build", os.path.join(SUITE_DIR, "suite12_end.end"), "--strip", "-o", os.path.join(SUITE_DIR, "suite12_end.exe")]
+        "compile": [os.path.join(os.path.dirname(os.path.dirname(SUITE_DIR)), "bin", "end.exe"), "build", os.path.join(SUITE_DIR, "suite12_end.end"), "--strip", "-o", os.path.join(SUITE_DIR, "suite12_end.exe")]
     },
     {
         "name": "Zig (0.16.0)",
         "icon": "⚡",
         "file": "suite12_zig.zig",
         "exe": "suite12_zig.exe",
-        "compile": ["zig", "build-exe", "-O", "ReleaseFast", "-lc", os.path.join(SUITE_DIR, "suite12_zig.zig"), f"-femit-bin={os.path.join(SUITE_DIR, 'suite12_zig.exe')}"]
+        "compile": ["zig", "build-exe", "-O", "ReleaseFast", "-lc", os.path.join(SUITE_DIR, "suite12_zig.zig")]
     },
     {
         "name": "Rust (1.89.0)",
@@ -132,17 +132,9 @@ for b_idx in range(1, 13):
         }
         print(f"  {lang['icon']} {lang['name']:<20}: Mean = {mean_t:7.2f} ms | P50 = {p50_t:7.2f} ms | Checksum = {checksum}")
 
-# Save JSON in both dirs
+# Save JSON
 results_json_path = os.path.join(SUITE_DIR, "suite12_results.json")
 with open(results_json_path, "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2)
 
-shutil.copy2(results_json_path, os.path.join(REPO_SUITE_DIR, "suite12_results.json"))
-
-# Sync all files to End repo
-for fname in ["suite12_c.c", "suite12_zig.zig", "suite12_rust.rs", "suite12_go.go", "suite12_end.end", "run_suite12.py"]:
-    src = os.path.join(SUITE_DIR, fname)
-    if os.path.exists(src):
-        shutil.copy2(src, os.path.join(REPO_SUITE_DIR, fname))
-
-print(f"\n✔ Full dataset saved and synced!")
+print(f"\n✔ Full dataset saved to {results_json_path}!")

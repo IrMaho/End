@@ -17,6 +17,7 @@ pub fn get_time_ns() u64 {
     ret ((counter as u64) * 1000000000) / (freq as u64)
 }
 
+@inline
 pub fn splitmix64(state: *u64) u64 {
     *state = *state + 0x9E3779B97F4A7C15
     mut z: u64 = *state
@@ -28,15 +29,18 @@ pub fn splitmix64(state: *u64) u64 {
 // -----------------------------------------------------------------------------
 // 1. Raymarcher (250,000 rays) — Pure SIMD/FPU Scalar Inlined
 // -----------------------------------------------------------------------------
+@inline
 pub fn sdf_sphere_scalar(px: f32, py: f32, pz: f32, r: f32) f32 {
     ret sqrtf(px * px + py * py + pz * pz) - r
 }
 
+@inline
 pub fn sdf_torus_scalar(px: f32, py: f32, pz: f32, r1: f32, r2: f32) f32 {
     val qx: f32 = sqrtf(px * px + pz * pz) - r1
     ret sqrtf(qx * qx + py * py) - r2
 }
 
+@inline
 pub fn sdf_scene_scalar(px: f32, py: f32, pz: f32) f32 {
     val d_sphere: f32 = sdf_sphere_scalar(px, py - 1.0, pz, 1.0)
     val d_torus: f32 = sdf_torus_scalar(px, py - 0.5, pz, 1.2, 0.3)
@@ -429,13 +433,68 @@ pub fn bench_7_dna_alignment() i64 {
 // -----------------------------------------------------------------------------
 // 8. JSON Microservice (100,000 Requests) — Zero-Alloc Formatter
 // -----------------------------------------------------------------------------
+@inline
+pub fn append_str(buf: *u8, offset: i32, s: *u8, slen: i32) i32 {
+    memcpy((buf + offset) as *void, s as *void, slen as u64)
+    ret offset + slen
+}
+
+@inline
+pub fn append_i32(buf: *u8, offset: i32, n: i32) i32 {
+    if n == 0 {
+        buf[offset] = 48
+        ret offset + 1
+    }
+    mut v: i32 = n
+    mut digits: i32 = 0
+    mut temp_v: i32 = v
+    while temp_v > 0 {
+        digits = digits + 1
+        temp_v = temp_v / 10
+    }
+    mut pos: i32 = offset + digits - 1
+    while v > 0 {
+        buf[pos] = ((v % 10) as u8) + 48
+        pos = pos - 1
+        v = v / 10
+    }
+    ret offset + digits
+}
+
+@inline
+pub fn append_f64_1dp(buf: *u8, offset: i32, f: f64) i32 {
+    val total_tenths: i64 = ((f * 10.0 + 0.5) as i64)
+    val integer_part: i32 = (total_tenths / 10) as i32
+    val frac_part: i32 = (total_tenths % 10) as i32
+    mut cur: i32 = append_i32(buf, offset, integer_part)
+    buf[cur] = 46
+    cur = cur + 1
+    buf[cur] = (frac_part as u8) + 48
+    ret cur + 1
+}
+
 pub fn bench_8_json_serializer() i64 {
     val buf: *u8 = malloc(512)
-    val fmt: *u8 = "{\"id\":%d,\"status\":\"active\",\"latency_us\":%d,\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":%.1f,\"mem\":%.1f}}" as *u8
     mut hash: i64 = 0
 
+    val s_prefix: *u8 = "{\"id\":" as *u8
+    val s_status: *u8 = ",\"status\":\"active\",\"latency_us\":" as *u8
+    val s_tags: *u8 = ",\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":" as *u8
+    val s_mem: *u8 = ",\"mem\":" as *u8
+    val s_suffix: *u8 = "}}" as *u8
+
     for i in 100000 {
-        val len: i32 = sprintf(buf, fmt, i, (i * 37) % 500, 42.5 + ((i % 10) as f64), 128.4 + ((i % 50) as f64))
+        mut len: i32 = 0
+        len = append_str(buf, len, s_prefix, 6)
+        len = append_i32(buf, len, i)
+        len = append_str(buf, len, s_status, 32)
+        len = append_i32(buf, len, (i * 37) % 500)
+        len = append_str(buf, len, s_tags, 46)
+        len = append_f64_1dp(buf, len, 42.5 + ((i % 10) as f64))
+        len = append_str(buf, len, s_mem, 7)
+        len = append_f64_1dp(buf, len, 128.4 + ((i % 50) as f64))
+        len = append_str(buf, len, s_suffix, 2)
+
         hash = (hash * 31) + (len as i64) + ((buf[len / 2]) as i64)
     }
     free(buf)
@@ -470,7 +529,7 @@ pub fn bench_9_fsm_lexer() i64 {
                 token_hash = (token_hash * 33) + 2
                 fsm_state = 0
             }
-        } else if fsm_state == 3 {
+        } else {
             token_count = token_count + 1
             token_hash = (token_hash * 33) + 3
             fsm_state = 0
@@ -494,19 +553,19 @@ pub fn bench_10_gemm_matrix() i64 {
         c_mat[idx] = 0.0
     }
 
-    for b_j in 16 {
-        val sj: i32 = b_j * 32
-        for b_i in 16 {
-            val si: i32 = b_i * 32
-            for b_k in 16 {
-                val sk: i32 = b_k * 32
+    for b_i in 16 {
+        val si: i32 = b_i * 32
+        for b_k in 16 {
+            val sk: i32 = b_k * 32
+            for b_j in 16 {
+                val sj: i32 = b_j * 32
                 for di in 32 {
                     val i: i32 = si + di
+                    val c_row: *f64 = c_mat + (i * n_dim + sj)
                     for dk in 32 {
                         val k: i32 = sk + dk
                         val a_ik: f64 = a_mat[i * n_dim + k]
                         val b_row: *f64 = b_mat + (k * n_dim + sj)
-                        val c_row: *f64 = c_mat + (i * n_dim + sj)
                         for dj in 32 {
                             c_row[dj] = c_row[dj] + a_ik * b_row[dj]
                         }
@@ -561,6 +620,7 @@ pub fn bench_11_monte_carlo() i64 {
 // 12. Super-Scalar ALU Reduction
 // -----------------------------------------------------------------------------
 st Req12 { id: u64, payload_size: i32, checksum: i64 }
+@inline
 pub fn process_req12(id: u64, size: i32) Req12 {
     mut hash: u64 = id ^ 0x9E3779B97F4A7C15
     for j in 50 {

@@ -426,22 +426,32 @@ impl CBackend {
                 self.map_type(&f.return_type)
             };
             let mut params_str = Vec::new();
-            for p in &f.params {
-                params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+            if f.name == "main" && !f.params.is_empty() {
+                params_str.push("int argc".to_string());
+                params_str.push("char** argv".to_string());
+            } else {
+                for p in &f.params {
+                    params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                }
+                if params_str.is_empty() {
+                    params_str.push("void".to_string());
+                }
             }
-            if params_str.is_empty() {
-                params_str.push("void".to_string());
-            }
+
+            let is_explicit_inline = f.directives.iter().any(|d| d.name == "@inline" || d.name == "@always_inline");
+            let is_exported = (is_lib && f.is_pub) || f.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export");
 
             if f.name == "main" {
                 self.output.push_str(&format!("{} {}({});\n", ret_type, f.name, params_str.join(", ")));
-            } else if is_lib || f.is_pub || f.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export") {
+            } else if is_exported {
                 self.output.push_str(&format!("END_API {} {}({});\n", ret_type, f.name, params_str.join(", ")));
                 if is_lib {
                     self.header_output.push_str(&format!("END_API {} {}({});\n", ret_type, f.name, params_str.join(", ")));
                 }
-            } else {
+            } else if is_explicit_inline {
                 self.output.push_str(&format!("static inline __attribute__((always_inline)) {} {}({});\n", ret_type, f.name, params_str.join(", ")));
+            } else {
+                self.output.push_str(&format!("static inline {} {}({});\n", ret_type, f.name, params_str.join(", ")));
             }
         }
         self.output.push('\n');
@@ -501,11 +511,16 @@ impl CBackend {
         };
 
         let mut params_str = Vec::new();
-        for p in &func.params {
-            params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
-        }
-        if params_str.is_empty() {
-            params_str.push("void".to_string());
+        if func.name == "main" && !func.params.is_empty() {
+            params_str.push("int argc".to_string());
+            params_str.push("char** argv".to_string());
+        } else {
+            for p in &func.params {
+                params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+            }
+            if params_str.is_empty() {
+                params_str.push("void".to_string());
+            }
         }
 
         let fn_name = if func.name == "main" {
@@ -514,14 +529,17 @@ impl CBackend {
             func.name.clone()
         };
 
-        let is_exported = self.is_lib || func.is_pub || func.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export");
+        let is_explicit_inline = func.directives.iter().any(|d| d.name == "@inline" || d.name == "@always_inline");
+        let is_exported = (self.is_lib && func.is_pub) || func.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export");
 
         let prefix = if func.name == "main" {
             "".to_string()
         } else if is_exported {
             "END_API ".to_string()
-        } else {
+        } else if is_explicit_inline {
             "static inline __attribute__((always_inline)) ".to_string()
+        } else {
+            "static inline ".to_string()
         };
 
         let clean_file = func.span.file.replace('\\', "/");

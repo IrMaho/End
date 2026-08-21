@@ -547,6 +547,8 @@ fn main() {
                 "-march=native".to_string(),
                 "-funroll-loops".to_string(),
                 "-fomit-frame-pointer".to_string(),
+                "-finline-functions".to_string(),
+                "-fno-math-errno".to_string(),
                 "-fwrapv".to_string(),
             ];
 
