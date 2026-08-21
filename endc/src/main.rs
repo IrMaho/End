@@ -17,7 +17,7 @@ mod semantic;
 
 use agent_api::{AgentApi, MicroEvaluator, SelfHealingEngine, SemanticCodeSlicer, StructuredAstPatcher};
 use architecture::ArchitectureEngine;
-use codegen::{CBackend, Interpreter};
+use codegen::{CBackend, CraneliftBackend, Interpreter, LlvmBackend};
 use diagnostics::Diagnostic;
 use lexer::Lexer;
 use lsp::LanguageServer;
@@ -62,6 +62,12 @@ enum Commands {
         /// Emit generated C code and header only
         #[arg(long)]
         emit_c: bool,
+        /// Emit LLVM IR (.ll) code directly (Zero C Dependency)
+        #[arg(long)]
+        emit_llvm: bool,
+        /// Code generation backend (c, llvm, cranelift)
+        #[arg(long, default_value = "c")]
+        backend: String,
     },
     /// Perform fast semantic check and return machine-readable diagnostics
     Check {
@@ -300,6 +306,8 @@ fn main() {
             lib,
             strip,
             emit_c,
+            emit_llvm,
+            backend: backend_choice,
         } => {
             let is_library_mode = dll || lib;
             let (module, _) = match load_and_analyze(&file) {
@@ -309,6 +317,33 @@ fn main() {
                     std::process::exit(1);
                 }
             };
+
+            if emit_llvm || backend_choice == "llvm" {
+                let mut llvm_be = LlvmBackend::new(target.as_deref());
+                let llvm_ir = llvm_be.generate_llvm_ir(&module);
+                let ll_file_path = file.with_extension("ll");
+                if let Err(e) = fs::write(&ll_file_path, &llvm_ir) {
+                    eprintln!("{} Failed to write LLVM IR: {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+                println!("{} Generated direct LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
+                if emit_llvm {
+                    return;
+                }
+            }
+
+            if backend_choice == "cranelift" {
+                match CraneliftBackend::compile_module_jit(&module) {
+                    Ok(rep) => {
+                        println!("⚡ {} JIT compiled {} functions in {} µs (Zero C Dependency)", "Cranelift:".green().bold(), rep.functions_compiled, rep.compilation_duration_us);
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} Cranelift error: {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
 
             let mut backend = CBackend::new();
             let (c_code, header_code) = backend.generate_with_options(&module, is_library_mode);
@@ -1227,6 +1262,8 @@ fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), S
         imports: Vec::new(),
         enums: Vec::new(),
         structs: Vec::new(),
+        traits: Vec::new(),
+        impls: Vec::new(),
         functions: Vec::new(),
         span: ast::Span::new(file.to_string_lossy().to_string(), 1, 1),
     };
@@ -1301,6 +1338,8 @@ fn load_module_recursive(
 
     merged.enums.extend(module.enums);
     merged.structs.extend(module.structs);
+    merged.traits.extend(module.traits);
+    merged.impls.extend(module.impls);
     merged.functions.extend(module.functions);
 
     Ok(())

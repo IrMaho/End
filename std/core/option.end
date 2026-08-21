@@ -1,0 +1,21 @@
+// 🧬 End Language Core: std/core/option.end
+// Algebraic Data Type: Option<T> for Null-Safe Monomorphic Optional Values
+
+pub enum Option<T> {
+    Some(T),
+    None,
+}
+
+pub fn option_is_some<T>(opt: Option<T>) bool {
+    match opt {
+        Option::Some(_) => true,
+        Option::None => false,
+    }
+}
+
+pub fn option_is_none<T>(opt: Option<T>) bool {
+    match opt {
+        Option::Some(_) => false,
+        Option::None => true,
+    }
+}

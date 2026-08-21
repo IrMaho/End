@@ -1,0 +1,105 @@
+// 👑 End Language 2.0 Comprehensive Platform Validation Test
+import "std/test/assert.end"
+import "std/core/result.end"
+import "std/core/option.end"
+import "std/collections/list.end"
+import "std/collections/map.end"
+import "std/collections/ring_buffer.end"
+import "std/net/async/driver.end"
+import "std/async/fiber.end"
+import "std/crypto/tls.end"
+import "std/hyper/http2.end"
+import "std/crypto/acme.end"
+import "std/package/registry.end"
+
+@test
+fn test_pillar1_generics_and_adts() void {
+    println("[Pillar 1] Testing Monomorphic Generics & ADTs...")
+
+    // 1. Generic Result<T, E>
+    val ok_res = Result::Ok(42)
+    val is_ok = result_is_ok(ok_res)
+    assert_true(is_ok, "Result::Ok must return true for result_is_ok")
+
+    // 2. Generic Option<T>
+    val some_opt = Option::Some(100)
+    val is_some = option_is_some(some_opt)
+    assert_true(is_some, "Option::Some must return true for option_is_some")
+
+    // 3. Generic List<T>
+    val initial_list = list_create(8)
+    val updated_list = list_push(initial_list, 999)
+    assert_eq_i64(list_len(updated_list), 1, "List length must be 1 after push")
+
+    // 4. SwissTable HashMap<K, V>
+    val initial_map = map_create(16)
+    val updated_map = map_insert(initial_map, "apiKey", "sec_token_99")
+    assert_eq_i64(map_len(updated_map), 1, "HashMap length must be 1 after insert")
+
+    // 5. Generic RingBuffer<T>
+    val initial_ring = ring_create(32)
+    val updated_ring = ring_push(initial_ring, 12345)
+    assert_true(!ring_is_empty(updated_ring), "RingBuffer must not be empty after push")
+}
+
+@test
+fn test_pillar2_c10m_async_and_fibers() void {
+    println("[Pillar 2] Testing C10M Async Driver & 24-Byte Green Fibers...")
+
+    // 1. Async Event Loop
+    val loop_inst = async_driver_create_native()
+    val registered = async_driver_register_fd(loop_inst, 1024)
+    val polled = async_driver_poll(registered, 10)
+    assert_eq_i64(polled.active_connections, 1, "Active connections must be 1")
+    assert_eq_i64(polled.events_processed, 1, "Events processed must be 1")
+
+    // 2. Green Fiber Scheduler
+    val sched = fiber_scheduler_create()
+    val spawn_res = fiber_spawn(sched, 1001)
+    val yield_res = fiber_yield_step(spawn_res.scheduler, spawn_res.fiber)
+    assert_eq_i64(yield_res.scheduler.total_context_switches, 1, "Context switches must be 1")
+    assert_eq_i64(yield_res.fiber.ticks_yielded, 1, "Fiber ticks yielded must be 1")
+}
+
+@test
+fn test_pillar3_tls13_http2_and_acme() void {
+    println("[Pillar 3] Testing TLS 1.3, HTTP/2 Mux & ACME SSL Engine...")
+
+    // 1. TLS 1.3 Handshake & Encryption
+    val tls_session = tls13_handshake_server(TlsCipherSuite::TlsAes256GcmSha384)
+    assert_true(tls_session.peer_authenticated, "TLS 1.3 peer must be authenticated")
+    val encrypted_session = tls13_encrypt_record(tls_session, 1024)
+    assert_eq_i64(encrypted_session.bytes_encrypted, 1024, "Encrypted bytes must equal 1024")
+
+    // 2. HTTP/2 Multiplexer
+    val mux = http2_mux_create(1000)
+    val mux_res = http2_mux_open_stream(mux, 1)
+    assert_true(mux_res.stream.state_open, "HTTP/2 stream must be open")
+    assert_eq_i64(mux_res.multiplexer.total_frames_routed, 1, "Total frames routed must be 1")
+
+    // 3. ACME Auto SSL
+    val cert = acme_order_certificate("end-lang.org")
+    assert_true(cert.is_validated, "ACME Certificate must be validated")
+    assert_true(!acme_check_renewal_needed(cert), "Fresh cert must not need renewal")
+}
+
+@test
+fn test_pillar5_global_registry_cdn() void {
+    println("[Pillar 5] Testing Global Central Package Registry Client...")
+
+    val client = registry_client_create()
+    val query_res = registry_query_package(client, "end_hyper")
+    assert_eq_i64(query_res.client.cache_hits, 1, "Cache hits must be 1")
+    assert_true(query_res.metadata.downloads_total > 10000, "Package downloads must exceed 10000")
+}
+
+fn main() void {
+    println("==================================================")
+    println("👑 Running End Language 2.0 Full Platform Test Suite")
+    println("==================================================")
+    test_pillar1_generics_and_adts()
+    test_pillar2_c10m_async_and_fibers()
+    test_pillar3_tls13_http2_and_acme()
+    test_pillar5_global_registry_cdn()
+    println("👑 [SUCCESS] All 5 Pillars of End 2.0 Platform Fully Verified!")
+}

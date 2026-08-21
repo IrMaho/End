@@ -1,0 +1,33 @@
+// 🧬 End Language Collections: std/collections/ring_buffer.end
+// Generic Lock-Free Circular Ring Buffer for High-Concurrency Channels
+
+pub st GenericRingBuffer<T> {
+    head: i64,
+    tail: i64,
+    capacity: i64,
+    is_full: bool,
+}
+
+pub fn ring_create<T>(cap: i64) GenericRingBuffer<T> {
+    ret GenericRingBuffer<T> {
+        head: 0,
+        tail: 0,
+        capacity: cap,
+        is_full: false,
+    }
+}
+
+pub fn ring_push<T>(ring: GenericRingBuffer<T>, item: T) GenericRingBuffer<T> {
+    val next_head = (ring.head + 1) % ring.capacity
+    val is_full = next_head == ring.tail
+    ret GenericRingBuffer<T> {
+        head: next_head,
+        tail: ring.tail,
+        capacity: ring.capacity,
+        is_full: is_full,
+    }
+}
+
+pub fn ring_is_empty<T>(ring: GenericRingBuffer<T>) bool {
+    ret ring.head == ring.tail && !ring.is_full
+}

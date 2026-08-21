@@ -30,6 +30,10 @@ pub enum TokenKind {
     False,    // 'false'
     Spawn,    // 'spawn'
     Skip,     // 'skip'
+    Trait,    // 'trait'
+    Impl,     // 'impl'
+    Async,    // 'async'
+    Await,    // 'await'
 
     // Directives
     Directive(String), // '@agent_note', '@target', '@c', etc.
@@ -256,6 +260,10 @@ impl<'a> Lexer<'a> {
                 "false" => TokenKind::False,
                 "spawn" => TokenKind::Spawn,
                 "skip" => TokenKind::Skip,
+                "trait" => TokenKind::Trait,
+                "impl" => TokenKind::Impl,
+                "async" => TokenKind::Async,
+                "await" => TokenKind::Await,
                 _ => TokenKind::Ident(ident),
             };
 

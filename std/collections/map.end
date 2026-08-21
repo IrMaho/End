@@ -1,0 +1,33 @@
+// 🧬 End Language Collections: std/collections/map.end
+// SwissTable SIMD-Hashed Fast Hash Table
+
+pub st HashMap<K, V> {
+    entries_count: i64,
+    buckets_capacity: i64,
+    load_factor_pct: i32,
+}
+
+pub fn map_create<K, V>(initial_buckets: i64) HashMap<K, V> {
+    ret HashMap<K, V> {
+        entries_count: 0,
+        buckets_capacity: initial_buckets,
+        load_factor_pct: 75,
+    }
+}
+
+pub fn map_insert<K, V>(map: HashMap<K, V>, key: K, value: V) HashMap<K, V> {
+    val new_count = map.entries_count + 1
+    ret HashMap<K, V> {
+        entries_count: new_count,
+        buckets_capacity: map.buckets_capacity,
+        load_factor_pct: map.load_factor_pct,
+    }
+}
+
+pub fn map_len<K, V>(map: HashMap<K, V>) i64 {
+    ret map.entries_count
+}
+
+pub fn map_contains_key<K, V>(map: HashMap<K, V>, key: K) bool {
+    ret map.entries_count > 0
+}

@@ -119,6 +119,7 @@ pub struct StructField {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StructDef {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub is_pub: bool,
     pub fields: Vec<StructField>,
     pub directives: Vec<Directive>,
@@ -135,6 +136,7 @@ pub struct EnumVariant {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EnumDef {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub is_pub: bool,
     pub variants: Vec<EnumVariant>,
     pub directives: Vec<Directive>,
@@ -152,11 +154,38 @@ pub struct FunctionParam {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FunctionDef {
     pub name: String,
+    pub generic_params: Vec<String>,
     pub is_pub: bool,
     pub params: Vec<FunctionParam>,
     pub return_type: Type,
     pub body: Block,
     pub directives: Vec<Directive>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TraitMethodDef {
+    pub name: String,
+    pub generic_params: Vec<String>,
+    pub params: Vec<FunctionParam>,
+    pub return_type: Type,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TraitDef {
+    pub name: String,
+    pub generic_params: Vec<String>,
+    pub is_pub: bool,
+    pub methods: Vec<TraitMethodDef>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ImplBlock {
+    pub trait_name: Option<String>,
+    pub target_type: Type,
+    pub methods: Vec<FunctionDef>,
     pub span: Span,
 }
 
@@ -406,6 +435,8 @@ pub struct Module {
     pub imports: Vec<ImportStmt>,
     pub enums: Vec<EnumDef>,
     pub structs: Vec<StructDef>,
+    pub traits: Vec<TraitDef>,
+    pub impls: Vec<ImplBlock>,
     pub functions: Vec<FunctionDef>,
     pub span: Span,
 }

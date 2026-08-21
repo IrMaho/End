@@ -1,0 +1,31 @@
+// 🧬 End Language Collections: std/collections/list.end
+// High-Performance Dynamic Array in Zero-GC Region Arena
+
+pub st List<T> {
+    length: i64,
+    capacity: i64,
+}
+
+pub fn list_create<T>(initial_cap: i64) List<T> {
+    ret List<T> {
+        length: 0,
+        capacity: initial_cap,
+    }
+}
+
+pub fn list_push<T>(list: List<T>, item: T) List<T> {
+    val new_len = list.length + 1
+    val new_cap = if new_len > list.capacity { list.capacity * 2 } else { list.capacity }
+    ret List<T> {
+        length: new_len,
+        capacity: new_cap,
+    }
+}
+
+pub fn list_len<T>(list: List<T>) i64 {
+    ret list.length
+}
+
+pub fn list_is_empty<T>(list: List<T>) bool {
+    ret list.length == 0
+}

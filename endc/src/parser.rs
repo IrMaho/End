@@ -71,6 +71,8 @@ impl Parser {
         let mut imports = Vec::new();
         let mut enums = Vec::new();
         let mut structs = Vec::new();
+        let mut traits = Vec::new();
+        let mut impls = Vec::new();
         let mut functions = Vec::new();
         let start_span = self.current_span();
 
@@ -155,6 +157,12 @@ impl Parser {
                 TokenKind::Struct => {
                     structs.push(self.parse_struct(false, pending_directives)?);
                 }
+                TokenKind::Trait => {
+                    traits.push(self.parse_trait(false)?);
+                }
+                TokenKind::Impl => {
+                    impls.push(self.parse_impl()?);
+                }
                 TokenKind::Fn => {
                     functions.push(self.parse_function(false, pending_directives)?);
                 }
@@ -167,12 +175,15 @@ impl Parser {
                         TokenKind::Struct => {
                             structs.push(self.parse_struct(true, pending_directives)?);
                         }
+                        TokenKind::Trait => {
+                            traits.push(self.parse_trait(true)?);
+                        }
                         TokenKind::Fn => {
                             functions.push(self.parse_function(true, pending_directives)?);
                         }
                         other => {
                             return Err(format!(
-                                "Expected enum, struct or fn after 'pub', found {:?} at line {}",
+                                "Expected enum, struct, trait or fn after 'pub', found {:?} at line {}",
                                 other,
                                 self.current_span().line
                             ))
@@ -199,6 +210,8 @@ impl Parser {
             imports,
             enums,
             structs,
+            traits,
+            impls,
             functions,
             span: start_span,
         })
@@ -389,6 +402,19 @@ impl Parser {
             other => return Err(format!("Expected enum name, found {:?} at line {}", other, span.line)),
         };
 
+        let mut generic_params = Vec::new();
+        if self.match_token(&TokenKind::Less) {
+            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                if let TokenKind::Ident(g) = self.advance().kind {
+                    generic_params.push(g);
+                }
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::Greater)?;
+        }
+
         self.expect(TokenKind::LBrace)?;
         let mut variants = Vec::new();
 
@@ -418,6 +444,7 @@ impl Parser {
 
         Ok(EnumDef {
             name,
+            generic_params,
             is_pub,
             variants,
             directives,
@@ -433,6 +460,19 @@ impl Parser {
             TokenKind::Ident(n) => n,
             other => return Err(format!("Expected struct name, found {:?} at line {}", other, span.line)),
         };
+
+        let mut generic_params = Vec::new();
+        if self.match_token(&TokenKind::Less) {
+            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                if let TokenKind::Ident(g) = self.advance().kind {
+                    generic_params.push(g);
+                }
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::Greater)?;
+        }
 
         self.expect(TokenKind::LBrace)?;
         let mut fields = Vec::new();
@@ -470,6 +510,7 @@ impl Parser {
 
         Ok(StructDef {
             name,
+            generic_params,
             is_pub,
             fields,
             directives,
@@ -485,6 +526,19 @@ impl Parser {
             TokenKind::Ident(n) => n,
             other => return Err(format!("Expected function name, found {:?} at line {}", other, span.line)),
         };
+
+        let mut generic_params = Vec::new();
+        if self.match_token(&TokenKind::Less) {
+            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                if let TokenKind::Ident(g) = self.advance().kind {
+                    generic_params.push(g);
+                }
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::Greater)?;
+        }
 
         self.expect(TokenKind::LParen)?;
         let mut params = Vec::new();
@@ -541,11 +595,143 @@ impl Parser {
 
         Ok(FunctionDef {
             name,
+            generic_params,
             is_pub,
             params,
             return_type,
             body,
             directives,
+            span,
+        })
+    }
+
+    fn parse_trait(&mut self, is_pub: bool) -> Result<TraitDef, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::Trait)?;
+
+        let name = match self.advance().kind {
+            TokenKind::Ident(n) => n,
+            other => return Err(format!("Expected trait name, found {:?} at line {}", other, span.line)),
+        };
+
+        let mut generic_params = Vec::new();
+        if self.match_token(&TokenKind::Less) {
+            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                if let TokenKind::Ident(g) = self.advance().kind {
+                    generic_params.push(g);
+                }
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::Greater)?;
+        }
+
+        self.expect(TokenKind::LBrace)?;
+        let mut methods = Vec::new();
+
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            let m_span = self.current_span();
+            self.expect(TokenKind::Fn)?;
+            let m_name = match self.advance().kind {
+                TokenKind::Ident(n) => n,
+                other => return Err(format!("Expected trait method name, found {:?}", other)),
+            };
+
+            let mut m_generic_params = Vec::new();
+            if self.match_token(&TokenKind::Less) {
+                while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                    if let TokenKind::Ident(g) = self.advance().kind {
+                        m_generic_params.push(g);
+                    }
+                    if !self.match_token(&TokenKind::Comma) {
+                        break;
+                    }
+                }
+                self.expect(TokenKind::Greater)?;
+            }
+
+            self.expect(TokenKind::LParen)?;
+            let mut params = Vec::new();
+            while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                let p_span = self.current_span();
+                let is_mut = self.match_token(&TokenKind::Mut);
+                let p_name = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected param name, found {:?}", other)),
+                };
+                let mut p_ty = Type::Void;
+                if self.match_token(&TokenKind::Colon) {
+                    p_ty = self.parse_type()?;
+                }
+                params.push(FunctionParam {
+                    name: p_name,
+                    param_type: p_ty,
+                    is_mut,
+                    span: p_span,
+                });
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::RParen)?;
+
+            let ret_ty = if self.match_token(&TokenKind::Arrow) {
+                self.parse_type()?
+            } else if matches!(self.peek_kind(), TokenKind::Ident(_)) || self.check(&TokenKind::LBracket) || self.check(&TokenKind::Star) {
+                self.parse_type()?
+            } else {
+                Type::Void
+            };
+
+            self.match_token(&TokenKind::SemiColon);
+
+            methods.push(TraitMethodDef {
+                name: m_name,
+                generic_params: m_generic_params,
+                params,
+                return_type: ret_ty,
+                span: m_span,
+            });
+        }
+        self.expect(TokenKind::RBrace)?;
+
+        Ok(TraitDef {
+            name,
+            generic_params,
+            is_pub,
+            methods,
+            span,
+        })
+    }
+
+    fn parse_impl(&mut self) -> Result<ImplBlock, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::Impl)?;
+
+        let first_ty = self.parse_type()?;
+        let (trait_name, target_type) = if self.match_token(&TokenKind::For) {
+            let tr_name = match &first_ty {
+                Type::Custom(n) => n.clone(),
+                _ => "Trait".to_string(),
+            };
+            let tgt = self.parse_type()?;
+            (Some(tr_name), tgt)
+        } else {
+            (None, first_ty)
+        };
+
+        self.expect(TokenKind::LBrace)?;
+        let mut methods = Vec::new();
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            methods.push(self.parse_function(true, Vec::new())?);
+        }
+        self.expect(TokenKind::RBrace)?;
+
+        Ok(ImplBlock {
+            trait_name,
+            target_type,
+            methods,
             span,
         })
     }
@@ -846,8 +1032,16 @@ impl Parser {
             }
             TokenKind::Ident(name) => {
                 let id = name.clone();
-                self.advance();
-                if self.match_token(&TokenKind::Dot) {
+                let is_enum_variant = if self.match_token(&TokenKind::Dot) {
+                    true
+                } else if self.check(&TokenKind::Colon) {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon)
+                } else {
+                    false
+                };
+
+                if is_enum_variant {
                     let vname = match self.advance().kind {
                         TokenKind::Ident(n) => n,
                         other => return Err(format!("Expected variant name, found {:?}", other)),
@@ -1187,6 +1381,44 @@ impl Parser {
     fn parse_primary(&mut self) -> Result<Expression, String> {
         let span = self.current_span();
 
+        if self.match_token(&TokenKind::Match) {
+            let expr = self.parse_expression()?;
+            self.expect(TokenKind::LBrace)?;
+            let mut arms = Vec::new();
+            while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                let arm_span = self.current_span();
+                let pattern = self.parse_pattern()?;
+                let mut guard = None;
+                if self.match_token(&TokenKind::If) {
+                    guard = Some(self.parse_expression()?);
+                }
+                self.expect(TokenKind::FatArrow)?;
+                let body = if self.check(&TokenKind::LBrace) {
+                    self.parse_block()?
+                } else {
+                    let expr = self.parse_expression()?;
+                    self.match_token(&TokenKind::Comma);
+                    Block {
+                        statements: vec![Statement::Expression(expr)],
+                        span: arm_span.clone(),
+                    }
+                };
+                self.match_token(&TokenKind::Comma);
+                arms.push(MatchArm {
+                    pattern,
+                    guard,
+                    body,
+                    span: arm_span,
+                });
+            }
+            self.expect(TokenKind::RBrace)?;
+            return Ok(Expression::Match {
+                expr: Box::new(expr),
+                arms,
+                span,
+            });
+        }
+
         if self.match_token(&TokenKind::Dot) {
             let vname = match self.advance().kind {
                 TokenKind::Ident(n) => n,
@@ -1306,8 +1538,25 @@ impl Parser {
                     });
                 }
 
-                // Check for Enum Qualified Init: `Status.Pending` or `Status.Failed("error")`
-                if id.chars().next().map_or(false, |c| c.is_uppercase()) && self.match_token(&TokenKind::Dot) {
+                // Check for Enum Qualified Init: `Status.Pending` or `Status::Ok`
+                let is_enum_access = if id.chars().next().map_or(false, |c| c.is_uppercase()) {
+                    if self.match_token(&TokenKind::Dot) {
+                        true
+                    } else if self.check(&TokenKind::Colon) {
+                        self.advance();
+                        if self.match_token(&TokenKind::Colon) {
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+
+                if is_enum_access {
                     let vname = match self.advance().kind {
                         TokenKind::Ident(n) => n,
                         other => return Err(format!("Expected enum variant name, found {:?}", other)),

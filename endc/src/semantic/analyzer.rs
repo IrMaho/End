@@ -171,6 +171,13 @@ impl SemanticAnalyzer {
             self.analyze_function(f);
         }
 
+        // Analyze Impl Block Methods
+        for imp in &module.impls {
+            for f in &imp.methods {
+                self.analyze_function(f);
+            }
+        }
+
         if self.errors.is_empty() {
             Ok(())
         } else {
