@@ -1,4 +1,4 @@
-// ?? End Language: std/ai/tensor.end
+// 🧠 End Language: std/ai/tensor.end
 // Hardware-Accelerated N-Dimensional Tensor & SIMD MatMul
 
 pub st TensorShape {

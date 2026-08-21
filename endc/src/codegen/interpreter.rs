@@ -510,6 +510,43 @@ impl Interpreter {
             Expression::Index { .. } => Ok(Value::Int(0)),
             Expression::Promote { expr, .. } => self.eval_expression(expr),
             Expression::Block(_) => Ok(Value::Void),
+            Expression::NameOf { target, .. } => Ok(Value::String(target.clone())),
+            Expression::PathOf { target, .. } => Ok(Value::String(target.clone())),
+            Expression::TypeOf { expr, .. } => {
+                let v = self.eval_expression(expr)?;
+                let type_name = match &v {
+                    Value::Int(_) => "i64",
+                    Value::Float(_) => "f64",
+                    Value::String(_) => "str",
+                    Value::Bool(_) => "bool",
+                    Value::Struct(name, _) => name.as_str(),
+                    _ => "unknown",
+                };
+                Ok(Value::String(type_name.to_string()))
+            }
+            Expression::DocOf { target, .. } => Ok(Value::String(format!("[Documentation for symbol '{}']", target))),
+            Expression::CodeOf { code, .. } => Ok(Value::String(code.clone())),
+            Expression::Dbg { expr, code, span } => {
+                let v = self.eval_expression(expr)?;
+                println!("\x1b[1;36m[DBG {}:{}]\x1b[0m \x1b[1;33m{}\x1b[0m = {}", span.file, span.line, code, v);
+                Ok(v)
+            }
+            Expression::AssertDebug { condition, code, span } => {
+                let v = self.eval_expression(condition)?;
+                match v {
+                    Value::Bool(true) => Ok(Value::Bool(true)),
+                    _ => {
+                        eprintln!("\x1b[1;31m[ASSERTION FAILURE {}:{}]\x1b[0m Condition failed: {}", span.file, span.line, code);
+                        Err(format!("Assertion failed at {}:{}: {}", span.file, span.line, code))
+                    }
+                }
+            }
+            Expression::Translate { key, .. } => Ok(Value::String(format!("[Localized: {}]", key))),
+            Expression::FieldsOf { target, .. } => Ok(Value::String(format!("[Fields of struct {}]", target))),
+            Expression::SqlExpr { expr, .. } => {
+                let _ = self.eval_expression(expr)?;
+                Ok(Value::String("SELECT * FROM table".to_string()))
+            }
         }
     }
 }

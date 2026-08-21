@@ -1,0 +1,18 @@
+// 🏷️ End Language: std/meta/reflection.end
+// Zero-Cost Compile-Time Symbol Reflection & Metadata Engine
+
+pub st SymbolReflection {
+    name: str,
+    path: str,
+    type_name: str,
+    doc: str,
+}
+
+pub fn reflect_symbol(name: str, path: str, type_name: str, doc: str) SymbolReflection {
+    ret SymbolReflection {
+        name: name,
+        path: path,
+        type_name: type_name,
+        doc: doc,
+    }
+}

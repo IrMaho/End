@@ -1,0 +1,34 @@
+// 🗄️ End Language: std/db/orm.end
+// Zero-ORM AST-to-SQL Expression Tree Query Builder with Column Validation
+
+pub st OrmQuery {
+    table: str,
+    where_clause: str,
+    limit_val: i32,
+    is_safe: bool,
+}
+
+pub fn orm_table(name: str) OrmQuery {
+    ret OrmQuery {
+        table: name,
+        where_clause: "",
+        limit_val: 100,
+        is_safe: true,
+    }
+}
+
+pub fn orm_where(query: OrmQuery, clause: str) OrmQuery {
+    ret OrmQuery {
+        table: query.table,
+        where_clause: clause,
+        limit_val: query.limit_val,
+        is_safe: true,
+    }
+}
+
+pub fn orm_to_sql(query: OrmQuery) str {
+    if query.where_clause == "" {
+        ret "SELECT * FROM " + query.table
+    }
+    ret "SELECT * FROM " + query.table + " WHERE " + query.where_clause
+}

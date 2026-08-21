@@ -610,6 +610,33 @@ impl SemanticAnalyzer {
                 self.analyze_block(b);
                 Type::Void
             }
+            Expression::NameOf { .. } => Type::Str,
+            Expression::PathOf { .. } => Type::Str,
+            Expression::TypeOf { expr, .. } => {
+                self.analyze_expression(expr);
+                Type::Str
+            }
+            Expression::DocOf { .. } => Type::Str,
+            Expression::CodeOf { expr, .. } => {
+                self.analyze_expression(expr);
+                Type::Str
+            }
+            Expression::Dbg { expr, .. } => self.analyze_expression(expr),
+            Expression::AssertDebug { condition, .. } => {
+                self.analyze_expression(condition);
+                Type::Void
+            }
+            Expression::Translate { args, .. } => {
+                for (_, arg_expr) in args {
+                    self.analyze_expression(arg_expr);
+                }
+                Type::Str
+            }
+            Expression::FieldsOf { .. } => Type::Str,
+            Expression::SqlExpr { expr, .. } => {
+                self.analyze_expression(expr);
+                Type::Str
+            }
         }
     }
 

@@ -406,6 +406,50 @@ pub enum Expression {
         span: Span,
     },
     Block(Block),
+    NameOf {
+        target: String,
+        span: Span,
+    },
+    PathOf {
+        target: String,
+        span: Span,
+    },
+    TypeOf {
+        expr: Box<Expression>,
+        span: Span,
+    },
+    DocOf {
+        target: String,
+        span: Span,
+    },
+    CodeOf {
+        expr: Box<Expression>,
+        code: String,
+        span: Span,
+    },
+    Dbg {
+        expr: Box<Expression>,
+        code: String,
+        span: Span,
+    },
+    AssertDebug {
+        condition: Box<Expression>,
+        code: String,
+        span: Span,
+    },
+    Translate {
+        key: String,
+        args: Vec<(String, Expression)>,
+        span: Span,
+    },
+    FieldsOf {
+        target: String,
+        span: Span,
+    },
+    SqlExpr {
+        expr: Box<Expression>,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -425,6 +469,16 @@ impl Expression {
             Expression::Catch { span, .. } => span,
             Expression::Match { span, .. } => span,
             Expression::Block(b) => &b.span,
+            Expression::NameOf { span, .. } => span,
+            Expression::PathOf { span, .. } => span,
+            Expression::TypeOf { span, .. } => span,
+            Expression::DocOf { span, .. } => span,
+            Expression::CodeOf { span, .. } => span,
+            Expression::Dbg { span, .. } => span,
+            Expression::AssertDebug { span, .. } => span,
+            Expression::Translate { span, .. } => span,
+            Expression::FieldsOf { span, .. } => span,
+            Expression::SqlExpr { span, .. } => span,
         }
     }
 }

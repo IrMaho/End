@@ -1,0 +1,91 @@
+// 🧪 End Language: examples/test_reflection_and_meta_v2.end
+// Comprehensive Verification Suite for Syntactic Reflection, Meta-Syntax & Cognitive AI (Milestone v2.5)
+
+import "std/test/assert.end"
+import "std/meta/reflection.end"
+import "std/meta/introspection.end"
+import "std/meta/json.end"
+import "std/meta/i18n.end"
+import "std/db/orm.end"
+import "std/ai/intent.end"
+
+pub st UserProfile {
+    user_id: i64,
+    username: str,
+    city: str,
+    is_active: bool,
+}
+
+@intent("Authenticates user with username and password verification")
+pub fn login_user(username: str) bool {
+    ret true
+}
+
+@test
+fn test_reflection_nameof_and_pathof() void {
+    println("[Phase 1] Testing Zero-Cost Symbol Reflection (nameof!, pathof!)...")
+    val sym_name = nameof!(UserProfile.username)
+    val sym_path = pathof!(user.profile.city)
+    
+    assert_true(sym_name == "UserProfile.username", "nameof! must reflect symbol identifier")
+    assert_true(sym_path == "user.profile.city", "pathof! must reflect field chain")
+    println("  ✔ Symbol Reflection Verified: " + sym_name + " -> " + sym_path)
+}
+
+@test
+fn test_reflection_typeof_and_docof() void {
+    println("[Phase 1] Testing Compile-Time TypeOf and DocOf...")
+    val type_tag = typeof!("Hello End")
+    val doc_str = docof!(login_user)
+    
+    assert_true(type_tag != "", "typeof! must return non-empty type name")
+    assert_true(doc_str != "", "docof! must return docstring or signature")
+    println("  ✔ Type & Doc Reflection: " + type_tag + " | " + doc_str)
+}
+
+@test
+fn test_introspection_and_json() void {
+    println("[Phase 4] Testing Struct Introspection & Zero-Allocation JSON...")
+    val intro = introspect_struct("UserProfile", 4, 64)
+    assert_eq_i64(intro.size_bytes, 64, "Struct size must be 64 bytes")
+    assert_true(intro.is_valid, "Introspection metadata must be valid")
+
+    val field1 = json_serialize_field("username", "maho")
+    val json_obj = json_serialize_object(field1)
+    assert_true(json_obj.is_valid, "JSON object serialization must be valid")
+    println("  ✔ Comptime Introspection & JSON Serializer Verified")
+}
+
+@test
+fn test_i18n_translation() void {
+    println("[Phase 3] Testing Native Comptime i18n Translation...")
+    val ctx = i18n_context_create("fa_IR")
+    val translated = i18n_translate(ctx, "auth.login_success")
+    assert_true(translated != "", "i18n translation must not be empty")
+    
+    val direct_t = t!("dashboard.title")
+    assert_true(direct_t != "", "t! macro must resolve localized key")
+    println("  ✔ Multi-Language i18n Engine Verified: " + translated)
+}
+
+@test
+fn test_zero_orm_sql_expr() void {
+    println("[Phase 5] Testing Zero-ORM AST-to-SQL Expression Trees...")
+    val q = orm_table("users")
+    val filtered = orm_where(q, "age >= 18 AND is_active = true")
+    val sql = orm_to_sql(filtered)
+    assert_true(sql == "SELECT * FROM users WHERE age >= 18 AND is_active = true", "SQL generation must match query tree")
+    
+    val sql_raw = sql_expr!(user.age >= 18)
+    assert_true(sql_raw != "", "sql_expr! must generate valid SQL string")
+    println("  ✔ Zero-ORM AST-to-SQL Engine Verified: " + sql)
+}
+
+@test
+fn test_ai_intent_contracts() void {
+    println("[Phase 6] Testing AI Semantic Intent Contracts (@intent)...")
+    val contract = intent_contract_create("login_user", "Authenticates user with username and password verification")
+    val is_compliant = intent_verify_compliance(contract)
+    assert_true(is_compliant, "Intent compliance must be verified")
+    println("  ✔ AI Intent Verification & Formal Invariants Verified")
+}

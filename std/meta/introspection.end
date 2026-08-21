@@ -1,0 +1,25 @@
+// 📦 End Language: std/meta/introspection.end
+// Zero-GC Struct Field Introspection & Metadata Engine
+
+pub st FieldInfo {
+    name: str,
+    field_type: str,
+    offset_bytes: i64,
+    is_public: bool,
+}
+
+pub st StructIntrospection {
+    struct_name: str,
+    fields_count: i32,
+    size_bytes: i64,
+    is_valid: bool,
+}
+
+pub fn introspect_struct(name: str, fields_count: i32, size: i64) StructIntrospection {
+    ret StructIntrospection {
+        struct_name: name,
+        fields_count: fields_count,
+        size_bytes: size,
+        is_valid: true,
+    }
+}

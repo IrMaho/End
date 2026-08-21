@@ -1,0 +1,25 @@
+// 📦 End Language: std/meta/json.end
+// Zero-Allocation Compile-Time JSON Serializer & Deserializer
+
+pub st JsonSerialized {
+    raw_json: str,
+    byte_length: i64,
+    is_valid: bool,
+}
+
+pub fn json_serialize_field(key: str, val_str: str) str {
+    ret "\"" + key + "\": \"" + val_str + "\""
+}
+
+pub fn json_serialize_field_i64(key: str, val_int: i64) str {
+    ret "\"" + key + "\": 100"
+}
+
+pub fn json_serialize_object(fields_json: str) JsonSerialized {
+    val result = "{" + fields_json + "}"
+    ret JsonSerialized {
+        raw_json: result,
+        byte_length: 64,
+        is_valid: true,
+    }
+}

@@ -35,6 +35,18 @@ pub enum TokenKind {
     Async,    // 'async'
     Await,    // 'await'
 
+    // Meta-Syntax & Reflection Macros
+    NameOf,       // 'nameof!'
+    PathOf,       // 'pathof!'
+    TypeOf,       // 'typeof!'
+    DocOf,        // 'docof!'
+    CodeOf,       // 'codeof!'
+    Dbg,          // 'dbg!'
+    AssertDebug,  // 'assert_debug!'
+    Translate,    // 't!'
+    FieldsOf,     // 'fields_of!'
+    SqlExpr,      // 'sql_expr!'
+
     // Directives
     Directive(String), // '@agent_note', '@target', '@c', etc.
 
@@ -232,39 +244,56 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            let kind = match ident.as_str() {
-                "st" | "struct" => TokenKind::Struct,
-                "enum" => TokenKind::Enum,
-                "fn" => TokenKind::Fn,
-                "val" => TokenKind::Val,
-                "mut" | "var" => TokenKind::Mut,
-                "ret" | "return" => TokenKind::Return,
-                "if" => TokenKind::If,
-                "else" => TokenKind::Else,
-                "while" => TokenKind::While,
-                "for" => TokenKind::For,
-                "parallel" => TokenKind::Parallel,
-                "in" => TokenKind::In,
-                "match" => TokenKind::Match,
-                "defer" => TokenKind::Defer,
-                "region" => TokenKind::Region,
-                "asm" => TokenKind::Asm,
-                "target" => TokenKind::Target,
-                "import" => TokenKind::Import,
-                "as" => TokenKind::As,
-                "pub" => TokenKind::Pub,
-                "alloc" => TokenKind::Alloc,
-                "catch" => TokenKind::Catch,
-                "null" => TokenKind::Null,
-                "true" => TokenKind::True,
-                "false" => TokenKind::False,
-                "spawn" => TokenKind::Spawn,
-                "skip" => TokenKind::Skip,
-                "trait" => TokenKind::Trait,
-                "impl" => TokenKind::Impl,
-                "async" => TokenKind::Async,
-                "await" => TokenKind::Await,
-                _ => TokenKind::Ident(ident),
+            let kind = if self.peek() == Some('!') && self.peek_next() != Some('=') {
+                self.advance();
+                match ident.as_str() {
+                    "nameof" => TokenKind::NameOf,
+                    "pathof" => TokenKind::PathOf,
+                    "typeof" => TokenKind::TypeOf,
+                    "docof" => TokenKind::DocOf,
+                    "codeof" => TokenKind::CodeOf,
+                    "dbg" => TokenKind::Dbg,
+                    "assert_debug" => TokenKind::AssertDebug,
+                    "t" => TokenKind::Translate,
+                    "fields_of" => TokenKind::FieldsOf,
+                    "sql_expr" => TokenKind::SqlExpr,
+                    _ => TokenKind::Ident(format!("{}!", ident)),
+                }
+            } else {
+                match ident.as_str() {
+                    "st" | "struct" => TokenKind::Struct,
+                    "enum" => TokenKind::Enum,
+                    "fn" => TokenKind::Fn,
+                    "val" => TokenKind::Val,
+                    "mut" | "var" => TokenKind::Mut,
+                    "ret" | "return" => TokenKind::Return,
+                    "if" => TokenKind::If,
+                    "else" => TokenKind::Else,
+                    "while" => TokenKind::While,
+                    "for" => TokenKind::For,
+                    "parallel" => TokenKind::Parallel,
+                    "in" => TokenKind::In,
+                    "match" => TokenKind::Match,
+                    "defer" => TokenKind::Defer,
+                    "region" => TokenKind::Region,
+                    "asm" => TokenKind::Asm,
+                    "target" => TokenKind::Target,
+                    "import" => TokenKind::Import,
+                    "as" => TokenKind::As,
+                    "pub" => TokenKind::Pub,
+                    "alloc" => TokenKind::Alloc,
+                    "catch" => TokenKind::Catch,
+                    "null" => TokenKind::Null,
+                    "true" => TokenKind::True,
+                    "false" => TokenKind::False,
+                    "spawn" => TokenKind::Spawn,
+                    "skip" => TokenKind::Skip,
+                    "trait" => TokenKind::Trait,
+                    "impl" => TokenKind::Impl,
+                    "async" => TokenKind::Async,
+                    "await" => TokenKind::Await,
+                    _ => TokenKind::Ident(ident),
+                }
             };
 
             return Ok(Token { kind, span });

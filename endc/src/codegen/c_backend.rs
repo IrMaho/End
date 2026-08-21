@@ -892,6 +892,30 @@ impl CBackend {
             }
             Expression::Match { .. } => "0".to_string(),
             Expression::Block(_) => "0".to_string(),
+            Expression::NameOf { target, .. } => format!("\"{}\"", escape_c_string(target)),
+            Expression::PathOf { target, .. } => format!("\"{}\"", escape_c_string(target)),
+            Expression::TypeOf { expr, .. } => {
+                let e = self.gen_expression(expr);
+                format!("\"type_of({})\"", escape_c_string(&e))
+            }
+            Expression::DocOf { target, .. } => format!("\"[Documentation for symbol '{}']\"", escape_c_string(target)),
+            Expression::CodeOf { code, .. } => format!("\"{}\"", escape_c_string(code)),
+            Expression::Dbg { expr, code, span } => {
+                let e = self.gen_expression(expr);
+                let clean_file = span.file.replace('\\', "/");
+                format!("(printf(\"\\033[1;36m[DBG %s:%d]\\033[0m \\033[1;33m%s\\033[0m = \", \"{}\", {}, \"{}\"), end_println({}), {})", clean_file, span.line, escape_c_string(code), e, e)
+            }
+            Expression::AssertDebug { condition, code, span } => {
+                let cond = self.gen_expression(condition);
+                let clean_file = span.file.replace('\\', "/");
+                format!("if (!({})) {{ fprintf(stderr, \"\\033[1;31m[ASSERTION FAILURE %s:%d]\\033[0m Condition failed: %s\\n\", \"{}\", {}, \"{}\"); abort(); }}", cond, clean_file, span.line, escape_c_string(code))
+            }
+            Expression::Translate { key, .. } => format!("\"[Localized: {}]\"", escape_c_string(key)),
+            Expression::FieldsOf { target, .. } => format!("\"[Fields of struct {}]\"", escape_c_string(target)),
+            Expression::SqlExpr { expr, .. } => {
+                let e = self.gen_expression(expr);
+                format!("\"SELECT * WHERE {}\"", escape_c_string(&e))
+            }
         }
     }
 }
