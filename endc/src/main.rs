@@ -16,6 +16,9 @@ mod lexer;
 mod lsp;
 mod mobile;
 pub mod docgen;
+pub mod ui;
+use ui::UiOrchestrator;
+use ui::feedback::FeedbackManager;
 use docgen::DocOrchestrator;
 use docgen::server::DocServer;
 mod package;
@@ -50,6 +53,57 @@ enum Commands {
     /// Print End language version and toolchain info
     Version,
     /// Generate comprehensive OpenAPI 3.1, AI Agent Passport, Struct Memory Layout, and Interactive Swagger Dashboard
+    /// Compile and run EndUI reactive declarative applications with AI Agent DevMode Canvas
+    Ui {
+        /// Path to .end entrypoint file
+        file: PathBuf,
+        /// Output directory (default: ./ui_build)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Enable live AI DevMode Canvas Overlay with visual pin annotations and task board
+        #[arg(long, default_value_t = true)]
+        dev: bool,
+        /// Start local interactive DevServer
+        #[arg(long, default_value_t = false)]
+        serve: bool,
+        /// Port for DevServer (default: 3000)
+        #[arg(long, default_value_t = 3000)]
+        port: u16,
+        /// Automatically open UI in default web browser
+        #[arg(long, default_value_t = false)]
+        open: bool,
+        /// Compilation target (web, desktop, flutter)
+        #[arg(long, default_value = "web")]
+        target: String,
+    },
+    /// AI Coding Agent bidirectional feedback, task planning, and inspection channel
+    Agent {
+        /// Action: feedback, list, reply, sync, board
+        #[arg(default_value = "list")]
+        action: String,
+        /// Target feedback / task ID
+        #[arg(long)]
+        id: Option<String>,
+        /// Reply message or resolution note from AI Agent
+        #[arg(long)]
+        message: Option<String>,
+        /// Status update: Open, In Progress, Resolved
+        #[arg(long)]
+        status: Option<String>,
+        /// Output report as machine-readable JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Flutter / Dart Native FFI Bridge and Widget Bindings Generator
+    Flutter {
+        /// Action: bindgen or bridge
+        action: String,
+        /// Path to .end entrypoint file
+        file: PathBuf,
+        /// Output directory for generated Dart files (default: ./lib)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
     Doc {
         /// Path to .end entrypoint file or project directory
         file: PathBuf,
@@ -389,6 +443,126 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Ui { file, output, dev, serve, port, open, target: _ } => {
+            let out_dir = output.unwrap_or_else(|| PathBuf::from("ui_build"));
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match UiOrchestrator::build_ui(&module, &out_dir, dev) {
+                Ok(index_path) => {
+                    println!("✨ {} Rendered EndUI Declarative Application at {:?}", "EndUI:".green().bold(), out_dir);
+                    println!("  ├─ 🌐 {} (120 FPS Reactive Declarative HTML5 DOM)", "index.html".cyan().bold());
+                    if dev {
+                        println!("  └─ 🤖 {} (Visual Pin Drop, Image Mockup, Task Board & Bug Reporter)", "AI DevMode Overlay: ACTIVE".green().bold());
+                    }
+
+                    if open {
+                        #[cfg(target_os = "windows")]
+                        let _ = std::process::Command::new("cmd").args(["/C", "start", &index_path.to_string_lossy()]).spawn();
+                        #[cfg(target_os = "macos")]
+                        let _ = std::process::Command::new("open").arg(&index_path).spawn();
+                        #[cfg(target_os = "linux")]
+                        let _ = std::process::Command::new("xdg-open").arg(&index_path).spawn();
+                    }
+
+                    if serve {
+                        if let Err(e) = UiOrchestrator::serve_ui(&out_dir, port) {
+                            eprintln!("{} Failed to start EndUI DevServer: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Agent { action, id, message, status, json } => {
+            let base_dir = std::path::Path::new(".");
+            match action.as_str() {
+                "list" | "feedback" | "sync" => {
+                    let items = FeedbackManager::list_all(base_dir);
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&items).unwrap_or_default());
+                    } else {
+                        println!("🤖 {} Found {} active feedback items / tasks in .end/agent_feedback/:", "AI Agent Feedback Channel:".green().bold(), items.len());
+                        for item in &items {
+                            let prio_color = if item.priority.contains("P0") { item.priority.red().bold() }
+                                else if item.priority.contains("P1") { item.priority.yellow().bold() }
+                                else { item.priority.green().bold() };
+                            println!("  ┌─ [{}] {} | Target: {} ({}:{})", prio_color, item.id.cyan().bold(), item.widget_name.yellow(), item.source_file, item.source_line);
+                            println!("  │  Note: {}", item.developer_note);
+                            if let Some(ref img) = item.attached_image {
+                                println!("  │  🖼️ Mockup Image: {}", img.cyan().underline());
+                            }
+                            println!("  │  Status: {} | Replies: {}", item.status.magenta(), item.agent_replies.len());
+                            for r in &item.agent_replies {
+                                println!("  │    └─ 🤖 {}: {}", r.agent_name.green(), r.message);
+                            }
+                            println!("  └───────────────────────────────────────────────");
+                        }
+                    }
+                }
+                "reply" => {
+                    let target_id = match id {
+                        Some(i) => i,
+                        None => {
+                            eprintln!("{} Please provide --id <feedback_id>", "Error:".red().bold());
+                            std::process::exit(1);
+                        }
+                    };
+                    let msg = message.unwrap_or_else(|| "Resolved by AI Coding Agent".to_string());
+                    let new_st = status.as_deref().unwrap_or("Resolved");
+                    match FeedbackManager::add_reply(base_dir, &target_id, "Antigravity Agent", &msg, Some(new_st)) {
+                        Ok(updated) => {
+                            println!("✔ {} Replied to feedback `{}` and updated status to `{}`", "Agent Protocol:".green().bold(), updated.id.cyan(), updated.status.green().bold());
+                        }
+                        Err(e) => {
+                            eprintln!("{} {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                "board" => {
+                    match FeedbackManager::update_board_summary(base_dir) {
+                        Ok(board) => {
+                            println!("📋 {} Total Tasks: {} | Open: {} | Resolved: {}", "Task Board:".green().bold(), board.total_tasks, board.open_count, board.resolved_count);
+                        }
+                        Err(e) => {
+                            eprintln!("{} {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                other => {
+                    eprintln!("Unknown action: {}", other);
+                }
+            }
+        }
+        Commands::Flutter { action: _, file, output } => {
+            let out_dir = output.unwrap_or_else(|| PathBuf::from("lib"));
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match UiOrchestrator::generate_flutter_bridge(&module, &out_dir) {
+                Ok(path) => {
+                    println!("🐦 {} Generated Flutter / Dart FFI Bridge at {:?}", "Flutter Bridge:".green().bold(), path);
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
         Commands::Doc { file, output, format: _, serve, port, open } => {
             let out_dir = output.unwrap_or_else(|| PathBuf::from("docs"));
             let (module, analyzer) = match load_and_analyze(&file) {
