@@ -1,0 +1,18 @@
+// End Standard Library: std/crypto/base64.end
+// Native High-Speed Base64 & Base64URL Encoding/Decoding
+
+pub fn base64_encode(data: str) str {
+    ret end_base64_encode(data, 0)
+}
+
+pub fn base64_url_encode(data: str) str {
+    ret end_base64_encode(data, 1)
+}
+
+pub fn base64_decode(data: str) str {
+    ret end_base64_decode(data, 0)
+}
+
+pub fn base64_url_decode(data: str) str {
+    ret end_base64_decode(data, 1)
+}

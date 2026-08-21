@@ -76,7 +76,8 @@ impl CBackend {
         self.output.push_str("#include <stdlib.h>\n");
         self.output.push_str("#include <stdint.h>\n");
         self.output.push_str("#include <stdbool.h>\n");
-                self.output.push_str("#include <string.h>\n");
+        self.output.push_str("#include <string.h>\n");
+        self.output.push_str("#include <time.h>\n");
         self.output.push_str("static inline char* _end_str_concat(const char* a, const char* b) {\n");
         self.output.push_str("    if (!a) a = \"\";\n");
         self.output.push_str("    if (!b) b = \"\";\n");
@@ -516,6 +517,192 @@ impl CBackend {
         self.output.push_str("    EndDbRecord* curr = db->head;\n");
         self.output.push_str("    while (curr) { EndDbRecord* next = curr->next; free(curr); curr = next; }\n");
         self.output.push_str("    free(db);\n");
+        self.output.push_str("}\n\n");
+
+        self.output.push_str("// --- Native Cryptography & Utilities Runtime ---\n");
+        self.output.push_str("static inline int64_t end_time_now_sec(void) { return (int64_t)time(NULL); }\n\n");
+        self.output.push_str("typedef struct { uint32_t state[8]; uint64_t count; uint8_t buffer[64]; } EndSha256Ctx;\n");
+        self.output.push_str("static inline uint32_t _end_rotr(uint32_t x, uint32_t n) { return (x >> n) | (x << (32 - n)); }\n");
+        self.output.push_str("static inline void _end_sha256_transform(EndSha256Ctx* ctx, const uint8_t data[64]) {\n");
+        self.output.push_str("    static const uint32_t K[64] = {\n");
+        self.output.push_str("        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,\n");
+        self.output.push_str("        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,\n");
+        self.output.push_str("        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,\n");
+        self.output.push_str("        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,\n");
+        self.output.push_str("        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,\n");
+        self.output.push_str("        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,\n");
+        self.output.push_str("        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,\n");
+        self.output.push_str("        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2\n");
+        self.output.push_str("    };\n");
+        self.output.push_str("    uint32_t W[64];\n");
+        self.output.push_str("    for (int i = 0; i < 16; i++) W[i] = ((uint32_t)data[i*4] << 24) | ((uint32_t)data[i*4+1] << 16) | ((uint32_t)data[i*4+2] << 8) | ((uint32_t)data[i*4+3]);\n");
+        self.output.push_str("    for (int i = 16; i < 64; i++) {\n");
+        self.output.push_str("        uint32_t s0 = _end_rotr(W[i-15], 7) ^ _end_rotr(W[i-15], 18) ^ (W[i-15] >> 3);\n");
+        self.output.push_str("        uint32_t s1 = _end_rotr(W[i-2], 17) ^ _end_rotr(W[i-2], 19) ^ (W[i-2] >> 10);\n");
+        self.output.push_str("        W[i] = W[i-16] + s0 + W[i-7] + s1;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    uint32_t a = ctx->state[0], b = ctx->state[1], c = ctx->state[2], d = ctx->state[3];\n");
+        self.output.push_str("    uint32_t e = ctx->state[4], f = ctx->state[5], g = ctx->state[6], h = ctx->state[7];\n");
+        self.output.push_str("    for (int i = 0; i < 64; i++) {\n");
+        self.output.push_str("        uint32_t S1 = _end_rotr(e, 6) ^ _end_rotr(e, 11) ^ _end_rotr(e, 25);\n");
+        self.output.push_str("        uint32_t ch = (e & f) ^ ((~e) & g);\n");
+        self.output.push_str("        uint32_t temp1 = h + S1 + ch + K[i] + W[i];\n");
+        self.output.push_str("        uint32_t S0 = _end_rotr(a, 2) ^ _end_rotr(a, 13) ^ _end_rotr(a, 22);\n");
+        self.output.push_str("        uint32_t maj = (a & b) ^ (a & c) ^ (b & c);\n");
+        self.output.push_str("        uint32_t temp2 = S0 + maj;\n");
+        self.output.push_str("        h = g; g = f; f = e; e = d + temp1;\n");
+        self.output.push_str("        d = c; c = b; b = a; a = temp1 + temp2;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    ctx->state[0] += a; ctx->state[1] += b; ctx->state[2] += c; ctx->state[3] += d;\n");
+        self.output.push_str("    ctx->state[4] += e; ctx->state[5] += f; ctx->state[6] += g; ctx->state[7] += h;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void _end_sha256_init(EndSha256Ctx* ctx) {\n");
+        self.output.push_str("    ctx->state[0] = 0x6a09e667; ctx->state[1] = 0xbb67ae85; ctx->state[2] = 0x3c6ef372; ctx->state[3] = 0xa54ff53a;\n");
+        self.output.push_str("    ctx->state[4] = 0x510e527f; ctx->state[5] = 0x9b05688c; ctx->state[6] = 0x1f83d9ab; ctx->state[7] = 0x5be0cd19;\n");
+        self.output.push_str("    ctx->count = 0;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void _end_sha256_update(EndSha256Ctx* ctx, const uint8_t* data, size_t len) {\n");
+        self.output.push_str("    size_t buffer_idx = (ctx->count >> 3) & 63;\n");
+        self.output.push_str("    ctx->count += (uint64_t)len << 3;\n");
+        self.output.push_str("    size_t part_len = 64 - buffer_idx; size_t i = 0;\n");
+        self.output.push_str("    if (len >= part_len) {\n");
+        self.output.push_str("        memcpy(&ctx->buffer[buffer_idx], data, part_len);\n");
+        self.output.push_str("        _end_sha256_transform(ctx, ctx->buffer);\n");
+        self.output.push_str("        for (i = part_len; i + 63 < len; i += 64) _end_sha256_transform(ctx, &data[i]);\n");
+        self.output.push_str("        buffer_idx = 0;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    memcpy(&ctx->buffer[buffer_idx], &data[i], len - i);\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void _end_sha256_final(EndSha256Ctx* ctx, uint8_t digest[32]) {\n");
+        self.output.push_str("    uint8_t count_bytes[8];\n");
+        self.output.push_str("    for (int i = 0; i < 8; i++) count_bytes[i] = (uint8_t)(ctx->count >> ((7 - i) * 8));\n");
+        self.output.push_str("    _end_sha256_update(ctx, (const uint8_t*)\"\\x80\", 1);\n");
+        self.output.push_str("    while (((ctx->count >> 3) & 63) != 56) _end_sha256_update(ctx, (const uint8_t*)\"\\0\", 1);\n");
+        self.output.push_str("    _end_sha256_update(ctx, count_bytes, 8);\n");
+        self.output.push_str("    for (int i = 0; i < 8; i++) {\n");
+        self.output.push_str("        digest[i*4] = (uint8_t)(ctx->state[i] >> 24);\n");
+        self.output.push_str("        digest[i*4+1] = (uint8_t)(ctx->state[i] >> 16);\n");
+        self.output.push_str("        digest[i*4+2] = (uint8_t)(ctx->state[i] >> 8);\n");
+        self.output.push_str("        digest[i*4+3] = (uint8_t)(ctx->state[i]);\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_crypto_sha256(const char* data) {\n");
+        self.output.push_str("    if (!data) return (char*)\"\";\n");
+        self.output.push_str("    EndSha256Ctx ctx; _end_sha256_init(&ctx); _end_sha256_update(&ctx, (const uint8_t*)data, strlen(data));\n");
+        self.output.push_str("    uint8_t digest[32]; _end_sha256_final(&ctx, digest);\n");
+        self.output.push_str("    char* hex = (char*)malloc(65);\n");
+        self.output.push_str("    for (int i = 0; i < 32; i++) sprintf(hex + (i * 2), \"%02x\", digest[i]);\n");
+        self.output.push_str("    hex[64] = 0; return hex;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_crypto_hmac_sha256(const char* key, const char* data) {\n");
+        self.output.push_str("    if (!key || !data) return (char*)\"\";\n");
+        self.output.push_str("    uint8_t k_pad[64]; memset(k_pad, 0, sizeof(k_pad)); size_t k_len = strlen(key);\n");
+        self.output.push_str("    if (k_len > 64) { EndSha256Ctx k_ctx; _end_sha256_init(&k_ctx); _end_sha256_update(&k_ctx, (const uint8_t*)key, k_len); _end_sha256_final(&k_ctx, k_pad); } else { memcpy(k_pad, key, k_len); }\n");
+        self.output.push_str("    uint8_t ipad[64], opad[64];\n");
+        self.output.push_str("    for (int i = 0; i < 64; i++) { ipad[i] = k_pad[i] ^ 0x36; opad[i] = k_pad[i] ^ 0x5c; }\n");
+        self.output.push_str("    EndSha256Ctx ctx; _end_sha256_init(&ctx); _end_sha256_update(&ctx, ipad, 64); _end_sha256_update(&ctx, (const uint8_t*)data, strlen(data));\n");
+        self.output.push_str("    uint8_t inner_digest[32]; _end_sha256_final(&ctx, inner_digest);\n");
+        self.output.push_str("    _end_sha256_init(&ctx); _end_sha256_update(&ctx, opad, 64); _end_sha256_update(&ctx, inner_digest, 32);\n");
+        self.output.push_str("    uint8_t final_digest[32]; _end_sha256_final(&ctx, final_digest);\n");
+        self.output.push_str("    char* hex = (char*)malloc(65);\n");
+        self.output.push_str("    for (int i = 0; i < 32; i++) sprintf(hex + (i * 2), \"%02x\", final_digest[i]);\n");
+        self.output.push_str("    hex[64] = 0; return hex;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_base64_encode(const char* data, int url_safe) {\n");
+        self.output.push_str("    if (!data) return (char*)\"\";\n");
+        self.output.push_str("    size_t len = strlen(data);\n");
+        self.output.push_str("    static const char* tbl_std = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";\n");
+        self.output.push_str("    static const char* tbl_url = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_\";\n");
+        self.output.push_str("    const char* tbl = url_safe ? tbl_url : tbl_std;\n");
+        self.output.push_str("    size_t out_len = 4 * ((len + 2) / 3);\n");
+        self.output.push_str("    char* out = (char*)malloc(out_len + 1); size_t j = 0;\n");
+        self.output.push_str("    for (size_t i = 0; i < len;) {\n");
+        self.output.push_str("        uint32_t a = (uint8_t)data[i++];\n");
+        self.output.push_str("        uint32_t b = (i < len) ? (uint8_t)data[i++] : 0;\n");
+        self.output.push_str("        uint32_t c = (i < len) ? (uint8_t)data[i++] : 0;\n");
+        self.output.push_str("        uint32_t triple = (a << 16) + (b << 8) + c;\n");
+        self.output.push_str("        out[j++] = tbl[(triple >> 18) & 0x3F];\n");
+        self.output.push_str("        out[j++] = tbl[(triple >> 12) & 0x3F];\n");
+        self.output.push_str("        out[j++] = (i > len + 1) ? (url_safe ? '\\0' : '=') : tbl[(triple >> 6) & 0x3F];\n");
+        self.output.push_str("        out[j++] = (i > len) ? (url_safe ? '\\0' : '=') : tbl[triple & 0x3F];\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    if (url_safe) { while (j > 0 && (out[j - 1] == '\\0' || out[j - 1] == '=')) j--; }\n");
+        self.output.push_str("    out[j] = '\\0'; return out;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_base64_decode(const char* data, int url_safe) {\n");
+        self.output.push_str("    if (!data) return (char*)\"\";\n");
+        self.output.push_str("    size_t len = strlen(data);\n");
+        self.output.push_str("    char* out = (char*)malloc(len + 1); size_t out_len = 0;\n");
+        self.output.push_str("    int val = 0, valb = -8;\n");
+        self.output.push_str("    for (size_t i = 0; i < len; i++) {\n");
+        self.output.push_str("        unsigned char c = (unsigned char)data[i]; int d = -1;\n");
+        self.output.push_str("        if (c >= 'A' && c <= 'Z') d = c - 'A';\n");
+        self.output.push_str("        else if (c >= 'a' && c <= 'z') d = c - 'a' + 26;\n");
+        self.output.push_str("        else if (c >= '0' && c <= '9') d = c - '0' + 52;\n");
+        self.output.push_str("        else if (c == '+' || (url_safe && c == '-')) d = 62;\n");
+        self.output.push_str("        else if (c == '/' || (url_safe && c == '_')) d = 63;\n");
+        self.output.push_str("        else if (c == '=') break;\n");
+        self.output.push_str("        if (d != -1) {\n");
+        self.output.push_str("            val = (val << 6) + d; valb += 6;\n");
+        self.output.push_str("            if (valb >= 0) { out[out_len++] = (char)((val >> valb) & 0xFF); valb -= 8; }\n");
+        self.output.push_str("        }\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    out[out_len] = '\\0'; return out;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_int_to_str(int64_t n) {\n");
+        self.output.push_str("    char* buf = (char*)malloc(32); snprintf(buf, 32, \"%lld\", (long long)n); return buf;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_json_get_string(const char* json, const char* key) {\n");
+        self.output.push_str("    if (!json || !key) return (char*)\"\";\n");
+        self.output.push_str("    char pattern[256]; snprintf(pattern, sizeof(pattern), \"\\\"%s\\\"\", key);\n");
+        self.output.push_str("    const char* pos = strstr(json, pattern);\n");
+        self.output.push_str("    if (!pos) return (char*)\"\";\n");
+        self.output.push_str("    pos += strlen(pattern);\n");
+        self.output.push_str("    while (*pos && (*pos == ' ' || *pos == '\\t' || *pos == ':')) pos++;\n");
+        self.output.push_str("    if (*pos == '\\\"') {\n");
+        self.output.push_str("        pos++; const char* end = strchr(pos, '\\\"');\n");
+        self.output.push_str("        if (end) { size_t val_len = end - pos; char* res = (char*)malloc(val_len + 1); strncpy(res, pos, val_len); res[val_len] = '\\0'; return res; }\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    return (char*)\"\";\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline int64_t end_json_get_int(const char* json, const char* key) {\n");
+        self.output.push_str("    if (!json || !key) return 0;\n");
+        self.output.push_str("    char pattern[256]; snprintf(pattern, sizeof(pattern), \"\\\"%s\\\"\", key);\n");
+        self.output.push_str("    const char* pos = strstr(json, pattern);\n");
+        self.output.push_str("    if (!pos) return 0;\n");
+        self.output.push_str("    pos += strlen(pattern);\n");
+        self.output.push_str("    while (*pos && (*pos == ' ' || *pos == '\\t' || *pos == ':')) pos++;\n");
+        self.output.push_str("    return (int64_t)strtoll(pos, NULL, 10);\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline int64_t end_json_get_bool(const char* json, const char* key) {\n");
+        self.output.push_str("    if (!json || !key) return 0;\n");
+        self.output.push_str("    char pattern[256]; snprintf(pattern, sizeof(pattern), \"\\\"%s\\\"\", key);\n");
+        self.output.push_str("    const char* pos = strstr(json, pattern);\n");
+        self.output.push_str("    if (!pos) return 0;\n");
+        self.output.push_str("    pos += strlen(pattern);\n");
+        self.output.push_str("    while (*pos && (*pos == ' ' || *pos == '\\t' || *pos == ':')) pos++;\n");
+        self.output.push_str("    if (strncmp(pos, \"true\", 4) == 0) return 1;\n");
+        self.output.push_str("    return 0;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline char* end_str_slice(const char* s, int64_t start, int64_t end) {\n");
+        self.output.push_str("    if (!s) return (char*)\"\";\n");
+        self.output.push_str("    size_t len = strlen(s);\n");
+        self.output.push_str("    if (start < 0) start = 0;\n");
+        self.output.push_str("    if (end > (int64_t)len || end < 0) end = len;\n");
+        self.output.push_str("    if (start >= end) return (char*)\"\";\n");
+        self.output.push_str("    size_t sub_len = end - start;\n");
+        self.output.push_str("    char* res = (char*)malloc(sub_len + 1);\n");
+        self.output.push_str("    memcpy(res, s + start, sub_len);\n");
+        self.output.push_str("    res[sub_len] = '\\0';\n");
+        self.output.push_str("    return res;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline int64_t end_str_find_char(const char* s, int64_t start_idx, int64_t ch) {\n");
+        self.output.push_str("    if (!s) return -1;\n");
+        self.output.push_str("    size_t len = strlen(s);\n");
+        self.output.push_str("    for (size_t i = (size_t)(start_idx < 0 ? 0 : start_idx); i < len; i++) {\n");
+        self.output.push_str("        if ((int64_t)s[i] == ch) return (int64_t)i;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    return -1;\n");
         self.output.push_str("}\n\n");
 
         // Process Imports
@@ -1353,18 +1540,52 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
                     BinaryOp::Equal => {
-                        let is_str = (self.infer_type(left) == Type::Str && self.infer_type(right) == Type::Str) || ((l.contains("str") || l.contains("text") || l.contains("msg") || l.contains("prefix") || l.starts_with('"'))
-                                  && (r.contains("str") || r.contains("text") || r.contains("msg") || r.contains("prefix") || r.starts_with('"')));
-                        if is_str {
+                        let is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                            || l.starts_with('"') || r.starts_with('"')
+                            || l.contains("str") || r.contains("str")
+                            || l.contains("sig") || r.contains("sig")
+                            || l.contains("token") || r.contains("token")
+                            || l.contains("hash") || r.contains("hash")
+                            || l.contains("sub") || r.contains("sub")
+                            || l.contains("text") || r.contains("text")
+                            || l.contains("msg") || r.contains("msg")
+                            || l.contains("name") || r.contains("name")
+                            || l.contains("key") || r.contains("key")
+                            || l.contains("val") || r.contains("val")
+                            || l.contains("data") || r.contains("data")
+                            || l.contains("raw") || r.contains("raw")
+                            || l.contains("input") || r.contains("input")
+                            || l.contains("output") || r.contains("output")
+                            || l.contains("err") || r.contains("err")
+                            || l.contains("header") || r.contains("header")
+                            || l.contains("payload") || r.contains("payload");
+                        if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) == 0)", l, r)
                         } else {
                             format!("({} == {})", l, r)
                         }
                     },
                     BinaryOp::NotEqual => {
-                        let is_str = (self.infer_type(left) == Type::Str && self.infer_type(right) == Type::Str) || ((l.contains("str") || l.contains("text") || l.contains("msg") || l.contains("prefix") || l.starts_with('"'))
-                                  && (r.contains("str") || r.contains("text") || r.contains("msg") || r.contains("prefix") || r.starts_with('"')));
-                        if is_str {
+                        let is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                            || l.starts_with('"') || r.starts_with('"')
+                            || l.contains("str") || r.contains("str")
+                            || l.contains("sig") || r.contains("sig")
+                            || l.contains("token") || r.contains("token")
+                            || l.contains("hash") || r.contains("hash")
+                            || l.contains("sub") || r.contains("sub")
+                            || l.contains("text") || r.contains("text")
+                            || l.contains("msg") || r.contains("msg")
+                            || l.contains("name") || r.contains("name")
+                            || l.contains("key") || r.contains("key")
+                            || l.contains("val") || r.contains("val")
+                            || l.contains("data") || r.contains("data")
+                            || l.contains("raw") || r.contains("raw")
+                            || l.contains("input") || r.contains("input")
+                            || l.contains("output") || r.contains("output")
+                            || l.contains("err") || r.contains("err")
+                            || l.contains("header") || r.contains("header")
+                            || l.contains("payload") || r.contains("payload");
+                        if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) != 0)", l, r)
                         } else {
                             format!("({} != {})", l, r)

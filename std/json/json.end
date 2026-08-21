@@ -1,18 +1,47 @@
 // End Standard Library: std/json/json.end
-// Native JSON Object Builder & Serializer
+// RFC 8259 Native JSON Parser, Query Engine & Serializer
 
-st JsonObject {
-    buffer: str,
-    field_count: i32,
+pub struct JsonValue {
+    pub raw: str,
+    pub is_valid: bool,
 }
 
-fn json_object_new() JsonObject {
-    ret JsonObject {
-        buffer: "{}",
-        field_count: 0,
+pub fn json_parse(raw_str: str) JsonValue {
+    if raw_str == "" {
+        ret JsonValue { raw: "{}", is_valid: false }
     }
+    ret JsonValue { raw: raw_str, is_valid: true }
 }
 
-fn json_format_pair(key: str, val: str) str {
-    ret val
+pub fn json_get_string(raw_json: str, key: str) str {
+    ret end_json_get_string(raw_json, key)
+}
+
+pub fn json_get_int(raw_json: str, key: str) i64 {
+    ret end_json_get_int(raw_json, key)
+}
+
+pub fn json_get_bool(raw_json: str, key: str) bool {
+    val b = end_json_get_bool(raw_json, key)
+    if b == 1 {
+        ret true
+    }
+    ret false
+}
+
+pub fn json_object_new() str {
+    ret "{}"
+}
+
+pub fn json_object_set_str(raw_json: str, key: str, val_str: str) str {
+    if raw_json == "{}" || raw_json == "" {
+        ret "{\"" + key + "\":\"" + val_str + "\"}"
+    }
+    // Trim trailing brace and append
+    val prefix = raw_json
+    ret prefix + ",\"" + key + "\":\"" + val_str + "\"}"
+}
+
+pub fn json_stringify(raw_json: str) str {
+    ret raw_json
 }

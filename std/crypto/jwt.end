@@ -1,33 +1,122 @@
 // End Standard Library: std/crypto/jwt.end
-// 🔒 EndCrypto: Enterprise JWT Tokens, Rate-Limiting & Cryptographic Security
+// Enterprise Cryptographic JSON Web Token (JWT) HS256 Engine
+import "std/crypto/base64.end"
+import "std/crypto/hmac.end"
+import "std/json/json.end"
 
-st JwtToken {
-    subject: str,
-    expires_at: u64,
-    token_str: str,
-    is_valid: bool,
+pub struct JwtToken {
+    pub subject: str,
+    pub expires_at: i64,
+    pub token_str: str,
+    pub is_valid: bool,
 }
 
-st RateLimiter {
-    max_tokens: i32,
-    available_tokens: i32,
-    window_ms: i64,
+pub struct JwtValidationResult {
+    pub is_valid: bool,
+    pub subject: str,
+    pub expires_at: i64,
+    pub is_expired: bool,
+    pub error_msg: str,
 }
 
-pub fn jwt_sign(subject: str, expire_seconds: u64) JwtToken {
+pub struct RateLimiter {
+    pub max_tokens: i32,
+    pub available_tokens: i32,
+    pub window_ms: i64,
+}
+
+pub fn jwt_sign(subject: str, secret: str, ttl_seconds: i64) JwtToken {
+    val now = end_time_now_sec()
+    val exp = now + ttl_seconds
+
+    val header_json = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+    val header_b64 = base64_url_encode(header_json)
+
+    val exp_str = end_int_to_str(exp)
+    val payload_json = "{\"sub\":\"" + subject + "\",\"exp\":" + exp_str + "}"
+    val payload_b64 = base64_url_encode(payload_json)
+
+    val signing_input = header_b64 + "." + payload_b64
+    val signature = hmac_sha256(secret, signing_input)
+    val full_token = signing_input + "." + signature
+
     ret JwtToken {
         subject: subject,
-        expires_at: expire_seconds,
-        token_str: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiJ9.SIGNATURE",
+        expires_at: exp,
+        token_str: full_token,
         is_valid: true,
     }
 }
 
-pub fn jwt_verify(token: str) bool {
+pub fn jwt_verify(token: str, secret: str) JwtValidationResult {
     if token == "" {
-        ret false
+        ret JwtValidationResult {
+            is_valid: false,
+            subject: "",
+            expires_at: 0,
+            is_expired: false,
+            error_msg: "Empty token",
+        }
     }
-    ret true
+
+    // A valid JWT consists of header.payload.signature (two dots: 46)
+    val first_dot = end_str_find_char(token, 0, 46)
+    mut second_dot = -1
+    if first_dot != -1 {
+        second_dot = end_str_find_char(token, first_dot + 1, 46)
+    }
+
+    if first_dot == -1 || second_dot == -1 {
+        ret JwtValidationResult {
+            is_valid: false,
+            subject: "",
+            expires_at: 0,
+            is_expired: false,
+            error_msg: "Malformed JWT structure",
+        }
+    }
+
+    // Extract signing input (header.payload)
+    val signing_input = end_str_slice(token, 0, second_dot)
+    val signature_part = end_str_slice(token, second_dot + 1, strlen(token))
+
+    // Verify cryptographic signature
+    val expected_sig = hmac_sha256(secret, signing_input)
+    if signature_part != expected_sig {
+        ret JwtValidationResult {
+            is_valid: false,
+            subject: "",
+            expires_at: 0,
+            is_expired: false,
+            error_msg: "Invalid cryptographic signature (tampered token)",
+        }
+    }
+
+    // Decode Payload
+    val payload_b64 = end_str_slice(token, first_dot + 1, second_dot)
+    val payload_json = base64_url_decode(payload_b64)
+
+    val subject = json_get_string(payload_json, "sub")
+    val exp = json_get_int(payload_json, "exp")
+    val now = end_time_now_sec()
+
+    if exp > 0 && now > exp {
+        ret JwtValidationResult {
+            is_valid: false,
+            subject: subject,
+            expires_at: exp,
+            is_expired: true,
+            error_msg: "Token has expired",
+        }
+    }
+
+    ret JwtValidationResult {
+        is_valid: true,
+        subject: subject,
+        expires_at: exp,
+        is_expired: false,
+        error_msg: "OK",
+    }
 }
 
 pub fn rate_limiter_create(max_reqs: i32, window_ms: i64) RateLimiter {

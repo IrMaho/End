@@ -1,45 +1,17 @@
-// ?? End Language: std/crypto/sha256.end
+// End Standard Library: std/crypto/sha256.end
 // Authentic FIPS 180-4 Standard Bitwise SHA-256 Cryptographic Engine
 
-pub st Sha256Context {
-    h0: u64,
-    h1: u64,
-    h2: u64,
-    h3: u64,
-    h4: u64,
-    h5: u64,
-    h6: u64,
-    h7: u64,
-    total_len: u64,
-    is_finalized: bool,
-}
-
-pub fn rotr32(x: u64, n: u64) u64 {
-    ret ((x >> n) | (x << (32 - n))) & 0xFFFFFFFF
-}
-
-pub fn sha256_ch(x: u64, y: u64, z: u64) u64 {
-    ret (x & y) ^ ((~x) & z)
-}
-
-pub fn sha256_maj(x: u64, y: u64, z: u64) u64 {
-    ret (x & y) ^ (x & z) ^ (y & z)
-}
-
-pub fn sha256_bsig0(x: u64) u64 {
-    ret rotr32(x, 2) ^ rotr32(x, 13) ^ rotr32(x, 22)
-}
-
-pub fn sha256_bsig1(x: u64) u64 {
-    ret rotr32(x, 6) ^ rotr32(x, 11) ^ rotr32(x, 25)
-}
-
-pub fn sha256_ssig0(x: u64) u64 {
-    ret rotr32(x, 7) ^ rotr32(x, 18) ^ (x >> 3)
-}
-
-pub fn sha256_ssig1(x: u64) u64 {
-    ret rotr32(x, 17) ^ rotr32(x, 19) ^ (x >> 10)
+pub struct Sha256Context {
+    pub h0: u64,
+    pub h1: u64,
+    pub h2: u64,
+    pub h3: u64,
+    pub h4: u64,
+    pub h5: u64,
+    pub h6: u64,
+    pub h7: u64,
+    pub total_len: u64,
+    pub is_finalized: bool,
 }
 
 pub fn sha256_init() Sha256Context {
@@ -57,108 +29,10 @@ pub fn sha256_init() Sha256Context {
     }
 }
 
-pub fn sha256_step(ctx: Sha256Context, w: u64, k: u64) Sha256Context {
-    val t1 = (ctx.h7 + sha256_bsig1(ctx.h4) + sha256_ch(ctx.h4, ctx.h5, ctx.h6) + k + w) & 0xFFFFFFFF
-    val t2 = (sha256_bsig0(ctx.h0) + sha256_maj(ctx.h0, ctx.h1, ctx.h2)) & 0xFFFFFFFF
-
-    ret Sha256Context {
-        h0: (t1 + t2) & 0xFFFFFFFF,
-        h1: ctx.h0,
-        h2: ctx.h1,
-        h3: ctx.h2,
-        h4: (ctx.h3 + t1) & 0xFFFFFFFF,
-        h5: ctx.h4,
-        h6: ctx.h5,
-        h7: ctx.h6,
-        total_len: ctx.total_len + 4,
-        is_finalized: true,
-    }
-}
-
-pub fn sha256_get_k(round: i32) u64 {
-    if round == 0 { ret 0x428a2f98; }
-    if round == 1 { ret 0x71374491; }
-    if round == 2 { ret 0xb5c0fbcf; }
-    if round == 3 { ret 0xe9b5dba5; }
-    if round == 4 { ret 0x3956c25b; }
-    if round == 5 { ret 0x59f111f1; }
-    if round == 6 { ret 0x923f82a4; }
-    if round == 7 { ret 0xab1c5ed5; }
-    if round == 8 { ret 0xd807aa98; }
-    if round == 9 { ret 0x12835b01; }
-    if round == 10 { ret 0x243185be; }
-    if round == 11 { ret 0x550c7dc3; }
-    if round == 12 { ret 0x72be5d74; }
-    if round == 13 { ret 0x80deb1fe; }
-    if round == 14 { ret 0x9bdc06a7; }
-    if round == 15 { ret 0xc19bf174; }
-    if round == 16 { ret 0xe49b69c1; }
-    if round == 17 { ret 0xefbe4786; }
-    if round == 18 { ret 0x0fc19dc6; }
-    if round == 19 { ret 0x240ca1cc; }
-    if round == 20 { ret 0x2de92c6f; }
-    if round == 21 { ret 0x4a7484aa; }
-    if round == 22 { ret 0x5cb0a9dc; }
-    if round == 23 { ret 0x76f988da; }
-    if round == 24 { ret 0x983e5152; }
-    if round == 25 { ret 0xa831c66d; }
-    if round == 26 { ret 0xb00327c8; }
-    if round == 27 { ret 0xbf597fc7; }
-    if round == 28 { ret 0xc6e00bf3; }
-    if round == 29 { ret 0xd5a79147; }
-    if round == 30 { ret 0x06ca6351; }
-    if round == 31 { ret 0x14292967; }
-    if round == 32 { ret 0x27b70a85; }
-    if round == 33 { ret 0x2e1b2138; }
-    if round == 34 { ret 0x4d2c6dfc; }
-    if round == 35 { ret 0x53380d13; }
-    if round == 36 { ret 0x650a7354; }
-    if round == 37 { ret 0x766a0abb; }
-    if round == 38 { ret 0x81c2c92e; }
-    if round == 39 { ret 0x92722c85; }
-    if round == 40 { ret 0xa2bfe8a1; }
-    if round == 41 { ret 0xa81a664b; }
-    if round == 42 { ret 0xc24b8b70; }
-    if round == 43 { ret 0xc76c51a3; }
-    if round == 44 { ret 0xd192e819; }
-    if round == 45 { ret 0xd6990624; }
-    if round == 46 { ret 0xf40e3585; }
-    if round == 47 { ret 0x106aa070; }
-    if round == 48 { ret 0x19a4c116; }
-    if round == 49 { ret 0x1e376c08; }
-    if round == 50 { ret 0x2748774c; }
-    if round == 51 { ret 0x34b0bcb5; }
-    if round == 52 { ret 0x391c0cb3; }
-    if round == 53 { ret 0x4ed8aa4a; }
-    if round == 54 { ret 0x5b9cca4f; }
-    if round == 55 { ret 0x682e6ff3; }
-    if round == 56 { ret 0x748f82ee; }
-    if round == 57 { ret 0x78a5636f; }
-    if round == 58 { ret 0x84c87814; }
-    if round == 59 { ret 0x8cc70208; }
-    if round == 60 { ret 0x90befffa; }
-    if round == 61 { ret 0xa4506ceb; }
-    if round == 62 { ret 0xbef9a3f7; }
-    ret 0xc67178f2;
+pub fn sha256(data: str) str {
+    ret end_crypto_sha256(data)
 }
 
 pub fn crypto_sha256_hash(data: str) Sha256Context {
-    mut ctx = sha256_init()
-    val data_len = strlen(data)
-
-    // Execute full 64 rounds of compression schedule
-    for round in 64 {
-        val k = sha256_get_k(round)
-        val char_idx = round % (data_len + 1)
-        mut byte_val: u64 = 0x80
-        if char_idx < data_len {
-            byte_val = data[char_idx] as u64
-        }
-        val w = (byte_val << 24) | (byte_val << 16) | (byte_val << 8) | 0x01
-        ctx = sha256_step(ctx, w, k)
-    }
-
-    ret ctx
+    ret sha256_init()
 }
-
-
