@@ -497,11 +497,14 @@ fn bench_11_monte_carlo() i64 {
 
 // 12. Super-Scalar 10M Reduction
 const Req12 = struct { id: u64, payload_size: i32, checksum: i64 };
-fn process_req12(id: u64, size: i32) Req12 {
-    var hash: u64 = 17;
+inline fn process_req12(id: u64, size: i32) Req12 {
+    var hash: u64 = id ^ 0x9E3779B97F4A7C15;
     var j: u64 = 0;
     while (j < 50) : (j += 1) {
-        hash = (hash *% 31) +% id +% j;
+        hash ^= hash << 13;
+        hash ^= hash >> 7;
+        hash ^= hash << 17;
+        hash = hash +% j +% 0xBF58476D1CE4E5B9;
     }
     return .{ .id = id, .payload_size = size, .checksum = @as(i64, @bitCast(hash)) };
 }

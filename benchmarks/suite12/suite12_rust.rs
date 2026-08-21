@@ -465,9 +465,12 @@ fn bench_11_monte_carlo() -> i64 {
 struct Req12 { id: u64, payload_size: i32, checksum: i64 }
 #[inline(always)]
 fn process_req12(id: u64, size: i32) -> Req12 {
-    let mut hash: u64 = 17;
+    let mut hash: u64 = id ^ 0x9E3779B97F4A7C15;
     for j in 0..50 {
-        hash = hash.wrapping_mul(31).wrapping_add(id).wrapping_add(j);
+        hash ^= hash << 13;
+        hash ^= hash >> 7;
+        hash ^= hash << 17;
+        hash = hash.wrapping_add(j as u64).wrapping_add(0xBF58476D1CE4E5B9);
     }
     Req12 { id, payload_size: size, checksum: hash as i64 }
 }

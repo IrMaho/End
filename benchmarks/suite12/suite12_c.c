@@ -494,10 +494,12 @@ int64_t bench_11_monte_carlo(void) {
 // ==============================================================================
 typedef struct { uint64_t id; int32_t payload_size; int64_t checksum; } Req12;
 static inline __attribute__((always_inline)) Req12 process_req12(uint64_t id, int32_t size) {
-    uint64_t hash = 17;
-    #pragma unroll
+    uint64_t hash = id ^ 0x9E3779B97F4A7C15ULL;
     for (int64_t j = 0; j < 50; j++) {
-        hash = (hash * 31) + id + j;
+        hash ^= (hash << 13);
+        hash ^= (hash >> 7);
+        hash ^= (hash << 17);
+        hash += (uint64_t)j + 0xBF58476D1CE4E5B9ULL;
     }
     return (Req12){ .id = id, .payload_size = size, .checksum = (int64_t)hash };
 }

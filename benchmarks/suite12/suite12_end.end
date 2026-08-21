@@ -562,9 +562,12 @@ pub fn bench_11_monte_carlo() i64 {
 // -----------------------------------------------------------------------------
 st Req12 { id: u64, payload_size: i32, checksum: i64 }
 pub fn process_req12(id: u64, size: i32) Req12 {
-    mut hash: u64 = 17
+    mut hash: u64 = id ^ 0x9E3779B97F4A7C15
     for j in 50 {
-        hash = (hash * 31) + id + j
+        hash = hash ^ (hash << 13)
+        hash = hash ^ (hash >> 7)
+        hash = hash ^ (hash << 17)
+        hash = hash + (j as u64) + 0xBF58476D1CE4E5B9
     }
     val req = Req12 { id: id, payload_size: size, checksum: hash as i64 }
     ret req

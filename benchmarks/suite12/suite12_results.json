@@ -1,268 +1,268 @@
 {
-  "timestamp": "2026-08-21 11:10:59",
+  "timestamp": "2026-08-21 11:58:14",
   "benchmarks": {
     "1. 3D SDF Raymarcher (250K Rays)": {
       "End (C11 Backend)": {
-        "mean_ms": 48.34,
-        "p50_ms": 47.67,
-        "std_dev": 1.4,
-        "min_ms": 47.57,
-        "max_ms": 50.83,
+        "mean_ms": 51.11,
+        "p50_ms": 51.24,
+        "std_dev": 0.43,
+        "min_ms": 50.65,
+        "max_ms": 51.65,
         "checksum": "14694880",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 61.9,
-        "p50_ms": 60.21,
-        "std_dev": 4.88,
-        "min_ms": 57.47,
-        "max_ms": 69.55,
+        "mean_ms": 60.96,
+        "p50_ms": 60.83,
+        "std_dev": 0.69,
+        "min_ms": 60.11,
+        "max_ms": 61.85,
         "checksum": "17840960",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 60.65,
-        "p50_ms": 63.12,
-        "std_dev": 4.93,
-        "min_ms": 55.17,
-        "max_ms": 65.24,
+        "mean_ms": 64.06,
+        "p50_ms": 64.7,
+        "std_dev": 2.98,
+        "min_ms": 60.59,
+        "max_ms": 67.47,
         "checksum": "17840960",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 52.01,
-        "p50_ms": 53.3,
-        "std_dev": 3.05,
-        "min_ms": 48.46,
-        "max_ms": 55.67,
+        "mean_ms": 52.95,
+        "p50_ms": 53.97,
+        "std_dev": 1.63,
+        "min_ms": 50.84,
+        "max_ms": 54.27,
         "checksum": "17840942",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 31.12,
-        "p50_ms": 30.76,
-        "std_dev": 0.95,
-        "min_ms": 30.05,
-        "max_ms": 32.51,
+        "mean_ms": 37.82,
+        "p50_ms": 38.21,
+        "std_dev": 0.69,
+        "min_ms": 36.93,
+        "max_ms": 38.38,
         "checksum": "17840960",
         "binary_kb": 1592.5
       }
     },
     "2. Binary Trees (Depth 16 Dynamic)": {
       "End (C11 Backend)": {
-        "mean_ms": 33.01,
-        "p50_ms": 32.42,
-        "std_dev": 2.3,
-        "min_ms": 31.25,
-        "max_ms": 37.02,
+        "mean_ms": 45.39,
+        "p50_ms": 44.99,
+        "std_dev": 1.79,
+        "min_ms": 43.19,
+        "max_ms": 47.59,
         "checksum": "407713",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 360.13,
-        "p50_ms": 360.76,
-        "std_dev": 18.24,
-        "min_ms": 337.12,
-        "max_ms": 379.3,
+        "mean_ms": 391.71,
+        "p50_ms": 391.96,
+        "std_dev": 2.07,
+        "min_ms": 388.97,
+        "max_ms": 394.12,
         "checksum": "407713",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 595.53,
-        "p50_ms": 592.85,
-        "std_dev": 41.55,
-        "min_ms": 542.31,
-        "max_ms": 646.56,
+        "mean_ms": 624.36,
+        "p50_ms": 621.69,
+        "std_dev": 16.68,
+        "min_ms": 608.93,
+        "max_ms": 651.95,
         "checksum": "407713",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 522.49,
-        "p50_ms": 511.16,
-        "std_dev": 25.67,
-        "min_ms": 498.22,
-        "max_ms": 557.71,
+        "mean_ms": 505.97,
+        "p50_ms": 503.53,
+        "std_dev": 7.36,
+        "min_ms": 499.02,
+        "max_ms": 518.3,
         "checksum": "407713",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 463.46,
-        "p50_ms": 462.63,
-        "std_dev": 7.28,
-        "min_ms": 455.03,
-        "max_ms": 472.51,
+        "mean_ms": 525.8,
+        "p50_ms": 510.23,
+        "std_dev": 33.53,
+        "min_ms": 505.7,
+        "max_ms": 585.25,
         "checksum": "407713",
         "binary_kb": 1592.5
       }
     },
     "3. HFT Limit Order Engine (1M Orders)": {
       "End (C11 Backend)": {
-        "mean_ms": 27.07,
-        "p50_ms": 26.54,
-        "std_dev": 1.13,
-        "min_ms": 25.86,
-        "max_ms": 28.32,
+        "mean_ms": 30.82,
+        "p50_ms": 31.05,
+        "std_dev": 1.2,
+        "min_ms": 28.94,
+        "max_ms": 32.22,
         "checksum": "552829538",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 23.25,
-        "p50_ms": 23.38,
-        "std_dev": 0.88,
-        "min_ms": 21.78,
-        "max_ms": 24.06,
+        "mean_ms": 27.05,
+        "p50_ms": 26.93,
+        "std_dev": 1.12,
+        "min_ms": 25.74,
+        "max_ms": 28.74,
         "checksum": "552829538",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 24.31,
-        "p50_ms": 23.91,
-        "std_dev": 1.7,
-        "min_ms": 22.72,
-        "max_ms": 26.86,
+        "mean_ms": 27.71,
+        "p50_ms": 27.89,
+        "std_dev": 0.88,
+        "min_ms": 26.25,
+        "max_ms": 28.42,
         "checksum": "552829538",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 27.75,
-        "p50_ms": 28.28,
-        "std_dev": 0.97,
-        "min_ms": 26.46,
-        "max_ms": 28.55,
+        "mean_ms": 31.71,
+        "p50_ms": 31.89,
+        "std_dev": 0.6,
+        "min_ms": 30.67,
+        "max_ms": 32.19,
         "checksum": "552829538",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 24.97,
-        "p50_ms": 24.9,
-        "std_dev": 0.3,
-        "min_ms": 24.62,
-        "max_ms": 25.45,
+        "mean_ms": 32.67,
+        "p50_ms": 32.29,
+        "std_dev": 3.38,
+        "min_ms": 29.39,
+        "max_ms": 38.26,
         "checksum": "552829538",
         "binary_kb": 1592.5
       }
     },
     "4. SHA-256 Crypto Hashing (500K Blocks)": {
       "End (C11 Backend)": {
-        "mean_ms": 93.58,
-        "p50_ms": 91.58,
-        "std_dev": 5.17,
-        "min_ms": 89.42,
-        "max_ms": 102.38,
+        "mean_ms": 106.94,
+        "p50_ms": 106.05,
+        "std_dev": 2.38,
+        "min_ms": 104.03,
+        "max_ms": 109.98,
         "checksum": "-4721506799343634759",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 104.72,
-        "p50_ms": 105.1,
-        "std_dev": 8.94,
-        "min_ms": 89.89,
-        "max_ms": 112.03,
+        "mean_ms": 108.94,
+        "p50_ms": 110.25,
+        "std_dev": 3.42,
+        "min_ms": 103.57,
+        "max_ms": 111.96,
         "checksum": "-4721506799343634759",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 112.38,
-        "p50_ms": 111.43,
-        "std_dev": 5.18,
-        "min_ms": 108.23,
-        "max_ms": 121.3,
+        "mean_ms": 111.8,
+        "p50_ms": 109.31,
+        "std_dev": 5.07,
+        "min_ms": 107.35,
+        "max_ms": 119.86,
         "checksum": "-4721506799343634759",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 94.99,
-        "p50_ms": 90.84,
-        "std_dev": 10.94,
-        "min_ms": 87.94,
-        "max_ms": 114.07,
+        "mean_ms": 107.36,
+        "p50_ms": 105.84,
+        "std_dev": 6.67,
+        "min_ms": 100.94,
+        "max_ms": 118.6,
         "checksum": "-4721506799343634759",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 104.08,
-        "p50_ms": 104.89,
-        "std_dev": 2.74,
-        "min_ms": 99.59,
-        "max_ms": 106.81,
+        "mean_ms": 139.27,
+        "p50_ms": 138.81,
+        "std_dev": 8.24,
+        "min_ms": 131.94,
+        "max_ms": 152.92,
         "checksum": "-4721506799343634759",
         "binary_kb": 1592.5
       }
     },
     "5. N-Body Gravity Orbit (1M Pairwise)": {
       "End (C11 Backend)": {
-        "mean_ms": 1944.99,
-        "p50_ms": 1943.91,
-        "std_dev": 46.69,
-        "min_ms": 1885.19,
-        "max_ms": 2003.59,
+        "mean_ms": 2429.02,
+        "p50_ms": 2419.54,
+        "std_dev": 27.48,
+        "min_ms": 2404.22,
+        "max_ms": 2461.94,
         "checksum": "1656141296",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 2136.09,
-        "p50_ms": 2174.58,
-        "std_dev": 90.23,
-        "min_ms": 2026.84,
-        "max_ms": 2225.57,
+        "mean_ms": 3054.82,
+        "p50_ms": 3040.44,
+        "std_dev": 29.78,
+        "min_ms": 3029.79,
+        "max_ms": 3092.62,
         "checksum": "1549675472",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 2148.6,
-        "p50_ms": 2141.09,
-        "std_dev": 32.18,
-        "min_ms": 2113.46,
-        "max_ms": 2197.5,
+        "mean_ms": 3287.29,
+        "p50_ms": 3307.94,
+        "std_dev": 50.95,
+        "min_ms": 3205.74,
+        "max_ms": 3339.25,
         "checksum": "1549675472",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 2446.85,
-        "p50_ms": 2536.55,
-        "std_dev": 204.04,
-        "min_ms": 2160.49,
-        "max_ms": 2673.52,
+        "mean_ms": 2618.86,
+        "p50_ms": 2630.99,
+        "std_dev": 86.27,
+        "min_ms": 2480.6,
+        "max_ms": 2690.79,
         "checksum": "1656141297",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 3871.93,
-        "p50_ms": 3828.78,
-        "std_dev": 448.44,
-        "min_ms": 3452.2,
-        "max_ms": 4492.3,
+        "mean_ms": 4266.36,
+        "p50_ms": 4190.98,
+        "std_dev": 152.11,
+        "min_ms": 4129.16,
+        "max_ms": 4485.4,
         "checksum": "1631413912",
         "binary_kb": 1592.5
       }
     },
     "6. SPSC Ring Buffer Queue (10M Items)": {
       "End (C11 Backend)": {
-        "mean_ms": 4.71,
-        "p50_ms": 4.83,
-        "std_dev": 1.09,
-        "min_ms": 3.54,
-        "max_ms": 5.81,
+        "mean_ms": 5.46,
+        "p50_ms": 5.31,
+        "std_dev": 0.68,
+        "min_ms": 4.57,
+        "max_ms": 6.28,
         "checksum": "1550000015000000",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 2.95,
-        "p50_ms": 2.83,
-        "std_dev": 0.47,
-        "min_ms": 2.54,
-        "max_ms": 3.75,
+        "mean_ms": 2.98,
+        "p50_ms": 2.91,
+        "std_dev": 0.44,
+        "min_ms": 2.62,
+        "max_ms": 3.74,
         "checksum": "1550000015000000",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 2.16,
-        "p50_ms": 2.01,
-        "std_dev": 0.56,
-        "min_ms": 1.54,
-        "max_ms": 2.8,
+        "mean_ms": 2.02,
+        "p50_ms": 1.65,
+        "std_dev": 0.69,
+        "min_ms": 1.4,
+        "max_ms": 3.02,
         "checksum": "1550000015000000",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
         "mean_ms": 0.0,
@@ -271,297 +271,297 @@
         "min_ms": 0.0,
         "max_ms": 0.0,
         "checksum": "150000155000000",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 11.24,
-        "p50_ms": 12.17,
-        "std_dev": 2.37,
-        "min_ms": 7.95,
-        "max_ms": 13.35,
+        "mean_ms": 11.86,
+        "p50_ms": 11.66,
+        "std_dev": 1.5,
+        "min_ms": 10.15,
+        "max_ms": 14.27,
         "checksum": "1550000015000000",
         "binary_kb": 1592.5
       }
     },
     "7. DNA Levenshtein Matrix (1M Cells)": {
       "End (C11 Backend)": {
-        "mean_ms": 1146.82,
-        "p50_ms": 1131.36,
-        "std_dev": 87.64,
-        "min_ms": 1059.34,
-        "max_ms": 1250.77,
+        "mean_ms": 1131.41,
+        "p50_ms": 1135.98,
+        "std_dev": 17.41,
+        "min_ms": 1101.38,
+        "max_ms": 1146.87,
         "checksum": "525912",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 2303.09,
-        "p50_ms": 2306.27,
-        "std_dev": 48.61,
-        "min_ms": 2235.01,
-        "max_ms": 2364.37,
+        "mean_ms": 2504.46,
+        "p50_ms": 2505.86,
+        "std_dev": 18.5,
+        "min_ms": 2476.26,
+        "max_ms": 2528.21,
         "checksum": "525912",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 2368.93,
-        "p50_ms": 2391.26,
-        "std_dev": 91.09,
-        "min_ms": 2219.05,
-        "max_ms": 2453.92,
+        "mean_ms": 2466.72,
+        "p50_ms": 2465.38,
+        "std_dev": 16.84,
+        "min_ms": 2443.78,
+        "max_ms": 2489.54,
         "checksum": "525912",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 1294.74,
-        "p50_ms": 1283.13,
-        "std_dev": 28.67,
-        "min_ms": 1262.61,
-        "max_ms": 1331.55,
+        "mean_ms": 1261.1,
+        "p50_ms": 1270.28,
+        "std_dev": 18.45,
+        "min_ms": 1232.18,
+        "max_ms": 1275.34,
         "checksum": "525912",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 2414.98,
-        "p50_ms": 2443.96,
-        "std_dev": 61.06,
-        "min_ms": 2347.54,
-        "max_ms": 2466.82,
+        "mean_ms": 2506.17,
+        "p50_ms": 2503.64,
+        "std_dev": 18.16,
+        "min_ms": 2488.45,
+        "max_ms": 2525.85,
         "checksum": "525912",
         "binary_kb": 1592.5
       }
     },
     "8. JSON Microservice Serializer (100K)": {
       "End (C11 Backend)": {
-        "mean_ms": 63.23,
-        "p50_ms": 64.42,
-        "std_dev": 5.72,
-        "min_ms": 56.55,
-        "max_ms": 68.67,
+        "mean_ms": 75.28,
+        "p50_ms": 74.03,
+        "std_dev": 2.81,
+        "min_ms": 73.07,
+        "max_ms": 80.02,
         "checksum": "5588438541400559045",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 9.92,
-        "p50_ms": 8.13,
-        "std_dev": 2.85,
-        "min_ms": 7.6,
-        "max_ms": 13.58,
+        "mean_ms": 12.87,
+        "p50_ms": 13.6,
+        "std_dev": 1.35,
+        "min_ms": 11.22,
+        "max_ms": 14.03,
         "checksum": "5588438541400559045",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 27.85,
-        "p50_ms": 23.89,
-        "std_dev": 7.4,
-        "min_ms": 21.05,
-        "max_ms": 37.11,
+        "mean_ms": 31.75,
+        "p50_ms": 31.97,
+        "std_dev": 0.71,
+        "min_ms": 30.54,
+        "max_ms": 32.38,
         "checksum": "5588438541400559045",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 60.91,
-        "p50_ms": 57.67,
-        "std_dev": 9.25,
-        "min_ms": 54.1,
-        "max_ms": 76.56,
+        "mean_ms": 76.02,
+        "p50_ms": 76.11,
+        "std_dev": 2.45,
+        "min_ms": 73.34,
+        "max_ms": 79.54,
         "checksum": "5588438541400559045",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 42.79,
-        "p50_ms": 41.57,
-        "std_dev": 3.45,
-        "min_ms": 40.29,
-        "max_ms": 48.85,
+        "mean_ms": 52.52,
+        "p50_ms": 51.07,
+        "std_dev": 4.65,
+        "min_ms": 49.34,
+        "max_ms": 60.72,
         "checksum": "5588438541400559045",
         "binary_kb": 1592.5
       }
     },
     "9. FSM Lexer Stream (10M Chars)": {
       "End (C11 Backend)": {
-        "mean_ms": 9.81,
-        "p50_ms": 10.24,
-        "std_dev": 2.66,
-        "min_ms": 7.01,
-        "max_ms": 12.62,
+        "mean_ms": 12.24,
+        "p50_ms": 12.58,
+        "std_dev": 0.93,
+        "min_ms": 11.0,
+        "max_ms": 13.15,
         "checksum": "-6471218147204355511",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 16.12,
-        "p50_ms": 17.09,
-        "std_dev": 2.66,
-        "min_ms": 13.27,
-        "max_ms": 19.45,
+        "mean_ms": 15.68,
+        "p50_ms": 16.28,
+        "std_dev": 1.46,
+        "min_ms": 13.42,
+        "max_ms": 17.08,
         "checksum": "-103069600432064540",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 16.88,
-        "p50_ms": 17.26,
-        "std_dev": 0.94,
-        "min_ms": 15.25,
-        "max_ms": 17.63,
+        "mean_ms": 16.77,
+        "p50_ms": 16.92,
+        "std_dev": 0.36,
+        "min_ms": 16.38,
+        "max_ms": 17.2,
         "checksum": "-103069600432064540",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 10.36,
-        "p50_ms": 9.3,
-        "std_dev": 3.95,
-        "min_ms": 7.79,
-        "max_ms": 17.25,
+        "mean_ms": 11.79,
+        "p50_ms": 11.01,
+        "std_dev": 2.25,
+        "min_ms": 9.5,
+        "max_ms": 15.47,
         "checksum": "-103069600432064540",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 22.9,
-        "p50_ms": 24.16,
-        "std_dev": 3.82,
-        "min_ms": 16.16,
-        "max_ms": 25.27,
+        "mean_ms": 21.82,
+        "p50_ms": 21.26,
+        "std_dev": 1.12,
+        "min_ms": 20.72,
+        "max_ms": 23.34,
         "checksum": "-103069600432064540",
         "binary_kb": 1592.5
       }
     },
     "10. GEMM Matrix Multiplication (512x512)": {
       "End (C11 Backend)": {
-        "mean_ms": 18.53,
-        "p50_ms": 18.59,
-        "std_dev": 4.82,
-        "min_ms": 13.37,
-        "max_ms": 26.09,
+        "mean_ms": 17.22,
+        "p50_ms": 15.4,
+        "std_dev": 5.38,
+        "min_ms": 12.76,
+        "max_ms": 25.99,
         "checksum": "6422836",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 72.9,
-        "p50_ms": 75.31,
-        "std_dev": 7.26,
-        "min_ms": 64.89,
-        "max_ms": 80.93,
+        "mean_ms": 92.01,
+        "p50_ms": 86.57,
+        "std_dev": 14.52,
+        "min_ms": 82.39,
+        "max_ms": 117.77,
         "checksum": "6422836",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 49.13,
-        "p50_ms": 44.81,
-        "std_dev": 6.7,
-        "min_ms": 43.71,
-        "max_ms": 56.76,
+        "mean_ms": 56.91,
+        "p50_ms": 56.37,
+        "std_dev": 1.74,
+        "min_ms": 55.07,
+        "max_ms": 59.35,
         "checksum": "6422836",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 15.72,
-        "p50_ms": 16.55,
-        "std_dev": 2.91,
-        "min_ms": 10.98,
-        "max_ms": 18.38,
+        "mean_ms": 14.95,
+        "p50_ms": 13.92,
+        "std_dev": 2.57,
+        "min_ms": 13.02,
+        "max_ms": 19.35,
         "checksum": "6422836",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 78.02,
-        "p50_ms": 79.31,
-        "std_dev": 5.12,
-        "min_ms": 70.62,
-        "max_ms": 83.45,
+        "mean_ms": 114.1,
+        "p50_ms": 113.42,
+        "std_dev": 2.03,
+        "min_ms": 112.55,
+        "max_ms": 117.65,
         "checksum": "6422836",
         "binary_kb": 1592.5
       }
     },
     "11. Monte Carlo Black-Scholes (2M Paths)": {
       "End (C11 Backend)": {
-        "mean_ms": 61.78,
-        "p50_ms": 63.66,
-        "std_dev": 7.42,
-        "min_ms": 54.47,
-        "max_ms": 72.24,
+        "mean_ms": 62.39,
+        "p50_ms": 55.58,
+        "std_dev": 13.6,
+        "min_ms": 54.73,
+        "max_ms": 86.43,
         "checksum": "10440247",
-        "binary_kb": 38.5
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 36.6,
-        "p50_ms": 37.64,
-        "std_dev": 3.99,
-        "min_ms": 32.67,
-        "max_ms": 42.14,
+        "mean_ms": 39.6,
+        "p50_ms": 38.59,
+        "std_dev": 2.89,
+        "min_ms": 37.52,
+        "max_ms": 44.68,
         "checksum": "10440246",
-        "binary_kb": 834.0
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 43.6,
-        "p50_ms": 44.92,
-        "std_dev": 5.31,
-        "min_ms": 37.59,
-        "max_ms": 49.81,
+        "mean_ms": 44.09,
+        "p50_ms": 43.39,
+        "std_dev": 3.54,
+        "min_ms": 41.16,
+        "max_ms": 50.07,
         "checksum": "10440246",
-        "binary_kb": 184.5
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 50.38,
-        "p50_ms": 52.41,
-        "std_dev": 6.52,
-        "min_ms": 42.99,
-        "max_ms": 58.57,
+        "mean_ms": 55.89,
+        "p50_ms": 54.78,
+        "std_dev": 3.19,
+        "min_ms": 52.68,
+        "max_ms": 59.37,
         "checksum": "10440246",
-        "binary_kb": 76.9
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 50.93,
-        "p50_ms": 48.02,
-        "std_dev": 8.92,
-        "min_ms": 43.88,
-        "max_ms": 65.25,
+        "mean_ms": 65.1,
+        "p50_ms": 65.34,
+        "std_dev": 2.29,
+        "min_ms": 61.39,
+        "max_ms": 67.65,
         "checksum": "10440246",
         "binary_kb": 1592.5
       }
     },
     "12. Super-Scalar ALU Reduction (10M)": {
       "End (C11 Backend)": {
-        "mean_ms": 213.08,
-        "p50_ms": 212.06,
-        "std_dev": 19.51,
-        "min_ms": 192.11,
-        "max_ms": 241.19,
-        "checksum": "-6815960706871662336",
-        "binary_kb": 38.5
+        "mean_ms": 723.46,
+        "p50_ms": 727.71,
+        "std_dev": 14.24,
+        "min_ms": 698.58,
+        "max_ms": 732.84,
+        "checksum": "3370198876750320971",
+        "binary_kb": 39.0
       },
       "Zig (0.16.0)": {
-        "mean_ms": 0.01,
-        "p50_ms": 0.01,
-        "std_dev": 0.0,
-        "min_ms": 0.01,
-        "max_ms": 0.01,
-        "checksum": "-6815960706871662336",
-        "binary_kb": 834.0
+        "mean_ms": 883.8,
+        "p50_ms": 885.88,
+        "std_dev": 11.67,
+        "min_ms": 871.06,
+        "max_ms": 895.96,
+        "checksum": "3370198876750320971",
+        "binary_kb": 835.0
       },
       "Rust (1.89.0)": {
-        "mean_ms": 0.0,
-        "p50_ms": 0.0,
-        "std_dev": 0.0,
-        "min_ms": 0.0,
-        "max_ms": 0.0,
-        "checksum": "-6815960706871662336",
-        "binary_kb": 184.5
+        "mean_ms": 164.2,
+        "p50_ms": 160.31,
+        "std_dev": 18.09,
+        "min_ms": 147.53,
+        "max_ms": 194.8,
+        "checksum": "3370198876750320971",
+        "binary_kb": 193.0
       },
       "C (GCC 15.2)": {
-        "mean_ms": 211.01,
-        "p50_ms": 209.01,
-        "std_dev": 15.17,
-        "min_ms": 195.0,
-        "max_ms": 235.59,
-        "checksum": "-6815960706871662336",
-        "binary_kb": 76.9
+        "mean_ms": 733.9,
+        "p50_ms": 730.87,
+        "std_dev": 15.54,
+        "min_ms": 718.36,
+        "max_ms": 759.52,
+        "checksum": "3370198876750320971",
+        "binary_kb": 77.4
       },
       "Go (1.25.1)": {
-        "mean_ms": 419.52,
-        "p50_ms": 419.61,
-        "std_dev": 21.29,
-        "min_ms": 391.66,
-        "max_ms": 443.26,
-        "checksum": "-6815960706871662336",
+        "mean_ms": 865.46,
+        "p50_ms": 867.71,
+        "std_dev": 21.81,
+        "min_ms": 831.7,
+        "max_ms": 892.74,
+        "checksum": "3370198876750320971",
         "binary_kb": 1592.5
       }
     }

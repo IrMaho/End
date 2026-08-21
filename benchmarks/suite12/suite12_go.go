@@ -516,9 +516,12 @@ type Req12 struct {
 }
 
 func processReq12(id uint64, size int32) Req12 {
-	var hash uint64 = 17
+	hash := id ^ 0x9E3779B97F4A7C15
 	for j := uint64(0); j < 50; j++ {
-		hash = hash*31 + id + j
+		hash ^= (hash << 13)
+		hash ^= (hash >> 7)
+		hash ^= (hash << 17)
+		hash += j + 0xBF58476D1CE4E5B9
 	}
 	return Req12{id: id, payloadSize: size, checksum: int64(hash)}
 }
