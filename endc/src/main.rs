@@ -15,6 +15,9 @@ mod fuzz;
 mod lexer;
 mod lsp;
 mod mobile;
+pub mod docgen;
+use docgen::DocOrchestrator;
+use docgen::server::DocServer;
 mod package;
 mod parser;
 mod repl;
@@ -46,6 +49,26 @@ struct Cli {
 enum Commands {
     /// Print End language version and toolchain info
     Version,
+    /// Generate comprehensive OpenAPI 3.1, AI Agent Passport, Struct Memory Layout, and Interactive Swagger Dashboard
+    Doc {
+        /// Path to .end entrypoint file or project directory
+        file: PathBuf,
+        /// Output documentation directory (default: ./docs)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Documentation format: all, html, openapi, passport, markdown
+        #[arg(short, long, default_value = "all")]
+        format: String,
+        /// Start built-in local live documentation preview server
+        #[arg(long, default_value_t = false)]
+        serve: bool,
+        /// Port for local preview server (default: 8080)
+        #[arg(long, default_value_t = 8080)]
+        port: u16,
+        /// Automatically open generated documentation in default web browser
+        #[arg(long, default_value_t = false)]
+        open: bool,
+    },
     /// Manage End Language AI coding skills (.agents/skills/end-language)
     Skill {
         /// Subcommand: init (copy skill into current project) or path (print skill path)
@@ -366,6 +389,46 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Doc { file, output, format: _, serve, port, open } => {
+            let out_dir = output.unwrap_or_else(|| PathBuf::from("docs"));
+            let (module, analyzer) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            let source = fs::read_to_string(&file).unwrap_or_default();
+            match DocOrchestrator::generate_all(&module, &analyzer, &source, &out_dir) {
+                Ok(index_path) => {
+                    println!("✨ {} Generated Universal Documentation Suite at {:?}", "End Doc:".green().bold(), out_dir);
+                    println!("  ├─ 🌐 {} (Swagger/Redoc Interactive Dashboard)", "index.html".cyan().bold());
+                    println!("  ├─ 🔌 {} (OpenAPI v3.1.0 JSON Specification)", "openapi.json".cyan().bold());
+                    println!("  ├─ 🛡️ {} (AI Agent & Compiler Passport)", "project_passport.json".cyan().bold());
+                    println!("  └─ 📖 {} (GitHub Markdown Technical Reference)", "API_REFERENCE.md".cyan().bold());
+
+                    if open {
+                        #[cfg(target_os = "windows")]
+                        let _ = std::process::Command::new("cmd").args(["/C", "start", &index_path.to_string_lossy()]).spawn();
+                        #[cfg(target_os = "macos")]
+                        let _ = std::process::Command::new("open").arg(&index_path).spawn();
+                        #[cfg(target_os = "linux")]
+                        let _ = std::process::Command::new("xdg-open").arg(&index_path).spawn();
+                    }
+
+                    if serve {
+                        if let Err(e) = DocServer::serve(&out_dir, port) {
+                            eprintln!("{} Failed to start doc server: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
         Commands::Version => {
             println!("👑 End Programming Language v1.0.0 (x86_64-pc-windows-msvc)");
             println!("⚡ Toolchain: GCC 15.2 Ultra-Optimized (LTO + Fast-Math)");

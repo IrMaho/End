@@ -1,0 +1,110 @@
+// 🛍️ High-Performance Cloud Ecommerce Service in End Programming Language
+// Features: Zero-Alloc Arena Allocation, OpenAPI 3.1 Documentation, AI Agent Passport
+
+/// Status of an active or fulfilled customer order
+enum OrderStatus {
+    Pending,
+    Processing,
+    Shipped,
+    Delivered,
+    Cancelled
+}
+
+/// Core User profile entity
+st User {
+    id: i64,
+    username: str,
+    email: str,
+    is_vip: bool
+}
+
+/// Product catalog item with pricing and stock
+st Product {
+    id: i64,
+    name: str,
+    price_cents: i64,
+    inventory_count: i64
+}
+
+/// Individual item in an order line
+st OrderItem {
+    product_id: i64,
+    quantity: i64,
+    unit_price_cents: i64
+}
+
+/// Inbound payload for creating a new order
+st CreateOrderRequest {
+    user_id: i64,
+    items_count: i64,
+    shipping_address: str
+}
+
+/// Outbound response for order creation
+st OrderResponse {
+    order_id: i64,
+    total_amount_cents: i64,
+    status: str
+}
+
+// 📦 Struct Method Extensions for Financial Arithmetic
+extend st Product {
+    /// Calculate price with VIP discount percentage
+    pub fn get_discounted_price(&self, discount_pct: i64) i64 {
+        ret self.price_cents - (self.price_cents * discount_pct / 100)
+    }
+}
+
+extend st OrderResponse {
+    /// Check if order qualifies for express free shipping
+    pub fn is_free_shipping(&self) bool {
+        ret self.total_amount_cents > 5000
+    }
+}
+
+// ==========================================
+// ⚡ REST API ENDPOINTS (OpenAPI v3.1 Engine)
+// ==========================================
+
+/// @get("/api/v1/health")
+/// @tag("System")
+/// @summary("Cluster Health & Node Liveness Check")
+pub fn get_health() i32 {
+    println("Health check requested")
+    ret 200
+}
+
+/// @get("/api/v1/products")
+/// @tag("Catalog")
+/// @summary("List all active catalog products")
+pub fn list_products() i64 {
+    val p = Product {
+        id: 101,
+        name: "Pro Gaming Laptop",
+        price_cents: 149900,
+        inventory_count: 42
+    }
+    ret p.price_cents
+}
+
+/// @post("/api/v1/orders")
+/// @tag("Orders")
+/// @summary("Create and process a new customer order")
+pub fn create_order(req: CreateOrderRequest) OrderResponse {
+    val total = req.items_count * 2500
+    ret OrderResponse {
+        order_id: 99482,
+        total_amount_cents: total,
+        status: "PROCESSING"
+    }
+}
+
+// Pure mathematical validation routine
+pub fn calculate_tax(amount_cents: i64, tax_rate_basis_points: i64) i64 {
+    ret amount_cents * tax_rate_basis_points / 10000
+}
+
+pub fn main() i32 {
+    println("🚀 End Cloud Ecommerce Microservice Running")
+    ret 0
+}
