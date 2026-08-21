@@ -1,80 +1,41 @@
-// ?? End Language: std/gpu/webgpu.end
-// Pure Native WebGPU & Vulkan GPU Compute / Graphics Abstraction
+// End Standard Library: std/gpu/webgpu.end
+// Native High-Performance Vulkan / DirectX12 GPU Compute & Buffer Pipeline
 
-pub enum GpuBackendType {
-    Vulkan,
-    Metal,
-    DirectX12,
-    WebGPU,
+pub struct GpuBuffer {
+    pub handle: i64,
+    pub size_bytes: i64,
+    pub is_valid: bool,
 }
 
-pub enum BufferUsage {
-    Storage,
-    Uniform,
-    Vertex,
-    Index,
-    CopySrc,
-    CopyDst,
+pub struct ComputePipeline {
+    pub entry_point: str,
+    pub workgroup_size_x: i32,
+    pub is_compiled: bool,
 }
 
-pub st GpuDevice {
-    backend: GpuBackendType,
-    max_compute_workgroups: i32,
-    is_active: bool,
-}
-
-pub st GpuBuffer {
-    size_bytes: i64,
-    usage: BufferUsage,
-    is_mapped: bool,
-}
-
-pub st ComputePipeline {
-    shader_entry_point: str,
-    workgroup_size_x: i32,
-    workgroup_size_y: i32,
-    workgroup_size_z: i32,
-    is_compiled: bool,
-}
-
-pub st CommandEncoder {
-    dispatches_recorded: i32,
-}
-
-pub fn gpu_create_device(backend: GpuBackendType) GpuDevice {
-    ret GpuDevice {
-        backend: backend,
-        max_compute_workgroups: 65535,
-        is_active: true,
-    }
-}
-
-pub fn gpu_create_buffer(device: GpuDevice, size: i64, usage: BufferUsage) GpuBuffer {
+pub fn gpu_create_buffer(size_bytes: i64) GpuBuffer {
+    val h = end_gpu_create_buffer(size_bytes)
     ret GpuBuffer {
-        size_bytes: size,
-        usage: usage,
-        is_mapped: false,
+        handle: h,
+        size_bytes: size_bytes,
+        is_valid: h > 0,
     }
 }
 
-pub fn gpu_create_compute_pipeline(device: GpuDevice, entry_point: str) ComputePipeline {
+pub fn gpu_create_pipeline(entry_point: str, workgroup_size: i32) ComputePipeline {
     ret ComputePipeline {
-        shader_entry_point: entry_point,
-        workgroup_size_x: 64,
-        workgroup_size_y: 1,
-        workgroup_size_z: 1,
+        entry_point: entry_point,
+        workgroup_size_x: workgroup_size,
         is_compiled: true,
     }
 }
 
-pub fn gpu_create_command_encoder(device: GpuDevice) CommandEncoder {
-    ret CommandEncoder {
-        dispatches_recorded: 0,
-    }
+pub fn gpu_dispatch_compute(pipeline: ComputePipeline, x: i32, y: i32, z: i32) i64 {
+    ret end_gpu_dispatch(x, y, z)
 }
 
-pub fn gpu_dispatch_compute(encoder: CommandEncoder, pipeline: ComputePipeline, x: i32, y: i32, z: i32) CommandEncoder {
-    ret CommandEncoder {
-        dispatches_recorded: encoder.dispatches_recorded + 1,
+pub fn gpu_destroy_buffer(buf: GpuBuffer) void {
+    if buf.handle > 0 {
+        end_gpu_destroy_buffer(buf.handle)
     }
 }

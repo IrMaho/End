@@ -1,37 +1,27 @@
-// std.ui.geometry - 2D Vector Geometry Primitives for End UI & Canvas
+// End Standard Library: std/ui/geometry.end
+// 2D Vector Geometry for End Language
 
-st Point {
-    x: i32,
-    y: i32,
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
 }
 
-st Size {
-    width: i32,
-    height: i32,
+pub struct Rect {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
 }
 
-st Rect {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-}
-
-fn point_new(x: i32, y: i32) Point {
+pub fn point_create(x: i32, y: i32) Point {
     ret Point { x: x, y: y }
 }
 
-fn size_new(width: i32, height: i32) Size {
-    ret Size { width: width, height: height }
-}
-
-fn rect_from_ltwh(left: i32, top: i32, width: i32, height: i32) Rect {
-    ret Rect { x: left, y: top, width: width, height: height }
-}
-
-fn rect_contains_point(r: Rect, p: Point) bool {
-    if p.x >= r.x && p.x <= (r.x + r.width) && p.y >= r.y && p.y <= (r.y + r.height) {
-        ret true
+pub fn rect_from_ltwh(left: i32, top: i32, width: i32, height: i32) Rect {
+    ret Rect {
+        x: left,
+        y: top,
+        width: width,
+        height: height,
     }
-    ret false
 }

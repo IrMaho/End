@@ -1,42 +1,28 @@
-// std.ui.color - Modern High-Precision Color & Gradient System for End Language
+// End Standard Library: std/ui/color.end
+// Modern High-Precision Color & Gradient System for End Language
 
-st Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
-fn color_rgba(r: u8, g: u8, b: u8, a: u8) Color {
+pub fn color_rgba(r: u8, g: u8, b: u8, a: u8) Color {
     ret Color { r: r, g: g, b: b, a: a }
 }
 
-fn color_rgb(r: u8, g: u8, b: u8) Color {
+pub fn color_rgb(r: u8, g: u8, b: u8) Color {
     ret Color { r: r, g: g, b: b, a: 255 }
 }
 
-fn color_hex(hex: u32) Color {
-    val r: u8 = ((hex >> 16) & 255) as u8
-    val g: u8 = ((hex >> 8) & 255) as u8
-    val b: u8 = (hex & 255) as u8
-    ret Color { r: r, g: g, b: b, a: 255 }
+pub fn color_to_u32(col: Color) u32 {
+    val pixel_val: u32 = ((col.a as u32) << 24) | ((col.r as u32) << 16) | ((col.g as u32) << 8) | (col.b as u32)
+    ret pixel_val
 }
 
-// Pre-defined Cyberpunk & Modern Luxury Palette
-fn color_cyan_neon() Color { ret color_rgba(0, 245, 255, 255) }
-fn color_violet_neon() Color { ret color_rgba(180, 0, 255, 255) }
-fn color_blue_laser() Color { ret color_rgba(0, 110, 255, 255) }
-fn color_dark_obsidian() Color { ret color_rgba(15, 18, 25, 255) }
-fn color_card_glass() Color { ret color_rgba(30, 35, 48, 200) }
-fn color_white() Color { ret color_rgba(255, 255, 255, 255) }
-fn color_black() Color { ret color_rgba(0, 0, 0, 255) }
-fn color_transparent() Color { ret color_rgba(0, 0, 0, 0) }
-
-fn color_lerp(c1: Color, c2: Color, t_percent: i32) Color {
-    val inv: i32 = 100 - t_percent
-    val r: u8 = (((c1.r as i32 * inv) + (c2.r as i32 * t_percent)) / 100) as u8
-    val g: u8 = (((c1.g as i32 * inv) + (c2.g as i32 * t_percent)) / 100) as u8
-    val b: u8 = (((c1.b as i32 * inv) + (c2.b as i32 * t_percent)) / 100) as u8
-    val a: u8 = (((c1.a as i32 * inv) + (c2.a as i32 * t_percent)) / 100) as u8
-    ret Color { r: r, g: g, b: b, a: a }
-}
+pub fn color_cyan_neon() Color { ret color_rgba(0, 245, 255, 255) }
+pub fn color_violet_neon() Color { ret color_rgba(180, 0, 255, 255) }
+pub fn color_dark_obsidian() Color { ret color_rgba(15, 18, 25, 255) }
+pub fn color_white() Color { ret color_rgba(255, 255, 255, 255) }
+pub fn color_black() Color { ret color_rgba(0, 0, 0, 255) }
