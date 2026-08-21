@@ -36,7 +36,6 @@
             overflow-x: hidden;
         }
 
-        /* SIDEBAR */
         .sidebar {
             width: 280px;
             background: rgba(11, 17, 30, 0.98);
@@ -92,7 +91,6 @@
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
         }
 
-        /* MAIN WRAPPER */
         .main-content {
             flex: 1;
             padding: 32px 40px;
@@ -100,7 +98,6 @@
             overflow-y: auto;
         }
 
-        /* TOP BAR */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -115,13 +112,6 @@
         .top-left h1 { font-size: 22px; font-weight: 800; }
         .top-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
-        .top-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        /* STATS GRID */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -147,9 +137,7 @@
         .stat-value { font-size: 28px; font-weight: 800; color: #fff; margin: 8px 0; font-family: var(--font-mono); }
         .stat-sub { font-size: 12px; display: flex; align-items: center; gap: 6px; }
         .stat-positive { color: var(--accent-emerald); font-weight: 600; }
-        .stat-negative { color: var(--accent-rose); font-weight: 600; }
 
-        /* PROGRESS BAR */
         .progress-bar-bg {
             width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 10px; overflow: hidden;
         }
@@ -157,7 +145,6 @@
             height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo));
         }
 
-        /* MAIN GRID SPLIT */
         .grid-2col {
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
@@ -182,7 +169,6 @@
         }
         .panel-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
 
-        /* FORM ELEMENTS */
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
         .form-group { margin-bottom: 14px; }
         .form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
@@ -224,7 +210,6 @@
             box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
         }
 
-        /* DATA TABLE */
         .table-wrap { width: 100%; overflow-x: auto; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .data-table th {
@@ -259,7 +244,6 @@
 </head>
 <body>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" data-widget-id="nav_sidebar" data-widget-kind="Sidebar" data-source-file="src/ui_dashboard.end" data-source-line="10">
         <div class="brand">
             <div class="brand-icon">💼</div>
@@ -286,22 +270,17 @@
         </div>
     </aside>
 
-    <!-- MAIN DASHBOARD -->
     <main class="main-content">
-        <!-- TOP BAR -->
         <header class="top-bar">
             <div class="top-left">
                 <h1 data-widget-id="executive_title" data-widget-kind="Text" data-source-file="src/ui_dashboard.end" data-source-line="35">💼 EndLedger Enterprise Dashboard</h1>
                 <p>Fiscal Period: August 2026 | Currency: USD ($) | Real-time Zero Floating-Point Drift</p>
             </div>
-            <div class="top-actions">
-                <button class="btn-gradient" style="width: auto; padding: 10px 18px;" onclick="scrollToInvoice()">
-                    ⚡ + New Sales Invoice
-                </button>
-            </div>
+            <button class="btn-gradient" style="width: auto; padding: 10px 18px;" onclick="scrollToInvoice()">
+                ⚡ + New Sales Invoice
+            </button>
         </header>
 
-        <!-- 4 KEY FINANCIAL METRICS -->
         <section class="stats-grid">
             <div class="stat-card" data-widget-id="card_cash" data-widget-kind="Card" data-source-file="src/main.end" data-source-line="240">
                 <div class="stat-label">Operating Cash Reserve</div>
@@ -332,9 +311,7 @@
             </div>
         </section>
 
-        <!-- 2 COLUMN INTERACTIVE PANELS -->
         <section class="grid-2col">
-            <!-- INVOICE & TAX TERMINAL -->
             <div class="panel-card" id="invoicePanel" data-widget-id="panel_invoice_creator" data-widget-kind="Card" data-source-file="src/ui_dashboard.end" data-source-line="70">
                 <div class="panel-header">
                     <h3 class="panel-title">🧾 Instant Invoice & Tax Calculation Terminal</h3>
@@ -377,7 +354,6 @@
                     </div>
                 </div>
 
-                <!-- LIVE BREAKDOWN -->
                 <div style="background: rgba(0,0,0,0.35); padding: 16px; border-radius: 10px; margin-bottom: 16px; border: 1px solid var(--border-subtle);">
                     <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
                         <span style="color: var(--text-muted);">Gross Subtotal:</span>
@@ -402,7 +378,6 @@
                 </button>
             </div>
 
-            <!-- REAL-TIME DOUBLE-ENTRY JOURNAL -->
             <div class="panel-card" data-widget-id="panel_ledger_table" data-widget-kind="Card" data-source-file="src/ui_dashboard.end" data-source-line="110">
                 <div class="panel-header">
                     <h3 class="panel-title">📖 Real-Time Double-Entry General Ledger</h3>
@@ -449,7 +424,6 @@
         </section>
     </main>
 
-    <!-- INJECTED DEVMODE CANVAS OVERLAY -->
     <!-- 🛠️ EndUI AI DevMode & Visual Feedback Canvas Overlay -->
 <style>
     .end-dev-badge {
@@ -580,7 +554,7 @@
 </div>
 
 <script>
-    let feedbackItems = [];
+    let feedbackItems = [{"id":"fb_direct_test","target_widget_id":"panel_invoice_creator","widget_name":"Card","source_file":"src/ui_dashboard.end","source_line":70,"developer_note":"Test without proxy","attached_image":null,"priority":"P1 (High)","category":"Design","status":"Open","created_at":"2026-08-21T21:58:45Z","agent_replies":[]},{"id":"fb_1787300100","target_widget_id":"Card_31_4","widget_name":"Card","source_file":"tests/test_interactive_dashboard.end","source_line":31,"developer_note":"Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.","attached_image":"https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png","priority":"P0 (Blocker)","category":"Design / UI","status":"Resolved","created_at":"2026-08-21T21:46:00Z","agent_replies":[{"agent_name":"Antigravity Agent","message":"Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target","timestamp":"2026-08-21T21:40:00Z","diff_file":null}]}];
     let isPinModeActive = false;
     let selectedWidget = null;
 
@@ -788,7 +762,6 @@
 
             if (total <= 0) { alert('Please enter valid quantities and prices.'); return; }
 
-            // Update Balances
             currentCash += total;
             currentRevenue += taxable;
             currentAR += total;
@@ -799,7 +772,6 @@
             document.getElementById('valProfit').innerText = '$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 });
             document.getElementById('valAR').innerText = '$' + currentAR.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-            // Insert Row in Table
             const tbody = document.getElementById('ledgerRows');
             const tr = document.createElement('tr');
             tr.innerHTML = `

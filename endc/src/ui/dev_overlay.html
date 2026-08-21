@@ -247,11 +247,25 @@
     }
 
     function saveFeedbackToServer(item) {
+        // 1. Save to LocalStorage
+        try {
+            let stored = JSON.parse(localStorage.getItem('end_agent_feedback') || '[]');
+            stored.unshift(item);
+            localStorage.setItem('end_agent_feedback', JSON.stringify(stored));
+        } catch (e) {}
+
+        // 2. Post to DevServer (both relative and explicit port 3000)
         fetch('/api/feedback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
-        }).catch(e => console.log('Saved to memory'));
+        }).catch(() => {
+            fetch('http://127.0.0.1:3000/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            }).catch(() => console.log('Saved to LocalStorage and memory'));
+        });
     }
 
     function renderDevUI() {

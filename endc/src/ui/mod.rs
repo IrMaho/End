@@ -47,18 +47,26 @@ impl UiOrchestrator {
 
         for stream in listener.incoming() {
             if let Ok(mut s) = stream {
-                let mut buf = [0u8; 8192];
-                let _ = s.read(&mut buf);
-                let req_str = String::from_utf8_lossy(&buf);
+                let mut buf = [0u8; 16384];
+                let n = s.read(&mut buf).unwrap_or(0);
+                if n == 0 { continue; }
+                let req_str = String::from_utf8_lossy(&buf[..n]);
 
-                if req_str.starts_with("POST /api/feedback") {
-                    // Extract body
+                if req_str.starts_with("OPTIONS") {
+                    let resp = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: 0\r\n\r\n";
+                    let _ = s.write_all(resp.as_bytes());
+                    let _ = s.flush();
+                    continue;
+                }
+
+                if req_str.contains("/api/feedback") {
                     if let Some(body_start) = req_str.find("\r\n\r\n") {
-                        let body = &req_str[body_start + 4..];
-                        if let Ok(item) = serde_json::from_str::<FeedbackItem>(body.trim_end_matches('\0')) {
+                        let body = req_str[body_start + 4..].trim_end_matches('\0').trim();
+                        if let Ok(item) = serde_json::from_str::<FeedbackItem>(body) {
                             let _ = FeedbackManager::save_item(Path::new("."), &item);
-                            let resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\"}";
+                            let resp = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\"}";
                             let _ = s.write_all(resp.as_bytes());
+                            let _ = s.flush();
                             continue;
                         }
                     }
@@ -67,7 +75,7 @@ impl UiOrchestrator {
                 let html_path = output_dir.join("index.html");
                 if let Ok(content) = fs::read_to_string(&html_path) {
                     let resp = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
+                        "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
                         content.len(),
                         content
                     );
