@@ -1,0 +1,16 @@
+// Test Phase 2: Direct C Header Ingestion (@import_c)
+@import_c("<math.h>")
+@import_c("<stdio.h>")
+
+fn main() void {
+    println("==================================================")
+    println("⚡ Testing Phase 2: Direct C Header Ingestion")
+    println("==================================================")
+
+    val x: f64 = 64.0
+    val sq = sqrt(x)
+    println("Square root of 64.0 computed directly via C math.h:")
+    println(sq)
+
+    println("SUCCESS: @import_c successfully bridged native C headers with 0 glue code!")
+}

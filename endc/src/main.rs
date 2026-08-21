@@ -7,15 +7,19 @@ use std::process::Command;
 mod agent_api;
 mod ast;
 mod codegen;
+mod diagnostics;
 mod lexer;
 mod lsp;
+mod package;
 mod parser;
 mod semantic;
 
-use agent_api::AgentApi;
+use agent_api::{AgentApi, SelfHealingEngine};
 use codegen::{CBackend, Interpreter};
+use diagnostics::Diagnostic;
 use lexer::Lexer;
 use lsp::LanguageServer;
+use package::PackageManager;
 use parser::Parser as EndParser;
 use semantic::SemanticAnalyzer;
 
@@ -104,6 +108,26 @@ enum Commands {
         file: PathBuf,
         /// Symbol name to query
         symbol: String,
+    },
+    /// AI Self-Healing engine: analyze diagnostics, typos, and automatically patch source code
+    Fix {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Apply the fix patch directly to the file
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+    },
+    /// Create a new End language project with end.toml manifest and scaffold
+    New {
+        /// Project directory name
+        name: String,
+    },
+    /// Initialize end.toml package manifest in current directory
+    Init,
+    /// Add a dependency to the current project's end.toml
+    Add {
+        /// Package name
+        package: String,
     },
 }
 
@@ -464,6 +488,46 @@ fn main() {
             let result = api.query_symbol(&symbol);
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
+        Commands::Fix { file, apply } => {
+            let file_str = file.to_string_lossy().to_string();
+            match SelfHealingEngine::analyze_and_fix(&file_str, apply) {
+                Ok(report) => {
+                    println!("==================================================");
+                    println!("🤖 {} for `{}`", "AI Self-Healing Report".cyan().bold(), report.file.yellow());
+                    println!("==================================================");
+                    for change in &report.changes {
+                        println!("  {} {}", "✔".green().bold(), change);
+                    }
+                    if report.applied {
+                        println!("\n{} Successfully patched `{}`", "✔".green().bold(), report.file.cyan());
+                    } else if report.fixed_content != report.original_content {
+                        println!("\n{} Proposed fixes available. Run with {} to apply automatically.", "ℹ".blue().bold(), "--apply".yellow());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::New { name } => {
+            if let Err(e) = PackageManager::new_project(&name) {
+                eprintln!("{} {}", "Error:".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Init => {
+            if let Err(e) = PackageManager::init_project() {
+                eprintln!("{} {}", "Error:".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Add { package } => {
+            if let Err(e) = PackageManager::add_dependency(&package) {
+                eprintln!("{} {}", "Error:".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
     }
 }
 
@@ -481,15 +545,36 @@ fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), S
     let source = fs::read_to_string(file).map_err(|e| format!("Failed to read file: {}", e))?;
 
     let mut lexer = Lexer::new(&file_str, &source);
-    let tokens = lexer.tokenize_all()?;
+    let tokens = match lexer.tokenize_all() {
+        Ok(t) => t,
+        Err(e) => {
+            let diag = Diagnostic::error("E0001", &e, &file_str, 1, 1);
+            eprintln!("{}", diag.render(&source));
+            return Err("Lexing failed".to_string());
+        }
+    };
 
     let mut parser = EndParser::new(&file_str, tokens);
-    let module = parser.parse_module("main")?;
+    let module = match parser.parse_module("main") {
+        Ok(m) => m,
+        Err(e) => {
+            let diag = Diagnostic::error("E0100", &e, &file_str, parser.current_span().line, parser.current_span().col);
+            eprintln!("{}", diag.render(&source));
+            return Err("Parsing failed".to_string());
+        }
+    };
 
     let mut analyzer = SemanticAnalyzer::new(&file_str, &source);
-    analyzer
-        .analyze_module(&module)
-        .map_err(|errs| format!("Semantic errors: {:?}", errs))?;
+    if let Err(errs) = analyzer.analyze_module(&module) {
+        for err in &errs {
+            let mut diag = Diagnostic::error(&err.code, &err.message, &file_str, err.line, err.col);
+            if let Some(ref h) = err.repair_suggestion {
+                diag = diag.with_help(h);
+            }
+            eprintln!("{}", diag.render(&source));
+        }
+        return Err(format!("Found {} semantic errors", errs.len()));
+    }
 
     Ok((module, analyzer))
 }

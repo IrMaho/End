@@ -458,6 +458,9 @@ impl SemanticAnalyzer {
             Statement::Defer { expr, .. } => {
                 self.analyze_expression(expr);
             }
+            Statement::Spawn { call, .. } => {
+                self.analyze_expression(call);
+            }
         }
     }
 
@@ -529,6 +532,7 @@ impl SemanticAnalyzer {
                 Type::Custom(enum_name.clone().unwrap_or_else(|| variant_name.clone()))
             }
             Expression::Alloc { target_type, .. } => Type::Pointer(Box::new(target_type.clone())),
+            Expression::Promote { expr, .. } => self.analyze_expression(expr),
             Expression::Catch { expr, .. } => self.analyze_expression(expr),
             Expression::Match { expr, arms, .. } => {
                 let match_type = self.analyze_expression(expr);

@@ -297,6 +297,10 @@ impl Interpreter {
                 let _ = expr;
                 Ok(None)
             }
+            Statement::Spawn { call, .. } => {
+                let _ = self.eval_expression(call)?;
+                Ok(None)
+            }
         }
     }
 
@@ -462,6 +466,7 @@ impl Interpreter {
                 Ok(Value::Void)
             }
             Expression::Index { .. } => Ok(Value::Int(0)),
+            Expression::Promote { expr, .. } => self.eval_expression(expr),
             Expression::Block(_) => Ok(Value::Void),
         }
     }

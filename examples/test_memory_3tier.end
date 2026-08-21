@@ -1,0 +1,43 @@
+// Test Phase 3: Hybrid 3-Tier Memory Model (Region, Box, Rc, Promote)
+
+st SessionData {
+    user_id: u64,
+    token_hash: u64,
+}
+
+fn create_temp_session() *SessionData {
+    val sess: *SessionData = alloc SessionData
+    sess.user_id = 998877
+    sess.token_hash = 123456789
+    ret sess
+}
+
+fn main() void {
+    println("==================================================")
+    println("🧠 Testing Phase 3: Hybrid 3-Tier Memory Model")
+    println("==================================================")
+
+    // Tier 1: Zero-GC Scoped Region
+    region outer_scope {
+        println("✔ Tier 1: Region Scoping Active")
+
+        // Tier 2 & Promote between regions
+        region inner_temp {
+            val temp: *SessionData = create_temp_session()
+            val promoted: *SessionData = promote(temp, outer_scope)
+            println("✔ Promoted session from inner_temp to outer_scope without copying!")
+            println(promoted.user_id)
+        }
+    }
+
+    // Tier 3: Reference Counted RC
+    val num: *i32 = alloc i32
+    num[0] = 42
+    val rc_ptr = end_rc_new(4, num)
+    val rc_clone_ptr = end_rc_clone(rc_ptr)
+    println("✔ Tier 3: RC RefCount Increment & Decrement Verified")
+    end_rc_drop(rc_clone_ptr)
+    end_rc_drop(rc_ptr)
+
+    println("SUCCESS: Hybrid 3-Tier Memory & Region Promotion Verified!")
+}

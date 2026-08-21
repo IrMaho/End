@@ -1,45 +1,51 @@
-# 👑 The End Programming Language: Official Developer & Agent Guide
+# 👑 The End Programming Language: Master Developer & Agent Guide
 
-> **Zero GC • Bare-Metal C/Zig Speed • AI-First Machine Introspection • 120 FPS Native GUI**
+> **Hybrid 3-Tier Memory • Bare-Metal Speed • Zero GC • Direct @import_c • Fiber Concurrency • AI Self-Healing**
 
 ---
 
-## 1. Quick Start
+## 1. Quick Start & Ecosystem Commands
 
-The compiler is available everywhere in Windows PATH:
+The compiler is available everywhere in Windows PATH (`end.exe` & `endc.exe`):
+
 ```powershell
-# Run instantly with VM
-end.exe run main.end
+# Project Management
+end.exe new my_service                # Scaffold complete project with end.toml
+end.exe init                          # Initialize end.toml in current folder
+end.exe add <package_name>            # Add dependency to manifest
 
-# Compile to optimized native binary (.exe)
-end.exe build main.end -o main.exe
+# Execution & Native Compilation
+end.exe run main.end                  # Run immediately via VM
+end.exe build main.end -o app.exe     # Compile to native binary (.exe)
+end.exe build mathlib.end --dll -o mathlib.dll  # Compile to DLL + C Header (.h)
 
-# Compile to Shared Library (.dll) + C Header (.h)
-end.exe build mathlib.end --dll -o mathlib.dll
-
-# Cross-compile for Linux or WebAssembly
-end.exe build main.end --target x86_64-linux -o main_linux
-end.exe build main.end --target wasm32-wasi -o main.wasm
+# AI Self-Healing & Semantic Introspection
+end.exe fix app.end --apply           # AI Self-Healing compiler auto-patching
+end.exe inspect app.end --line 10     # Deep semantic introspection
+end.exe explain app.end --line 10     # Natural language explanation
+end.exe trace app.end --symbol x      # Symbol lifecycle data-flow
+end.exe impact app.end --symbol fn    # Blast-radius analysis
 ```
 
 ---
 
-## 2. Capabilities Overview
+## 2. Master Feature Capabilities
 
-| Task | Syntax / Feature | Description |
+| Feature | Syntax / Command | Description |
 | :--- | :--- | :--- |
-| **GUI & Desktop Apps** | `window_create`, `window_poll`, `window_present`, `Canvas` | 120 FPS zero-overhead V-Sync desktop windows with CustomPainter |
-| **Backend & Microservices** | `parallel`, `region`, `alloc [N]Type` | High-throughput web APIs handling 4,978M req/s |
-| **Shared Libraries** | `@export fn my_func()`, `end build --dll` | Produces native `.dll` and `.h` C-ABI for Python, C#, Dart/Flutter FFI, Rust, Go |
-| **Memory Management** | `region my_scope { ... }` | Stack/Cache scoped arenas with zero GC pauses and zero runtime leaks |
-| **Introspection** | `end.exe inspect / trace / impact / explain` | Machine-readable JSON AST and semantic telemetry for AI agents |
+| **Direct C Ingestion** | `@import_c("<sqlite3.h>")` | Zero-glue direct C/C++ library bridging |
+| **3-Tier Memory Model** | `region`, `alloc`, `promote`, `RC` | Scoped arena + heap box + ref-counted sharing |
+| **Fiber Concurrency** | `spawn worker()`, `channel_*` | Virtual green threads with lock-free MPSC channels |
+| **Desktop GUI Engine** | `window_create`, `Canvas` | 120 FPS native V-Sync vector CustomPainter |
+| **Standard Library** | `std/net`, `std/json`, `std/crypto`, `std/db` | Production-ready network, JSON, SHA256 & DB modules |
+| **Package Manager** | `end.toml`, `end new`, `end add` | Modern project configuration and dependency management |
+| **AI Self-Healing** | `end fix --apply` | Automated compiler semantic bug fixing and patching |
 
 ---
 
-## 3. Project Directory Reference
-* `std/ui/`: UI primitives (`color.end`, `geometry.end`, `canvas.end`, `widget.end`).
-* `examples/`: Full working examples:
-  * `examples/pure_end_window.end`: 100% Pure End 120 FPS Desktop HUD.
-  * `examples/mathlib.end`: DLL / Shared Library export.
-  * `examples/zero_import_app.end`: Standalone zero-import app.
-  * `examples/server.end`: Backend server.
+## 3. Working Example Directory
+* `examples/test_import_c.end`: Direct `@import_c("<math.h>")` demonstration.
+* `examples/test_memory_3tier.end`: 3-Tier memory model & region promotion demonstration.
+* `examples/test_concurrency_fibers.end`: Concurrency fibers and lock-free channels.
+* `examples/pure_end_window.end`: 100% Pure End 120 FPS native desktop HUD application.
+* `examples/mathlib.end`: DLL / Shared Library export with C Header generation.

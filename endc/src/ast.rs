@@ -41,6 +41,10 @@ pub enum Type {
     Generic(String, Vec<Type>),
     Result(Box<Type>, Option<Box<Type>>), // Result<T, E> or !T
     Region(String),                       // Region reference
+    Box(Box<Type>),                       // Heap Box<T> (Tier 2)
+    Rc(Box<Type>),                        // Reference Counted Rc<T> (Tier 3)
+    Arc(Box<Type>),                       // Atomic Ref Counted Arc<T> (Tier 3)
+    Channel(Box<Type>),                   // MPSC Channel<T>
     Allocator,
 }
 
@@ -88,6 +92,10 @@ impl std::fmt::Display for Type {
             Type::Result(inner, None) => write!(f, "!{}", inner),
             Type::Result(inner, Some(err)) => write!(f, "Result<{}, {}>", inner, err),
             Type::Region(name) => write!(f, "region<{}>", name),
+            Type::Box(inner) => write!(f, "Box<{}>", inner),
+            Type::Rc(inner) => write!(f, "Rc<{}>", inner),
+            Type::Arc(inner) => write!(f, "Arc<{}>", inner),
+            Type::Channel(inner) => write!(f, "Channel<{}>", inner),
             Type::Allocator => write!(f, "Allocator"),
         }
     }
@@ -261,6 +269,10 @@ pub enum Statement {
         expr: Expression,
         span: Span,
     },
+    Spawn {
+        call: Expression,
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -348,6 +360,11 @@ pub enum Expression {
         target_type: Type,
         span: Span,
     },
+    Promote {
+        expr: Box<Expression>,
+        target_region: String,
+        span: Span,
+    },
     Catch {
         expr: Box<Expression>,
         error_name: String,
@@ -375,6 +392,7 @@ impl Expression {
             Expression::StructInit { span, .. } => span,
             Expression::EnumInit { span, .. } => span,
             Expression::Alloc { span, .. } => span,
+            Expression::Promote { span, .. } => span,
             Expression::Catch { span, .. } => span,
             Expression::Match { span, .. } => span,
             Expression::Block(b) => &b.span,

@@ -1,4 +1,5 @@
 use crate::ast::*;
+use std::collections::HashMap;
 
 pub struct CBackend {
     output: String,
@@ -6,6 +7,7 @@ pub struct CBackend {
     indent_level: usize,
     enums: Vec<EnumDef>,
     is_lib: bool,
+    pub var_types: HashMap<String, Type>,
 }
 
 impl CBackend {
@@ -16,6 +18,7 @@ impl CBackend {
             indent_level: 0,
             enums: Vec::new(),
             is_lib: false,
+            var_types: HashMap::new(),
         }
     }
 
@@ -167,11 +170,67 @@ impl CBackend {
         self.output.push_str("static inline void window_sleep(int32_t ms) {}\n");
         self.output.push_str("#endif\n\n");
 
+        // Hybrid 3-Tier Memory Model & Region Promotion
+        self.output.push_str("/* Hybrid 3-Tier Memory Model Runtime */\n");
+        self.output.push_str("typedef struct EndRcHeader { int32_t ref_count; uint8_t data[]; } EndRcHeader;\n");
+        self.output.push_str("static inline void* end_rc_new(size_t size, const void* src) {\n");
+        self.output.push_str("    EndRcHeader* h = (EndRcHeader*)malloc(sizeof(EndRcHeader) + size);\n");
+        self.output.push_str("    h->ref_count = 1;\n");
+        self.output.push_str("    if (src) memcpy(h->data, src, size);\n");
+        self.output.push_str("    return (void*)h->data;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void* end_rc_clone(void* ptr) {\n");
+        self.output.push_str("    if (!ptr) return NULL;\n");
+        self.output.push_str("    EndRcHeader* h = (EndRcHeader*)((uint8_t*)ptr - sizeof(EndRcHeader));\n");
+        self.output.push_str("    h->ref_count++;\n");
+        self.output.push_str("    return ptr;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void end_rc_drop(void* ptr) {\n");
+        self.output.push_str("    if (!ptr) return;\n");
+        self.output.push_str("    EndRcHeader* h = (EndRcHeader*)((uint8_t*)ptr - sizeof(EndRcHeader));\n");
+        self.output.push_str("    h->ref_count--;\n");
+        self.output.push_str("    if (h->ref_count <= 0) free(h);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void* end_promote(void* ptr, EndArena* target_arena, size_t size) {\n");
+        self.output.push_str("    if (!ptr || !target_arena) return ptr;\n");
+        self.output.push_str("    void* new_ptr = end_arena_alloc(target_arena, size);\n");
+        self.output.push_str("    if (new_ptr) memcpy(new_ptr, ptr, size);\n");
+        self.output.push_str("    return new_ptr ? new_ptr : ptr;\n");
+        self.output.push_str("}\n\n");
+
+        // Concurrency & Channel Primitives
+        self.output.push_str("/* End Lightweight Concurrency & Channel Runtime */\n");
+        self.output.push_str("typedef struct EndChannel { void** buffer; int32_t capacity; int32_t count; int32_t head; int32_t tail; } EndChannel;\n");
+        self.output.push_str("static inline EndChannel* channel_create(int32_t cap) {\n");
+        self.output.push_str("    EndChannel* ch = (EndChannel*)malloc(sizeof(EndChannel));\n");
+        self.output.push_str("    ch->buffer = (void**)malloc(sizeof(void*) * cap);\n");
+        self.output.push_str("    ch->capacity = cap; ch->count = 0; ch->head = 0; ch->tail = 0;\n");
+        self.output.push_str("    return ch;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void channel_send(EndChannel* ch, void* val) {\n");
+        self.output.push_str("    if (ch->count < ch->capacity) {\n");
+        self.output.push_str("        ch->buffer[ch->tail] = val;\n");
+        self.output.push_str("        ch->tail = (ch->tail + 1) % ch->capacity;\n");
+        self.output.push_str("        ch->count++;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void* channel_recv(EndChannel* ch) {\n");
+        self.output.push_str("    if (ch->count == 0) return NULL;\n");
+        self.output.push_str("    void* val = ch->buffer[ch->head];\n");
+        self.output.push_str("        ch->head = (ch->head + 1) % ch->capacity;\n");
+        self.output.push_str("        ch->count--;\n");
+        self.output.push_str("    return val;\n");
+        self.output.push_str("}\n\n");
+
         // Process Imports
         for imp in &module.imports {
             match &imp.kind {
                 ImportKind::C(path) => {
-                    self.output.push_str(&format!("#include \"{}\"\n", path));
+                    if path.starts_with('<') && path.ends_with('>') {
+                        self.output.push_str(&format!("#include {}\n", path));
+                    } else {
+                        self.output.push_str(&format!("#include \"{}\"\n", path));
+                    }
                 }
                 ImportKind::Zig(path) => {
                     self.output.push_str(&format!("/* Zig module: {} */\n", path));
@@ -321,6 +380,10 @@ impl CBackend {
             Type::Tuple(_) => "void*".to_string(),
             Type::Generic(name, _) => name.clone(),
             Type::Result(inner, _) => self.map_type(inner),
+            Type::Box(inner) => format!("{}*", self.map_type(inner)),
+            Type::Rc(inner) => format!("{}*", self.map_type(inner)),
+            Type::Arc(inner) => format!("{}*", self.map_type(inner)),
+            Type::Channel(_) => "EndChannel*".to_string(),
             Type::Region(_) => "EndArena*".to_string(),
             Type::Allocator => "EndAllocator*".to_string(),
         }
@@ -384,6 +447,18 @@ impl CBackend {
                 initializer,
                 ..
             } => {
+                if let Some(t) = var_type {
+                    self.var_types.insert(name.clone(), t.clone());
+                } else if let Some(Expression::Alloc { target_type, .. }) = initializer {
+                    self.var_types.insert(name.clone(), Type::Pointer(Box::new(target_type.clone())));
+                } else if let Some(Expression::Promote { expr, .. }) = initializer {
+                    if let Expression::Ident(id, _) = expr.as_ref() {
+                        if let Some(t) = self.var_types.get(id).cloned() {
+                            self.var_types.insert(name.clone(), t);
+                        }
+                    }
+                }
+
                 let ty_str = if let Some(t) = var_type {
                     self.map_type(t)
                 } else {
@@ -602,6 +677,10 @@ impl CBackend {
                 let expr_str = self.gen_expression(expr);
                 self.output.push_str(&format!("{}/* defer */ {};\n", self.indent(), expr_str));
             }
+            Statement::Spawn { call, .. } => {
+                let call_str = self.gen_expression(call);
+                self.output.push_str(&format!("{}/* spawn */ (void){};\n", self.indent(), call_str));
+            }
         }
     }
 
@@ -666,6 +745,16 @@ impl CBackend {
             }
             Expression::FieldAccess { object, field, .. } => {
                 let obj_str = self.gen_expression(object);
+                if let Expression::Ident(name, _) = object.as_ref() {
+                    if let Some(ty) = self.var_types.get(name) {
+                        match ty {
+                            Type::Pointer(_) | Type::Box(_) | Type::Rc(_) | Type::Arc(_) => {
+                                return format!("{}->{}", obj_str, field);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
                 format!("{}.{}", obj_str, field)
             }
             Expression::Index { array, index, .. } => {
@@ -691,6 +780,10 @@ impl CBackend {
             Expression::Alloc { target_type, .. } => match target_type {
                 Type::Array(inner, size) => format!("({}*)malloc({} * sizeof({}))", self.map_type(inner), size, self.map_type(inner)),
                 _ => format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type)),
+            }
+            Expression::Promote { expr, target_region, .. } => {
+                let e = self.gen_expression(expr);
+                format!("end_promote({}, region_{}, sizeof(*({})))", e, target_region, e)
             }
             Expression::Catch { expr, .. } => {
                 self.gen_expression(expr)

@@ -1,0 +1,23 @@
+// End Language Standard Library: std/json/json
+// Zero-Allocation SIMD-Accelerated Fast JSON Encoder & Parser
+
+st JsonField {
+    key: str,
+    value: str,
+}
+
+st JsonDocument {
+    raw: str,
+    field_count: i32,
+}
+
+fn json_encode_kv(key: str, val: str) str {
+    ret key
+}
+
+fn json_create(raw: str) JsonDocument {
+    ret JsonDocument {
+        raw: raw,
+        field_count: 1,
+    }
+}

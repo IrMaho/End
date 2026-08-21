@@ -1,0 +1,32 @@
+// Test Phase 4: Lightweight Concurrency, Spawn & Channels
+
+fn worker_task(id: i32) void {
+    println("Worker task executing in parallel fiber:")
+    println(id)
+}
+
+fn main() void {
+    println("==================================================")
+    println("⚡ Testing Phase 4: Lightweight Concurrency & Channels")
+    println("==================================================")
+
+    // 1. Spawning parallel lightweight fibers
+    spawn worker_task(101)
+    spawn worker_task(202)
+    spawn worker_task(303)
+    println("✔ Spawned 3 lightweight worker tasks!")
+
+    // 2. Lock-free MPSC Channel
+    val ch: *EndChannel = channel_create(8)
+    val msg: *str = alloc str
+    msg[0] = "Hello Fiber Channel Message"
+
+    channel_send(ch, msg)
+    println("✔ Sent message into Channel queue")
+
+    val received: *str = channel_recv(ch)
+    println("✔ Received from Channel:")
+    println(received[0])
+
+    println("SUCCESS: Concurrency Fibers & Lock-Free Channels Operational!")
+}

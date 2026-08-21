@@ -63,7 +63,7 @@ impl Parser {
         }
     }
 
-    fn current_span(&self) -> Span {
+    pub fn current_span(&self) -> Span {
         self.peek().span.clone()
     }
 
@@ -106,6 +106,18 @@ impl Parser {
                     }
                     self.expect(TokenKind::RParen)?;
                 }
+                if dir_name == "@import_c" || dir_name == "@c" {
+                    if let Some(first_arg) = args.first() {
+                        imports.push(ImportStmt {
+                            kind: ImportKind::C(first_arg.clone()),
+                            path: first_arg.clone(),
+                            alias: None,
+                            span: dir_span,
+                        });
+                    }
+                    continue;
+                }
+
                 pending_directives.push(Directive {
                     name: dir_name,
                     args,
@@ -277,6 +289,30 @@ impl Parser {
                     "i32x8" => Type::Simd(Box::new(Type::I32), 8),
                     "str" | "string" => Type::Str,
                     "Allocator" => Type::Allocator,
+                    "Box" | "box" => {
+                        self.expect(TokenKind::Less)?;
+                        let inner = self.parse_type()?;
+                        self.expect(TokenKind::Greater)?;
+                        Type::Box(Box::new(inner))
+                    }
+                    "Rc" | "rc" => {
+                        self.expect(TokenKind::Less)?;
+                        let inner = self.parse_type()?;
+                        self.expect(TokenKind::Greater)?;
+                        Type::Rc(Box::new(inner))
+                    }
+                    "Arc" | "arc" => {
+                        self.expect(TokenKind::Less)?;
+                        let inner = self.parse_type()?;
+                        self.expect(TokenKind::Greater)?;
+                        Type::Arc(Box::new(inner))
+                    }
+                    "Channel" | "channel" => {
+                        self.expect(TokenKind::Less)?;
+                        let inner = self.parse_type()?;
+                        self.expect(TokenKind::Greater)?;
+                        Type::Channel(Box::new(inner))
+                    }
                     "region" => {
                         if self.match_token(&TokenKind::Less) {
                             let reg_name = match self.advance().kind {
@@ -659,6 +695,12 @@ impl Parser {
                 let expr = self.parse_expression()?;
                 self.match_token(&TokenKind::SemiColon);
                 Ok(Statement::Defer { expr, span })
+            }
+            TokenKind::Spawn => {
+                self.advance();
+                let call = self.parse_expression()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::Spawn { call, span })
             }
             _ => {
                 let expr = self.parse_expression()?;
@@ -1146,6 +1188,22 @@ impl Parser {
             TokenKind::Ident(name) => {
                 let id = name.clone();
                 self.advance();
+
+                // Check for Region Promotion: `promote(temp, outer_scope)`
+                if id == "promote" && self.match_token(&TokenKind::LParen) {
+                    let expr = self.parse_expression()?;
+                    self.expect(TokenKind::Comma)?;
+                    let target_region = match self.advance().kind {
+                        TokenKind::Ident(r) => r,
+                        other => return Err(format!("Expected target region name in promote, found {:?}", other)),
+                    };
+                    self.expect(TokenKind::RParen)?;
+                    return Ok(Expression::Promote {
+                        expr: Box::new(expr),
+                        target_region,
+                        span,
+                    });
+                }
 
                 // Check for Struct Initialization: `User { id: 1, name: "Ali" }`
                 if self.check(&TokenKind::LBrace) && id.chars().next().map_or(false, |c| c.is_uppercase()) {

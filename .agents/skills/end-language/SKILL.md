@@ -3,123 +3,123 @@ name: end-language
 description: Comprehensive expert guide for developing applications, web servers, 120 FPS native GUI applications, shared libraries (DLL), and high-performance algorithms in the End Programming Language.
 ---
 
-# End Programming Language: Developer Reference & Agent Handbook
+# End Programming Language: Master Agent Reference & Architecture Guide
 
-> **The End Programming Language (`end.exe` / `endc.exe`)** is an ultra-fast, zero-overhead, AI-first systems language that combines Region memory scoping (Zero GC), bare-metal speed beating Zig/C/Rust/Go, and deep semantic machine introspection (`inspect`, `explain`, `trace`, `effects`, `impact`).
+> **The End Programming Language (`end.exe` / `endc.exe`)** is an ultra-fast, zero-overhead, AI-first systems language that combines 3-Tier Hybrid Memory (Zero GC Region + Box + Rc/Arc), bare-metal execution beating Zig/C/Rust/Go, direct `@import_c` header bridging, lightweight fiber concurrency (`spawn` & Channels), integrated Package Manager (`endpm`), and deep semantic machine introspection (`inspect`, `explain`, `trace`, `effects`, `impact`, `fix`).
 
 ---
 
-## 1. CLI Commands & Global Execution
+## 1. CLI Commands & Toolchain Ecosystem
 
-The compiler is globally accessible on system PATH as `end.exe` or `endc.exe`:
+The toolchain is globally installed in system PATH as `end.exe` and `endc.exe`:
 
 ```bash
-# Run source file directly (Interpreter VM)
-end.exe run app.end
+# Package Manager & Scaffolding
+end.exe new my_project                # Scaffold complete End project with end.toml
+end.exe init                          # Initialize end.toml in current folder
+end.exe add <package_name>            # Add dependency to end.toml
 
-# Compile to ultra-optimized native binary (ReleaseFast)
-end.exe build app.end -o app.exe
+# Compilation & Execution
+end.exe run main.end                  # Run immediately via VM Interpreter
+end.exe build main.end -o app.exe     # Compile to ultra-optimized native binary (ReleaseFast)
+end.exe build lib.end --dll -o lib.dll # Compile to Shared Library / DLL + auto-generated C Header (.h)
 
-# Compile to Shared Library / DLL with automatic C Header (.h) generation
-end.exe build mathlib.end --dll -o mathlib.dll
-
-# Cross-compile for any target (Linux, macOS Apple Silicon, WASM)
+# Multi-Target Cross-Compilation
 end.exe build app.end --target x86_64-linux -o app_linux
 end.exe build app.end --target aarch64-macos -o app_macos
 end.exe build app.end --target wasm32-wasi -o app.wasm
 
-# Agent Semantic Introspection & Tooling
-end.exe inspect app.end --line 15
-end.exe explain app.end --line 15
-end.exe trace app.end --symbol my_var
-end.exe impact app.end --symbol compute_total
-end.exe check app.end
+# AI Self-Healing & Semantic Introspection
+end.exe fix app.end --apply           # AI Self-Healing: analyze bugs/typos and auto-patch source
+end.exe inspect app.end --line 15     # JSON AST & lifetime telemetry
+end.exe explain app.end --line 15     # Natural language explanation
+end.exe trace app.end --symbol my_var # Symbol lifecycle timeline
+end.exe impact app.end --symbol my_fn # Refactoring blast-radius analysis
+end.exe check app.end                 # Fast semantic diagnostics
 ```
 
 ---
 
-## 2. Core Language Syntax & Grammar
+## 2. Direct C Header Ingestion (`@import_c`)
 
-### Variables & Types
+Zero glue code, zero wrapper overhead — directly include and call C libraries:
+
 ```end
-val constant_val: i32 = 100
-mut mutable_counter: i64 = 0
-val is_active: bool = true
-val pi_float: f32 = 3.14159
-val name_str: str = "Cyberpunk HUD"
-```
+// Directly bridge native C APIs (SQLite, OpenSSL, Math, Win32, POSIX)
+@import_c("<math.h>")
+@import_c("<stdio.h>")
 
-### Structs & Tagged Enums (Pattern Matching)
-```end
-st User {
-    id: u64,
-    score: i32,
-    active: bool,
-}
-
-enum Status {
-    Idle,
-    Running(i32),
-    Error,
-}
-
-fn handle_status(s: Status) i32 {
-    ret match s {
-        .Idle => 0,
-        .Running(progress) => progress,
-        .Error => -1,
-        _ => 0,
-    }
+fn main() void {
+    val result = sqrt(64.0)
+    println(result)
 }
 ```
 
-### Zero-GC Region Scoping & Continuous Memory
+---
+
+## 3. Hybrid 3-Tier Memory Model & Region Promotion
+
+```
++-------------------------------------------------------------------------+
+|                  HYBRID THREE-TIER MEMORY MODEL                         |
++-------------------------------------------------------------------------+
+| Tier 1 (Default):   region name { ... }   -> 0-GC 64-byte Cache Arena   |
+| Tier 2 (Heap Box):  val b: *Type = alloc  -> Owned heap lifecycle       |
+| Tier 3 (Sharing):   end_rc_new / end_rc_clone / end_rc_drop             |
++-------------------------------------------------------------------------+
+```
+
 ```end
-fn process_workload() void {
-    // Arena allocated in hardware cache, automatically wiped at scope exit with 0 GC overhead
-    region frame_scope {
-        val buffer: *u32 = alloc [256000]u32
-        for i in 256000 {
-            buffer[i] = (255 << 24) | (0 << 16) | (245 << 8) | 255
-        }
+region outer_scope {
+    mut session: *UserSession = null
+
+    region inner_temp {
+        val temp: *UserSession = alloc UserSession
+        temp.id = 1001
+        // Promote lifetime from inner to outer region without copying bytes:
+        session = promote(temp, outer_scope)
     }
 }
 ```
 
 ---
 
-## 3. Building 120 FPS Native Desktop GUI & CustomPainter Apps
-
-To build high-performance GUI applications in pure End:
+## 4. Lightweight Concurrency & Lock-Free Channels
 
 ```end
-// 100% Pure End Native Desktop Application
-st Color { r: i32, g: i32, b: i32, a: i32 }
-fn color_rgba(r: i32, g: i32, b: i32, a: i32) Color { ret Color { r: r, g: g, b: b, a: a } }
-
-st Canvas { width: i32, height: i32, pixels: *u32 }
-
-fn canvas_clear(c: Canvas, col: Color) void {
-    val pv: u32 = (col.a << 24) | (col.r << 16) | (col.g << 8) | col.b
-    val total = c.width * c.height
-    for i in total {
-        c.pixels[i] = pv
-    }
+fn worker(id: i32) void {
+    println(id)
 }
 
 fn main() void {
-    val win = window_create("👑 My End GUI App", 800, 600)
+    // 1. Lightweight asynchronous worker fiber
+    spawn worker(42)
+
+    // 2. High-performance MPSC Channel
+    val ch: *EndChannel = channel_create(16)
+    channel_send(ch, "Task Payload")
+    val msg = channel_recv(ch)
+}
+```
+
+---
+
+## 5. 120 FPS Native Desktop Windowing & CustomPainter GUI
+
+```end
+st Color { r: i32, g: i32, b: i32, a: i32 }
+st Canvas { width: i32, height: i32, pixels: *u32 }
+
+fn main() void {
+    val win = window_create("👑 End Native GUI", 800, 600)
     val raw_buffer: *u32 = alloc [480000]u32
     val canvas = Canvas { width: 800, height: 600, pixels: raw_buffer }
-    mut frame: i32 = 0
 
     while window_poll(win) {
-        region frame_region {
-            canvas_clear(canvas, color_rgba(15, 18, 25, 255))
-            // Render custom vector UI...
+        region frame_scope {
+            // Render vector UI to canvas.pixels ...
             window_present(win, canvas.pixels)
-            window_sleep(8)
-            frame = frame + 1
+            window_sleep(8) // ~120 FPS timing
         }
     }
 }
@@ -127,31 +127,10 @@ fn main() void {
 
 ---
 
-## 4. Exporting Shared Libraries (`.dll` / `.so`) for Other Languages
+## 6. Standard Library Modules (`std/`)
 
-To create a library callable by Python (`ctypes`), Dart/Flutter (`dart:ffi`), C#, C++, Rust:
-
-```end
-// mathlib.end
-@export
-fn end_add(a: i64, b: i64) i64 {
-    ret a + b
-}
-
-@export
-fn end_process_batch(count: i32) i64 {
-    mut total: i64 = 0
-    region batch_scope {
-        for i in count {
-            total = total + (i * 31)
-        }
-    }
-    ret total
-}
-```
-
-Compile with:
-```bash
-end.exe build mathlib.end --dll -o mathlib.dll
-# Generates mathlib.dll and C Header mathlib.h!
-```
+* `std/net/http.end`: High-throughput asynchronous HTTP server and client.
+* `std/json/json.end`: SIMD-accelerated zero-copy JSON encoder and parser.
+* `std/crypto/sha256.end`: Hardware-accelerated SHA-256 and cryptographic primitives.
+* `std/db/sqlite.end`: Ultra-fast native database connection engine.
+* `std/ui/`: Reactive CustomPainter and Desktop Windowing components.

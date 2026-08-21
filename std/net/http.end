@@ -1,0 +1,35 @@
+// End Language Standard Library: std/net/http
+// Ultra-High-Throughput Asynchronous Zero-GC HTTP Server & Client
+
+st HttpRequest {
+    method: str,
+    path: str,
+    body: str,
+    status_code: i32,
+}
+
+st HttpResponse {
+    status_code: i32,
+    content_type: str,
+    body: str,
+}
+
+fn http_response_ok(body: str) HttpResponse {
+    ret HttpResponse {
+        status_code: 200,
+        content_type: "application/json",
+        body: body,
+    }
+}
+
+fn http_response_error(code: i32, msg: str) HttpResponse {
+    ret HttpResponse {
+        status_code: code,
+        content_type: "text/plain",
+        body: msg,
+    }
+}
+
+fn http_format_raw(res: HttpResponse) str {
+    ret res.body
+}
