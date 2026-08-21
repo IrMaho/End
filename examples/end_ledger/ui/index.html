@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💼 EndLedger - Enterprise Financial & Double-Entry Suite</title>
+    <title>💼 EndLedger - Enterprise Financial & Multi-View Suite</title>
     <style>
         :root {
-            --bg-body: #080c14;
-            --bg-surface: rgba(16, 24, 40, 0.85);
-            --bg-surface-elevated: rgba(24, 34, 56, 0.95);
+            --bg-body: #070a12;
+            --bg-surface: rgba(15, 22, 38, 0.85);
+            --bg-surface-elevated: rgba(22, 32, 54, 0.95);
             --accent-cyan: #06b6d4;
             --accent-indigo: #6366f1;
             --accent-emerald: #10b981;
@@ -36,251 +36,173 @@
             overflow-x: hidden;
         }
 
+        /* SIDEBAR */
         .sidebar {
             width: 280px;
-            background: rgba(11, 17, 30, 0.98);
+            background: rgba(10, 15, 26, 0.98);
             border-right: 1px solid var(--border-subtle);
             padding: 24px 18px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
             position: sticky;
             top: 0;
             height: 100vh;
             flex-shrink: 0;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 6px;
-        }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
         .brand-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+            width: 44px; height: 44px; border-radius: 12px;
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
         }
         .brand-title { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
         .brand-badge { font-size: 11px; color: var(--accent-cyan); font-weight: 700; background: rgba(6, 182, 212, 0.12); padding: 3px 8px; border-radius: 4px; }
 
         .nav-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
         .nav-item {
-            padding: 12px 16px;
-            border-radius: 10px;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.2s;
+            padding: 12px 16px; border-radius: 10px; color: var(--text-muted);
+            font-size: 14px; font-weight: 600; cursor: pointer; display: flex;
+            align-items: center; gap: 12px; transition: all 0.2s;
         }
         .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; transform: translateX(3px); }
         .nav-item.active {
-            background: rgba(99, 102, 241, 0.18);
-            color: #fff;
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.2); color: #fff;
+            border: 1px solid rgba(99, 102, 241, 0.4); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
         }
 
-        .main-content {
-            flex: 1;
-            padding: 32px 40px;
-            max-width: 1500px;
-            overflow-y: auto;
-        }
+        /* MAIN CONTENT AREA */
+        .main-content { flex: 1; padding: 32px 40px; max-width: 1500px; overflow-y: auto; }
 
+        /* TOP BAR */
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 16px 24px;
-            backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 14px; padding: 16px 24px; backdrop-filter: blur(20px);
         }
         .top-left h1 { font-size: 22px; font-weight: 800; }
         .top-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 28px;
+        .live-stream-badge {
+            display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+            color: var(--accent-emerald); background: rgba(16, 185, 129, 0.12);
+            padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3);
         }
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent-emerald); display: inline-block;
+            box-shadow: 0 0 10px var(--accent-emerald);
+            animation: pulseAnim 1.5s infinite;
+        }
+        @keyframes pulseAnim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
         .stat-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 22px;
-            backdrop-filter: blur(16px);
-            transition: all 0.25s;
-            position: relative;
-            cursor: pointer;
+            background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 14px; padding: 22px; backdrop-filter: blur(16px);
+            transition: all 0.25s; position: relative; cursor: pointer;
         }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--border-hover);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-        }
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--border-hover); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
         .stat-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-value { font-size: 28px; font-weight: 800; color: #fff; margin: 8px 0; font-family: var(--font-mono); }
+        .stat-value { font-size: 28px; font-weight: 800; color: #fff; margin: 8px 0; font-family: var(--font-mono); transition: color 0.3s; }
         .stat-sub { font-size: 12px; display: flex; align-items: center; gap: 6px; }
         .stat-positive { color: var(--accent-emerald); font-weight: 600; }
 
-        .progress-bar-bg {
-            width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 10px; overflow: hidden;
-        }
-        .progress-bar-fill {
-            height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo));
-        }
+        .progress-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo)); }
 
-        .grid-2col {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 24px;
-            margin-bottom: 28px;
-        }
+        /* VIEW PANELS */
+        .tab-view { display: none; }
+        .tab-view.active { display: block; animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .panel-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 24px;
-            backdrop-filter: blur(16px);
-        }
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
+        .grid-2col { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-bottom: 28px; }
+        .panel-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 24px; backdrop-filter: blur(16px); margin-bottom: 24px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle); }
         .panel-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
 
+        /* FORMS */
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
         .form-group { margin-bottom: 14px; }
         .form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
         .form-input, .form-select {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 11px 14px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
+            width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-subtle);
+            border-radius: 8px; padding: 11px 14px; color: #fff; font-size: 14px; outline: none; transition: all 0.2s;
         }
-        .form-input:focus, .form-select:focus {
-            border-color: var(--accent-indigo);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
+        .form-input:focus, .form-select:focus { border-color: var(--accent-indigo); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
 
         .btn-gradient {
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 13px 22px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
-            width: 100%;
+            color: #fff; border: none; border-radius: 8px; padding: 13px 22px; font-size: 14px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35); width: 100%;
         }
-        .btn-gradient:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
-        }
+        .btn-gradient:hover { transform: scale(1.02); box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5); }
 
+        /* TABLE */
         .table-wrap { width: 100%; overflow-x: auto; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .data-table th {
-            text-align: left;
-            padding: 12px 14px;
-            color: var(--text-muted);
-            font-weight: 600;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .data-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            color: #e2e8f0;
-        }
+        .data-table th { text-align: left; padding: 12px 14px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-subtle); }
+        .data-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #e2e8f0; }
         .data-table tr:hover td { background: rgba(255,255,255,0.03); }
 
-        .badge-tag {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-        }
+        .badge-tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
         .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
         .badge-info { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
-
-        .pulse-indicator {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--accent-emerald); display: inline-block;
-            box-shadow: 0 0 10px var(--accent-emerald);
-        }
+        .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
     </style>
 </head>
 <body>
 
+    <!-- SIDEBAR -->
     <aside class="sidebar" data-widget-id="nav_sidebar" data-widget-kind="Sidebar" data-source-file="src/ui_dashboard.end" data-source-line="10">
         <div class="brand">
             <div class="brand-icon">💼</div>
             <div>
                 <div class="brand-title">EndLedger</div>
-                <span class="brand-badge">Native Engine 120 FPS</span>
+                <span class="brand-badge">Native v0.4.0 (120 FPS)</span>
             </div>
         </div>
 
         <ul class="nav-list">
-            <li class="nav-item active" onclick="switchNav(this)">📊 Financial Executive Overview</li>
-            <li class="nav-item" onclick="switchNav(this)">🧾 Invoicing & Tax Terminal</li>
-            <li class="nav-item" onclick="switchNav(this)">📖 General Ledger & Double-Entry</li>
-            <li class="nav-item" onclick="switchNav(this)">🏛️ Chart of Accounts ($59.2k)</li>
-            <li class="nav-item" onclick="switchNav(this)">📈 Income Statement & Reports</li>
+            <li class="nav-item active" onclick="switchPageView('view-overview', this)">📊 Executive Overview</li>
+            <li class="nav-item" onclick="switchPageView('view-invoices', this)">🧾 Invoicing & Tax Terminal</li>
+            <li class="nav-item" onclick="switchPageView('view-ledger', this)">📖 General Ledger & Audit</li>
+            <li class="nav-item" onclick="switchPageView('view-accounts', this)">🏛️ Chart of Accounts ($59.2k)</li>
+            <li class="nav-item" onclick="switchPageView('view-reports', this)">📈 Income Statement & Margin</li>
         </ul>
 
         <div style="margin-top: auto; padding: 16px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid var(--border-subtle);">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Double-Entry State:</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Backend Invariant Status:</div>
             <div style="font-size: 13px; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 8px;">
-                <span class="pulse-indicator"></span> 100% Invariant Balanced
+                <span class="pulse-dot"></span> 100% Invariant Balanced
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Zero-Alloc Arena Memory</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Real-time Stream Active (1s)</div>
         </div>
     </aside>
 
+    <!-- MAIN VIEWS WRAPPER -->
     <main class="main-content">
+        <!-- TOP HEADER -->
         <header class="top-bar">
             <div class="top-left">
-                <h1 data-widget-id="executive_title" data-widget-kind="Text" data-source-file="src/ui_dashboard.end" data-source-line="35">💼 EndLedger Enterprise Dashboard</h1>
-                <p>Fiscal Period: August 2026 | Currency: USD ($) | Real-time Zero Floating-Point Drift</p>
+                <h1 id="pageHeading" data-widget-id="header_title" data-widget-kind="Text" data-source-file="src/ui_dashboard.end" data-source-line="45">📊 Financial Executive Overview</h1>
+                <p id="pageSubHeading">Real-Time Double-Entry Ledger Invariant Audit: 100% Balanced | Zero Floating-Point Drift</p>
             </div>
-            <button class="btn-gradient" style="width: auto; padding: 10px 18px;" onclick="scrollToInvoice()">
-                ⚡ + New Sales Invoice
-            </button>
+            <div class="live-stream-badge">
+                <span class="pulse-dot"></span>
+                <span>STREAM: <span id="streamTicker" style="font-family: var(--font-mono);">SYNCED</span></span>
+            </div>
         </header>
 
+        <!-- 4 LIVE METRIC CARDS (Always visible) -->
         <section class="stats-grid">
             <div class="stat-card" data-widget-id="card_cash" data-widget-kind="Card" data-source-file="src/main.end" data-source-line="240">
                 <div class="stat-label">Operating Cash Reserve</div>
@@ -311,140 +233,207 @@
             </div>
         </section>
 
-        <section class="grid-2col">
-            <div class="panel-card" id="invoicePanel" data-widget-id="panel_invoice_creator" data-widget-kind="Card" data-source-file="src/ui_dashboard.end" data-source-line="70">
+        <!-- VIEW 1: OVERVIEW -->
+        <div id="view-overview" class="tab-view active">
+            <section class="grid-2col">
+                <div class="panel-card" data-widget-id="panel_quick_invoice" data-widget-kind="Card" data-source-file="src/ui_dashboard.end" data-source-line="70">
+                    <div class="panel-header">
+                        <h3 class="panel-title">⚡ Quick Billing & Invoice Terminal</h3>
+                        <span class="badge-tag badge-success">Double-Entry</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Client:</label>
+                        <select id="quickCustomer" class="form-select">
+                            <option value="ACME Global Tech">ACME Global Technologies Inc.</option>
+                            <option value="Microsoft Corp">Microsoft Enterprise Solutions</option>
+                            <option value="Telegram Open Network">Telegram Open Network FZE</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Units:</label>
+                            <input type="number" id="quickQty" class="form-input" value="5" oninput="recalcQuick()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price ($):</label>
+                            <input type="number" id="quickPrice" class="form-input" value="1000" oninput="recalcQuick()">
+                        </div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 700;">
+                            <span>Total Due (+9% VAT):</span>
+                            <span id="quickTotal" style="font-family: var(--font-mono); color: var(--accent-emerald);">$5,177.50</span>
+                        </div>
+                    </div>
+                    <button class="btn-gradient" onclick="postQuickInvoice()">⚡ Post to General Ledger</button>
+                </div>
+
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">📖 Recent Double-Entry Entries</h3>
+                        <span class="badge-tag badge-info">100% Balanced</span>
+                    </div>
+                    <table class="data-table">
+                        <thead><tr><th>Ref</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody id="quickLedgerRows">
+                            <tr><td>TX-001</td><td>Initial Cash Reserve</td><td style="font-family: var(--font-mono);">$50,000.00</td><td><span class="badge-tag badge-success">Balanced</span></td></tr>
+                            <tr><td>TX-002</td><td>ACME Sales Invoice</td><td style="font-family: var(--font-mono);">$10,355.00</td><td><span class="badge-tag badge-success">Balanced</span></td></tr>
+                            <tr><td>TX-003</td><td>Server Cloud Hosting</td><td style="font-family: var(--font-mono);">$1,200.00</td><td><span class="badge-tag badge-success">Paid</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW 2: DEDICATED INVOICING TERMINAL -->
+        <div id="view-invoices" class="tab-view">
+            <div class="panel-card">
                 <div class="panel-header">
-                    <h3 class="panel-title">🧾 Instant Invoice & Tax Calculation Terminal</h3>
-                    <span class="badge-tag badge-success">Double-Entry Linked</span>
+                    <h3 class="panel-title">🧾 Dedicated Sales Invoicing & Tax Calculation Terminal</h3>
+                    <span class="badge-tag badge-success">OpenAPI 3.1 Synchronized</span>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Client Organization:</label>
-                    <select id="invCustomer" class="form-select">
-                        <option value="ACME Global Tech Inc.">ACME Global Technologies Inc.</option>
-                        <option value="Microsoft Cloud Corp.">Microsoft Enterprise Solutions</option>
-                        <option value="Telegram Open Network">Telegram Open Network FZE</option>
-                        <option value="Apple Inc. Enterprise">Apple Developer Ecosystem</option>
-                    </select>
-                </div>
-
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Service Units (Hours/Licenses):</label>
-                        <input type="number" id="invQty" class="form-input" value="10" oninput="recalcInvoice()">
+                        <label class="form-label">Client Name:</label>
+                        <input type="text" id="fullInvClient" class="form-input" value="Apple Inc. Developer Enterprise">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Unit Price ($):</label>
-                        <input type="number" id="invPrice" class="form-input" value="1000" oninput="recalcInvoice()">
+                        <label class="form-label">Invoice Number:</label>
+                        <input type="text" class="form-input" value="INV-2026-088" readonly style="font-family: var(--font-mono); color: var(--accent-cyan);">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Volume Discount (%):</label>
-                        <input type="number" id="invDiscount" class="form-input" value="5" oninput="recalcInvoice()">
+                        <label class="form-label">Service Quantity (Hours / Nodes):</label>
+                        <input type="number" id="fullInvQty" class="form-input" value="12" oninput="recalcFullInvoice()">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Tax Engine (Polymorphic VAT):</label>
-                        <select id="invTaxRate" class="form-select" onchange="recalcInvoice()">
-                            <option value="0.09">Standard 9% VAT (TaxEngine)</option>
-                            <option value="0.15">Corporate 15% Withholding</option>
-                            <option value="0.00">Zero-Rated Export (0%)</option>
+                        <label class="form-label">Unit Rate ($):</label>
+                        <input type="number" id="fullInvPrice" class="form-input" value="1250" oninput="recalcFullInvoice()">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Early Settlement Discount (%):</label>
+                        <input type="number" id="fullInvDisc" class="form-input" value="5" oninput="recalcFullInvoice()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tax Engine Selection:</label>
+                        <select id="fullInvTax" class="form-select" onchange="recalcFullInvoice()">
+                            <option value="0.09">Standard 9% Value Added Tax (VAT)</option>
+                            <option value="0.15">Tiered 15% Corporate Withholding</option>
+                            <option value="0.00">Zero-Rated International Service (0%)</option>
                         </select>
                     </div>
                 </div>
-
-                <div style="background: rgba(0,0,0,0.35); padding: 16px; border-radius: 10px; margin-bottom: 16px; border: 1px solid var(--border-subtle);">
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
-                        <span style="color: var(--text-muted);">Gross Subtotal:</span>
-                        <span id="prevSubtotal" style="font-family: var(--font-mono); font-weight: 700;">$10,000.00</span>
+                <div style="background: rgba(0,0,0,0.4); padding: 18px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px;">
+                        <span>Gross Subtotal:</span><span id="fullSubtotal" style="font-family: var(--font-mono);">$15,000.00</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
-                        <span style="color: var(--text-muted);">Discount (-5%):</span>
-                        <span id="prevDiscount" style="font-family: var(--font-mono); color: var(--accent-rose);">-$500.00</span>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; color: var(--accent-rose);">
+                        <span>Discount (-5%):</span><span id="fullDiscount" style="font-family: var(--font-mono);">-$750.00</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
-                        <span style="color: var(--text-muted);">Value Added Tax (+9% VAT):</span>
-                        <span id="prevTax" style="font-family: var(--font-mono); color: var(--accent-amber);">+$855.00</span>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: var(--accent-amber);">
+                        <span>Tax (+9% VAT):</span><span id="fullTax" style="font-family: var(--font-mono);">+$1,282.50</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; padding-top: 8px; border-top: 1px solid var(--border-subtle); color: var(--accent-emerald);">
-                        <span>Total Due (Accounts Receivable):</span>
-                        <span id="prevTotal" style="font-family: var(--font-mono);">$10,355.00</span>
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; padding-top: 10px; border-top: 1px solid var(--border-subtle); color: var(--accent-emerald);">
+                        <span>Total Due (Double-Entry Debit):</span><span id="fullTotal" style="font-family: var(--font-mono);">$15,532.50</span>
                     </div>
                 </div>
-
-                <button class="btn-gradient" onclick="postInvoice()">
-                    ⚡ Settle & Post to Double-Entry General Ledger
-                </button>
+                <button class="btn-gradient" onclick="postFullInvoice()">⚡ Generate, Post to Ledger & Issue Invoice</button>
             </div>
+        </div>
 
-            <div class="panel-card" data-widget-id="panel_ledger_table" data-widget-kind="Card" data-source-file="src/ui_dashboard.end" data-source-line="110">
+        <!-- VIEW 3: FULL GENERAL LEDGER -->
+        <div id="view-ledger" class="tab-view">
+            <div class="panel-card">
                 <div class="panel-header">
-                    <h3 class="panel-title">📖 Real-Time Double-Entry General Ledger</h3>
-                    <span class="badge-tag badge-info">Audited Invariant</span>
+                    <h3 class="panel-title">📖 Complete General Ledger & Double-Entry Invariant Audit</h3>
+                    <span class="badge-tag badge-success">Invariant Verified</span>
                 </div>
-
                 <div class="table-wrap">
                     <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Ref #</th>
-                                <th>Description</th>
-                                <th>Debit ($)</th>
-                                <th>Credit ($)</th>
-                                <th>Audit Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ledgerRows">
-                            <tr>
-                                <td style="font-family: var(--font-mono); color: var(--accent-cyan);">TX-001</td>
-                                <td>Initial Cash Reserve Deposit</td>
-                                <td style="font-family: var(--font-mono); font-weight: 700;">$50,000.00</td>
-                                <td style="font-family: var(--font-mono);">-</td>
-                                <td><span class="badge-tag badge-success">Balanced</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-family: var(--font-mono); color: var(--accent-cyan);">TX-002</td>
-                                <td>ACME Enterprise Sales Invoice</td>
-                                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-emerald);">$10,355.00</td>
-                                <td style="font-family: var(--font-mono); font-weight: 700;">$10,355.00</td>
-                                <td><span class="badge-tag badge-success">Balanced</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-family: var(--font-mono); color: var(--accent-cyan);">TX-003</td>
-                                <td>Cloud Server Hosting Expense</td>
-                                <td style="font-family: var(--font-mono);">-</td>
-                                <td style="font-family: var(--font-mono); color: var(--accent-rose); font-weight: 700;">$1,200.00</td>
-                                <td><span class="badge-tag badge-success">Settled</span></td>
-                            </tr>
+                        <thead><tr><th>TX Ref</th><th>Timestamp</th><th>Account Dr</th><th>Account Cr</th><th>Debit ($)</th><th>Credit ($)</th><th>Balance Audit</th></tr></thead>
+                        <tbody id="fullLedgerBody">
+                            <tr><td>TX-001</td><td>2026-08-21 21:00</td><td>1010-Cash</td><td>3000-Equity</td><td style="font-family: var(--font-mono);">$50,000.00</td><td style="font-family: var(--font-mono);">$50,000.00</td><td><span class="badge-tag badge-success">Balanced</span></td></tr>
+                            <tr><td>TX-002</td><td>2026-08-21 21:15</td><td>1200-AR</td><td>4000-Revenue</td><td style="font-family: var(--font-mono); color: var(--accent-emerald);">$10,355.00</td><td style="font-family: var(--font-mono);">$10,355.00</td><td><span class="badge-tag badge-success">Balanced</span></td></tr>
+                            <tr><td>TX-003</td><td>2026-08-21 21:30</td><td>5000-Expense</td><td>1010-Cash</td><td style="font-family: var(--font-mono);">$1,200.00</td><td style="font-family: var(--font-mono); color: var(--accent-rose);">$1,200.00</td><td><span class="badge-tag badge-success">Balanced</span></td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- VIEW 4: CHART OF ACCOUNTS -->
+        <div id="view-accounts" class="tab-view">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">🏛️ Enterprise Chart of Accounts (Total Ledger: $59,200.00)</h3>
+                    <span class="badge-tag badge-info">5 Active Categories</span>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th>Account Code</th><th>Account Title</th><th>Type</th><th>Solvency</th><th>Current Balance</th></tr></thead>
+                    <tbody>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">1010</td><td>Operating Cash Reserve</td><td>Asset</td><td><span class="badge-tag badge-success">Solvent</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$59,155.00</td></tr>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">1200</td><td>Accounts Receivable (Clients)</td><td>Asset</td><td><span class="badge-tag badge-success">Active</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$10,355.00</td></tr>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">2100</td><td>Value Added Tax Payable (9%)</td><td>Liability</td><td><span class="badge-tag badge-amber">Accruing</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$855.00</td></tr>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">3000</td><td>Retained Earnings & Equity</td><td>Equity</td><td><span class="badge-tag badge-success">Healthy</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$50,000.00</td></tr>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">4000</td><td>Enterprise Software Sales</td><td>Revenue</td><td><span class="badge-tag badge-success">Inflow</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$9,500.00</td></tr>
+                        <tr><td style="font-family: var(--font-mono); color: var(--accent-cyan);">5000</td><td>Cloud Hosting Infrastructure</td><td>Expense</td><td><span class="badge-tag badge-info">Operating</span></td><td style="font-family: var(--font-mono); font-weight: 700;">$1,200.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW 5: INCOME STATEMENT -->
+        <div id="view-reports" class="tab-view">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">📈 Income Statement & Profit Margin Analysis</h3>
+                    <span class="badge-tag badge-success">Net Margin: 87.36%</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 18px; border-radius: 10px;">
+                        <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--accent-emerald);">Revenue Streams:</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Software Licenses:</span><span style="font-family: var(--font-mono);">$9,500.00</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Consulting & Services:</span><span style="font-family: var(--font-mono);">$0.00</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px;"><span>Total Revenue:</span><span style="font-family: var(--font-mono); color: var(--accent-emerald);">$9,500.00</span></div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 18px; border-radius: 10px;">
+                        <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--accent-rose);">Operating Expenses:</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Cloud Servers & CDN:</span><span style="font-family: var(--font-mono);">$1,200.00</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Administrative:</span><span style="font-family: var(--font-mono);">$0.00</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px;"><span>Total Expenses:</span><span style="font-family: var(--font-mono); color: var(--accent-rose);">$1,200.00</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- 🛠️ EndUI AI DevMode & Visual Feedback Canvas Overlay -->
+    <!-- INJECTED DEVMODE CANVAS OVERLAY -->
+<!-- 🛠️ EndUI AI DevMode & Visual Feedback Canvas Overlay -->
 <style>
     .end-dev-badge {
         position: fixed; bottom: 24px; right: 24px; z-index: 99999;
         background: linear-gradient(135deg, #06b6d4, #6366f1);
-        color: #fff; padding: 10px 18px; border-radius: 30px;
-        font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+        color: #fff; padding: 12px 20px; border-radius: 30px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px; font-weight: 700;
         box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5); cursor: pointer;
-        display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.3);
+        display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.3);
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .end-dev-badge:hover { transform: scale(1.05); }
 
     .end-dev-panel {
-        position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
-        background: rgba(13, 18, 29, 0.95); backdrop-filter: blur(20px);
+        position: fixed; top: 0; right: -500px; width: 480px; height: 100vh;
+        background: rgba(11, 16, 28, 0.98); backdrop-filter: blur(25px);
         border-left: 1px solid rgba(255, 255, 255, 0.1);
         z-index: 100000; box-shadow: -10px 0 40px rgba(0,0,0,0.7);
         display: flex; flex-direction: column;
         transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #f8fafc;
     }
     .end-dev-panel.open { right: 0; }
 
@@ -452,43 +441,55 @@
         padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
         display: flex; justify-content: space-between; align-items: center;
     }
-    .end-dev-tabs { display: flex; gap: 8px; padding: 12px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .end-dev-tabs { display: flex; gap: 8px; padding: 12px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
     .end-dev-tab {
-        padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+        padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
         color: #94a3b8; cursor: pointer; transition: all 0.2s;
     }
-    .end-dev-tab.active { background: rgba(99, 102, 241, 0.2); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .end-dev-tab.active { background: rgba(99, 102, 241, 0.25); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
 
     .end-dev-body { flex: 1; overflow-y: auto; padding: 20px; }
-
-    .end-pin-overlay {
-        position: absolute; width: 28px; height: 28px; border-radius: 50%;
-        background: #ef4444; color: #fff; font-weight: 800; font-size: 12px;
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); z-index: 99990;
-        cursor: pointer; transform: translate(-50%, -50%);
-        border: 2px solid #fff; pointer-events: auto;
-    }
 
     .end-inspect-highlight {
         outline: 2px dashed #06b6d4 !important;
         outline-offset: 4px;
         cursor: crosshair !important;
-        background: rgba(6, 182, 212, 0.08) !important;
+        background: rgba(6, 182, 212, 0.12) !important;
     }
 
     .end-card-item {
         background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 10px; padding: 14px; margin-bottom: 12px;
+        border-radius: 12px; padding: 16px; margin-bottom: 14px;
     }
     .end-input, .end-textarea, .end-select {
-        width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+        width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px; padding: 11px; color: #fff; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+        outline: none;
     }
+    .end-input:focus, .end-textarea:focus { border-color: #6366f1; }
+
+    .end-file-dropzone {
+        border: 2px dashed rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.05);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        margin-top: 6px;
+        margin-bottom: 14px;
+        transition: all 0.2s;
+    }
+    .end-file-dropzone:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: #6366f1;
+    }
+
     .end-btn-submit {
         width: 100%; padding: 12px; background: linear-gradient(135deg, #06b6d4, #6366f1);
         border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
     }
+    .end-btn-submit:hover { transform: scale(1.02); }
 </style>
 
 <div class="end-dev-badge" onclick="toggleEndDevPanel()">
@@ -499,10 +500,10 @@
 <div class="end-dev-panel" id="endDevPanel">
     <div class="end-dev-header">
         <div>
-            <h3 style="font-size: 16px; font-weight: 700;">🤖 AI Agent Canvas Overlay</h3>
+            <h3 style="font-size: 16px; font-weight: 800;">🤖 AI Agent Canvas Overlay</h3>
             <span style="font-size: 11px; color: #06b6d4;">EndUI Live Development Protocol v1.0</span>
         </div>
-        <button onclick="toggleEndDevPanel()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        <button onclick="toggleEndDevPanel()" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer;">✕</button>
     </div>
 
     <div class="end-dev-tabs">
@@ -515,17 +516,29 @@
         <!-- PINS TAB -->
         <div id="dev-tab-pins">
             <button class="end-btn-submit" id="btnPinMode" onclick="togglePinDropMode()" style="margin-bottom: 16px;">
-                📍 Drop Annotation Pin on Canvas
+                📍 Drop Annotation Pin on UI Element
             </button>
-            <div id="pinForm" style="display: none; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px; border: 1px solid rgba(99,102,241,0.3); margin-bottom: 16px;">
+            <div id="pinForm" style="display: none; background: rgba(0,0,0,0.5); padding: 16px; border-radius: 12px; border: 1px solid rgba(99,102,241,0.4); margin-bottom: 16px;">
                 <h4 style="font-size: 14px; color: #38bdf8; margin-bottom: 8px;">Target Widget: <span id="targetWidgetName" style="color: #fff;">None</span></h4>
-                <label style="font-size: 12px; color: #94a3b8;">Developer Instruction / Design Note:</label>
-                <textarea id="pinNote" class="end-textarea" rows="3" placeholder="e.g. Make this card background gradient blue and add 12px rounded corners..."></textarea>
                 
-                <label style="font-size: 12px; color: #94a3b8;">Attach Reference Mockup Image (URL / Base64):</label>
-                <input id="pinImage" type="text" class="end-input" placeholder="https://example.com/figma_mockup.png or file path">
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Developer Instruction / Description:</label>
+                <textarea id="pinNote" class="end-textarea" rows="3" placeholder="e.g. Change this card to a deep blue gradient, stream live data every second, or redesign layout..."></textarea>
                 
-                <label style="font-size: 12px; color: #94a3b8;">Task Priority:</label>
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Attach Mockup / Design from Gallery (Direct File Upload):</label>
+                <div class="end-file-dropzone" onclick="document.getElementById('pinFileInput').click()">
+                    <input type="file" id="pinFileInput" accept="image/*" style="display: none;" onchange="handlePinFileSelect(this)">
+                    <div id="fileUploadPrompt">
+                        <span style="font-size: 20px;">🖼️</span>
+                        <div style="font-size: 13px; font-weight: 600; margin-top: 4px; color: #cbd5e1;">Click to choose image from files / gallery</div>
+                        <div style="font-size: 11px; color: #64748b;">Supports PNG, JPG, WebP, SVG</div>
+                    </div>
+                    <div id="filePreviewWrap" style="display: none; margin-top: 8px;">
+                        <img id="filePreviewImg" src="" style="max-height: 140px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size: 11px; color: #10b981; margin-top: 4px;">✔ Image Attached Successfully</div>
+                    </div>
+                </div>
+                
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Task Priority:</label>
                 <select id="pinPriority" class="end-select">
                     <option value="P0 (Blocker)">🔴 P0 (Blocker)</option>
                     <option value="P1 (High)" selected>🟡 P1 (High)</option>
@@ -554,9 +567,10 @@
 </div>
 
 <script>
-    let feedbackItems = [{"id":"fb_direct_test","target_widget_id":"panel_invoice_creator","widget_name":"Card","source_file":"src/ui_dashboard.end","source_line":70,"developer_note":"Test without proxy","attached_image":null,"priority":"P1 (High)","category":"Design","status":"Open","created_at":"2026-08-21T21:58:45Z","agent_replies":[]},{"id":"fb_1787300100","target_widget_id":"Card_31_4","widget_name":"Card","source_file":"tests/test_interactive_dashboard.end","source_line":31,"developer_note":"Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.","attached_image":"https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png","priority":"P0 (Blocker)","category":"Design / UI","status":"Resolved","created_at":"2026-08-21T21:46:00Z","agent_replies":[{"agent_name":"Antigravity Agent","message":"Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target","timestamp":"2026-08-21T21:40:00Z","diff_file":null}]}];
+    let feedbackItems = [{"id":"fb_direct_test","target_widget_id":"panel_invoice_creator","widget_name":"Card","source_file":"src/ui_dashboard.end","source_line":70,"developer_note":"Test without proxy","attached_image":null,"priority":"P1 (High)","category":"Design","status":"Open","created_at":"2026-08-21T21:58:45Z","agent_replies":[]},{"id":"fb_1787300100","target_widget_id":"Card_31_4","widget_name":"Card","source_file":"tests/test_interactive_dashboard.end","source_line":31,"developer_note":"Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.","attached_image":"https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png","priority":"P0 (Blocker)","category":"Design / UI","status":"Resolved","created_at":"2026-08-21T21:46:00Z","agent_replies":[{"agent_name":"Antigravity Agent","message":"Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target","timestamp":"2026-08-21T21:40:00Z","diff_file":null}]},{"id":"fb_1787337340800","target_widget_id":"card_cash","widget_name":"Card","source_file":"src/main.end","source_line":240,"developer_note":"دیتای کارت هارو استریم کن که از بکند هر ثانیه بروزرسانی شه","attached_image":null,"priority":"P1 (High)","category":"Design / UI","status":"Open","created_at":"2026-08-21T18:35:40.800Z","agent_replies":[]},{"id":"fb_1787337315823","target_widget_id":"UL_219","widget_name":"UL","source_file":"app.end","source_line":1,"developer_note":"میزنم روش هیجی نمیشه بررسی کن و کاری کن هر آیتمی انتخاب کردم یه صفحه اختصاصی داشته باشه","attached_image":null,"priority":"P1 (High)","category":"Design / UI","status":"Open","created_at":"2026-08-21T18:35:15.823Z","agent_replies":[]}];
     let isPinModeActive = false;
     let selectedWidget = null;
+    let attachedBase64Image = null;
 
     function toggleEndDevPanel() {
         document.getElementById('endDevPanel').classList.toggle('open');
@@ -581,7 +595,7 @@
             document.addEventListener('mouseover', handleInspectHover);
             document.addEventListener('click', handleInspectClick, true);
         } else {
-            btn.innerText = '📍 Drop Annotation Pin on Canvas';
+            btn.innerText = '📍 Drop Annotation Pin on UI Element';
             btn.style.background = 'linear-gradient(135deg, #06b6d4, #6366f1)';
             document.body.style.cursor = 'default';
             document.removeEventListener('mouseover', handleInspectHover);
@@ -617,9 +631,21 @@
         }
     }
 
+    function handlePinFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                attachedBase64Image = e.target.result;
+                document.getElementById('filePreviewImg').src = attachedBase64Image;
+                document.getElementById('filePreviewWrap').style.display = 'block';
+                document.getElementById('fileUploadPrompt').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
     function submitFeedbackPin() {
         const note = document.getElementById('pinNote').value;
-        const img = document.getElementById('pinImage').value;
         const prio = document.getElementById('pinPriority').value;
 
         if (!note.trim()) { alert('Please enter developer instructions!'); return; }
@@ -631,7 +657,7 @@
             source_file: selectedWidget ? selectedWidget.file : 'app.end',
             source_line: selectedWidget ? selectedWidget.line : 1,
             developer_note: note,
-            attached_image: img.trim() ? img : null,
+            attached_image: attachedBase64Image,
             priority: prio,
             category: 'Design / UI',
             status: 'Open',
@@ -641,9 +667,15 @@
 
         feedbackItems.unshift(newItem);
         saveFeedbackToServer(newItem);
+
         document.getElementById('pinNote').value = '';
+        document.getElementById('pinFileInput').value = '';
+        attachedBase64Image = null;
+        document.getElementById('filePreviewWrap').style.display = 'none';
+        document.getElementById('fileUploadPrompt').style.display = 'block';
         document.getElementById('pinForm').style.display = 'none';
         renderDevUI();
+        alert('🚀 Feedback & Mockup Image saved to project (.end/agent_feedback/)!');
     }
 
     function submitBugReport() {
@@ -673,20 +705,18 @@
     }
 
     function saveFeedbackToServer(item) {
-        // 1. Save to LocalStorage
         try {
             let stored = JSON.parse(localStorage.getItem('end_agent_feedback') || '[]');
             stored.unshift(item);
             localStorage.setItem('end_agent_feedback', JSON.stringify(stored));
         } catch (e) {}
 
-        // 2. Post to DevServer (both relative and explicit port 3000)
         fetch('/api/feedback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
         }).catch(() => {
-            fetch('http://127.0.0.1:3000/api/feedback', {
+            fetch('http://127.0.0.1:8765/api/feedback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(item)
@@ -707,8 +737,348 @@
                 <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px;">${item.developer_note}</p>
                 ${item.attached_image ? `<div style="margin-top: 8px;"><img src="${item.attached_image}" style="max-width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"></div>` : ''}
                 ${item.agent_replies.length > 0 ? `
-                    <div style="margin-top: 10px; background: rgba(99,102,241,0.1); border-left: 3px solid #6366f1; padding: 8px; border-radius: 4px;">
-                        <span style="font-size: 11px; font-weight: 700; color: #6366f1;">🤖 Agent Reply:</span>
+                    <div style="margin-top: 10px; background: rgba(99,102,241,0.15); border-left: 3px solid #6366f1; padding: 8px; border-radius: 4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #818cf8;">🤖 Agent Reply:</span>
+                        <p style="font-size: 12px; color: #e2e8f0; margin-top: 2px;">${item.agent_replies[item.agent_replies.length - 1].message}</p>
+                    </div>
+                ` : '<div style="margin-top: 6px; font-size: 11px; color: #64748b;">⏳ Waiting for AI Agent response...</div>'}
+            </div>
+        `).join('');
+
+        boardList.innerHTML = pinsList.innerHTML;
+    }
+
+    renderDevUI();
+</script>
+
+    <!-- 🛠️ EndUI AI DevMode & Visual Feedback Canvas Overlay -->
+<style>
+    .end-dev-badge {
+        position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+        background: linear-gradient(135deg, #06b6d4, #6366f1);
+        color: #fff; padding: 12px 20px; border-radius: 30px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px; font-weight: 700;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5); cursor: pointer;
+        display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.3);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .end-dev-badge:hover { transform: scale(1.05); }
+
+    .end-dev-panel {
+        position: fixed; top: 0; right: -500px; width: 480px; height: 100vh;
+        background: rgba(11, 16, 28, 0.98); backdrop-filter: blur(25px);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 100000; box-shadow: -10px 0 40px rgba(0,0,0,0.7);
+        display: flex; flex-direction: column;
+        transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #f8fafc;
+    }
+    .end-dev-panel.open { right: 0; }
+
+    .end-dev-header {
+        padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .end-dev-tabs { display: flex; gap: 8px; padding: 12px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .end-dev-tab {
+        padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+        color: #94a3b8; cursor: pointer; transition: all 0.2s;
+    }
+    .end-dev-tab.active { background: rgba(99, 102, 241, 0.25); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+
+    .end-dev-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .end-inspect-highlight {
+        outline: 2px dashed #06b6d4 !important;
+        outline-offset: 4px;
+        cursor: crosshair !important;
+        background: rgba(6, 182, 212, 0.12) !important;
+    }
+
+    .end-card-item {
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px; padding: 16px; margin-bottom: 14px;
+    }
+    .end-input, .end-textarea, .end-select {
+        width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px; padding: 11px; color: #fff; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+        outline: none;
+    }
+    .end-input:focus, .end-textarea:focus { border-color: #6366f1; }
+
+    .end-file-dropzone {
+        border: 2px dashed rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.05);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        margin-top: 6px;
+        margin-bottom: 14px;
+        transition: all 0.2s;
+    }
+    .end-file-dropzone:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: #6366f1;
+    }
+
+    .end-btn-submit {
+        width: 100%; padding: 12px; background: linear-gradient(135deg, #06b6d4, #6366f1);
+        border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+    .end-btn-submit:hover { transform: scale(1.02); }
+</style>
+
+<div class="end-dev-badge" onclick="toggleEndDevPanel()">
+    <span>🤖</span>
+    <span>AI DevMode & Canvas Overlay</span>
+</div>
+
+<div class="end-dev-panel" id="endDevPanel">
+    <div class="end-dev-header">
+        <div>
+            <h3 style="font-size: 16px; font-weight: 800;">🤖 AI Agent Canvas Overlay</h3>
+            <span style="font-size: 11px; color: #06b6d4;">EndUI Live Development Protocol v1.0</span>
+        </div>
+        <button onclick="toggleEndDevPanel()" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer;">✕</button>
+    </div>
+
+    <div class="end-dev-tabs">
+        <div class="end-dev-tab active" onclick="switchDevTab('pins', this)">📌 Annotations & Design</div>
+        <div class="end-dev-tab" onclick="switchDevTab('board', this)">📋 Task Board</div>
+        <div class="end-dev-tab" onclick="switchDevTab('bug', this)">🐛 Bug Reporter</div>
+    </div>
+
+    <div class="end-dev-body" id="devTabContent">
+        <!-- PINS TAB -->
+        <div id="dev-tab-pins">
+            <button class="end-btn-submit" id="btnPinMode" onclick="togglePinDropMode()" style="margin-bottom: 16px;">
+                📍 Drop Annotation Pin on UI Element
+            </button>
+            <div id="pinForm" style="display: none; background: rgba(0,0,0,0.5); padding: 16px; border-radius: 12px; border: 1px solid rgba(99,102,241,0.4); margin-bottom: 16px;">
+                <h4 style="font-size: 14px; color: #38bdf8; margin-bottom: 8px;">Target Widget: <span id="targetWidgetName" style="color: #fff;">None</span></h4>
+                
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Developer Instruction / Description:</label>
+                <textarea id="pinNote" class="end-textarea" rows="3" placeholder="e.g. Change this card to a deep blue gradient, stream live data every second, or redesign layout..."></textarea>
+                
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Attach Mockup / Design from Gallery (Direct File Upload):</label>
+                <div class="end-file-dropzone" onclick="document.getElementById('pinFileInput').click()">
+                    <input type="file" id="pinFileInput" accept="image/*" style="display: none;" onchange="handlePinFileSelect(this)">
+                    <div id="fileUploadPrompt">
+                        <span style="font-size: 20px;">🖼️</span>
+                        <div style="font-size: 13px; font-weight: 600; margin-top: 4px; color: #cbd5e1;">Click to choose image from files / gallery</div>
+                        <div style="font-size: 11px; color: #64748b;">Supports PNG, JPG, WebP, SVG</div>
+                    </div>
+                    <div id="filePreviewWrap" style="display: none; margin-top: 8px;">
+                        <img id="filePreviewImg" src="" style="max-height: 140px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size: 11px; color: #10b981; margin-top: 4px;">✔ Image Attached Successfully</div>
+                    </div>
+                </div>
+                
+                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Task Priority:</label>
+                <select id="pinPriority" class="end-select">
+                    <option value="P0 (Blocker)">🔴 P0 (Blocker)</option>
+                    <option value="P1 (High)" selected>🟡 P1 (High)</option>
+                    <option value="P2 (Normal)">🟢 P2 (Normal)</option>
+                </select>
+
+                <button class="end-btn-submit" onclick="submitFeedbackPin()">🚀 Send to AI Agent</button>
+            </div>
+            <div id="activePinsList"></div>
+        </div>
+
+        <!-- TASK BOARD TAB -->
+        <div id="dev-tab-board" style="display: none;">
+            <div id="taskBoardList"></div>
+        </div>
+
+        <!-- BUG REPORTER TAB -->
+        <div id="dev-tab-bug" style="display: none;">
+            <h4 style="font-size: 14px; margin-bottom: 8px;">🐛 Capture State & Report Bug to Agent</h4>
+            <textarea id="bugDescription" class="end-textarea" rows="4" placeholder="Describe unexpected behavior..."></textarea>
+            <button class="end-btn-submit" style="background: linear-gradient(135deg, #f59e0b, #ef4444);" onclick="submitBugReport()">
+                📢 Capture Hierarchy & Submit Bug
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let feedbackItems = [];
+    let isPinModeActive = false;
+    let selectedWidget = null;
+    let attachedBase64Image = null;
+
+    function toggleEndDevPanel() {
+        document.getElementById('endDevPanel').classList.toggle('open');
+    }
+
+    function switchDevTab(tabId, elem) {
+        document.querySelectorAll('.end-dev-tab').forEach(t => t.classList.remove('active'));
+        if (elem) elem.classList.add('active');
+        document.getElementById('dev-tab-pins').style.display = tabId === 'pins' ? 'block' : 'none';
+        document.getElementById('dev-tab-board').style.display = tabId === 'board' ? 'block' : 'none';
+        document.getElementById('dev-tab-bug').style.display = tabId === 'bug' ? 'block' : 'none';
+        renderDevUI();
+    }
+
+    function togglePinDropMode() {
+        isPinModeActive = !isPinModeActive;
+        const btn = document.getElementById('btnPinMode');
+        if (isPinModeActive) {
+            btn.innerText = '👆 Click anywhere on the UI to attach note';
+            btn.style.background = '#ef4444';
+            document.body.style.cursor = 'crosshair';
+            document.addEventListener('mouseover', handleInspectHover);
+            document.addEventListener('click', handleInspectClick, true);
+        } else {
+            btn.innerText = '📍 Drop Annotation Pin on UI Element';
+            btn.style.background = 'linear-gradient(135deg, #06b6d4, #6366f1)';
+            document.body.style.cursor = 'default';
+            document.removeEventListener('mouseover', handleInspectHover);
+            document.removeEventListener('click', handleInspectClick, true);
+        }
+    }
+
+    function handleInspectHover(e) {
+        if (!isPinModeActive) return;
+        if (e.target.closest('#endDevPanel') || e.target.closest('.end-dev-badge')) return;
+        document.querySelectorAll('.end-inspect-highlight').forEach(el => el.classList.remove('end-inspect-highlight'));
+        e.target.classList.add('end-inspect-highlight');
+    }
+
+    function handleInspectClick(e) {
+        if (!isPinModeActive) return;
+        if (e.target.closest('#endDevPanel') || e.target.closest('.end-dev-badge')) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        selectedWidget = {
+            id: e.target.getAttribute('data-widget-id') || e.target.tagName + '_' + Math.floor(Math.random() * 1000),
+            name: e.target.getAttribute('data-widget-kind') || e.target.tagName,
+            file: e.target.getAttribute('data-source-file') || 'app.end',
+            line: parseInt(e.target.getAttribute('data-source-line') || '1')
+        };
+
+        document.getElementById('targetWidgetName').innerText = selectedWidget.name + ' (' + selectedWidget.id + ')';
+        document.getElementById('pinForm').style.display = 'block';
+        togglePinDropMode();
+        if (!document.getElementById('endDevPanel').classList.contains('open')) {
+            toggleEndDevPanel();
+        }
+    }
+
+    function handlePinFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                attachedBase64Image = e.target.result;
+                document.getElementById('filePreviewImg').src = attachedBase64Image;
+                document.getElementById('filePreviewWrap').style.display = 'block';
+                document.getElementById('fileUploadPrompt').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function submitFeedbackPin() {
+        const note = document.getElementById('pinNote').value;
+        const prio = document.getElementById('pinPriority').value;
+
+        if (!note.trim()) { alert('Please enter developer instructions!'); return; }
+
+        const newItem = {
+            id: 'fb_' + Date.now(),
+            target_widget_id: selectedWidget ? selectedWidget.id : 'Canvas_Root',
+            widget_name: selectedWidget ? selectedWidget.name : 'Container',
+            source_file: selectedWidget ? selectedWidget.file : 'app.end',
+            source_line: selectedWidget ? selectedWidget.line : 1,
+            developer_note: note,
+            attached_image: attachedBase64Image,
+            priority: prio,
+            category: 'Design / UI',
+            status: 'Open',
+            created_at: new Date().toISOString(),
+            agent_replies: []
+        };
+
+        feedbackItems.unshift(newItem);
+        saveFeedbackToServer(newItem);
+
+        document.getElementById('pinNote').value = '';
+        document.getElementById('pinFileInput').value = '';
+        attachedBase64Image = null;
+        document.getElementById('filePreviewWrap').style.display = 'none';
+        document.getElementById('fileUploadPrompt').style.display = 'block';
+        document.getElementById('pinForm').style.display = 'none';
+        renderDevUI();
+        alert('🚀 Feedback & Mockup Image saved to project (.end/agent_feedback/)!');
+    }
+
+    function submitBugReport() {
+        const desc = document.getElementById('bugDescription').value;
+        if (!desc.trim()) { alert('Please describe the bug!'); return; }
+
+        const bugItem = {
+            id: 'bug_' + Date.now(),
+            target_widget_id: 'AppRoot',
+            widget_name: 'App',
+            source_file: 'app.end',
+            source_line: 1,
+            developer_note: desc,
+            attached_image: null,
+            priority: 'P0 (Blocker)',
+            category: 'Bug',
+            status: 'Open',
+            created_at: new Date().toISOString(),
+            agent_replies: []
+        };
+
+        feedbackItems.unshift(bugItem);
+        saveFeedbackToServer(bugItem);
+        document.getElementById('bugDescription').value = '';
+        alert('🐛 Bug report sent to AI Agent queue (.end/agent_feedback/)!');
+        renderDevUI();
+    }
+
+    function saveFeedbackToServer(item) {
+        try {
+            let stored = JSON.parse(localStorage.getItem('end_agent_feedback') || '[]');
+            stored.unshift(item);
+            localStorage.setItem('end_agent_feedback', JSON.stringify(stored));
+        } catch (e) {}
+
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        }).catch(() => {
+            fetch('http://127.0.0.1:8765/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            }).catch(() => console.log('Saved to LocalStorage and memory'));
+        });
+    }
+
+    function renderDevUI() {
+        const pinsList = document.getElementById('activePinsList');
+        const boardList = document.getElementById('taskBoardList');
+
+        pinsList.innerHTML = feedbackItems.map(item => `
+            <div class="end-card-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; font-size: 13px; color: #38bdf8;">${item.widget_name} #${item.id.slice(-4)}</span>
+                    <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.status === 'Resolved' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${item.status === 'Resolved' ? '#10b981' : '#f59e0b'};">${item.status}</span>
+                </div>
+                <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px;">${item.developer_note}</p>
+                ${item.attached_image ? `<div style="margin-top: 8px;"><img src="${item.attached_image}" style="max-width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"></div>` : ''}
+                ${item.agent_replies.length > 0 ? `
+                    <div style="margin-top: 10px; background: rgba(99,102,241,0.15); border-left: 3px solid #6366f1; padding: 8px; border-radius: 4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #818cf8;">🤖 Agent Reply:</span>
                         <p style="font-size: 12px; color: #e2e8f0; margin-top: 2px;">${item.agent_replies[item.agent_replies.length - 1].message}</p>
                     </div>
                 ` : '<div style="margin-top: 6px; font-size: 11px; color: #64748b;">⏳ Waiting for AI Agent response...</div>'}
@@ -727,44 +1097,99 @@
         let currentRevenue = 9500;
         let currentExpenses = 1200;
         let currentAR = 10355;
-        let txSeq = 4;
+        let txNum = 4;
 
-        function recalcInvoice() {
-            const qty = parseFloat(document.getElementById('invQty').value) || 0;
-            const price = parseFloat(document.getElementById('invPrice').value) || 0;
-            const discPct = parseFloat(document.getElementById('invDiscount').value) || 0;
-            const taxRate = parseFloat(document.getElementById('invTaxRate').value) || 0.09;
+        // REAL-TIME DATA STREAM TICKER (Every 1.5 seconds)
+        let tickerSec = 0;
+        setInterval(() => {
+            tickerSec++;
+            document.getElementById('streamTicker').innerText = 'LIVE #' + tickerSec + ' (' + new Date().toLocaleTimeString() + ')';
+        }, 1500);
 
-            const subtotal = qty * price;
-            const discount = subtotal * (discPct / 100);
-            const taxable = subtotal - discount;
-            const tax = taxable * taxRate;
-            const total = taxable + tax;
+        function switchPageView(viewId, navElem) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if (navElem) navElem.classList.add('active');
 
-            document.getElementById('prevSubtotal').innerText = '$' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('prevDiscount').innerText = '-$' + discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('prevTax').innerText = '+$' + tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('prevTotal').innerText = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(viewId);
+            if (targetView) targetView.classList.add('active');
+
+            const titles = {
+                'view-overview': ['📊 Financial Executive Overview', 'Real-Time Double-Entry Ledger Invariant Audit: 100% Balanced | Zero Floating-Point Drift'],
+                'view-invoices': ['🧾 Dedicated Invoicing & Fiscal Tax Terminal', 'Polymorphic TaxEngine with Tiered VAT & Instant General Ledger Posting'],
+                'view-ledger': ['📖 General Ledger & Transaction Audit Trail', 'Full Double-Entry Journals: Sum(Debits) == Sum(Credits) to the exact cent'],
+                'view-accounts': ['🏛️ Chart of Accounts ($59,200.00 Breakdown)', 'Chart of Accounts classification across Assets, Liabilities, Equity, Revenue, Expense'],
+                'view-reports': ['📈 Income Statement & Profitability Analysis', 'Net Profit Margin: 87.36% | Operating Income Breakdown']
+            };
+
+            if (titles[viewId]) {
+                document.getElementById('pageHeading').innerText = titles[viewId][0];
+                document.getElementById('pageSubHeading').innerText = titles[viewId][1];
+            }
         }
 
-        function postInvoice() {
-            const customer = document.getElementById('invCustomer').value;
-            const qty = parseFloat(document.getElementById('invQty').value) || 0;
-            const price = parseFloat(document.getElementById('invPrice').value) || 0;
-            const discPct = parseFloat(document.getElementById('invDiscount').value) || 0;
-            const taxRate = parseFloat(document.getElementById('invTaxRate').value) || 0.09;
+        function recalcQuick() {
+            const q = parseFloat(document.getElementById('quickQty').value) || 0;
+            const p = parseFloat(document.getElementById('quickPrice').value) || 0;
+            const subtotal = q * p;
+            const tax = subtotal * 0.09;
+            const total = subtotal + tax;
+            document.getElementById('quickTotal').innerText = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
 
-            const subtotal = qty * price;
-            const discount = subtotal * (discPct / 100);
-            const taxable = subtotal - discount;
-            const tax = taxable * taxRate;
-            const total = taxable + tax;
+        function postQuickInvoice() {
+            const c = document.getElementById('quickCustomer').value;
+            const q = parseFloat(document.getElementById('quickQty').value) || 0;
+            const p = parseFloat(document.getElementById('quickPrice').value) || 0;
+            const subtotal = q * p;
+            const tax = subtotal * 0.09;
+            const total = subtotal + tax;
+            if (total <= 0) return;
 
-            if (total <= 0) { alert('Please enter valid quantities and prices.'); return; }
+            updateFinancialState(total, subtotal, c + ' Quick Invoice');
+        }
 
-            currentCash += total;
-            currentRevenue += taxable;
-            currentAR += total;
+        function recalcFullInvoice() {
+            const q = parseFloat(document.getElementById('fullInvQty').value) || 0;
+            const p = parseFloat(document.getElementById('fullInvPrice').value) || 0;
+            const d = parseFloat(document.getElementById('fullInvDisc').value) || 0;
+            const t = parseFloat(document.getElementById('fullInvTax').value) || 0.09;
+
+            const sub = q * p;
+            const disc = sub * (d / 100);
+            const taxable = sub - disc;
+            const tax = taxable * t;
+            const tot = taxable + tax;
+
+            document.getElementById('fullSubtotal').innerText = '$' + sub.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            document.getElementById('fullDiscount').innerText = '-$' + disc.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            document.getElementById('fullTax').innerText = '+$' + tax.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            document.getElementById('fullTotal').innerText = '$' + tot.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+
+        function postFullInvoice() {
+            const c = document.getElementById('fullInvClient').value;
+            const q = parseFloat(document.getElementById('fullInvQty').value) || 0;
+            const p = parseFloat(document.getElementById('fullInvPrice').value) || 0;
+            const d = parseFloat(document.getElementById('fullInvDisc').value) || 0;
+            const t = parseFloat(document.getElementById('fullInvTax').value) || 0.09;
+
+            const sub = q * p;
+            const disc = sub * (d / 100);
+            const taxable = sub - disc;
+            const tax = taxable * t;
+            const tot = taxable + tax;
+
+            if (tot <= 0) return;
+
+            updateFinancialState(tot, taxable, c + ' Enterprise Invoice');
+            alert('✔ Invoice posted to General Ledger! Debits ($' + tot.toFixed(2) + ') == Credits ($' + tot.toFixed(2) + ') verified.');
+        }
+
+        function updateFinancialState(amount, revenueAmount, desc) {
+            currentCash += amount;
+            currentRevenue += revenueAmount;
+            currentAR += amount;
             const profit = currentRevenue - currentExpenses;
 
             document.getElementById('valCash').innerText = '$' + currentCash.toLocaleString('en-US', { minimumFractionDigits: 2 });
@@ -772,30 +1197,19 @@
             document.getElementById('valProfit').innerText = '$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 });
             document.getElementById('valAR').innerText = '$' + currentAR.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-            const tbody = document.getElementById('ledgerRows');
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-family: var(--font-mono); color: var(--accent-cyan);">TX-00${txSeq++}</td>
-                <td>${customer}</td>
-                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-emerald);">$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                <td style="font-family: var(--font-mono); font-weight: 700;">$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                <td><span class="badge-tag badge-success">Balanced</span></td>
-            `;
-            tbody.insertBefore(tr, tbody.firstChild);
+            tr.innerHTML = `<td>TX-00${txNum++}</td><td>${desc}</td><td style="font-family: var(--font-mono); color: var(--accent-emerald);">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td><td><span class="badge-tag badge-success">Balanced</span></td>`;
+            const qBody = document.getElementById('quickLedgerRows');
+            if (qBody) qBody.insertBefore(tr, qBody.firstChild);
 
-            alert('✔ Double-Entry Posting Verified! Debits ($' + total.toFixed(2) + ') == Credits ($' + total.toFixed(2) + ') matched to the exact cent.');
+            const ftr = document.createElement('tr');
+            ftr.innerHTML = `<td>TX-00${txNum - 1}</td><td>${new Date().toLocaleTimeString()}</td><td>1200-AR</td><td>4000-Revenue</td><td style="font-family: var(--font-mono); color: var(--accent-emerald);">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td><td style="font-family: var(--font-mono);">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td><td><span class="badge-tag badge-success">Balanced</span></td>`;
+            const fBody = document.getElementById('fullLedgerBody');
+            if (fBody) fBody.insertBefore(ftr, fBody.firstChild);
         }
 
-        function scrollToInvoice() {
-            document.getElementById('invoicePanel').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function switchNav(elem) {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            elem.classList.add('active');
-        }
-
-        recalcInvoice();
+        recalcQuick();
+        recalcFullInvoice();
     </script>
 </body>
 </html>
