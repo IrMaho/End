@@ -290,13 +290,15 @@ class TestItem extends vscode.TreeItem {
     label;
     duration;
     collapsibleState;
-    constructor(label, duration, collapsibleState) {
+    iconName;
+    constructor(label, duration, collapsibleState, iconName = 'pass-filled') {
         super(label, collapsibleState);
         this.label = label;
         this.duration = duration;
         this.collapsibleState = collapsibleState;
+        this.iconName = iconName;
         this.description = duration;
-        this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+        this.iconPath = new vscode.ThemeIcon(iconName, new vscode.ThemeColor('testing.iconPassed'));
     }
 }
 // -----------------------------------------------------------------------------
