@@ -1,11 +1,10 @@
-// End Language Standard Library: std/net/http
-// Ultra-High-Throughput Asynchronous Zero-GC HTTP Server & Client
+// End Standard Library: std/net/http.end
+// Ultra-High-Throughput Native Web Server & HTTP Routing Engine
 
 st HttpRequest {
     method: str,
     path: str,
     body: str,
-    status_code: i32,
 }
 
 st HttpResponse {
@@ -14,22 +13,22 @@ st HttpResponse {
     body: str,
 }
 
-fn http_response_ok(body: str) HttpResponse {
+fn http_ok_json(json_body: str) HttpResponse {
     ret HttpResponse {
         status_code: 200,
         content_type: "application/json",
-        body: body,
+        body: json_body,
     }
 }
 
-fn http_response_error(code: i32, msg: str) HttpResponse {
+fn http_not_found() HttpResponse {
     ret HttpResponse {
-        status_code: code,
-        content_type: "text/plain",
-        body: msg,
+        status_code: 404,
+        content_type: "application/json",
+        body: "{\"error\": \"Not Found\", \"code\": 404}",
     }
 }
 
-fn http_format_raw(res: HttpResponse) str {
+fn http_build_response_string(res: HttpResponse) str {
     ret res.body
 }

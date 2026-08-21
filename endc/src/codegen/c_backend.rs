@@ -10,6 +10,22 @@ pub struct CBackend {
     pub var_types: HashMap<String, Type>,
 }
 
+fn escape_c_string(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 16);
+    for c in s.chars() {
+        match c {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\0' => out.push_str("\\0"),
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 impl CBackend {
     pub fn new() -> Self {
         Self {
@@ -221,6 +237,37 @@ impl CBackend {
         self.output.push_str("        ch->count--;\n");
         self.output.push_str("    return val;\n");
         self.output.push_str("}\n\n");
+
+        // High-Resolution Hardware Timer Runtime
+        self.output.push_str("/* End High-Resolution Hardware Timer Runtime (std::time) */\n");
+        self.output.push_str("#if defined(_WIN32)\n");
+        self.output.push_str("static inline uint64_t end_time_now_nanos(void) {\n");
+        self.output.push_str("    LARGE_INTEGER freq, counter;\n");
+        self.output.push_str("    QueryPerformanceFrequency(&freq);\n");
+        self.output.push_str("    QueryPerformanceCounter(&counter);\n");
+        self.output.push_str("    return (uint64_t)((counter.QuadPart * 1000000000ULL) / freq.QuadPart);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline uint64_t end_time_now_micros(void) {\n");
+        self.output.push_str("    LARGE_INTEGER freq, counter;\n");
+        self.output.push_str("    QueryPerformanceFrequency(&freq);\n");
+        self.output.push_str("    QueryPerformanceCounter(&counter);\n");
+        self.output.push_str("    return (uint64_t)((counter.QuadPart * 1000000ULL) / freq.QuadPart);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline uint64_t end_time_now_millis(void) {\n");
+        self.output.push_str("    LARGE_INTEGER freq, counter;\n");
+        self.output.push_str("    QueryPerformanceFrequency(&freq);\n");
+        self.output.push_str("    QueryPerformanceCounter(&counter);\n");
+        self.output.push_str("    return (uint64_t)((counter.QuadPart * 1000ULL) / freq.QuadPart);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("#include <time.h>\n");
+        self.output.push_str("static inline uint64_t end_time_now_nanos(void) {\n");
+        self.output.push_str("    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);\n");
+        self.output.push_str("    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline uint64_t end_time_now_micros(void) { return end_time_now_nanos() / 1000ULL; }\n");
+        self.output.push_str("static inline uint64_t end_time_now_millis(void) { return end_time_now_nanos() / 1000000ULL; }\n");
+        self.output.push_str("#endif\n\n");
 
         // Process Imports
         for imp in &module.imports {
@@ -689,7 +736,7 @@ impl CBackend {
             Expression::Lit(lit, _) => match lit {
                 Literal::Int(n) => n.to_string(),
                 Literal::Float(f) => format!("{:.6}f", f),
-                Literal::String(s) => format!("\"{}\"", s.replace('\n', "\\n")),
+                Literal::String(s) => format!("\"{}\"", escape_c_string(s)),
                 Literal::Bool(b) => if *b { "true".to_string() } else { "false".to_string() },
                 Literal::Null => "NULL".to_string(),
             },
@@ -697,27 +744,26 @@ impl CBackend {
             Expression::Binary { left, op, right, .. } => {
                 let l = self.gen_expression(left);
                 let r = self.gen_expression(right);
-                let op_str = match op {
-                    BinaryOp::Add => "+",
-                    BinaryOp::Sub => "-",
-                    BinaryOp::Mul => "*",
-                    BinaryOp::Div => "/",
-                    BinaryOp::Mod => "%",
-                    BinaryOp::Equal => "==",
-                    BinaryOp::NotEqual => "!=",
-                    BinaryOp::LessThan => "<",
-                    BinaryOp::LessEqual => "<=",
-                    BinaryOp::GreaterThan => ">",
-                    BinaryOp::GreaterEqual => ">=",
-                    BinaryOp::And => "&&",
-                    BinaryOp::Or => "||",
-                    BinaryOp::Shl => "<<",
-                    BinaryOp::Shr => ">>",
-                    BinaryOp::BitAnd => "&",
-                    BinaryOp::BitOr => "|",
-                    BinaryOp::BitXor => "^",
-                };
-                format!("({} {} {})", l, op_str, r)
+                match op {
+                    BinaryOp::Add => format!("({} + {})", l, r),
+                    BinaryOp::Sub => format!("({} - {})", l, r),
+                    BinaryOp::Mul => format!("({} * {})", l, r),
+                    BinaryOp::Div => format!("({} / {})", l, r),
+                    BinaryOp::Mod => format!("({} % {})", l, r),
+                    BinaryOp::Equal => format!("({} == {})", l, r),
+                    BinaryOp::NotEqual => format!("({} != {})", l, r),
+                    BinaryOp::LessThan => format!("({} < {})", l, r),
+                    BinaryOp::LessEqual => format!("({} <= {})", l, r),
+                    BinaryOp::GreaterThan => format!("({} > {})", l, r),
+                    BinaryOp::GreaterEqual => format!("({} >= {})", l, r),
+                    BinaryOp::And => format!("({} && {})", l, r),
+                    BinaryOp::Or => format!("({} || {})", l, r),
+                    BinaryOp::Shl => format!("(((uint64_t)({})) << ({}) )", l, r),
+                    BinaryOp::Shr => format!("(((uint64_t)({})) >> ({}) )", l, r),
+                    BinaryOp::BitAnd => format!("(((uint64_t)({})) & ((uint64_t)({})))", l, r),
+                    BinaryOp::BitOr => format!("(((uint64_t)({})) | ((uint64_t)({})))", l, r),
+                    BinaryOp::BitXor => format!("(((uint64_t)({})) ^ ((uint64_t)({})))", l, r),
+                }
             }
             Expression::Unary { op, expr, .. } => {
                 let e = self.gen_expression(expr);

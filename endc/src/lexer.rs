@@ -262,10 +262,45 @@ impl<'a> Lexer<'a> {
             return Ok(Token { kind, span });
         }
 
-        // Numbers (integers or floats)
+        // Numbers (integers, hex, binary, or floats)
         if ch.is_ascii_digit() {
             let mut num_str = String::new();
             let mut is_float = false;
+
+            if ch == '0' && (self.peek_next() == Some('x') || self.peek_next() == Some('X')) {
+                self.advance(); // consume '0'
+                self.advance(); // consume 'x'
+                let mut hex_str = String::new();
+                while let Some(c) = self.peek() {
+                    if c.is_ascii_hexdigit() {
+                        hex_str.push(c);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+                let val = i64::from_str_radix(&hex_str, 16)
+                    .or_else(|_| u64::from_str_radix(&hex_str, 16).map(|u| u as i64))
+                    .map_err(|e| format!("Invalid hex literal 0x{}: {}", hex_str, e))?;
+                return Ok(Token { kind: TokenKind::IntLit(val), span });
+            }
+
+            if ch == '0' && (self.peek_next() == Some('b') || self.peek_next() == Some('B')) {
+                self.advance(); // consume '0'
+                self.advance(); // consume 'b'
+                let mut bin_str = String::new();
+                while let Some(c) = self.peek() {
+                    if c == '0' || c == '1' {
+                        bin_str.push(c);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+                let val = i64::from_str_radix(&bin_str, 2)
+                    .map_err(|e| format!("Invalid binary literal 0b{}: {}", bin_str, e))?;
+                return Ok(Token { kind: TokenKind::IntLit(val), span });
+            }
 
             while let Some(c) = self.peek() {
                 if c.is_ascii_digit() {

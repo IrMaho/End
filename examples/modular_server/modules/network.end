@@ -1,0 +1,12 @@
+// Module: modules/network.end
+st EndpointConfig {
+    route: str,
+    port: i32,
+}
+
+pub fn create_endpoint_route(path: str) EndpointConfig {
+    ret EndpointConfig {
+        route: path,
+        port: 8080,
+    }
+}

@@ -207,15 +207,28 @@ impl Parser {
                     _ => (ImportKind::Standard, p),
                 }
             }
+            TokenKind::StringLit(s) => {
+                let p = s.clone();
+                self.advance();
+                (ImportKind::Standard, p)
+            }
             TokenKind::Ident(_) => {
                 let mut full_path = String::new();
-                while let TokenKind::Ident(id) = self.peek_kind() {
-                    full_path.push_str(id);
-                    self.advance();
-                    if self.match_token(&TokenKind::Dot) {
-                        full_path.push('.');
-                    } else {
-                        break;
+                while !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::As) && !self.check(&TokenKind::EOF) {
+                    match self.peek_kind() {
+                        TokenKind::Ident(id) => {
+                            full_path.push_str(id);
+                            self.advance();
+                        }
+                        TokenKind::Dot => {
+                            full_path.push('.');
+                            self.advance();
+                        }
+                        TokenKind::Star => {
+                            full_path.push('*');
+                            self.advance();
+                        }
+                        _ => break,
                     }
                 }
                 (ImportKind::Standard, full_path.clone())
@@ -409,6 +422,15 @@ impl Parser {
             let is_field_pub = self.match_token(&TokenKind::Pub);
             let field_name = match self.advance().kind {
                 TokenKind::Ident(n) => n,
+                TokenKind::Struct => "st".to_string(),
+                TokenKind::Val => "val".to_string(),
+                TokenKind::Mut => "mut".to_string(),
+                TokenKind::Target => "target".to_string(),
+                TokenKind::Match => "match".to_string(),
+                TokenKind::Fn => "fn".to_string(),
+                TokenKind::In => "in".to_string(),
+                TokenKind::Asm => "asm".to_string(),
+                TokenKind::Region => "region".to_string(),
                 other => return Err(format!("Expected field name, found {:?}", other)),
             };
 
@@ -424,7 +446,6 @@ impl Parser {
                 span: field_span,
             });
         }
-
         self.expect(TokenKind::RBrace)?;
 
         Ok(StructDef {
@@ -453,6 +474,15 @@ impl Parser {
             let is_mut = self.match_token(&TokenKind::Mut);
             let param_name = match self.advance().kind {
                 TokenKind::Ident(n) => n,
+                TokenKind::Struct => "st".to_string(),
+                TokenKind::Val => "val".to_string(),
+                TokenKind::Mut => "mut".to_string(),
+                TokenKind::Target => "target".to_string(),
+                TokenKind::Match => "match".to_string(),
+                TokenKind::Fn => "fn".to_string(),
+                TokenKind::In => "in".to_string(),
+                TokenKind::Asm => "asm".to_string(),
+                TokenKind::Region => "region".to_string(),
                 other => return Err(format!("Expected parameter name, found {:?}", other)),
             };
 
@@ -1184,6 +1214,22 @@ impl Parser {
             TokenKind::Null => {
                 self.advance();
                 Ok(Expression::Lit(Literal::Null, span))
+            }
+            TokenKind::Struct => {
+                self.advance();
+                Ok(Expression::Ident("st".to_string(), span))
+            }
+            TokenKind::Val => {
+                self.advance();
+                Ok(Expression::Ident("val".to_string(), span))
+            }
+            TokenKind::Mut => {
+                self.advance();
+                Ok(Expression::Ident("mut".to_string(), span))
+            }
+            TokenKind::Target => {
+                self.advance();
+                Ok(Expression::Ident("target".to_string(), span))
             }
             TokenKind::Ident(name) => {
                 let id = name.clone();

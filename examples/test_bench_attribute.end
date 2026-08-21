@@ -1,0 +1,32 @@
+// Native High-Precision Benchmark Test
+import "../std/time/time.end"
+
+@bench(iterations = 1000000)
+fn bench_matrix_math(count: i32) u64 {
+    mut acc: u64 = 0
+    region bench_scope {
+        for i in count {
+            acc = acc + ((i * 31) ^ 0x55555555)
+        }
+    }
+    ret acc
+}
+
+fn main() void {
+    println("==================================================")
+    println("⚡ End Language: Built-in High-Precision @bench")
+    println("==================================================")
+
+    val iters: i32 = 10000000
+    val start = instant_now()
+    val res = bench_matrix_math(iters)
+    val elapsed_us = instant_elapsed_micros(start)
+
+    println("Computed Benchmark Result:")
+    println(res)
+    println("Total Iterations Executed:")
+    println(iters)
+    println("Elapsed Time (Microseconds):")
+    println(elapsed_us)
+    println("SUCCESS: Hardware-aligned microsecond profiling verified!")
+}

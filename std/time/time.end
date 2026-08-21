@@ -1,0 +1,27 @@
+// End Standard Library: std/time/time.end
+// High-Resolution Native Hardware Clock & High-Precision Timing
+
+st Instant {
+    start_nanos: u64,
+}
+
+fn instant_now() Instant {
+    ret Instant {
+        start_nanos: end_time_now_nanos(),
+    }
+}
+
+fn instant_elapsed_nanos(inst: Instant) u64 {
+    val current: u64 = end_time_now_nanos()
+    ret current - inst.start_nanos
+}
+
+fn instant_elapsed_micros(inst: Instant) u64 {
+    val current: u64 = end_time_now_nanos()
+    ret (current - inst.start_nanos) / 1000
+}
+
+fn instant_elapsed_millis(inst: Instant) u64 {
+    val current: u64 = end_time_now_nanos()
+    ret (current - inst.start_nanos) / 1000000
+}

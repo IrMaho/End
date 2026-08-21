@@ -254,6 +254,7 @@ fn main() {
                 if t.contains("windows") {
                     zig_args.push("-lgdi32".to_string());
                     zig_args.push("-luser32".to_string());
+                    zig_args.push("-lws2_32".to_string());
                 }
             } else {
                 zig_args.push("-march=native".to_string());
@@ -261,6 +262,7 @@ fn main() {
                 {
                     zig_args.push("-lgdi32".to_string());
                     zig_args.push("-luser32".to_string());
+                    zig_args.push("-lws2_32".to_string());
                 }
             }
 
@@ -540,9 +542,76 @@ fn parse_file_line(target: &str) -> (PathBuf, usize) {
     (PathBuf::from(parts[0]), parts[1].parse().unwrap_or(0))
 }
 
+fn resolve_import_file(base_dir: &std::path::Path, path_str: &str) -> Option<PathBuf> {
+    // 1. Direct path
+    let direct = base_dir.join(path_str);
+    if direct.exists() && direct.is_file() {
+        return Some(direct);
+    }
+    let with_ext = base_dir.join(format!("{}.end", path_str));
+    if with_ext.exists() && with_ext.is_file() {
+        return Some(with_ext);
+    }
+    // 2. Dot notation: modules.hardware -> modules/hardware.end
+    let dot_path = path_str.replace('.', "/").replace("::", "/");
+    let dot_file = base_dir.join(format!("{}.end", dot_path));
+    if dot_file.exists() && dot_file.is_file() {
+        return Some(dot_file);
+    }
+    // 3. Workspace std root check
+    let std_candidate = std::path::Path::new("std").join(format!("{}.end", dot_path.trim_start_matches("std/")));
+    if std_candidate.exists() && std_candidate.is_file() {
+        return Some(std_candidate);
+    }
+    None
+}
+
 fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), String> {
+    let mut visited = std::collections::HashSet::new();
+    let mut merged_module = ast::Module {
+        name: "main".to_string(),
+        imports: Vec::new(),
+        enums: Vec::new(),
+        structs: Vec::new(),
+        functions: Vec::new(),
+        span: ast::Span::new(file.to_string_lossy().to_string(), 1, 1),
+    };
+
+    let mut full_source = String::new();
+    load_module_recursive(file, &mut merged_module, &mut full_source, &mut visited)?;
+
     let file_str = file.to_string_lossy().to_string();
-    let source = fs::read_to_string(file).map_err(|e| format!("Failed to read file: {}", e))?;
+    let mut analyzer = SemanticAnalyzer::new(&file_str, &full_source);
+    if let Err(errs) = analyzer.analyze_module(&merged_module) {
+        for err in &errs {
+            let mut diag = Diagnostic::error(&err.code, &err.message, &file_str, err.line, err.col);
+            if let Some(ref h) = err.repair_suggestion {
+                diag = diag.with_help(h);
+            }
+            eprintln!("{}", diag.render(&full_source));
+        }
+        return Err(format!("Found {} semantic errors", errs.len()));
+    }
+
+    Ok((merged_module, analyzer))
+}
+
+fn load_module_recursive(
+    file: &PathBuf,
+    merged: &mut ast::Module,
+    full_source: &mut String,
+    visited: &mut std::collections::HashSet<PathBuf>,
+) -> Result<(), String> {
+    let canonical = file.canonicalize().unwrap_or_else(|_| file.clone());
+    if visited.contains(&canonical) {
+        return Ok(());
+    }
+    visited.insert(canonical);
+
+    let file_str = file.to_string_lossy().to_string();
+    let source = fs::read_to_string(file).map_err(|e| format!("Failed to read file '{}': {}", file_str, e))?;
+    full_source.push_str(&source);
+    full_source.push('\n');
 
     let mut lexer = Lexer::new(&file_str, &source);
     let tokens = match lexer.tokenize_all() {
@@ -550,7 +619,7 @@ fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), S
         Err(e) => {
             let diag = Diagnostic::error("E0001", &e, &file_str, 1, 1);
             eprintln!("{}", diag.render(&source));
-            return Err("Lexing failed".to_string());
+            return Err(format!("Lexing failed for '{}'", file_str));
         }
     };
 
@@ -560,21 +629,25 @@ fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), S
         Err(e) => {
             let diag = Diagnostic::error("E0100", &e, &file_str, parser.current_span().line, parser.current_span().col);
             eprintln!("{}", diag.render(&source));
-            return Err("Parsing failed".to_string());
+            return Err(format!("Parsing failed for '{}'", file_str));
         }
     };
 
-    let mut analyzer = SemanticAnalyzer::new(&file_str, &source);
-    if let Err(errs) = analyzer.analyze_module(&module) {
-        for err in &errs {
-            let mut diag = Diagnostic::error(&err.code, &err.message, &file_str, err.line, err.col);
-            if let Some(ref h) = err.repair_suggestion {
-                diag = diag.with_help(h);
+    let base_dir = file.parent().unwrap_or_else(|| std::path::Path::new("."));
+
+    // Process file imports
+    for imp in &module.imports {
+        merged.imports.push(imp.clone());
+        if let ast::ImportKind::Standard = imp.kind {
+            if let Some(child_path) = resolve_import_file(base_dir, &imp.path) {
+                load_module_recursive(&child_path, merged, full_source, visited)?;
             }
-            eprintln!("{}", diag.render(&source));
         }
-        return Err(format!("Found {} semantic errors", errs.len()));
     }
 
-    Ok((module, analyzer))
+    merged.enums.extend(module.enums);
+    merged.structs.extend(module.structs);
+    merged.functions.extend(module.functions);
+
+    Ok(())
 }

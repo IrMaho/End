@@ -1,0 +1,14 @@
+// Module: modules/hardware.end
+st HardwareStats {
+    cpu_cores: i32,
+    ram_mb: i64,
+    cache_line_bytes: i32,
+}
+
+pub fn get_hardware_info(st: i64) HardwareStats {
+    ret HardwareStats {
+        cpu_cores: 16,
+        ram_mb: st,
+        cache_line_bytes: 64,
+    }
+}
