@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>End Language Web Playground v2.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="logo-area">
+            <span class="logo-icon">👑</span>
+            <span class="logo-text">End Language</span>
+            <span class="badge">WebAssembly Playground</span>
+        </div>
+        <div class="header-actions">
+            <button id="btn-run" class="btn btn-primary">⚡ Run Code</button>
+            <button id="btn-share" class="btn btn-secondary">🔗 Share</button>
+            <button id="btn-clear" class="btn btn-secondary">🧹 Clear</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="editor-section">
+            <div class="panel-header">
+                <span>📝 Source Editor (main.end)</span>
+                <span class="perf-metric">Zero-Leak Strict Mode: Active</span>
+            </div>
+            <textarea id="code-editor" spellcheck="false">// 👑 End Language 2.0 Web Playground
+import "std/sync/atomic.end"
+import "std/ai/tensor.end"
+
+fn main() void {
+    println("👑 Welcome to End Language Web Playground!")
+    
+    // Hardware Atomic CAS
+    val atom = atomic_i64_create(100)
+    val res = atomic_i64_fetch_add(atom, 25)
+    println("Atomic Value: " + res.old_value)
+    
+    // AI Tensor SIMD MatMul
+    val t = tensor_2d(2, 2, [1.0, 2.0, 3.0, 4.0])
+    println("Tensor shape: 2x2 | Contiguous Buffer Ready")
+}
+</textarea>
+        </section>
+
+        <section class="console-section">
+            <div class="panel-header">
+                <span>🖥️ Execution Console & Metrics</span>
+                <span id="exec-time" class="exec-time">Ready</span>
+            </div>
+            <pre id="console-output" class="console-output">👑 [End Playground Initialized] Click 'Run Code' to execute directly in WebAssembly...</pre>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

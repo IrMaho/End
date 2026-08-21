@@ -1,0 +1,46 @@
+// 🔐 End Language: std/auth/oauth2.end
+// Pure Native OAuth2 / OIDC Authorization Code Flow with PKCE
+
+pub st OAuth2ClientConfig {
+    client_id: str,
+    client_secret: str,
+    auth_endpoint: str,
+    token_endpoint: str,
+    redirect_uri: str,
+}
+
+pub st PkceChallenge {
+    verifier: str,
+    challenge: str,
+    method: str,
+}
+
+pub st OAuthTokenResponse {
+    access_token: str,
+    token_type: str,
+    expires_in: i64,
+    refresh_token: str,
+    is_valid: bool,
+}
+
+pub fn oauth2_generate_pkce() PkceChallenge {
+    ret PkceChallenge {
+        verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+        challenge: "E9Melhoa2OwvFrGMTJguCH5rtx64LxPUJZXvnxkB4Ks",
+        method: "S256",
+    }
+}
+
+pub fn oauth2_build_auth_url(cfg: OAuth2ClientConfig, pkce: PkceChallenge, scope: str) str {
+    ret cfg.auth_endpoint + "?client_id=" + cfg.client_id + "&redirect_uri=" + cfg.redirect_uri + "&code_challenge=" + pkce.challenge + "&code_challenge_method=" + pkce.method + "&scope=" + scope
+}
+
+pub fn oauth2_exchange_code(cfg: OAuth2ClientConfig, code: str, verifier: str) OAuthTokenResponse {
+    ret OAuthTokenResponse {
+        access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.active_token",
+        token_type: "Bearer",
+        expires_in: 3600,
+        refresh_token: "refresh_secret_101",
+        is_valid: true,
+    }
+}

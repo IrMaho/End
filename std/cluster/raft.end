@@ -1,0 +1,73 @@
+// 🌐 End Language: std/cluster/raft.end
+// Distributed Raft Consensus Protocol & Clustered State Machine
+
+pub enum RaftRole {
+    Follower,
+    Candidate,
+    Leader,
+}
+
+pub st RaftNode {
+    node_id: i32,
+    current_term: i64,
+    voted_for: i32,
+    role: RaftRole,
+    commit_index: i64,
+    cluster_size: i32,
+}
+
+pub st RequestVoteResult {
+    term: i64,
+    vote_granted: bool,
+}
+
+pub st AppendEntriesResult {
+    term: i64,
+    success: bool,
+}
+
+pub fn raft_node_create(node_id: i32, cluster_size: i32) RaftNode {
+    ret RaftNode {
+        node_id: node_id,
+        current_term: 1,
+        voted_for: 0,
+        role: RaftRole::Follower,
+        commit_index: 0,
+        cluster_size: cluster_size,
+    }
+}
+
+pub fn raft_start_election(node: RaftNode) RaftNode {
+    val new_term = node.current_term + 1
+    ret RaftNode {
+        node_id: node.node_id,
+        current_term: new_term,
+        voted_for: node.node_id,
+        role: RaftRole::Candidate,
+        commit_index: node.commit_index,
+        cluster_size: node.cluster_size,
+    }
+}
+
+pub fn raft_become_leader(node: RaftNode) RaftNode {
+    ret RaftNode {
+        node_id: node.node_id,
+        current_term: node.current_term,
+        voted_for: node.voted_for,
+        role: RaftRole::Leader,
+        commit_index: node.commit_index,
+        cluster_size: node.cluster_size,
+    }
+}
+
+pub fn raft_append_log(node: RaftNode, entry_count: i64) RaftNode {
+    val new_commit = node.commit_index + entry_count
+    ret RaftNode {
+        node_id: node.node_id,
+        current_term: node.current_term,
+        voted_for: node.voted_for,
+        role: node.role,
+        commit_index: new_commit,
+        cluster_size: node.cluster_size,
+    }
+}

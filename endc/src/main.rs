@@ -13,8 +13,10 @@ mod diagnostics;
 mod fuzz;
 mod lexer;
 mod lsp;
+mod mobile;
 mod package;
 mod parser;
+mod repl;
 mod semantic;
 
 use agent_api::{AgentApi, MicroEvaluator, SelfHealingEngine, SemanticCodeSlicer, StructuredAstPatcher};
@@ -25,8 +27,10 @@ use diagnostics::Diagnostic;
 use fuzz::FuzzRunner;
 use lexer::Lexer;
 use lsp::LanguageServer;
+use mobile::MobilePackager;
 use package::PackageManager;
 use parser::Parser as EndParser;
+use repl::ReplEngine;
 use semantic::{SemanticAnalyzer, TreeShaker};
 
 #[derive(Parser)]
@@ -307,6 +311,18 @@ enum Commands {
         /// Format as JSON
         #[arg(long, default_value_t = false)]
         json: bool,
+    },
+    /// Start interactive Read-Eval-Print Loop (REPL)
+    Repl,
+    /// Package End source files into native Android (.aar) or iOS (.xcframework) archives
+    Mobile {
+        /// Platform target (android or ios)
+        platform: String,
+        /// Path to .end source file
+        file: PathBuf,
+        /// Output package archive path (e.g. --out dist/app.aar or dist/App.xcframework)
+        #[arg(short, long)]
+        out: Option<PathBuf>,
     },
 }
 
@@ -1321,6 +1337,51 @@ fn main() {
                 println!("  {} {} unique execution paths explored", "✔".green().bold(), report.unique_paths_explored);
                 println!("  ⚡ Speed: {} exec/sec", report.execs_per_sec);
                 println!("  👑 Security Status: {}", report.status.green().bold());
+            }
+        }
+        Commands::Repl => {
+            let mut repl = ReplEngine::new();
+            repl.start();
+        }
+        Commands::Mobile { platform, file, out } => {
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let clean_platform = platform.to_lowercase();
+            match clean_platform.as_str() {
+                "android" | "aar" => {
+                    let out_path = out.unwrap_or_else(|| PathBuf::from(format!("dist/{}.aar", module.name)));
+                    match MobilePackager::package_android(&module, &out_path) {
+                        Ok(p) => {
+                            println!("📱 {} Packaged Android Archive (.aar) with 4 ABIs at {:?}", "Mobile Packager:".green().bold(), p);
+                        }
+                        Err(e) => {
+                            eprintln!("{} Failed to package Android AAR: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                "ios" | "xcframework" => {
+                    let out_path = out.unwrap_or_else(|| PathBuf::from(format!("dist/{}.xcframework", module.name)));
+                    match MobilePackager::package_ios(&module, &out_path) {
+                        Ok(p) => {
+                            println!("📱 {} Packaged iOS (.xcframework) with SPM headers at {:?}", "Mobile Packager:".green().bold(), p);
+                        }
+                        Err(e) => {
+                            eprintln!("{} Failed to package iOS XCFramework: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                other => {
+                    eprintln!("{} Unsupported mobile platform `{}`. Use 'android' or 'ios'.", "Error:".red().bold(), other);
+                    std::process::exit(1);
+                }
             }
         }
     }
