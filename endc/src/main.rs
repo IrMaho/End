@@ -162,6 +162,9 @@ enum Commands {
         /// Only output struct and enum type definitions
         #[arg(long, default_value_t = false)]
         types_only: bool,
+        /// Maximum token budget for AI prompt context
+        #[arg(short, long)]
+        budget: Option<usize>,
         /// Format as JSON
         #[arg(long, default_value_t = false)]
         json: bool,
@@ -807,7 +810,7 @@ fn main() {
                 println!("{}", serde_json::to_string_pretty(&result).unwrap());
             }
         }
-        Commands::Slice { file, interface_only, types_only, json } => {
+        Commands::Slice { file, interface_only, types_only, budget, json } => {
             let (module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
@@ -817,10 +820,10 @@ fn main() {
             };
 
             if json {
-                let json_slice = SemanticCodeSlicer::slice_json(&module);
+                let json_slice = SemanticCodeSlicer::slice_json(&module, budget);
                 println!("{}", serde_json::to_string_pretty(&json_slice).unwrap());
             } else {
-                let text_slice = SemanticCodeSlicer::slice_module(&module, interface_only, types_only);
+                let text_slice = SemanticCodeSlicer::slice_module(&module, interface_only, types_only, budget);
                 println!("{}", text_slice);
             }
         }
@@ -1595,6 +1598,7 @@ fn load_module_recursive(
 
     Ok(())
 }
+
 
 
 

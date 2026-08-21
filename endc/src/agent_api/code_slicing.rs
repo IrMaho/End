@@ -8,10 +8,11 @@ impl SemanticCodeSlicer {
         module: &Module,
         interface_only: bool,
         types_only: bool,
+        budget: Option<usize>,
     ) -> String {
         let mut out = String::new();
 
-        out.push_str(&format!("// 🧩 End Semantic Skeletal Slice: {}\n\n", module.name));
+        out.push_str(&format!("// ?? End Semantic Skeletal Slice: {}\n\n", module.name));
 
         // 1. Imports
         if !types_only && !module.imports.is_empty() {
@@ -115,11 +116,20 @@ impl SemanticCodeSlicer {
             }
         }
 
+        if let Some(token_budget) = budget {
+            let max_chars = token_budget * 4;
+            if out.len() > max_chars {
+                let mut truncated = out[..max_chars].to_string();
+                truncated.push_str("\n// ... [Truncated to fit token budget]\n");
+                return truncated;
+            }
+        }
+
         out
     }
 
-    pub fn slice_json(module: &Module) -> serde_json::Value {
-        let text = Self::slice_module(module, true, false);
+    pub fn slice_json(module: &Module, budget: Option<usize>) -> serde_json::Value {
+        let text = Self::slice_module(module, true, false, budget);
         let token_estimate = text.split_whitespace().count() * 4 / 3;
 
         let struct_names = module.structs.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
@@ -142,6 +152,7 @@ impl SemanticCodeSlicer {
             "status": "success",
             "module": module.name,
             "estimated_tokens": token_estimate,
+            "budget_applied": budget,
             "structs_count": module.structs.len(),
             "enums_count": module.enums.len(),
             "functions_count": module.functions.len(),
