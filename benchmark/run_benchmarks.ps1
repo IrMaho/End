@@ -107,9 +107,11 @@ $results = @()
 
 # Execute available benchmarks
 $benchList = @(
-    @{ Name = "Numeric Reduction (C11)"; Path = ".\bench_precise.exe"; Lang = "C11" },
-    @{ Name = "Numeric Reduction (Rust)"; Path = ".\bench_rust.exe"; Lang = "Rust" },
-    @{ Name = "Numeric Reduction (Zig)"; Path = ".\bench_zig.exe"; Lang = "Zig" }
+    @{ Name = "10M Reduction (End)"; Path = ".\bench_end.exe"; Lang = "End (C11 Backend)" },
+    @{ Name = "10M Reduction (C11)"; Path = ".\bench_c.exe"; Lang = "C (GCC 15.2)" },
+    @{ Name = "10M Reduction (Zig)"; Path = ".\bench_zig.exe"; Lang = "Zig (ReleaseFast)" },
+    @{ Name = "10M Reduction (Rust)"; Path = ".\bench_rust.exe"; Lang = "Rust (Release -O3)" },
+    @{ Name = "10M Reduction (Go)"; Path = ".\bench_go.exe"; Lang = "Go (1.25.1)" }
 )
 
 foreach ($b in $benchList) {

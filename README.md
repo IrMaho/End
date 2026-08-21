@@ -31,9 +31,11 @@ Performance measurements conform to the statistical specification in [BENCHMARKS
 
 | Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Verification Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 👑 **End (C11 Backend)** | 10M Reduction | **8.33 ms** | **22.54 ms** | **9.49 ms** | **4.33 ms** | ✔ Live Measured |
-| **Rust (Release -O3)** | 10M Reduction | 6.98 ms | 17.38 ms | 7.78 ms | 2.98 ms | ✔ Live Measured |
-| **Zig (ReleaseFast)** | 10M Reduction | 6.76 ms | 20.35 ms | 7.14 ms | 3.17 ms | ✔ Live Measured |
+| 👑 **End (C11 Backend)** | 10M Reduction | **21.80 ms** | **38.90 ms** | **22.43 ms** | **5.04 ms** | ✔ Live Measured |
+| **C (GCC 15.2 -O3)** | 10M Reduction | 15.82 ms | 37.79 ms | 17.15 ms | 4.14 ms | ✔ Live Measured |
+| **Zig (ReleaseFast)** | 10M Reduction | 7.16 ms | 21.32 ms | 7.93 ms | 3.45 ms | ✔ Live Measured |
+| **Rust (Release -O3)** | 10M Reduction | 7.29 ms | 21.51 ms | 8.11 ms | 3.24 ms | ✔ Live Measured |
+| **Go (1.25.1)** | 10M Reduction | 45.69 ms | 59.11 ms | 46.33 ms | 5.01 ms | ✔ Live Measured |
 
 > Raw machine-readable benchmark outputs, hardware metadata, and execution percentiles are automatically generated in [enchmark/benchmark_results.json](benchmark/benchmark_results.json).
 
