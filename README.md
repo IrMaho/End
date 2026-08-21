@@ -25,19 +25,27 @@
 
 </div>
 
-## 📊 Multi-Language Performance Matrix
+## 📊 12-Challenge Grandmaster Performance Matrix
 
-Performance measurements conform to the statistical specification in [BENCHMARKS.md](BENCHMARKS.md) and can be reproduced locally via `powershell -File .enchmarkun_benchmarks.ps1`.
+Performance measurements conform to the 12-benchmark specification in [BENCHMARKS.md](BENCHMARKS.md) and can be reproduced locally via `python benchmarks/suite12/run_suite12.py`.
 
-| Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Source Code Reference | Verification Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| ⚡ **Zig (ReleaseFast)** | 10M Reduction | **4.11 ms** | 5.19 ms | 4.17 ms | 0.25 ms | [`benchmark/bench_zig.zig`](benchmark/bench_zig.zig) | ✔ Live Measured |
-| ⚡ **Rust (Release -O3)** | 10M Reduction | **4.33 ms** | 30.48 ms | 5.15 ms | 3.71 ms | [`benchmark/bench_rust.rs`](benchmark/bench_rust.rs) | ✔ Live Measured |
-| 👑 **End (C11 Backend)** | 10M Reduction | **7.05 ms** | 19.96 ms | 7.77 ms | 2.52 ms | [`benchmark/bench_end.end`](benchmark/bench_end.end) | ✔ Live Measured |
-| ⚡ **C (GCC 15.2 -O3)** | 10M Reduction | **12.61 ms** | 27.25 ms | 13.70 ms | 3.15 ms | [`benchmark/bench_c.c`](benchmark/bench_c.c) | ✔ Live Measured |
-| ⚡ **Go (1.25.1)** | 10M Reduction | **35.34 ms** | 50.15 ms | 36.59 ms | 3.88 ms | [`benchmark/bench_go.go`](benchmark/bench_go.go) | ✔ Live Measured |
+| Benchmark Challenge | 👑 **End (C11)** | ⚡ **Zig (0.16.0)** | ⚡ **Rust (1.89.0)** | ⚡ **C (GCC 15.2)** | ⚡ **Go (1.25.1)** | Verification |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1. 3D SDF Raymarcher (250K Rays)** | **68.23 ms** | 59.79 ms | 60.18 ms | 50.10 ms | 41.30 ms 🥇 | `17840942` ✅ |
+| **2. Binary Trees (Depth 16 Dynamic)** | **487.85 ms** | 351.88 ms 🥇 | 561.47 ms | 493.55 ms | 455.79 ms | `407713` ✅ |
+| **3. HFT Limit Order Engine (1M Orders)** | **26.14 ms** | 22.50 ms 🥇 | 23.72 ms | 27.57 ms | 25.85 ms | `552829538` ✅ |
+| **4. SHA-256 Crypto Hashing (500K Blocks)** | **95.97 ms** | 92.63 ms | 102.03 ms | 90.61 ms 🥇 | 102.45 ms | `-4721506799343634759` ✅ |
+| **5. N-Body Gravity Orbit (1M Pairwise)** | **1858.70 ms** | 2164.25 ms | 2180.32 ms | 1790.46 ms 🥇 | 3050.80 ms | `1656141296` ✅ |
+| **6. SPSC Ring Buffer Queue (10M Items)** | **3.38 ms** | 2.57 ms | 1.46 ms | 0.00 ms 🥇 | 8.09 ms | `1550000015000000` ✅ |
+| **7. DNA Levenshtein Matrix (1M Cells)** | **970.42 ms** 🥇 | 2188.07 ms | 2194.66 ms | 1203.28 ms | 2266.70 ms | `525912` ✅ |
+| **8. JSON Microservice Serializer (100K)** | **59.05 ms** | 12.38 ms 🥇 | 25.05 ms | 55.05 ms | 39.07 ms | `5588438541400559045` ✅ |
+| **9. FSM Lexer Stream (10M Chars)** | **8.13 ms** 🥇 | 12.52 ms | 16.67 ms | 8.17 ms | 20.54 ms | `-6471218147204355511` ✅ |
+| **10. GEMM Matrix Multiplication (512x512)** | **62.65 ms** | 73.59 ms | 58.50 ms | 23.99 ms 🥇 | 109.85 ms | `6422836` ✅ |
+| **11. Monte Carlo Black-Scholes (2M Paths)** | **51.31 ms** | 32.88 ms 🥇 | 41.72 ms | 43.75 ms | 49.31 ms | `10440247` ✅ |
+| **12. Super-Scalar ALU Reduction (10M)** | **208.19 ms** | 0.01 ms | 0.00 ms 🥇 | 212.95 ms | 454.54 ms | `-6815960706871662336` ✅ |
+| **📦 Executable Binary Size** | 🥇 **41.0 KB** | 834.0 KB | 184.5 KB | 76.9 KB | 1592.5 KB | Stripped Native |
 
-> 📁 **Verification Datasets & Specifications:** Raw machine-readable outputs, execution percentiles, and hardware metadata are saved in [benchmark/benchmark_results.json](benchmark/benchmark_results.json). Comprehensive multi-suite specifications (HTTP, HFT, 3D Raymarching, Memory Torture) are detailed in [BENCHMARKS.md](BENCHMARKS.md).
+> 📁 **Verification Datasets & Specifications:** Raw machine-readable outputs, execution percentiles, and hardware metadata are saved in [benchmarks/suite12/suite12_results.json](benchmarks/suite12/suite12_results.json). Full source codes and reproduction instructions are documented in [BENCHMARKS.md](BENCHMARKS.md).
 
 ---
 

@@ -1,0 +1,564 @@
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<math.h>")
+@import_c("<stdint.h>")
+@import_c("<windows.h>")
+
+// ==============================================================================
+// 👑 End Language — 12-Challenge Grandmaster Benchmark Suite
+// ==============================================================================
+
+pub fn get_time_ns() u64 {
+    mut freq: i64 = 0
+    mut counter: i64 = 0
+    QueryPerformanceFrequency(&freq)
+    QueryPerformanceCounter(&counter)
+    ret ((counter as u64) * 1000000000) / (freq as u64)
+}
+
+pub fn splitmix64(state: *u64) u64 {
+    *state = *state + 0x9E3779B97F4A7C15
+    mut z: u64 = *state
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EB
+    ret z ^ (z >> 31)
+}
+
+// 1. Raymarcher (250,000 rays)
+st Vec3 { x: f32, y: f32, z: f32 }
+
+pub fn v_add(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z } }
+pub fn v_sub(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z } }
+pub fn v_scale(a: Vec3, s: f32) Vec3 { ret Vec3 { x: a.x * s, y: a.y * s, z: a.z * s } }
+pub fn v_dot(a: Vec3, b: Vec3) f32 { ret a.x * b.x + a.y * b.y + a.z * b.z }
+pub fn v_length(a: Vec3) f32 { ret sqrtf(v_dot(a, a)) }
+pub fn v_norm(a: Vec3) Vec3 {
+    val l: f32 = v_length(a)
+    if l > 0.00001 { ret v_scale(a, 1.0 / l) }
+    ret a
+}
+
+pub fn sdf_sphere(p: Vec3, r: f32) f32 { ret v_length(p) - r }
+pub fn sdf_torus(p: Vec3, r1: f32, r2: f32) f32 {
+    val qx: f32 = sqrtf(p.x * p.x + p.z * p.z) - r1
+    ret sqrtf(qx * qx + p.y * p.y) - r2
+}
+pub fn sdf_scene(p: Vec3) f32 {
+    val d_sphere: f32 = sdf_sphere(v_sub(p, Vec3 { x: 0.0, y: 1.0, z: 0.0 }), 1.0)
+    val d_torus: f32 = sdf_torus(v_sub(p, Vec3 { x: 0.0, y: 0.5, z: 0.0 }), 1.2, 0.3)
+    val d_floor: f32 = p.y
+    mut d: f32 = d_sphere
+    if d_torus < d { d = d_torus }
+    if d_floor < d { d = d_floor }
+    ret d
+}
+pub fn calc_normal(p: Vec3) Vec3 {
+    val eps: f32 = 0.001
+    ret v_norm(Vec3 {
+        x: sdf_scene(Vec3 { x: p.x + eps, y: p.y, z: p.z }) - sdf_scene(Vec3 { x: p.x - eps, y: p.y, z: p.z }),
+        y: sdf_scene(Vec3 { x: p.x, y: p.y + eps, z: p.z }) - sdf_scene(Vec3 { x: p.x, y: p.y - eps, z: p.z }),
+        z: sdf_scene(Vec3 { x: p.x, y: p.y, z: p.z + eps }) - sdf_scene(Vec3 { x: p.x, y: p.y, z: p.z - eps }),
+    })
+}
+
+pub fn bench_1_raymarcher() i64 {
+    val width: i32 = 500
+    val height: i32 = 500
+    mut checksum: i64 = 0
+    val ro: Vec3 = Vec3 { x: 0.0, y: 1.5, z: -3.5 }
+    val light_pos: Vec3 = Vec3 { x: 2.0, y: 4.0, z: -2.0 }
+
+    for y in 500 {
+        for x in 500 {
+            val u: f32 = (2.0 * (x as f32) - (width as f32)) / (height as f32)
+            val v: f32 = -(2.0 * (y as f32) - (height as f32)) / (height as f32)
+            val rd: Vec3 = v_norm(Vec3 { x: u, y: v, z: 1.5 })
+            mut t: f32 = 0.0
+            mut hit: i32 = 0
+            for step in 64 {
+                val p: Vec3 = v_add(ro, v_scale(rd, t))
+                val d: f32 = sdf_scene(p)
+                if d < 0.001 {
+                    val n: Vec3 = calc_normal(p)
+                    val l: Vec3 = v_norm(v_sub(light_pos, p))
+                    mut diff: f32 = v_dot(n, l)
+                    if diff < 0.0 { diff = 0.0 }
+                    val color: i64 = (diff * 255.0) as i64
+                    checksum = checksum + color
+                    hit = 1
+                    break
+                }
+                t = t + d
+                if t > 20.0 { break }
+            }
+            if hit == 0 { checksum = checksum + 10 }
+        }
+    }
+    ret checksum
+}
+
+// 2. Binary Trees (Depth 16)
+st TreeNode {
+    left: *TreeNode,
+    right: *TreeNode,
+    value: i32,
+}
+
+pub fn create_tree(depth: i32) *TreeNode {
+    val node: *TreeNode = malloc(24) as *TreeNode
+    node.value = depth
+    if depth > 0 {
+        node.left = create_tree(depth - 1)
+        node.right = create_tree(depth - 1)
+    } else {
+        node.left = 0 as *TreeNode
+        node.right = 0 as *TreeNode
+    }
+    ret node
+}
+pub fn sum_tree(node: *TreeNode) i64 {
+    if (node as u64) == 0 { ret 0 }
+    ret (node.value as i64) + sum_tree(node.left) - sum_tree(node.right)
+}
+pub fn free_tree(node: *TreeNode) void {
+    if (node as u64) == 0 { ret }
+    free_tree(node.left)
+    free_tree(node.right)
+    free(node as *u8)
+}
+
+pub fn bench_2_binary_trees() i64 {
+    val max_depth: i32 = 16
+    val stretch: *TreeNode = create_tree(max_depth + 1)
+    mut check: i64 = sum_tree(stretch)
+    free_tree(stretch)
+
+    val long_lived: *TreeNode = create_tree(max_depth)
+    for d_idx in 7 {
+        val depth: i32 = 4 + (d_idx * 2)
+        if depth <= max_depth {
+            val iterations: i32 = 1 << ((max_depth - depth + 4) as u32)
+            for i in iterations {
+                val t1: *TreeNode = create_tree(depth)
+                check = check + sum_tree(t1)
+                free_tree(t1)
+            }
+        }
+    }
+    check = check + sum_tree(long_lived)
+    free_tree(long_lived)
+    ret check
+}
+
+// 3. HFT Order Matching Engine (1,000,000 Orders)
+pub fn bench_3_hft_engine() i64 {
+    mut rng: u64 = 0x123456789ABCDEF0
+    mut total_volume: i64 = 0
+    val buy_depth: *i32 = malloc(400) as *i32
+    val sell_depth: *i32 = malloc(400) as *i32
+    for i in 100 { buy_depth[i] = 0; sell_depth[i] = 0 }
+
+    for i in 1000000 {
+        val r: u64 = splitmix64(&rng)
+        val side: u64 = (r >> 63) & 1
+        val price: i32 = (r % 100) as i32
+        mut qty: i32 = (((r >> 8) % 50) + 1) as i32
+        val op: u64 = (r >> 16) % 10
+
+        if op == 0 {
+            if side == 0 { buy_depth[price] = 0 }
+            else { sell_depth[price] = 0 }
+        } else if side == 0 {
+            for p_down in (price + 1) {
+                val p: i32 = price - p_down
+                if qty > 0 && sell_depth[p] > 0 {
+                    mut fill: i32 = qty
+                    if sell_depth[p] < fill { fill = sell_depth[p] }
+                    sell_depth[p] = sell_depth[p] - fill
+                    qty = qty - fill
+                    total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
+                }
+            }
+            if qty > 0 { buy_depth[price] = buy_depth[price] + qty }
+        } else {
+            for p_up in (100 - price) {
+                val p: i32 = price + p_up
+                if qty > 0 && buy_depth[p] > 0 {
+                    mut fill: i32 = qty
+                    if buy_depth[p] < fill { fill = buy_depth[p] }
+                    buy_depth[p] = buy_depth[p] - fill
+                    qty = qty - fill
+                    total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
+                }
+            }
+            if qty > 0 { sell_depth[price] = sell_depth[price] + qty }
+        }
+    }
+    free(buy_depth as *u8)
+    free(sell_depth as *u8)
+    ret total_volume
+}
+
+// 4. SHA-256 (500,000 Blocks = 32 MB)
+pub fn rotr(x: u32, n: u32) u32 { ret (x >> n) | (x << (32 - n)) }
+
+pub fn bench_4_sha256() i64 {
+    val state: *u32 = malloc(32) as *u32
+    state[0] = 0x6a09e667; state[1] = 0xbb67ae85; state[2] = 0x3c6ef372; state[3] = 0xa54ff53a
+    state[4] = 0x510e527f; state[5] = 0x9b05688c; state[6] = 0x1f83d9ab; state[7] = 0x5be0cd19
+
+    val k_table: *u32 = malloc(256) as *u32
+    k_table[0] = 0x428a2f98; k_table[1] = 0x71374491; k_table[2] = 0xb5c0fbcf; k_table[3] = 0xe9b5dba5
+    k_table[4] = 0x3956c25b; k_table[5] = 0x59f111f1; k_table[6] = 0x923f82a4; k_table[7] = 0xab1c5ed5
+    k_table[8] = 0xd807aa98; k_table[9] = 0x12835b01; k_table[10] = 0x243185be; k_table[11] = 0x550c7dc3
+    k_table[12] = 0x72be5d74; k_table[13] = 0x80deb1fe; k_table[14] = 0x9bdc06a7; k_table[15] = 0xc19bf174
+    k_table[16] = 0xe49b69c1; k_table[17] = 0xefbe4786; k_table[18] = 0x0fc19dc6; k_table[19] = 0x240ca1cc
+    k_table[20] = 0x2de92c6f; k_table[21] = 0x4a7484aa; k_table[22] = 0x5cb0a9dc; k_table[23] = 0x76f988da
+    k_table[24] = 0x983e5152; k_table[25] = 0xa831c66d; k_table[26] = 0xb00327c8; k_table[27] = 0xbf597fc7
+    k_table[28] = 0xc6e00bf3; k_table[29] = 0xd5a79147; k_table[30] = 0x06ca6351; k_table[31] = 0x14292967
+    k_table[32] = 0x27b70a85; k_table[33] = 0x2e1b2138; k_table[34] = 0x4d2c6dfc; k_table[35] = 0x53380d13
+    k_table[36] = 0x650a7354; k_table[37] = 0x766a0abb; k_table[38] = 0x81c2c92e; k_table[39] = 0x92722c85
+    k_table[40] = 0xa2bfe8a1; k_table[41] = 0xa81a664b; k_table[42] = 0xc24b8b70; k_table[43] = 0xc76c51a3
+    k_table[44] = 0xd192e819; k_table[45] = 0xd6990624; k_table[46] = 0xf40e3585; k_table[47] = 0x106aa070
+    k_table[48] = 0x19a4c116; k_table[49] = 0x1e376c08; k_table[50] = 0x2748774c; k_table[51] = 0x34b0bcb5
+    k_table[52] = 0x391c0cb3; k_table[53] = 0x4ed8aa4a; k_table[54] = 0x5b9cca4f; k_table[55] = 0x682e6ff3
+    k_table[56] = 0x748f82ee; k_table[57] = 0x78a5636f; k_table[58] = 0x84c87814; k_table[59] = 0x8cc70208
+    k_table[60] = 0x90befffa; k_table[61] = 0xa4506ceb; k_table[62] = 0x0bef9a3f; k_table[63] = 0xc67178f2
+
+    val w: *u32 = malloc(256) as *u32
+    mut prng: u64 = 0xCAFEBABE12345678
+
+    for block in 500000 {
+        for i in 16 { w[i] = splitmix64(&prng) as u32 }
+        for i in 48 {
+            val idx: i32 = i + 16
+            val s0: u32 = rotr(w[idx - 15], 7) ^ rotr(w[idx - 15], 18) ^ (w[idx - 15] >> 3)
+            val s1: u32 = rotr(w[idx - 2], 17) ^ rotr(w[idx - 2], 19) ^ (w[idx - 2] >> 10)
+            w[idx] = w[idx - 16] + s0 + w[idx - 7] + s1
+        }
+        mut a: u32 = state[0]; mut b: u32 = state[1]; mut c: u32 = state[2]; mut d: u32 = state[3]
+        mut e: u32 = state[4]; mut f: u32 = state[5]; mut g: u32 = state[6]; mut h: u32 = state[7]
+
+        for i in 64 {
+            val s1_rot: u32 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
+            val ch: u32 = (e & f) ^ ((~e) & g)
+            val temp1: u32 = h + s1_rot + ch + k_table[i] + w[i]
+            val s0_rot: u32 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
+            val maj: u32 = (a & b) ^ (a & c) ^ (b & c)
+            val temp2: u32 = s0_rot + maj
+
+            h = g; g = f; f = e; e = d + temp1
+            d = c; c = b; b = a; a = temp1 + temp2
+        }
+        state[0] = state[0] + a; state[1] = state[1] + b
+        state[2] = state[2] + c; state[3] = state[3] + d
+        state[4] = state[4] + e; state[5] = state[5] + f
+        state[6] = state[6] + g; state[7] = state[7] + h
+    }
+    val res: u64 = ((state[0] as u64) << 32) | (state[7] as u64)
+    free(state as *u8)
+    free(k_table as *u8)
+    free(w as *u8)
+    ret res as i64
+}
+
+// 5. N-Body (1,000 Bodies × 1,000 Steps)
+pub fn bench_5_nbody() i64 {
+    val pos_x: *f32 = malloc(4000) as *f32
+    val pos_y: *f32 = malloc(4000) as *f32
+    val pos_z: *f32 = malloc(4000) as *f32
+    val vel_x: *f32 = malloc(4000) as *f32
+    val vel_y: *f32 = malloc(4000) as *f32
+    val vel_z: *f32 = malloc(4000) as *f32
+    val mass: *f32 = malloc(4000) as *f32
+    mut prng: u64 = 0x5555AAAA5555AAAA
+
+    for i in 1000 {
+        pos_x[i] = (((splitmix64(&prng) % 1000) as f32) / 100.0) - 5.0
+        pos_y[i] = (((splitmix64(&prng) % 1000) as f32) / 100.0) - 5.0
+        pos_z[i] = (((splitmix64(&prng) % 1000) as f32) / 100.0) - 5.0
+        vel_x[i] = 0.0; vel_y[i] = 0.0; vel_z[i] = 0.0
+        mass[i] = 1.0 + (((splitmix64(&prng) % 100) as f32) / 10.0)
+    }
+
+    val dt: f32 = 0.01
+    val eps2: f32 = 0.001
+
+    for step in 1000 {
+        for i in 1000 {
+            mut fx: f32 = 0.0; mut fy: f32 = 0.0; mut fz: f32 = 0.0
+            for j in 1000 {
+                if i != j {
+                    val dx: f32 = pos_x[j] - pos_x[i]
+                    val dy: f32 = pos_y[j] - pos_y[i]
+                    val dz: f32 = pos_z[j] - pos_z[i]
+                    val dist_sq: f32 = dx * dx + dy * dy + dz * dz + eps2
+                    val dist_inv: f32 = 1.0 / sqrtf(dist_sq)
+                    val f: f32 = mass[j] * (dist_inv * dist_inv * dist_inv)
+                    fx = fx + dx * f
+                    fy = fy + dy * f
+                    fz = fz + dz * f
+                }
+            }
+            vel_x[i] = vel_x[i] + fx * dt
+            vel_y[i] = vel_y[i] + fy * dt
+            vel_z[i] = vel_z[i] + fz * dt
+        }
+        for i in 1000 {
+            pos_x[i] = pos_x[i] + vel_x[i] * dt
+            pos_y[i] = pos_y[i] + vel_y[i] * dt
+            pos_z[i] = pos_z[i] + vel_z[i] * dt
+        }
+    }
+
+    mut total_ke: f64 = 0.0
+    for i in 1000 {
+        val vx: f64 = vel_x[i] as f64
+        val vy: f64 = vel_y[i] as f64
+        val vz: f64 = vel_z[i] as f64
+        total_ke = total_ke + 0.5 * (mass[i] as f64) * (vx * vx + vy * vy + vz * vz)
+    }
+    free(pos_x as *u8); free(pos_y as *u8); free(pos_z as *u8)
+    free(vel_x as *u8); free(vel_y as *u8); free(vel_z as *u8); free(mass as *u8)
+    ret (total_ke * 1000.0) as i64
+}
+
+// 6. Ring Buffer SPSC Queue (10,000,000 Items)
+pub fn bench_6_ring_buffer() i64 {
+    val cap: i32 = 65536
+    val mask_val: i32 = cap - 1
+    val ring: *i64 = malloc(524288) as *i64
+    mut total_sum: i64 = 0
+
+    mut head: i32 = 0
+    mut tail: i32 = 0
+    for chunk_idx in 156250 {
+        val base_chunk: i32 = chunk_idx * 64
+        for k in 64 {
+            ring[(tail + k) & mask_val] = ((base_chunk + k) as i64) * 31 + 17
+        }
+        tail = tail + 64
+        for k in 64 {
+            total_sum = total_sum + ring[(head + k) & mask_val]
+        }
+        head = head + 64
+    }
+    free(ring as *u8)
+    ret total_sum
+}
+
+// 7. DNA Levenshtein (1,000 Pairs × 1,000 bp)
+pub fn bench_7_dna_alignment() i64 {
+    val n_size: i32 = 1000
+    val dp: *i32 = malloc(4004) as *i32
+    mut prng: u64 = 0x9999888877776666
+    val s1: *u8 = malloc(1000)
+    val s2: *u8 = malloc(1000)
+    val bases: *u8 = "ACGT" as *u8
+
+    mut total_distance: i64 = 0
+    for pair in 1000 {
+        for i in 1000 {
+            s1[i] = bases[(splitmix64(&prng) % 4) as i32]
+            s2[i] = bases[(splitmix64(&prng) % 4) as i32]
+        }
+        for j in 1001 { dp[j] = j }
+
+        for i_idx in 1000 {
+            val i: i32 = i_idx + 1
+            mut prev: i32 = dp[0]
+            dp[0] = i
+            for j_idx in 1000 {
+                val j: i32 = j_idx + 1
+                val temp: i32 = dp[j]
+                mut cost_val: i32 = 1
+                if s1[i - 1] == s2[j - 1] { cost_val = 0 }
+                val d1: i32 = dp[j - 1] + 1
+                val d2: i32 = dp[j] + 1
+                val d3: i32 = prev + cost_val
+                mut min_d: i32 = d1
+                if d2 < min_d { min_d = d2 }
+                if d3 < min_d { min_d = d3 }
+                dp[j] = min_d
+                prev = temp
+            }
+        }
+        total_distance = total_distance + (dp[n_size] as i64)
+    }
+    free(dp as *u8); free(s1); free(s2)
+    ret total_distance
+}
+
+// 8. JSON Microservice (100,000 Requests)
+pub fn bench_8_json_serializer() i64 {
+    val buf: *u8 = malloc(512)
+    val fmt: *u8 = "{\"id\":%d,\"status\":\"active\",\"latency_us\":%d,\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":%.1f,\"mem\":%.1f}}" as *u8
+    mut hash: i64 = 0
+
+    for i in 100000 {
+        val len: i32 = sprintf(buf, fmt, i, (i * 37) % 500, 42.5 + ((i % 10) as f64), 128.4 + ((i % 50) as f64))
+        hash = (hash * 31) + (len as i64) + ((buf[len / 2]) as i64)
+    }
+    free(buf)
+    ret hash
+}
+
+// 9. FSM Lexer (10,000,000 Characters)
+pub fn bench_9_fsm_lexer() i64 {
+    val sample: *u8 = "pub fn calculate_metrics(id: u64, active: bool) -> i64 { val base = id * 31; ret base + 10; } " as *u8
+    val sample_len: i32 = 98
+    mut token_count: i64 = 0
+    mut token_hash: i64 = 0
+    mut fsm_state: i32 = 0
+
+    for i in 10000000 {
+        val c: u8 = sample[i % sample_len]
+        if fsm_state == 0 {
+            if (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95 { fsm_state = 1 }
+            else if c >= 48 && c <= 57 { fsm_state = 2 }
+            else if c != 32 && c != 10 && c != 9 { fsm_state = 3 }
+        } else if fsm_state == 1 {
+            if !((c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95) {
+                token_count = token_count + 1
+                token_hash = (token_hash * 33) + 1
+                fsm_state = 0
+            }
+        } else if fsm_state == 2 {
+            if !(c >= 48 && c <= 57) {
+                token_count = token_count + 1
+                token_hash = (token_hash * 33) + 2
+                fsm_state = 0
+            }
+        } else if fsm_state == 3 {
+            token_count = token_count + 1
+            token_hash = (token_hash * 33) + 3
+            fsm_state = 0
+        }
+    }
+    ret token_hash + token_count
+}
+
+// 10. GEMM Matrix Multiplication 512x512
+pub fn bench_10_gemm_matrix() i64 {
+    val n_dim: i32 = 512
+    val a_mat: *f64 = malloc(2097152) as *f64
+    val b_mat: *f64 = malloc(2097152) as *f64
+    val c_mat: *f64 = malloc(2097152) as *f64
+
+    for idx in 262144 {
+        a_mat[idx] = ((idx % 100) as f64) * 0.01
+        b_mat[idx] = (((idx * 3) % 100) as f64) * 0.01
+        c_mat[idx] = 0.0
+    }
+
+    for b_j in 16 {
+        val sj: i32 = b_j * 32
+        for b_i in 16 {
+            val si: i32 = b_i * 32
+            for b_k in 16 {
+                val sk: i32 = b_k * 32
+                for di in 32 {
+                    val i: i32 = si + di
+                    for dk in 32 {
+                        val k: i32 = sk + dk
+                        val a_ik: f64 = a_mat[i * n_dim + k]
+                        for dj in 32 {
+                            val j: i32 = sj + dj
+                            c_mat[i * n_dim + j] = c_mat[i * n_dim + j] + a_ik * (b_mat[k * n_dim + j])
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    mut trace: f64 = 0.0
+    for i in 512 { trace = trace + c_mat[i * n_dim + i] }
+    free(a_mat as *u8); free(b_mat as *u8); free(c_mat as *u8)
+    ret (trace * 100.0) as i64
+}
+
+// 11. Monte Carlo Black-Scholes (2,000,000 Paths)
+pub fn bench_11_monte_carlo() i64 {
+    val paths_cnt: i32 = 2000000
+    val s0_price: f64 = 100.0; val k_strike: f64 = 100.0; val t_time: f64 = 1.0; val r: f64 = 0.05; val sigma: f64 = 0.20
+    val drift: f64 = (r - 0.5 * sigma * sigma) * t_time
+    val vol: f64 = sigma * sqrt(t_time)
+    val discount: f64 = exp(-r * t_time)
+
+    mut prng: u64 = 0xFEEDFACECAFE1234
+    mut total_payoff: f64 = 0.0
+
+    for pair in 1000000 {
+        val u1: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) / 9007199254740992.0
+        val u2: f64 = (((splitmix64(&prng) >> 11) + 1) as f64) / 9007199254740992.0
+        val radius: f64 = sqrt(-2.0 * log(u1))
+        val theta: f64 = 2.0 * 3.14159265358979323846 * u2
+        val z1: f64 = radius * cos(theta)
+        val z2: f64 = radius * sin(theta)
+
+        val s_t1: f64 = s0_price * exp(drift + vol * z1)
+        val s_t2: f64 = s0_price * exp(drift + vol * z2)
+
+        mut payoff1: f64 = 0.0
+        if s_t1 > k_strike { payoff1 = s_t1 - k_strike }
+        mut payoff2: f64 = 0.0
+        if s_t2 > k_strike { payoff2 = s_t2 - k_strike }
+
+        total_payoff = total_payoff + payoff1 + payoff2
+    }
+    val option_price: f64 = (total_payoff / (paths_cnt as f64)) * discount
+    ret (option_price * 1000000.0) as i64
+}
+
+// 12. Super-Scalar Reduction
+st Req12 { id: u64, payload_size: i32, checksum: i64 }
+pub fn process_req12(id: u64, size: i32) Req12 {
+    mut hash: u64 = 17
+    for j in 50 {
+        hash = (hash * 31) + id + j
+    }
+    val req = Req12 { id: id, payload_size: size, checksum: hash as i64 }
+    ret req
+}
+
+pub fn bench_12_reduction() i64 {
+    mut sum0: i64 = 0; mut sum1: i64 = 0; mut sum2: i64 = 0; mut sum3: i64 = 0
+
+    for i_idx in 2500000 {
+        val i: u64 = (i_idx as u64) * 4
+        sum0 = sum0 + process_req12(i, 256).checksum
+        sum1 = sum1 + process_req12(i + 1, 256).checksum
+        sum2 = sum2 + process_req12(i + 2, 256).checksum
+        sum3 = sum3 + process_req12(i + 3, 256).checksum
+    }
+    ret sum0 + sum1 + sum2 + sum3
+}
+
+pub fn main(argc: i32, argv: **u8) i32 {
+    if argc < 2 {
+        printf("Usage: suite12_end.exe <id (1..12)>\n")
+        ret 1
+    }
+    val id: i32 = atoi(*(argv + 1))
+    mut check: i64 = 0
+
+    val t0: u64 = get_time_ns()
+    if id == 1 { check = bench_1_raymarcher() }
+    else if id == 2 { check = bench_2_binary_trees() }
+    else if id == 3 { check = bench_3_hft_engine() }
+    else if id == 4 { check = bench_4_sha256() }
+    else if id == 5 { check = bench_5_nbody() }
+    else if id == 6 { check = bench_6_ring_buffer() }
+    else if id == 7 { check = bench_7_dna_alignment() }
+    else if id == 8 { check = bench_8_json_serializer() }
+    else if id == 9 { check = bench_9_fsm_lexer() }
+    else if id == 10 { check = bench_10_gemm_matrix() }
+    else if id == 11 { check = bench_11_monte_carlo() }
+    else if id == 12 { check = bench_12_reduction() }
+    val t1: u64 = get_time_ns()
+
+    val ms: f64 = ((t1 - t0) as f64) / 1000000.0
+    printf("RESULT:bench=%d,time_ms=%.3f,checksum=%lld\n", id, ms, check)
+    ret 0
+}

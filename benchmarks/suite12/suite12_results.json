@@ -1,0 +1,569 @@
+{
+  "timestamp": "2026-08-21 10:56:15",
+  "benchmarks": {
+    "1. 3D SDF Raymarcher (250K Rays)": {
+      "End (C11 Backend)": {
+        "mean_ms": 66.44,
+        "p50_ms": 68.23,
+        "std_dev": 3.95,
+        "min_ms": 62.06,
+        "max_ms": 70.53,
+        "checksum": "17840942",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 59.5,
+        "p50_ms": 59.79,
+        "std_dev": 2.5,
+        "min_ms": 56.89,
+        "max_ms": 62.38,
+        "checksum": "17840960",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 61.0,
+        "p50_ms": 60.18,
+        "std_dev": 5.89,
+        "min_ms": 55.33,
+        "max_ms": 69.36,
+        "checksum": "17840960",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 50.42,
+        "p50_ms": 50.1,
+        "std_dev": 2.27,
+        "min_ms": 47.11,
+        "max_ms": 52.68,
+        "checksum": "17840942",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 40.61,
+        "p50_ms": 41.3,
+        "std_dev": 3.41,
+        "min_ms": 35.33,
+        "max_ms": 44.34,
+        "checksum": "17840960",
+        "binary_kb": 1592.5
+      }
+    },
+    "2. Binary Trees (Depth 16 Dynamic)": {
+      "End (C11 Backend)": {
+        "mean_ms": 498.32,
+        "p50_ms": 487.85,
+        "std_dev": 45.08,
+        "min_ms": 444.02,
+        "max_ms": 566.9,
+        "checksum": "407713",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 352.27,
+        "p50_ms": 351.88,
+        "std_dev": 18.72,
+        "min_ms": 328.78,
+        "max_ms": 378.45,
+        "checksum": "407713",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 553.18,
+        "p50_ms": 561.47,
+        "std_dev": 24.22,
+        "min_ms": 511.57,
+        "max_ms": 574.73,
+        "checksum": "407713",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 481.39,
+        "p50_ms": 493.55,
+        "std_dev": 21.52,
+        "min_ms": 448.88,
+        "max_ms": 499.21,
+        "checksum": "407713",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 463.03,
+        "p50_ms": 455.79,
+        "std_dev": 13.57,
+        "min_ms": 450.67,
+        "max_ms": 482.34,
+        "checksum": "407713",
+        "binary_kb": 1592.5
+      }
+    },
+    "3. HFT Limit Order Engine (1M Orders)": {
+      "End (C11 Backend)": {
+        "mean_ms": 25.9,
+        "p50_ms": 26.14,
+        "std_dev": 0.67,
+        "min_ms": 24.88,
+        "max_ms": 26.54,
+        "checksum": "552829538",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 23.28,
+        "p50_ms": 22.5,
+        "std_dev": 1.47,
+        "min_ms": 22.26,
+        "max_ms": 25.72,
+        "checksum": "552829538",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 24.41,
+        "p50_ms": 23.72,
+        "std_dev": 1.83,
+        "min_ms": 22.57,
+        "max_ms": 26.62,
+        "checksum": "552829538",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 29.07,
+        "p50_ms": 27.57,
+        "std_dev": 2.85,
+        "min_ms": 26.92,
+        "max_ms": 33.65,
+        "checksum": "552829538",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 26.14,
+        "p50_ms": 25.85,
+        "std_dev": 0.94,
+        "min_ms": 25.31,
+        "max_ms": 27.62,
+        "checksum": "552829538",
+        "binary_kb": 1592.5
+      }
+    },
+    "4. SHA-256 Crypto Hashing (500K Blocks)": {
+      "End (C11 Backend)": {
+        "mean_ms": 96.52,
+        "p50_ms": 95.97,
+        "std_dev": 4.49,
+        "min_ms": 92.08,
+        "max_ms": 103.73,
+        "checksum": "-4721506799343634759",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 94.98,
+        "p50_ms": 92.63,
+        "std_dev": 4.04,
+        "min_ms": 91.61,
+        "max_ms": 99.87,
+        "checksum": "-4721506799343634759",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 101.03,
+        "p50_ms": 102.03,
+        "std_dev": 4.92,
+        "min_ms": 94.92,
+        "max_ms": 106.25,
+        "checksum": "-4721506799343634759",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 92.25,
+        "p50_ms": 90.61,
+        "std_dev": 3.59,
+        "min_ms": 89.32,
+        "max_ms": 97.79,
+        "checksum": "-4721506799343634759",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 104.72,
+        "p50_ms": 102.45,
+        "std_dev": 4.75,
+        "min_ms": 100.18,
+        "max_ms": 110.89,
+        "checksum": "-4721506799343634759",
+        "binary_kb": 1592.5
+      }
+    },
+    "5. N-Body Gravity Orbit (1M Pairwise)": {
+      "End (C11 Backend)": {
+        "mean_ms": 1877.67,
+        "p50_ms": 1858.7,
+        "std_dev": 107.57,
+        "min_ms": 1731.15,
+        "max_ms": 1986.83,
+        "checksum": "1656141296",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 2167.43,
+        "p50_ms": 2164.25,
+        "std_dev": 31.97,
+        "min_ms": 2140.33,
+        "max_ms": 2220.57,
+        "checksum": "1549675472",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 2195.85,
+        "p50_ms": 2180.32,
+        "std_dev": 143.81,
+        "min_ms": 2029.69,
+        "max_ms": 2415.48,
+        "checksum": "1549675472",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 1778.05,
+        "p50_ms": 1790.46,
+        "std_dev": 22.05,
+        "min_ms": 1745.48,
+        "max_ms": 1795.9,
+        "checksum": "1656141297",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 3032.93,
+        "p50_ms": 3050.8,
+        "std_dev": 136.07,
+        "min_ms": 2857.43,
+        "max_ms": 3196.27,
+        "checksum": "1631413912",
+        "binary_kb": 1592.5
+      }
+    },
+    "6. SPSC Ring Buffer Queue (10M Items)": {
+      "End (C11 Backend)": {
+        "mean_ms": 3.44,
+        "p50_ms": 3.38,
+        "std_dev": 0.23,
+        "min_ms": 3.14,
+        "max_ms": 3.74,
+        "checksum": "1550000015000000",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 2.56,
+        "p50_ms": 2.57,
+        "std_dev": 0.22,
+        "min_ms": 2.29,
+        "max_ms": 2.88,
+        "checksum": "1550000015000000",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 1.4,
+        "p50_ms": 1.46,
+        "std_dev": 0.15,
+        "min_ms": 1.14,
+        "max_ms": 1.53,
+        "checksum": "1550000015000000",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 0.0,
+        "p50_ms": 0.0,
+        "std_dev": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "checksum": "150000155000000",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 8.23,
+        "p50_ms": 8.09,
+        "std_dev": 0.47,
+        "min_ms": 7.61,
+        "max_ms": 8.73,
+        "checksum": "1550000015000000",
+        "binary_kb": 1592.5
+      }
+    },
+    "7. DNA Levenshtein Matrix (1M Cells)": {
+      "End (C11 Backend)": {
+        "mean_ms": 983.5,
+        "p50_ms": 970.42,
+        "std_dev": 37.19,
+        "min_ms": 958.09,
+        "max_ms": 1048.49,
+        "checksum": "525912",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 2168.85,
+        "p50_ms": 2188.07,
+        "std_dev": 68.22,
+        "min_ms": 2057.5,
+        "max_ms": 2230.81,
+        "checksum": "525912",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 2214.97,
+        "p50_ms": 2194.66,
+        "std_dev": 30.99,
+        "min_ms": 2189.59,
+        "max_ms": 2253.13,
+        "checksum": "525912",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 1205.51,
+        "p50_ms": 1203.28,
+        "std_dev": 24.79,
+        "min_ms": 1169.82,
+        "max_ms": 1231.62,
+        "checksum": "525912",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 2265.14,
+        "p50_ms": 2266.7,
+        "std_dev": 8.46,
+        "min_ms": 2251.0,
+        "max_ms": 2273.82,
+        "checksum": "525912",
+        "binary_kb": 1592.5
+      }
+    },
+    "8. JSON Microservice Serializer (100K)": {
+      "End (C11 Backend)": {
+        "mean_ms": 57.8,
+        "p50_ms": 59.05,
+        "std_dev": 2.94,
+        "min_ms": 54.45,
+        "max_ms": 61.29,
+        "checksum": "5588438541400559045",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 12.09,
+        "p50_ms": 12.38,
+        "std_dev": 2.72,
+        "min_ms": 8.68,
+        "max_ms": 15.1,
+        "checksum": "5588438541400559045",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 24.18,
+        "p50_ms": 25.05,
+        "std_dev": 3.75,
+        "min_ms": 20.23,
+        "max_ms": 27.81,
+        "checksum": "5588438541400559045",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 55.74,
+        "p50_ms": 55.05,
+        "std_dev": 3.72,
+        "min_ms": 52.6,
+        "max_ms": 62.08,
+        "checksum": "5588438541400559045",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 39.8,
+        "p50_ms": 39.07,
+        "std_dev": 2.19,
+        "min_ms": 37.47,
+        "max_ms": 43.13,
+        "checksum": "5588438541400559045",
+        "binary_kb": 1592.5
+      }
+    },
+    "9. FSM Lexer Stream (10M Chars)": {
+      "End (C11 Backend)": {
+        "mean_ms": 9.69,
+        "p50_ms": 8.13,
+        "std_dev": 2.68,
+        "min_ms": 7.45,
+        "max_ms": 12.77,
+        "checksum": "-6471218147204355511",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 12.67,
+        "p50_ms": 12.52,
+        "std_dev": 0.45,
+        "min_ms": 12.27,
+        "max_ms": 13.21,
+        "checksum": "-103069600432064540",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 16.85,
+        "p50_ms": 16.67,
+        "std_dev": 2.05,
+        "min_ms": 14.67,
+        "max_ms": 20.11,
+        "checksum": "-103069600432064540",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 8.19,
+        "p50_ms": 8.17,
+        "std_dev": 0.51,
+        "min_ms": 7.67,
+        "max_ms": 9.01,
+        "checksum": "-103069600432064540",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 19.81,
+        "p50_ms": 20.54,
+        "std_dev": 1.81,
+        "min_ms": 17.35,
+        "max_ms": 21.54,
+        "checksum": "-103069600432064540",
+        "binary_kb": 1592.5
+      }
+    },
+    "10. GEMM Matrix Multiplication (512x512)": {
+      "End (C11 Backend)": {
+        "mean_ms": 62.32,
+        "p50_ms": 62.65,
+        "std_dev": 5.06,
+        "min_ms": 56.21,
+        "max_ms": 69.32,
+        "checksum": "6422836",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 73.46,
+        "p50_ms": 73.59,
+        "std_dev": 7.85,
+        "min_ms": 62.55,
+        "max_ms": 84.32,
+        "checksum": "6422836",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 59.0,
+        "p50_ms": 58.5,
+        "std_dev": 4.43,
+        "min_ms": 54.37,
+        "max_ms": 66.08,
+        "checksum": "6422836",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 21.11,
+        "p50_ms": 23.99,
+        "std_dev": 6.45,
+        "min_ms": 13.2,
+        "max_ms": 28.38,
+        "checksum": "6422836",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 103.75,
+        "p50_ms": 109.85,
+        "std_dev": 13.87,
+        "min_ms": 85.86,
+        "max_ms": 116.84,
+        "checksum": "6422836",
+        "binary_kb": 1592.5
+      }
+    },
+    "11. Monte Carlo Black-Scholes (2M Paths)": {
+      "End (C11 Backend)": {
+        "mean_ms": 56.18,
+        "p50_ms": 51.31,
+        "std_dev": 10.56,
+        "min_ms": 47.14,
+        "max_ms": 72.39,
+        "checksum": "10440247",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 33.4,
+        "p50_ms": 32.88,
+        "std_dev": 2.58,
+        "min_ms": 30.69,
+        "max_ms": 36.27,
+        "checksum": "10440246",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 42.39,
+        "p50_ms": 41.72,
+        "std_dev": 4.98,
+        "min_ms": 37.95,
+        "max_ms": 50.8,
+        "checksum": "10440246",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 44.76,
+        "p50_ms": 43.75,
+        "std_dev": 1.67,
+        "min_ms": 43.36,
+        "max_ms": 46.84,
+        "checksum": "10440246",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 59.12,
+        "p50_ms": 49.31,
+        "std_dev": 15.29,
+        "min_ms": 47.05,
+        "max_ms": 77.89,
+        "checksum": "10440246",
+        "binary_kb": 1592.5
+      }
+    },
+    "12. Super-Scalar ALU Reduction (10M)": {
+      "End (C11 Backend)": {
+        "mean_ms": 216.46,
+        "p50_ms": 208.19,
+        "std_dev": 30.5,
+        "min_ms": 195.44,
+        "max_ms": 269.76,
+        "checksum": "-6815960706871662336",
+        "binary_kb": 41.0
+      },
+      "Zig (0.16.0)": {
+        "mean_ms": 0.01,
+        "p50_ms": 0.01,
+        "std_dev": 0.0,
+        "min_ms": 0.01,
+        "max_ms": 0.01,
+        "checksum": "-6815960706871662336",
+        "binary_kb": 834.0
+      },
+      "Rust (1.89.0)": {
+        "mean_ms": 0.0,
+        "p50_ms": 0.0,
+        "std_dev": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "checksum": "-6815960706871662336",
+        "binary_kb": 184.5
+      },
+      "C (GCC 15.2)": {
+        "mean_ms": 216.67,
+        "p50_ms": 212.95,
+        "std_dev": 14.42,
+        "min_ms": 203.5,
+        "max_ms": 237.51,
+        "checksum": "-6815960706871662336",
+        "binary_kb": 76.9
+      },
+      "Go (1.25.1)": {
+        "mean_ms": 468.85,
+        "p50_ms": 454.54,
+        "std_dev": 45.21,
+        "min_ms": 432.68,
+        "max_ms": 547.81,
+        "checksum": "-6815960706871662336",
+        "binary_kb": 1592.5
+      }
+    }
+  }
+}
