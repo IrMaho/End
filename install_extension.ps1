@@ -1,40 +1,55 @@
-# 👑 Universal One-Click Installer for End Language VS Code & Modern IDE Extension
+# 👑 Universal Deployer for Antigravity IDE, VS Code, Cursor & Windsurf
 
-Write-Host "Deploying End Language Extension (v0.2.0)..." -ForegroundColor Green
+Write-Host "👑 Deploying End Language Extension to Antigravity IDE & All Editors..." -ForegroundColor Green
 
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not $Root) {
-    $Root = (Get-Location).Path
-}
-
+$Root = "c:\Users\ASUS\Desktop\flutter_project\end"
 $VscodeDir = Join-Path $Root "editors\vscode"
 
 Write-Host "[1/2] Compiling TypeScript extension..." -ForegroundColor Yellow
 Set-Location $VscodeDir
 npm run compile
 
-Write-Host "[2/2] Installing extension..." -ForegroundColor Yellow
-$Target = Join-Path $env:USERPROFILE ".vscode\extensions\endlanguage.end-lang-0.2.0"
-
-if (Test-Path $Target) {
-    Remove-Item -Path $Target -Recurse -Force
-}
-New-Item -ItemType Directory -Path $Target -Force | Out-Null
+$TargetDirs = @(
+    "C:\Users\ASUS\.antigravity-ide\extensions\endlanguage.end-lang-0.2.0",
+    "C:\Users\ASUS\.antigravity\extensions\endlanguage.end-lang-0.2.0",
+    "C:\Users\ASUS\.vscode\extensions\endlanguage.end-lang-0.2.0",
+    "C:\Users\ASUS\.cursor\extensions\endlanguage.end-lang-0.2.0",
+    "C:\Users\ASUS\.windsurf\extensions\endlanguage.end-lang-0.2.0"
+)
 
 $Files = @("package.json", "language-configuration.json", "README.md", "icon.png")
-foreach ($f in $Files) {
-    $src = Join-Path $VscodeDir $f
-    if (Test-Path $src) {
-        Copy-Item -Path $src -Destination (Join-Path $Target $f) -Force
-    }
-}
-
 $Dirs = @("dist", "syntaxes", "snippets")
-foreach ($d in $Dirs) {
-    $src = Join-Path $VscodeDir $d
-    if (Test-Path $src) {
-        Copy-Item -Path $src -Destination $Target -Recurse -Force
+
+Write-Host "[2/2] Copying extension bundles..." -ForegroundColor Yellow
+
+foreach ($Target in $TargetDirs) {
+    $parent = Split-Path $Target -Parent
+    if (-not (Test-Path $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
+
+    if (Test-Path $Target) {
+        Remove-Item -Path $Target -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $Target -Force | Out-Null
+
+    foreach ($f in $Files) {
+        $src = Join-Path $VscodeDir $f
+        if (Test-Path $src) {
+            Copy-Item -Path $src -Destination (Join-Path $Target $f) -Force
+        }
+    }
+
+    foreach ($d in $Dirs) {
+        $src = Join-Path $VscodeDir $d
+        if (Test-Path $src) {
+            Copy-Item -Path $src -Destination $Target -Recurse -Force
+        }
+    }
+
+    Write-Host "  ✔ Successfully installed into: $Target" -ForegroundColor Green
 }
 
-Write-Host "SUCCESS: End Language Extension (v0.2.0) Installed into $Target" -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Cyan
+Write-Host "👑 SUCCESS: Extension is now installed in Antigravity IDE!" -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Cyan
