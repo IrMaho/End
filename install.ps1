@@ -1,4 +1,4 @@
-﻿# End Language - Official PowerShell Automated Installer
+# End Language - Official PowerShell Automated Installer
 # Usage: irm https://raw.githubusercontent.com/IrMaho/End/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
@@ -38,6 +38,7 @@ if (Test-Path $LocalBin) {
     Write-Host "  [+] Deployed from local build tree!" -ForegroundColor Green
 } else {
     try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
         Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
         Remove-Item $TempZip -Force -ErrorAction SilentlyContinue
@@ -68,7 +69,7 @@ if ($userPath -notlike "*EndLanguage\bin*") {
 Write-Host "[4/4] Verifying installation..." -ForegroundColor Yellow
 $endExe = "$BinDir\end.exe"
 if (Test-Path $endExe) {
-    & $endExe --version
+    & $endExe version
 }
 
 Write-Host "`n================================================================================" -ForegroundColor Cyan
