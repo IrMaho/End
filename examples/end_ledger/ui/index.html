@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EndUI Application</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #07090e;
+            --accent-cyan: #06b6d4;
+            --accent-indigo: #6366f1;
+            --accent-green: #10b981;
+            --card-bg: rgba(18, 24, 38, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-body); color: var(--text-primary); min-height: 100vh; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
+        
+        .end-app-container { width: 100%; max-width: 1200px; }
+        .end-column { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+        .end-row { display: flex; flex-direction: row; gap: 16px; align-items: center; width: 100%; }
+        .end-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 24px; backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .end-card:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(99, 102, 241, 0.15); }
+        .end-btn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+            color: #fff; border: none; border-radius: 10px; padding: 12px 24px;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .end-btn:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        .end-input {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 14px;
+            outline: none; transition: border-color 0.2s; width: 100%;
+        }
+        .end-input:focus { border-color: var(--accent-indigo); }
+    </style>
+</head>
+<body>
+    <div class="end-app-container">
+        <div class="end-app" data-widget-id="widget_root_App" data-widget-kind="App" data-source-file="C:\Users\ASUS\Desktop\flutter_project\end\examples\end_ledger\src\main.end" data-source-line="227"><div class="end-card" data-widget-id="Card_228_9" data-widget-kind="Card" data-source-file="C:\Users\ASUS\Desktop\flutter_project\end\examples\end_ledger\src\main.end" data-source-line="228">
+                        <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px;">💼 EndLedger: Real-Time Double-Entry Financial Dashboard</h3>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Net Income: $8,300.00 | Total Assets: $59,200.00 | Trial Balance: 100% Balanced</p>
+                        
+                        <button class="end-btn" onclick="alert('Action triggered')">Post New Journal Entry</button>
+                    </div></div>
+    </div>
+    <!-- 🛠️ EndUI AI DevMode & Visual Feedback Canvas Overlay -->
+<style>
+    .end-dev-badge {
+        position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+        background: linear-gradient(135deg, #06b6d4, #6366f1);
+        color: #fff; padding: 10px 18px; border-radius: 30px;
+        font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5); cursor: pointer;
+        display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.3);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .end-dev-badge:hover { transform: scale(1.05); }
+
+    .end-dev-panel {
+        position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
+        background: rgba(13, 18, 29, 0.95); backdrop-filter: blur(20px);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 100000; box-shadow: -10px 0 40px rgba(0,0,0,0.7);
+        display: flex; flex-direction: column;
+        transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc;
+    }
+    .end-dev-panel.open { right: 0; }
+
+    .end-dev-header {
+        padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .end-dev-tabs { display: flex; gap: 8px; padding: 12px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .end-dev-tab {
+        padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+        color: #94a3b8; cursor: pointer; transition: all 0.2s;
+    }
+    .end-dev-tab.active { background: rgba(99, 102, 241, 0.2); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    .end-dev-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .end-pin-overlay {
+        position: absolute; width: 28px; height: 28px; border-radius: 50%;
+        background: #ef4444; color: #fff; font-weight: 800; font-size: 12px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); z-index: 99990;
+        cursor: pointer; transform: translate(-50%, -50%);
+        border: 2px solid #fff; pointer-events: auto;
+    }
+
+    .end-inspect-highlight {
+        outline: 2px dashed #06b6d4 !important;
+        outline-offset: 4px;
+        cursor: crosshair !important;
+        background: rgba(6, 182, 212, 0.08) !important;
+    }
+
+    .end-card-item {
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px; padding: 14px; margin-bottom: 12px;
+    }
+    .end-input, .end-textarea, .end-select {
+        width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+    }
+    .end-btn-submit {
+        width: 100%; padding: 12px; background: linear-gradient(135deg, #06b6d4, #6366f1);
+        border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+</style>
+
+<div class="end-dev-badge" onclick="toggleEndDevPanel()">
+    <span>🤖</span>
+    <span>AI DevMode & Canvas Overlay</span>
+</div>
+
+<div class="end-dev-panel" id="endDevPanel">
+    <div class="end-dev-header">
+        <div>
+            <h3 style="font-size: 16px; font-weight: 700;">🤖 AI Agent Canvas Overlay</h3>
+            <span style="font-size: 11px; color: #06b6d4;">EndUI Live Development Protocol v1.0</span>
+        </div>
+        <button onclick="toggleEndDevPanel()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+
+    <div class="end-dev-tabs">
+        <div class="end-dev-tab active" onclick="switchDevTab('pins', this)">📌 Annotations & Design</div>
+        <div class="end-dev-tab" onclick="switchDevTab('board', this)">📋 Task Board</div>
+        <div class="end-dev-tab" onclick="switchDevTab('bug', this)">🐛 Bug Reporter</div>
+    </div>
+
+    <div class="end-dev-body" id="devTabContent">
+        <!-- PINS TAB -->
+        <div id="dev-tab-pins">
+            <button class="end-btn-submit" id="btnPinMode" onclick="togglePinDropMode()" style="margin-bottom: 16px;">
+                📍 Drop Annotation Pin on Canvas
+            </button>
+            <div id="pinForm" style="display: none; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px; border: 1px solid rgba(99,102,241,0.3); margin-bottom: 16px;">
+                <h4 style="font-size: 14px; color: #38bdf8; margin-bottom: 8px;">Target Widget: <span id="targetWidgetName" style="color: #fff;">None</span></h4>
+                <label style="font-size: 12px; color: #94a3b8;">Developer Instruction / Design Note:</label>
+                <textarea id="pinNote" class="end-textarea" rows="3" placeholder="e.g. Make this card background gradient blue and add 12px rounded corners..."></textarea>
+                
+                <label style="font-size: 12px; color: #94a3b8;">Attach Reference Mockup Image (URL / Base64):</label>
+                <input id="pinImage" type="text" class="end-input" placeholder="https://example.com/figma_mockup.png or file path">
+                
+                <label style="font-size: 12px; color: #94a3b8;">Task Priority:</label>
+                <select id="pinPriority" class="end-select">
+                    <option value="P0 (Blocker)">🔴 P0 (Blocker)</option>
+                    <option value="P1 (High)" selected>🟡 P1 (High)</option>
+                    <option value="P2 (Normal)">🟢 P2 (Normal)</option>
+                </select>
+
+                <button class="end-btn-submit" onclick="submitFeedbackPin()">🚀 Send to AI Agent</button>
+            </div>
+            <div id="activePinsList"></div>
+        </div>
+
+        <!-- TASK BOARD TAB -->
+        <div id="dev-tab-board" style="display: none;">
+            <div id="taskBoardList"></div>
+        </div>
+
+        <!-- BUG REPORTER TAB -->
+        <div id="dev-tab-bug" style="display: none;">
+            <h4 style="font-size: 14px; margin-bottom: 8px;">🐛 Capture State & Report Bug to Agent</h4>
+            <textarea id="bugDescription" class="end-textarea" rows="4" placeholder="Describe unexpected behavior..."></textarea>
+            <button class="end-btn-submit" style="background: linear-gradient(135deg, #f59e0b, #ef4444);" onclick="submitBugReport()">
+                📢 Capture Hierarchy & Submit Bug
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let feedbackItems = [{"id":"fb_1787300100","target_widget_id":"Card_31_4","widget_name":"Card","source_file":"tests/test_interactive_dashboard.end","source_line":31,"developer_note":"Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.","attached_image":"https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png","priority":"P0 (Blocker)","category":"Design / UI","status":"Resolved","created_at":"2026-08-21T21:46:00Z","agent_replies":[{"agent_name":"Antigravity Agent","message":"Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target","timestamp":"2026-08-21T21:40:00Z","diff_file":null}]}];
+    let isPinModeActive = false;
+    let selectedWidget = null;
+
+    function toggleEndDevPanel() {
+        document.getElementById('endDevPanel').classList.toggle('open');
+    }
+
+    function switchDevTab(tabId, elem) {
+        document.querySelectorAll('.end-dev-tab').forEach(t => t.classList.remove('active'));
+        if (elem) elem.classList.add('active');
+        document.getElementById('dev-tab-pins').style.display = tabId === 'pins' ? 'block' : 'none';
+        document.getElementById('dev-tab-board').style.display = tabId === 'board' ? 'block' : 'none';
+        document.getElementById('dev-tab-bug').style.display = tabId === 'bug' ? 'block' : 'none';
+        renderDevUI();
+    }
+
+    function togglePinDropMode() {
+        isPinModeActive = !isPinModeActive;
+        const btn = document.getElementById('btnPinMode');
+        if (isPinModeActive) {
+            btn.innerText = '👆 Click anywhere on the UI to attach note';
+            btn.style.background = '#ef4444';
+            document.body.style.cursor = 'crosshair';
+            document.addEventListener('mouseover', handleInspectHover);
+            document.addEventListener('click', handleInspectClick, true);
+        } else {
+            btn.innerText = '📍 Drop Annotation Pin on Canvas';
+            btn.style.background = 'linear-gradient(135deg, #06b6d4, #6366f1)';
+            document.body.style.cursor = 'default';
+            document.removeEventListener('mouseover', handleInspectHover);
+            document.removeEventListener('click', handleInspectClick, true);
+        }
+    }
+
+    function handleInspectHover(e) {
+        if (!isPinModeActive) return;
+        if (e.target.closest('#endDevPanel') || e.target.closest('.end-dev-badge')) return;
+        document.querySelectorAll('.end-inspect-highlight').forEach(el => el.classList.remove('end-inspect-highlight'));
+        e.target.classList.add('end-inspect-highlight');
+    }
+
+    function handleInspectClick(e) {
+        if (!isPinModeActive) return;
+        if (e.target.closest('#endDevPanel') || e.target.closest('.end-dev-badge')) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        selectedWidget = {
+            id: e.target.getAttribute('data-widget-id') || e.target.tagName + '_' + Math.floor(Math.random() * 1000),
+            name: e.target.getAttribute('data-widget-kind') || e.target.tagName,
+            file: e.target.getAttribute('data-source-file') || 'app.end',
+            line: parseInt(e.target.getAttribute('data-source-line') || '1')
+        };
+
+        document.getElementById('targetWidgetName').innerText = selectedWidget.name + ' (' + selectedWidget.id + ')';
+        document.getElementById('pinForm').style.display = 'block';
+        togglePinDropMode();
+        if (!document.getElementById('endDevPanel').classList.contains('open')) {
+            toggleEndDevPanel();
+        }
+    }
+
+    function submitFeedbackPin() {
+        const note = document.getElementById('pinNote').value;
+        const img = document.getElementById('pinImage').value;
+        const prio = document.getElementById('pinPriority').value;
+
+        if (!note.trim()) { alert('Please enter developer instructions!'); return; }
+
+        const newItem = {
+            id: 'fb_' + Date.now(),
+            target_widget_id: selectedWidget ? selectedWidget.id : 'Canvas_Root',
+            widget_name: selectedWidget ? selectedWidget.name : 'Container',
+            source_file: selectedWidget ? selectedWidget.file : 'app.end',
+            source_line: selectedWidget ? selectedWidget.line : 1,
+            developer_note: note,
+            attached_image: img.trim() ? img : null,
+            priority: prio,
+            category: 'Design / UI',
+            status: 'Open',
+            created_at: new Date().toISOString(),
+            agent_replies: []
+        };
+
+        feedbackItems.unshift(newItem);
+        saveFeedbackToServer(newItem);
+        document.getElementById('pinNote').value = '';
+        document.getElementById('pinForm').style.display = 'none';
+        renderDevUI();
+    }
+
+    function submitBugReport() {
+        const desc = document.getElementById('bugDescription').value;
+        if (!desc.trim()) { alert('Please describe the bug!'); return; }
+
+        const bugItem = {
+            id: 'bug_' + Date.now(),
+            target_widget_id: 'AppRoot',
+            widget_name: 'App',
+            source_file: 'app.end',
+            source_line: 1,
+            developer_note: desc,
+            attached_image: null,
+            priority: 'P0 (Blocker)',
+            category: 'Bug',
+            status: 'Open',
+            created_at: new Date().toISOString(),
+            agent_replies: []
+        };
+
+        feedbackItems.unshift(bugItem);
+        saveFeedbackToServer(bugItem);
+        document.getElementById('bugDescription').value = '';
+        alert('🐛 Bug report sent to AI Agent queue (.end/agent_feedback/)!');
+        renderDevUI();
+    }
+
+    function saveFeedbackToServer(item) {
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        }).catch(e => console.log('Saved to memory'));
+    }
+
+    function renderDevUI() {
+        const pinsList = document.getElementById('activePinsList');
+        const boardList = document.getElementById('taskBoardList');
+
+        pinsList.innerHTML = feedbackItems.map(item => `
+            <div class="end-card-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; font-size: 13px; color: #38bdf8;">${item.widget_name} #${item.id.slice(-4)}</span>
+                    <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.status === 'Resolved' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${item.status === 'Resolved' ? '#10b981' : '#f59e0b'};">${item.status}</span>
+                </div>
+                <p style="font-size: 12px; color: #cbd5e1; margin-top: 6px;">${item.developer_note}</p>
+                ${item.attached_image ? `<div style="margin-top: 8px;"><img src="${item.attached_image}" style="max-width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"></div>` : ''}
+                ${item.agent_replies.length > 0 ? `
+                    <div style="margin-top: 10px; background: rgba(99,102,241,0.1); border-left: 3px solid #6366f1; padding: 8px; border-radius: 4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #6366f1;">🤖 Agent Reply:</span>
+                        <p style="font-size: 12px; color: #e2e8f0; margin-top: 2px;">${item.agent_replies[item.agent_replies.length - 1].message}</p>
+                    </div>
+                ` : '<div style="margin-top: 6px; font-size: 11px; color: #64748b;">⏳ Waiting for AI Agent response...</div>'}
+            </div>
+        `).join('');
+
+        boardList.innerHTML = pinsList.innerHTML;
+    }
+
+    renderDevUI();
+</script>
+
+</body>
+</html>

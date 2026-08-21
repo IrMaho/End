@@ -1,0 +1,762 @@
+{
+  "metadata": {
+    "name": "main",
+    "entry_file": "C:\\Users\\ASUS\\Desktop\\flutter_project\\end\\examples\\end_ledger\\src\\main.end",
+    "total_lines": 304,
+    "total_structs": 9,
+    "total_enums": 1,
+    "total_functions": 6,
+    "total_modules": 3,
+    "total_endpoints": 3,
+    "compiler_version": "0.4.0-alpha (Enterprise Vibe Coding Edition)",
+    "generation_timestamp": "2026-08-21T21:30:00Z"
+  },
+  "structs": [
+    {
+      "name": "Account",
+      "is_pub": false,
+      "total_size_bytes": 40,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "code",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "name",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "balance_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "account_type_id",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Core financial account entity"
+    },
+    {
+      "name": "JournalEntry",
+      "is_pub": false,
+      "total_size_bytes": 48,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "reference_no",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "description",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_debit_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_credit_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "is_posted",
+          "field_type": "Bool",
+          "byte_offset": 40,
+          "byte_size": 1,
+          "alignment": 1,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Ledger transaction journal header"
+    },
+    {
+      "name": "LedgerLine",
+      "is_pub": false,
+      "total_size_bytes": 40,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "entry_id",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "account_id",
+          "field_type": "I64",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "debit_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "credit_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Individual debit/credit line in a journal entry"
+    },
+    {
+      "name": "Customer",
+      "is_pub": false,
+      "total_size_bytes": 40,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "name",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "tax_id",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "credit_limit_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "outstanding_balance_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Customer profile with credit limit"
+    },
+    {
+      "name": "InvoiceItem",
+      "is_pub": false,
+      "total_size_bytes": 40,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "product_name",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "quantity",
+          "field_type": "I64",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "unit_price_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Itemized invoice line"
+    },
+    {
+      "name": "Invoice",
+      "is_pub": false,
+      "total_size_bytes": 64,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "customer_id",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "invoice_number",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "subtotal_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "tax_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "discount_cents",
+          "field_type": "I64",
+          "byte_offset": 40,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_cents",
+          "field_type": "I64",
+          "byte_offset": 48,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "is_paid",
+          "field_type": "Bool",
+          "byte_offset": 56,
+          "byte_size": 1,
+          "alignment": 1,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Customer sales invoice"
+    },
+    {
+      "name": "FinancialReport",
+      "is_pub": false,
+      "total_size_bytes": 40,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "total_revenue_cents",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_expenses_cents",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "net_income_cents",
+          "field_type": "I64",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_assets_cents",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_liabilities_cents",
+          "field_type": "I64",
+          "byte_offset": 32,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Comprehensive Financial Health & Income Statement Report"
+    },
+    {
+      "name": "Card",
+      "is_pub": false,
+      "total_size_bytes": 24,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "title",
+          "field_type": "Str",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "subtitle",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "button_action",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": ""
+    },
+    {
+      "name": "Text",
+      "is_pub": false,
+      "total_size_bytes": 32,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "text",
+          "field_type": "Str",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "color",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "font_size",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "font_weight",
+          "field_type": "Str",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": ""
+    }
+  ],
+  "enums": [
+    {
+      "name": "AccountType",
+      "is_pub": false,
+      "variants": [
+        {
+          "name": "Asset",
+          "payload_type": null,
+          "tag_value": 0
+        },
+        {
+          "name": "Liability",
+          "payload_type": null,
+          "tag_value": 1
+        },
+        {
+          "name": "Equity",
+          "payload_type": null,
+          "tag_value": 2
+        },
+        {
+          "name": "Revenue",
+          "payload_type": null,
+          "tag_value": 3
+        },
+        {
+          "name": "Expense",
+          "payload_type": null,
+          "tag_value": 4
+        }
+      ],
+      "memory_size_bytes": 16,
+      "doc": "Chart of Accounts classification"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_accounts",
+      "is_pub": true,
+      "signature": "fn get_accounts() -> I64",
+      "params": [],
+      "return_type": "I64",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@get(\"/api/v1/accounts\")\\n@tag(\"ChartOfAccounts\")\\n@summary(\"List active financial accounts and current balances\")"
+    },
+    {
+      "name": "post_journal_entry",
+      "is_pub": true,
+      "signature": "fn post_journal_entry(debit: I64, credit: I64) -> Bool",
+      "params": [
+        {
+          "name": "debit",
+          "param_type": "I64",
+          "is_mut": false,
+          "is_ref": false
+        },
+        {
+          "name": "credit",
+          "param_type": "I64",
+          "is_mut": false,
+          "is_ref": false
+        }
+      ],
+      "return_type": "Bool",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: [\"debit\", \"credit\"]"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@post(\"/api/v1/ledger/post\")\\n@tag(\"GeneralLedger\")\\n@summary(\"Post a double-entry transaction to general ledger\")"
+    },
+    {
+      "name": "get_financial_summary",
+      "is_pub": true,
+      "signature": "fn get_financial_summary() -> Custom(\"FinancialReport\")",
+      "params": [],
+      "return_type": "Custom(\"FinancialReport\")",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@get(\"/api/v1/reports/financial-summary\")\\n@tag(\"Reports\")\\n@summary(\"Get real-time Balance Sheet and Income Statement summary\")"
+    },
+    {
+      "name": "App",
+      "is_pub": true,
+      "signature": "fn App() -> Custom(\"Card\")",
+      "params": [],
+      "return_type": "Custom(\"Card\")",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@widget"
+    },
+    {
+      "name": "run_accounting_simulation",
+      "is_pub": true,
+      "signature": "fn run_accounting_simulation() -> I32",
+      "params": [],
+      "return_type": "I32",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": ""
+    },
+    {
+      "name": "main",
+      "is_pub": true,
+      "signature": "fn main() -> I32",
+      "params": [],
+      "return_type": "I32",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": ""
+    }
+  ],
+  "modules": [
+    {
+      "name": "AccountingCore",
+      "is_pub": true,
+      "parent_module": null,
+      "functions": [
+        "validate_balance",
+        "compute_tax"
+      ],
+      "overrides": [],
+      "doc": "Base Accounting Engine contract"
+    },
+    {
+      "name": "TaxEngine",
+      "is_pub": true,
+      "parent_module": "AccountingCore",
+      "functions": [],
+      "overrides": [
+        "compute_tax"
+      ],
+      "doc": "Enterprise Tax Engine with derived polymorphism"
+    },
+    {
+      "name": "InvoiceManager",
+      "is_pub": true,
+      "parent_module": "AccountingCore",
+      "functions": [
+        "create_invoice"
+      ],
+      "overrides": [],
+      "doc": "Automated Invoice & Reconciliation Manager"
+    }
+  ],
+  "extensions": [
+    {
+      "target_struct": "Account",
+      "extension_methods": [
+        "is_solvent",
+        "deposit"
+      ]
+    },
+    {
+      "target_struct": "Invoice",
+      "extension_methods": [
+        "calculate_final_amount",
+        "is_large_order"
+      ]
+    },
+    {
+      "target_struct": "FinancialReport",
+      "extension_methods": [
+        "get_profit_margin_basis_points"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/api/v1/accounts",
+      "http_method": "GET",
+      "summary": "Handler for get_accounts",
+      "tag": "Default",
+      "handler_name": "get_accounts",
+      "request_body_type": null,
+      "response_type": "I64",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@get(\"/api/v1/accounts\")\\n@tag(\"ChartOfAccounts\")\\n@summary(\"List active financial accounts and current balances\")"
+    },
+    {
+      "path": "/api/v1/ledger/post",
+      "http_method": "POST",
+      "summary": "Handler for post_journal_entry",
+      "tag": "Default",
+      "handler_name": "post_journal_entry",
+      "request_body_type": "I64",
+      "response_type": "Bool",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@post(\"/api/v1/ledger/post\")\\n@tag(\"GeneralLedger\")\\n@summary(\"Post a double-entry transaction to general ledger\")"
+    },
+    {
+      "path": "/api/v1/reports/financial-summary",
+      "http_method": "GET",
+      "summary": "Handler for get_financial_summary",
+      "tag": "Default",
+      "handler_name": "get_financial_summary",
+      "request_body_type": null,
+      "response_type": "Custom(\"FinancialReport\")",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@get(\"/api/v1/reports/financial-summary\")\\n@tag(\"Reports\")\\n@summary(\"Get real-time Balance Sheet and Income Statement summary\")"
+    }
+  ],
+  "memory_safety_summary": {
+    "tier1_arena_symbols_count": 6,
+    "tier2_arc_symbols_count": 0,
+    "tier3_bare_metal_symbols_count": 0,
+    "zero_overhead_percentage": 100.0
+  },
+  "capability_summary": {
+    "pure_functions_count": 6,
+    "io_restricted_functions_count": 0,
+    "network_access_functions_count": 0,
+    "disk_access_functions_count": 0,
+    "concurrency_safe_percentage": 100.0
+  }
+}

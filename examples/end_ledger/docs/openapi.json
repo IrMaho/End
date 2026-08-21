@@ -1,0 +1,472 @@
+{
+  "components": {
+    "schemas": {
+      "Account": {
+        "description": "Core financial account entity",
+        "properties": {
+          "account_type_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "balance_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "balance_cents",
+          "account_type_id"
+        ],
+        "type": "object"
+      },
+      "AccountType": {
+        "description": "Chart of Accounts classification",
+        "enum": [
+          "Asset",
+          "Liability",
+          "Equity",
+          "Revenue",
+          "Expense"
+        ],
+        "type": "string"
+      },
+      "Card": {
+        "description": "",
+        "properties": {
+          "button_action": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "subtitle",
+          "button_action"
+        ],
+        "type": "object"
+      },
+      "Customer": {
+        "description": "Customer profile with credit limit",
+        "properties": {
+          "credit_limit_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "outstanding_balance_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "tax_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "tax_id",
+          "credit_limit_cents",
+          "outstanding_balance_cents"
+        ],
+        "type": "object"
+      },
+      "FinancialReport": {
+        "description": "Comprehensive Financial Health & Income Statement Report",
+        "properties": {
+          "net_income_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_assets_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_expenses_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_liabilities_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_revenue_cents": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_revenue_cents",
+          "total_expenses_cents",
+          "net_income_cents",
+          "total_assets_cents",
+          "total_liabilities_cents"
+        ],
+        "type": "object"
+      },
+      "Invoice": {
+        "description": "Customer sales invoice",
+        "properties": {
+          "customer_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "discount_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "invoice_number": {
+            "type": "string"
+          },
+          "is_paid": {
+            "type": "boolean"
+          },
+          "subtotal_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "tax_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_cents": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "customer_id",
+          "invoice_number",
+          "subtotal_cents",
+          "tax_cents",
+          "discount_cents",
+          "total_cents",
+          "is_paid"
+        ],
+        "type": "object"
+      },
+      "InvoiceItem": {
+        "description": "Itemized invoice line",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "unit_price_cents": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "product_name",
+          "quantity",
+          "unit_price_cents",
+          "total_cents"
+        ],
+        "type": "object"
+      },
+      "JournalEntry": {
+        "description": "Ledger transaction journal header",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "is_posted": {
+            "type": "boolean"
+          },
+          "reference_no": {
+            "type": "string"
+          },
+          "total_credit_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_debit_cents": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "reference_no",
+          "description",
+          "total_debit_cents",
+          "total_credit_cents",
+          "is_posted"
+        ],
+        "type": "object"
+      },
+      "LedgerLine": {
+        "description": "Individual debit/credit line in a journal entry",
+        "properties": {
+          "account_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "credit_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "debit_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "entry_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "entry_id",
+          "account_id",
+          "debit_cents",
+          "credit_cents"
+        ],
+        "type": "object"
+      },
+      "Text": {
+        "description": "",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "font_size": {
+            "type": "string"
+          },
+          "font_weight": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "color",
+          "font_size",
+          "font_weight"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "name": "End Language Engineering Team",
+      "url": "https://github.com/IrMaho/End"
+    },
+    "description": "Auto-generated OpenAPI v3.1 Specification by End Language Compiler (v0.4.0-alpha (Enterprise Vibe Coding Edition)).\nHigh-Performance, Zero-Overhead Compiled Backend Service.",
+    "title": "main API Specification",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/accounts": {
+      "get": {
+        "description": "@get(\"/api/v1/accounts\")\\n@tag(\"ChartOfAccounts\")\\n@summary(\"List active financial accounts and current balances\")",
+        "operationId": "get_accounts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "int64",
+                  "type": "integer"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request or validation error"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Handler for get_accounts",
+        "tags": [
+          "Default"
+        ]
+      }
+    },
+    "/api/v1/ledger/post": {
+      "post": {
+        "description": "@post(\"/api/v1/ledger/post\")\\n@tag(\"GeneralLedger\")\\n@summary(\"Post a double-entry transaction to general ledger\")",
+        "operationId": "post_journal_entry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "format": "int64",
+                "type": "integer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request or validation error"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Handler for post_journal_entry",
+        "tags": [
+          "Default"
+        ]
+      }
+    },
+    "/api/v1/reports/financial-summary": {
+      "get": {
+        "description": "@get(\"/api/v1/reports/financial-summary\")\\n@tag(\"Reports\")\\n@summary(\"Get real-time Balance Sheet and Income Statement summary\")",
+        "operationId": "get_financial_summary",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialReport"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request or validation error"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Handler for get_financial_summary",
+        "tags": [
+          "Default"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Local Development Server",
+      "url": "http://localhost:8080"
+    },
+    {
+      "description": "Production High-Performance Cluster",
+      "url": "https://api.production.internal"
+    }
+  ]
+}
