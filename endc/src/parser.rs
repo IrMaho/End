@@ -89,7 +89,27 @@ impl Parser {
                                 self.advance();
                             }
                             TokenKind::Ident(i) => {
-                                args.push(i.clone());
+                                let mut arg = i.clone();
+                                self.advance();
+                                if self.match_token(&TokenKind::Equal) || self.match_token(&TokenKind::Colon) {
+                                    arg.push('=');
+                                    match self.peek_kind() {
+                                        TokenKind::StringLit(s) => { arg.push_str(s); self.advance(); }
+                                        TokenKind::Ident(s) => { arg.push_str(s); self.advance(); }
+                                        TokenKind::True => { arg.push_str("true"); self.advance(); }
+                                        TokenKind::False => { arg.push_str("false"); self.advance(); }
+                                        TokenKind::IntLit(n) => { arg.push_str(&n.to_string()); self.advance(); }
+                                        _ => {}
+                                    }
+                                }
+                                args.push(arg);
+                            }
+                            TokenKind::True => {
+                                args.push("true".to_string());
+                                self.advance();
+                            }
+                            TokenKind::False => {
+                                args.push("false".to_string());
                                 self.advance();
                             }
                             TokenKind::IntLit(n) => {

@@ -1,0 +1,4 @@
+pub fn calc_score(raw_score: i64, multiplier: i32) i32 {
+    val total = raw_score * multiplier
+    ret total
+}

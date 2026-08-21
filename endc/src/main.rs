@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod agent_api;
+mod architecture;
 mod ast;
 mod codegen;
 mod diagnostics;
@@ -14,7 +15,8 @@ mod package;
 mod parser;
 mod semantic;
 
-use agent_api::{AgentApi, SelfHealingEngine};
+use agent_api::{AgentApi, MicroEvaluator, SelfHealingEngine, SemanticCodeSlicer, StructuredAstPatcher};
+use architecture::ArchitectureEngine;
 use codegen::{CBackend, Interpreter};
 use diagnostics::Diagnostic;
 use lexer::Lexer;
@@ -102,12 +104,77 @@ enum Commands {
         /// Symbol to analyze (e.g. function or struct name)
         symbol: String,
     },
-    /// Query semantic information about a symbol
+    /// Generate full Machine Knowledge Graph for AI Agents (1ms token-efficient JSON)
+    Graph {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Format as JSON
+        #[arg(long, default_value_t = true)]
+        json: bool,
+    },
+    /// Query semantic knowledge, callers, callees, or symbol contracts
     Query {
         /// Path to .end source file
         file: PathBuf,
         /// Symbol name to query
         symbol: String,
+        /// Query functions calling this symbol
+        #[arg(long, default_value_t = false)]
+        callers: bool,
+        /// Query functions called by this symbol
+        #[arg(long, default_value_t = false)]
+        callees: bool,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Semantic Code Slicing: compress 50,000+ line files into skeletal AST interfaces for AI prompts
+    Slice {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Only output public interface signatures
+        #[arg(long, default_value_t = true)]
+        interface_only: bool,
+        /// Only output struct and enum type definitions
+        #[arg(long, default_value_t = false)]
+        types_only: bool,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Structured AST Auto-Patch: apply node-level AST modifications without text/whitespace breakage
+    Patch {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Path to AST patch JSON file
+        #[arg(long)]
+        ast_patch: Option<PathBuf>,
+        /// Raw JSON string patch payload
+        #[arg(long)]
+        json_input: Option<String>,
+        /// Apply changes directly to file
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+    },
+    /// Micro-isolated expression evaluator: test formulas, expressions, and algorithms in < 50 µs
+    Eval {
+        /// Raw End code expression or snippet
+        expression: String,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Architecture Guardrails & Rule Enforcement (Architecture.toml validation)
+    Arch {
+        /// Subcommand action (e.g. check)
+        #[arg(default_value = "check")]
+        action: String,
+        /// Path to Architecture.toml config
+        #[arg(short, long)]
+        config: Option<PathBuf>,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
     },
     /// AI Self-Healing engine: analyze diagnostics, typos, and automatically patch source code
     Fix {
@@ -528,7 +595,7 @@ fn main() {
             let result = api.impact_analysis(&symbol);
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
-        Commands::Query { file, symbol } => {
+        Commands::Graph { file, json } => {
             let (_, analyzer) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
@@ -538,8 +605,168 @@ fn main() {
             };
 
             let api = AgentApi::new(&analyzer.graph);
-            let result = api.query_symbol(&symbol);
-            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            let result = api.knowledge_graph();
+            if json {
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            } else {
+                println!("🗺️ {} for {:?}", "End Machine Knowledge Graph".cyan().bold(), file);
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            }
+        }
+        Commands::Query { file, symbol, callers, callees, json } => {
+            let (_, analyzer) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let api = AgentApi::new(&analyzer.graph);
+            let result = if callers {
+                api.query_callers(&symbol)
+            } else if callees {
+                api.query_callees(&symbol)
+            } else {
+                api.query_symbol(&symbol)
+            };
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            } else {
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            }
+        }
+        Commands::Slice { file, interface_only, types_only, json } => {
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            if json {
+                let json_slice = SemanticCodeSlicer::slice_json(&module);
+                println!("{}", serde_json::to_string_pretty(&json_slice).unwrap());
+            } else {
+                let text_slice = SemanticCodeSlicer::slice_module(&module, interface_only, types_only);
+                println!("{}", text_slice);
+            }
+        }
+        Commands::Patch { file, ast_patch, json_input, apply } => {
+            let file_str = file.to_string_lossy().to_string();
+            let source = match fs::read_to_string(&file) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("{} Failed reading file {:?}: {}", "Error:".red().bold(), file, e);
+                    std::process::exit(1);
+                }
+            };
+
+            let patch_json_str = if let Some(ref p) = ast_patch {
+                match fs::read_to_string(p) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("{} Failed reading patch file {:?}: {}", "Error:".red().bold(), p, e);
+                        std::process::exit(1);
+                    }
+                }
+            } else if let Some(ref s) = json_input {
+                s.clone()
+            } else {
+                eprintln!("{} Must provide either --ast-patch <file.json> or --json-input <json>", "Error:".red().bold());
+                std::process::exit(1);
+            };
+
+            match StructuredAstPatcher::apply_patch_json(&source, &patch_json_str) {
+                Ok(report) => {
+                    println!("==================================================");
+                    println!("🛠️ {} for `{}`", "Structured AST Patch Report".green().bold(), file_str.yellow());
+                    println!("==================================================");
+                    println!("  Action:  {}", report.action.cyan());
+                    println!("  Target:  {}", report.target.cyan());
+                    println!("  Lines:   {} -> {}", report.original_lines_count, report.patched_lines_count);
+                    println!("  Status:  {}", "✔ Validated AST Node".green());
+
+                    if apply {
+                        if let Err(e) = fs::write(&file, &report.patched_source) {
+                            eprintln!("{} Failed to apply patch to {:?}: {}", "Error:".red().bold(), file, e);
+                            std::process::exit(1);
+                        }
+                        println!("\n{} Successfully applied patch to `{}`", "✔".green().bold(), file_str.cyan());
+                    } else {
+                        println!("\n{} Proposed patch is valid. Run with {} to apply directly.", "ℹ".blue().bold(), "--apply".yellow());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "AST Patch Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Eval { expression, json } => {
+            match MicroEvaluator::eval_expression(&expression) {
+                Ok(eval_res) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&eval_res).unwrap());
+                    } else {
+                        println!("⚡ {} {}", "Evaluated:".green().bold(), eval_res.result.cyan().bold());
+                        println!("  Type:     {}", eval_res.value_type);
+                        println!("  Duration: {} µs", eval_res.duration_us.to_string().yellow());
+                    }
+                }
+                Err(e) => {
+                    if json {
+                        println!("{}", serde_json::json!({
+                            "status": "error",
+                            "error": e
+                        }));
+                    } else {
+                        eprintln!("{} {}", "Eval Error:".red().bold(), e);
+                    }
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Arch { action: _, config, json } => {
+            let arch_cfg = match ArchitectureEngine::load_config(config.as_deref()) {
+                Ok(cfg) => cfg,
+                Err(e) => {
+                    eprintln!("{} {}", "Architecture Config Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let report = match ArchitectureEngine::check_project(&arch_cfg, std::path::Path::new(".")) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("{} {}", "Architecture Check Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("🛡️ {}", "End Enterprise Architecture Invariant Validator".cyan().bold());
+                println!("================================================================================");
+                println!("  Rules Checked:  {}", report.rules_checked);
+                println!("  Files Scanned:  {}", report.files_scanned);
+                println!("  Violations:     {}", report.violations_count);
+
+                if report.violations.is_empty() {
+                    println!("\n{} 100% Architectural Invariants Respected (0 Violations)!", "✔".green().bold());
+                } else {
+                    println!("\n{} {} Architecture Violation(s) Found:\n", "✖".red().bold(), report.violations.len());
+                    for v in &report.violations {
+                        println!("  ✖ [{}] Rule: `{}` in `{}:{}`", v.violation_type.red().bold(), v.rule_pattern.yellow(), v.file.cyan(), v.line);
+                        println!("    Message: {}", v.message);
+                        println!("    Suggested Fix: {}\n", v.suggested_alternative.green());
+                    }
+                    std::process::exit(1);
+                }
+            }
         }
         Commands::Fix { file, apply } => {
             let file_str = file.to_string_lossy().to_string();

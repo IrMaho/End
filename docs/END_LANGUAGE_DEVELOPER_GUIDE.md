@@ -1,49 +1,77 @@
 # 👑 The End Programming Language: Master Enterprise Platform Guide
 
-> **Hardware Watchdog • Zero-Downtime Hot-Reload • Deep Semantic Observability • What-If Simulation • Scale Stress Engine • Zero GC • Native C-Speed**
+> **AI-First Machine Architecture • Hardware Watchdog • Zero-Downtime Hot-Reload • Deep Semantic Observability • What-If Simulation • Scale Stress Engine • Zero GC • Native C-Speed**
 
 ---
 
-## 🏛️ The 4 Pillars of the End Enterprise Platform
+## 🏛️ The AI-Agent & Enterprise Platform Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                   👑 END ENTERPRISE DEVELOPER PLATFORM                    │
-├────────────────────┬────────────────────┬────────────────────────────────┤
-│ 🛡️ 1. Hardware     │ ⚡ 2. Hot-Reload   │ 🔍 3. Semantic Observability   │
-│    Watchdog &      │    & Zero-Downtime │    & Line-Level Telemetry      │
-│    CPU Throttling  │    Recompiler      │    (Agent Protocol)            │
-├────────────────────┴────────────────────┴────────────────────────────────┤
-│ 🧪 4. Interactive Simulation, "What-If" Sandbox & Scale Stress Engine     │
-└──────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 🧠 END LANGUAGE: AI-AGENT COGNITIVE ENGINE                  │
+├────────────────────┬────────────────────┬───────────────────────────────────┤
+│ 🗺️ 1. Semantic     │ 🎯 2. Blast-Radius │ 🔮 3. Side-Effect                 │
+│    Knowledge Graph │    & Impact Map    │    & Contract System              │
+├────────────────────┼────────────────────┼───────────────────────────────────┤
+│ 🧩 4. Semantic     │ 🛠️ 5. Structured   │ ⚡ 6. Micro-Isolated              │
+│    Code Slicing    │    AST Auto-Patch  │    Expression Evaluator           │
+├────────────────────┴────────────────────┴───────────────────────────────────┤
+│ 🛡️ 7. Architecture Guardrails & Rule Enforcement (Architecture.toml)        │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. CLI Commands & Developer Workflow
+## 1. AI-First CLI Capabilities for 100M+ Line Codebases
 
-The End toolchain CLI (`end` / `endc`) provides enterprise subcommands out of the box:
+The End toolchain CLI (`end` / `endc`) provides dedicated commands engineered specifically for AI Agents and massive software architectures:
 
 ```powershell
-# 1. Parallel Unit Testing & Verification
-end test app.end                       # Run all @test functions with microsecond timers
-end test app.end --filter "Socket"     # Filter specific test names
-end test app.end --json                # Machine-first JSON output for AI Agent integration
+# 1. Machine Knowledge Graph (Sub-millisecond token-efficient index)
+end graph server.end --json                           # Full machine knowledge graph with symbol contracts
+end query server.end calculate_physics --callers --json # Query callers in 1ms (< 50 tokens)
+end query server.end calculate_physics --callees --json # Query callees
 
-# 2. Zero-Downtime Hot-Reload Development Server
-end dev server.end --port 5050         # Launch dev server with instant hot-reload & state hydration
-end watch .                            # High-speed sub-millisecond file watcher
+# 2. Blast-Radius & Impact Analysis
+end impact server.end calculate_physics --json        # Assess risk, affected files, and breaking change safety
 
-# 3. Interactive "What-If" Differential Mutation & Simulation
+# 3. Side-Effects & Capability Contracts
+end effects server.end pure_physics --json            # Query net/disk/io/memory/purity capabilities
+
+# 4. Semantic Code Slicing (Compress 50,000 line files to 50 lines)
+end slice server.end --interface-only                 # Skeletal AST with only structs, enums, pub signatures
+end slice server.end --json                           # Machine-readable AST slice with token estimates
+
+# 5. Structured AST Auto-Patches
+end patch server.end --ast-patch patch.json --apply   # Apply node-level AST modification without text breakage
+
+# 6. Micro-Isolated Expression Evaluator (< 50 µs)
+end eval "val x = 100 * 31; (x ^ 0x5AA5) % 50"        # Instant RAM expression execution in microseconds
+end eval "15 * 4 + 20" --json
+
+# 7. Architecture Guardrails & Invariant Validation
+end arch check                                        # Enforce Architecture.toml layer & purity boundaries
+end arch check --json
+
+# 8. Parallel Unit Testing & Verification
+end test app.end                                      # Run all @test functions with microsecond timers
+end test app.end --filter "Socket"                    # Filter specific test names
+end test app.end --json                               # Machine-first JSON output for AI Agent integration
+
+# 9. Zero-Downtime Hot-Reload Development Server
+end dev server.end --port 5050                        # Launch dev server with instant hot-reload & state hydration
+end watch .                                           # High-speed sub-millisecond file watcher
+
+# 10. Interactive "What-If" Differential Mutation & Simulation
 end simulate app.end --scenario "SIMD Vectorization"  # Compare baseline vs simulated mutant
 
-# 4. Virtual High-Scale Stress Benchmark
-end stress server.end --iterations 1000000            # Simulate 1,000,000 ops with P50, P90, P99 metrics
+# 11. Virtual High-Scale Stress Benchmark
+end stress server.end --iterations 1000000           # Simulate 1,000,000 ops with P50, P90, P99 metrics
 
-# 5. Project & Native Compilation
-end new my_enterprise_app              # Create scaffold with end.toml
-end build main.end -o app.exe          # Bare-metal ultra-optimized binary (.exe)
-end build lib.end --dll -o lib.dll     # Shared library (.dll / .so / .dylib) with C-ABI header (.h)
+# 12. Project & Native Compilation
+end new my_enterprise_app                             # Create scaffold with end.toml
+end build main.end -o app.exe                         # Bare-metal ultra-optimized binary (.exe)
+end build lib.end --dll -o lib.dll                    # Shared library (.dll / .so / .dylib) with C-ABI header (.h)
 ```
 
 ---
@@ -58,46 +86,16 @@ end build lib.end --dll -o lib.dll     # Shared library (.dll / .so / .dylib) wi
 | **🔍 Ring Buffer** | `std/telemetry/ring_buffer.end` | 10,000-entry in-memory zero-alloc circular buffer readable in < 1ms by AI agent without disk I/O. |
 | **🔍 Telemetry Trace** | `std/telemetry/trace.end` | Nanosecond function timing, memory allocation telemetry, and `/api/__dev/inspect` endpoint. |
 | **🧪 What-If Engine** | `std/simulation/what_if.end` | Differential mutation comparison and variance matrix generator. |
-| **🧪 Stress Engine** | `std/nexus/stress.end` | Statistical latency distribution calculator (P50, P90, P99, P99.9, Max latency, RPS). |
+| **🧪 Stress Engine** | `std/nexus/stress.end` | 1,000,000 operations scale metrics and P50/P90/P99 latency calculations. |
 
 ---
 
-## 3. Real-World Enterprise Example
+## 3. Architecture Invariants (`Architecture.toml`)
 
-```end
-// 👑 End Language Enterprise Server
-import "std/nexus/socket_guard.end"
-import "std/nexus/circuit_breaker.end"
-import "std/nexus/hot_reload.end"
-import "std/telemetry/ring_buffer.end"
-import "std/simulation/what_if.end"
-import "std/nexus/stress.end"
-
-@test("Hardware Watchdog Verification")
-pub fn test_watchdog() bool {
-    val guard = socket_guard_create(50)
-    ret safe_socket_is_valid(5050)
-}
-
-fn main() void {
-    println("👑 Enterprise Server Online!")
-
-    // 1. Hardware Guard
-    val is_valid = safe_socket_is_valid(5050)
-    
-    // 2. State Hydration
-    val store = hot_reload_store_create("player:active=12500")
-    val reloaded = hot_reload_preserve_state(store, "player:active=12501")
-    val hydrated = hot_reload_hydrate_state(reloaded)
-    println(hydrated.state_payload)
-
-    // 3. 10k Ring Buffer
-    mut rb = ring_buffer_create(10000)
-    rb = ring_buffer_push(rb)
-    println(ring_buffer_total(rb))
-
-    // 4. 1M Scale Stress
-    val report = stress_report_create(1000000, 14200, 14.2)
-    println(report.requests_per_sec)
-}
+```toml
+[invariants]
+"std/nexus/**" = { pure_math_only = false, allowed_effects = ["net", "io", "alloc"] }
+"std/simulation/**" = { cannot_import = ["std/nexus/socket_guard.end"], pure_math_only = true }
+"std/crypto/**" = { cannot_import = ["std/ui/**", "std/forge/**", "std/net/**"] }
+"std/math/**" = { pure_math_only = true, cannot_import = ["std/net/**", "std/db/**"] }
 ```

@@ -72,6 +72,7 @@ impl SemanticAnalyzer {
                 effects: Vec::new(),
                 is_pure: true,
                 memory_region: None,
+                capabilities: CapabilityContract::default(),
             };
             self.graph.symbols.insert(e.name.clone(), info);
         }
@@ -89,6 +90,7 @@ impl SemanticAnalyzer {
                 effects: Vec::new(),
                 is_pure: true,
                 memory_region: None,
+                capabilities: CapabilityContract::default(),
             };
             self.graph.symbols.insert(s.name.clone(), info);
         }
@@ -96,12 +98,42 @@ impl SemanticAnalyzer {
         // Register Functions
         for f in &module.functions {
             let mut effect_list = Vec::new();
+            let mut cap = CapabilityContract::default();
+
             for dir in &f.directives {
                 if dir.name == "@alloc_bound" {
                     effect_list.push(format!("alloc_bound({})", dir.args.join(", ")));
-                }
-                if dir.name == "@target" {
+                } else if dir.name == "@target" {
                     effect_list.push(format!("target({})", dir.args.join(", ")));
+                } else if dir.name == "@capability" {
+                    for arg in &dir.args {
+                        let parts: Vec<&str> = arg.split('=').collect();
+                        if parts.len() == 2 {
+                            let k = parts[0].trim();
+                            let v = parts[1].trim().trim_matches('"');
+                            match k {
+                                "net" => cap.net = v == "true",
+                                "disk" => cap.disk = v == "true",
+                                "io" => cap.io = v == "true",
+                                "memory" => cap.memory = v.to_string(),
+                                "pure" => cap.is_pure = v == "true",
+                                "can_panic" => cap.can_panic = v == "true",
+                                _ => {}
+                            }
+                        }
+                    }
+                    effect_list.push(format!("capability({})", dir.args.join(", ")));
+                } else if dir.name == "@pure" {
+                    cap.is_pure = true;
+                    cap.net = false;
+                    cap.disk = false;
+                    cap.io = false;
+                    effect_list.push("pure".to_string());
+                } else if dir.name == "@ws" || dir.name == "@post" || dir.name == "@get" {
+                    cap.net = true;
+                    cap.io = true;
+                    cap.is_pure = false;
+                    effect_list.push(dir.name.clone());
                 }
             }
 
@@ -123,8 +155,9 @@ impl SemanticAnalyzer {
                 callers: Vec::new(),
                 callees: Vec::new(),
                 effects: effect_list,
-                is_pure: false,
-                memory_region: None,
+                is_pure: cap.is_pure,
+                memory_region: Some(cap.memory.clone()),
+                capabilities: cap,
             };
             self.graph.symbols.insert(f.name.clone(), info);
         }

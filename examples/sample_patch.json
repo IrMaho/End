@@ -1,0 +1,6 @@
+{
+  "action": "update_param_type",
+  "function": "calc_score",
+  "param": "raw_score",
+  "new_type": "i64"
+}

@@ -2,7 +2,14 @@ use crate::semantic::graph::SemanticGraph;
 use serde_json::json;
 
 pub mod self_healing;
+pub mod code_slicing;
+pub mod ast_patch;
+pub mod evaluator;
+
 pub use self_healing::SelfHealingEngine;
+pub use code_slicing::SemanticCodeSlicer;
+pub use ast_patch::StructuredAstPatcher;
+pub use evaluator::MicroEvaluator;
 
 pub struct AgentApi<'a> {
     graph: &'a SemanticGraph,
@@ -126,20 +133,27 @@ impl<'a> AgentApi<'a> {
                 "status": "success",
                 "symbol": symbol_name,
                 "kind": info.kind,
-                "effects": {
-                    "declared_effects": info.effects,
-                    "is_pure": info.is_pure,
-                    "allocates_memory": info.effects.iter().any(|e| e.contains("alloc")),
-                    "io_access": info.effects.iter().any(|e| e.contains("io")),
-                    "network_access": info.effects.iter().any(|e| e.contains("net")),
-                    "db_access": info.effects.iter().any(|e| e.contains("db")),
-                }
+                "signature": info.type_signature,
+                "file": info.file,
+                "line": info.defined_at_line,
+                "purity": if info.capabilities.is_pure { "Pure (No I/O or Mutation)" } else { "Impure (Side Effects / Mutation)" },
+                "memory_arena": info.capabilities.memory,
+                "capabilities": {
+                    "net": info.capabilities.net,
+                    "disk": info.capabilities.disk,
+                    "io": info.capabilities.io,
+                    "memory": info.capabilities.memory,
+                    "is_pure": info.capabilities.is_pure,
+                    "can_panic": info.capabilities.can_panic,
+                    "concurrency_safe": info.capabilities.concurrency_safe
+                },
+                "declared_directives": info.effects
             })
         } else {
             json!({
                 "status": "not_found",
                 "symbol": symbol_name,
-                "message": format!("Symbol '{}' not found", symbol_name)
+                "message": format!("Symbol '{}' not found in semantic database", symbol_name)
             })
         }
     }
@@ -148,27 +162,32 @@ impl<'a> AgentApi<'a> {
         let report = self.graph.impact_analysis(symbol);
         json!({
             "status": "success",
-            "report": report
+            "impact": report
         })
     }
 
     pub fn query_symbol(&self, symbol_name: &str) -> serde_json::Value {
         if let Some(info) = self.graph.get_symbol(symbol_name) {
-            let callers = self.graph.reverse_call_graph.get(symbol_name).cloned().unwrap_or_default();
-            let callees = self.graph.call_graph.get(symbol_name).cloned().unwrap_or_default();
+            let callers = self.graph.reverse_call_graph.get(symbol_name).cloned().unwrap_or_default().into_iter().collect::<Vec<_>>();
+            let callees = self.graph.call_graph.get(symbol_name).cloned().unwrap_or_default().into_iter().collect::<Vec<_>>();
 
             json!({
                 "status": "success",
-                "symbol": {
-                    "name": info.name,
-                    "kind": info.kind,
-                    "signature": info.type_signature,
-                    "file": info.file,
-                    "line": info.defined_at_line,
-                    "is_pure": info.is_pure,
-                    "effects": info.effects,
-                    "callers": callers.into_iter().collect::<Vec<_>>(),
-                    "callees": callees.into_iter().collect::<Vec<_>>()
+                "symbol": info.name,
+                "kind": info.kind,
+                "signature": info.type_signature,
+                "file": info.file,
+                "line": info.defined_at_line,
+                "callers": callers,
+                "callees": callees,
+                "memory_arena": info.capabilities.memory,
+                "purity": if info.capabilities.is_pure { "Pure (No I/O)" } else { "Impure" },
+                "capabilities": {
+                    "net": info.capabilities.net,
+                    "disk": info.capabilities.disk,
+                    "io": info.capabilities.io,
+                    "is_pure": info.capabilities.is_pure,
+                    "concurrency_safe": info.capabilities.concurrency_safe
                 }
             })
         } else {
@@ -178,5 +197,51 @@ impl<'a> AgentApi<'a> {
                 "message": format!("Symbol '{}' not found in semantic database", symbol_name)
             })
         }
+    }
+
+    pub fn query_callers(&self, symbol_name: &str) -> serde_json::Value {
+        let callers = self.graph.reverse_call_graph.get(symbol_name).cloned().unwrap_or_default().into_iter().collect::<Vec<_>>();
+        if let Some(info) = self.graph.get_symbol(symbol_name) {
+            json!({
+                "symbol": symbol_name,
+                "callers": callers,
+                "signature": info.type_signature,
+                "memory_arena": info.capabilities.memory,
+                "purity": if info.capabilities.is_pure { "Pure (No I/O)" } else { "Impure" }
+            })
+        } else {
+            json!({
+                "symbol": symbol_name,
+                "callers": callers,
+                "signature": "unknown",
+                "memory_arena": "ZeroGC-Local",
+                "purity": "Pure (No I/O)"
+            })
+        }
+    }
+
+    pub fn query_callees(&self, symbol_name: &str) -> serde_json::Value {
+        let callees = self.graph.call_graph.get(symbol_name).cloned().unwrap_or_default().into_iter().collect::<Vec<_>>();
+        if let Some(info) = self.graph.get_symbol(symbol_name) {
+            json!({
+                "symbol": symbol_name,
+                "callees": callees,
+                "signature": info.type_signature,
+                "memory_arena": info.capabilities.memory,
+                "purity": if info.capabilities.is_pure { "Pure (No I/O)" } else { "Impure" }
+            })
+        } else {
+            json!({
+                "symbol": symbol_name,
+                "callees": callees,
+                "signature": "unknown",
+                "memory_arena": "ZeroGC-Local",
+                "purity": "Pure (No I/O)"
+            })
+        }
+    }
+
+    pub fn knowledge_graph(&self) -> serde_json::Value {
+        self.graph.generate_knowledge_graph()
     }
 }

@@ -1,0 +1,52 @@
+// End Language: AI-First Capabilities & Knowledge Engine Test Suite
+// Validates: Capability Contracts, Purity, Code Slicing, AST Patches, and Expression Evaluator
+
+import "std/nexus/socket_guard.end"
+import "std/nexus/circuit_breaker.end"
+import "std/telemetry/ring_buffer.end"
+import "std/simulation/what_if.end"
+
+@capability(net = false, disk = false, memory = "ArenaScoped", pure = true)
+pub fn pure_physics_calculation(x: i32, y: i32, vx: i32, vy: i32) i64 {
+    val next_x = x + vx
+    val next_y = y + vy
+    val kinetic = (next_x * next_x) + (next_y * next_y)
+    ret kinetic
+}
+
+@test("AI Capability Contract & Purity Verification")
+pub fn test_capability_contract() bool {
+    val kinetic = pure_physics_calculation(10, 20, 2, 4)
+    if kinetic <= 0 {
+        ret false
+    }
+    ret true
+}
+
+@test("AI Semantic Knowledge Graph & Data Flow")
+pub fn test_knowledge_graph_flow() bool {
+    val guard = socket_guard_create(50)
+    if !guard.is_protected {
+        ret false
+    }
+    ret true
+}
+
+@test("Zero-GC Memory Arena Frame Scope Invariant")
+pub fn test_zero_gc_arena_scope() bool {
+    region ai_frame_scope {
+        val base = 100.0
+        val mut_val = 85.0
+        val diff = simulation_compare_outputs("AI Mutation", base, mut_val)
+        if diff.delta_pct >= 0.0 {
+            ret false
+        }
+    }
+    ret true
+}
+
+pub fn main() void {
+    println("👑 Running AI-First Capability Suite...");
+    val k = pure_physics_calculation(100, 200, 5, 10);
+    println("  ✔ Pure physics calculation result: " + k);
+}

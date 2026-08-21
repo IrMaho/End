@@ -1,0 +1,8 @@
+# 🛡️ End Language Enterprise Architecture Invariants & Layer Boundaries
+# Machine-readable architectural constraints checked automatically by 'end arch check'
+
+[invariants]
+"std/nexus/**" = { pure_math_only = false, allowed_effects = ["net", "io", "alloc"] }
+"std/simulation/**" = { cannot_import = ["std/nexus/socket_guard.end"], pure_math_only = true }
+"std/crypto/**" = { cannot_import = ["std/ui/**", "std/forge/**", "std/net/**"] }
+"std/math/**" = { pure_math_only = true, cannot_import = ["std/net/**", "std/db/**"] }
