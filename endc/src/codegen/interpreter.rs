@@ -475,6 +475,45 @@ impl Interpreter {
                     if let Some(func) = self.functions.get(name).cloned() {
                         return self.eval_function(&func, eval_args);
                     }
+
+                    // Morphic function dispatch: if "telegram_send" not found,
+                    // search for a morphic template like "{platform}_send"
+                    for (fn_name, func) in self.functions.clone() {
+                        if let Some(ref morphic_var) = func.morphic_param {
+                            // fn_name is like "{platform}_send"
+                            // morphic_var is like "platform"
+                            // Extract the suffix after the {var} part
+                            let template = &fn_name;
+                            let brace_open = template.find('{');
+                            let brace_close = template.find('}');
+                            if let (Some(bo), Some(bc)) = (brace_open, brace_close) {
+                                let prefix = &template[..bo];
+                                let suffix = &template[bc+1..];
+                                // Check if called name matches the pattern
+                                if name.ends_with(suffix) && name.len() > suffix.len() {
+                                    let concrete_value = &name[prefix.len()..name.len()-suffix.len()];
+                                    // Found! Set the morphic_var as a local variable and call the function
+                                    self.push_scope();
+                                    self.set_var(morphic_var, Value::String(concrete_value.to_string()));
+                                    for (param, arg) in func.params.iter().zip(eval_args.into_iter()) {
+                                        self.set_var(&param.name, arg);
+                                    }
+                                    let mut ret_val = Value::Void;
+                                    for stmt in &func.body.statements {
+                                        match self.eval_statement(stmt)? {
+                                            Some(v) => {
+                                                ret_val = v;
+                                                break;
+                                            }
+                                            None => {}
+                                        }
+                                    }
+                                    self.pop_scope();
+                                    return Ok(ret_val);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Ok(Value::Void)

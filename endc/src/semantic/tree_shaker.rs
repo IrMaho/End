@@ -19,6 +19,26 @@ impl TreeShaker {
             }
         }
 
+        // Morphic function resolution: if any reachable call name matches a morphic template,
+        // mark the template as reachable too
+        let morphic_templates: Vec<_> = module.functions.iter()
+            .filter(|f| f.morphic_param.is_some())
+            .collect();
+        for mt in &morphic_templates {
+            let template_name = &mt.name;
+            if let (Some(bo), Some(bc)) = (template_name.find('{'), template_name.find('}')) {
+                let suffix = &template_name[bc+1..];
+                let prefix = &template_name[..bo];
+                for fn_name in reachable_functions.clone() {
+                    if fn_name.ends_with(suffix) && fn_name.len() > suffix.len() + prefix.len() {
+                        reachable_functions.insert(mt.name.clone());
+                        Self::visit_function_body(mt, &mut reachable_functions, &mut reachable_structs, module);
+                        break;
+                    }
+                }
+            }
+        }
+
         let initial_count = module.functions.len();
         let pruned_functions: Vec<FunctionDef> = module
             .functions

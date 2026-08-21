@@ -457,6 +457,10 @@ impl CBackend {
             let is_explicit_inline = f.directives.iter().any(|d| d.name == "@inline" || d.name == "@always_inline");
             let is_exported = (is_lib && f.is_pub) || f.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export");
 
+            // Skip forward declaration for morphic template functions
+            if f.morphic_param.is_some() {
+                continue;
+            }
             if f.name == "main" {
                 self.output.push_str(&format!("{} {}({});\n", ret_type, f.name, params_str.join(", ")));
             } else if is_exported {
@@ -523,6 +527,136 @@ impl CBackend {
         self.output.push('\n');
 
         // Function Bodies
+        // First pass: generate morphic concrete specializations
+        let mut morphic_templates: Vec<FunctionDef> = Vec::new();
+        let mut morphic_calls: Vec<(String, String, String)> = Vec::new(); // (call_name, morphic_var, concrete_val)
+        
+        for f in &module.functions {
+            if f.morphic_param.is_some() {
+                morphic_templates.push(f.clone());
+            }
+        }
+        
+        // Collect all function call identifiers from the AST to find morphic invocations
+        fn collect_call_names(stmts: &[Statement], names: &mut Vec<String>) {
+            for stmt in stmts {
+                match stmt {
+                    Statement::Expression(expr) | Statement::Return { value: Some(expr), .. } |
+                    Statement::Defer { expr, .. } | Statement::Spawn { call: expr, .. } => {
+                        collect_expr_calls(expr, names);
+                    }
+                    Statement::VarDecl { initializer: Some(init), .. } => {
+                        collect_expr_calls(init, names);
+                    }
+                    Statement::Assignment { value, .. } => {
+                        collect_expr_calls(value, names);
+                    }
+                    Statement::If { condition, then_block, else_block, .. } => {
+                        collect_expr_calls(condition, names);
+                        collect_call_names(&then_block.statements, names);
+                        if let Some(eb) = else_block {
+                            collect_call_names(&eb.statements, names);
+                        }
+                    }
+                    Statement::While { condition, body, .. } => {
+                        collect_expr_calls(condition, names);
+                        collect_call_names(&body.statements, names);
+                    }
+                    Statement::ForIn { body, .. } | Statement::ParallelFor { body, .. } |
+                    Statement::RegionBlock { body, .. } | Statement::TargetBlock { body, .. } => {
+                        collect_call_names(&body.statements, names);
+                    }
+                    Statement::Match { expr, arms, .. } => {
+                        collect_expr_calls(expr, names);
+                        for arm in arms {
+                            collect_call_names(&arm.body.statements, names);
+                        }
+                    }
+                    Statement::QuantumUnwrap { expr, fallback, .. } => {
+                        collect_expr_calls(expr, names);
+                        collect_expr_calls(fallback, names);
+                    }
+                    Statement::AtomicOp { value, .. } => {
+                        collect_expr_calls(value, names);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        fn collect_expr_calls(expr: &Expression, names: &mut Vec<String>) {
+            match expr {
+                Expression::Call { callee, args, .. } => {
+                    if let Expression::Ident(name, _) = callee.as_ref() {
+                        names.push(name.clone());
+                    }
+                    for a in args {
+                        collect_expr_calls(a, names);
+                    }
+                }
+                Expression::Binary { left, right, .. } => {
+                    collect_expr_calls(left, names);
+                    collect_expr_calls(right, names);
+                }
+                Expression::Unary { expr, .. } | Expression::Await { expr, .. } => {
+                    collect_expr_calls(expr, names);
+                }
+                Expression::Pipe { lhs, rhs, .. } | Expression::NullCollapse { left: lhs, right: rhs, .. } => {
+                    collect_expr_calls(lhs, names);
+                    collect_expr_calls(rhs, names);
+                }
+                _ => {}
+            }
+        }
+        
+        let mut all_call_names: Vec<String> = Vec::new();
+        for f in &module.functions {
+            collect_call_names(&f.body.statements, &mut all_call_names);
+        }
+        
+        // For each morphic template, find matching calls and generate concrete functions
+        for mt in &morphic_templates {
+            if let Some(ref morphic_var) = mt.morphic_param {
+                let template_name = &mt.name;
+                let brace_open = template_name.find('{');
+                let brace_close = template_name.find('}');
+                if let (Some(bo), Some(bc)) = (brace_open, brace_close) {
+                    let prefix = &template_name[..bo];
+                    let suffix = &template_name[bc+1..];
+                    
+                    let mut seen = std::collections::HashSet::new();
+                    for call_name in &all_call_names {
+                        if call_name.ends_with(suffix) && call_name.len() > suffix.len() + prefix.len() {
+                            let concrete_value = &call_name[prefix.len()..call_name.len()-suffix.len()];
+                            if !concrete_value.is_empty() && !seen.contains(concrete_value) {
+                                seen.insert(concrete_value.to_string());
+                                // Generate a concrete C function
+                                let mut concrete_fn = mt.clone();
+                                concrete_fn.name = call_name.clone();
+                                concrete_fn.morphic_param = None; // So gen_function doesn't skip it
+                                
+                                // Add a local variable declaration for the morphic param at start of body
+                                let morphic_decl = Statement::VarDecl {
+                                    name: morphic_var.clone(),
+                                    var_type: Some(Type::Str),
+                                    is_mut: false,
+                                    initializer: Some(Expression::Lit(
+                                        Literal::String(concrete_value.to_string()),
+                                        mt.span.clone(),
+                                    )),
+                                    span: mt.span.clone(),
+                                };
+                                let mut new_stmts = vec![morphic_decl];
+                                new_stmts.extend(concrete_fn.body.statements.clone());
+                                concrete_fn.body.statements = new_stmts;
+                                
+                                self.gen_function(&concrete_fn);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         for f in &module.functions {
             self.gen_function(f);
         }
@@ -645,6 +779,13 @@ impl CBackend {
         } else {
             func.name.clone()
         };
+
+        // If this is a morphic function template like {platform}_send,
+        // we skip generating it directly — concrete specializations are generated at call sites.
+        if func.morphic_param.is_some() {
+            // Store the morphic template for later specialization
+            return;
+        }
 
         let is_explicit_inline = func.directives.iter().any(|d| d.name == "@inline" || d.name == "@always_inline");
         let is_exported = (self.is_lib && func.is_pub) || func.directives.iter().any(|d| d.name == "@export" || d.name == "@c_export");
@@ -1264,7 +1405,8 @@ Statement::Spawn { call, .. } => {
             Expression::NullCollapse { left, right, .. } => {
                 let l = self.gen_expression(left);
                 let r = self.gen_expression(right);
-                format!("(({} != NULL) ? ({}) : NULL)", l, r)
+                // Pipeline operator: evaluate left, then evaluate right
+                format!("((void)({}), ({}))", l, r)
             }
         }
     }
