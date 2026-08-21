@@ -24,6 +24,12 @@ app_*
 examples/*.c
 examples/*.exe
 
+tests/*.c
+tests/*.exe
+tests/test_pkg/
+bindings/test_bindgen/
+docs/test_out/
+
 # IDE & system
 /ide
 .idea/

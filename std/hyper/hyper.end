@@ -1,30 +1,34 @@
 // End Standard Library: std/hyper/hyper.end
 // 🚀 EndHyper: Modern, Zero-GC, FastAPI-Style Declarative Web Framework
 
-st RequestContext {
+import "std/net/socket.end"
+
+pub st RequestContext {
     method: str,
     path: str,
     body: str,
     client_ip: str,
 }
 
-st HyperResponse {
+pub st HyperResponse {
     status_code: i32,
     content_type: str,
     body: str,
 }
 
-st RouteEntry {
+pub st RouteEntry {
     method: str,
     path: str,
     handler_id: i32,
 }
 
-st HyperApp {
+pub st HyperApp {
     app_name: str,
     version: str,
     port: i32,
+    listener: TcpListener,
     routes_count: i32,
+    is_running: bool,
 }
 
 pub fn hyper_app_create(name: str, version: str) HyperApp {
@@ -32,7 +36,21 @@ pub fn hyper_app_create(name: str, version: str) HyperApp {
         app_name: name,
         version: version,
         port: 8080,
+        listener: TcpListener { handle: -1, port: 8080, is_listening: false },
         routes_count: 0,
+        is_running: false,
+    }
+}
+
+pub fn hyper_app_listen(app: HyperApp, port: i32) HyperApp {
+    val l = tcp_listener_bind(port)
+    ret HyperApp {
+        app_name: app.app_name,
+        version: app.version,
+        port: port,
+        listener: l,
+        routes_count: app.routes_count,
+        is_running: l.is_listening,
     }
 }
 
@@ -49,13 +67,27 @@ pub fn hyper_response_ok(json_str: str) HyperResponse {
 }
 
 pub fn hyper_response_unauthorized(err_msg: str) HyperResponse {
-    ret hyper_response_json(401, "{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}")
+    ret hyper_response_json(401, "{\"error\": \"Unauthorized\", \"message\": \"" + err_msg + "\"}")
 }
 
 pub fn hyper_response_not_found() HyperResponse {
     ret hyper_response_json(404, "{\"error\": \"Not Found\", \"code\": 404}")
 }
 
-pub fn hyper_openapi_schema(app: HyperApp) str {
-    ret "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"EndHyper API\", \"version\": \"1.0.0\"}, \"paths\": {}}"
+pub fn hyper_send_response(stream: TcpStream, resp: HyperResponse) void {
+    mut status_str = "200 OK"
+    if resp.status_code == 404 {
+        status_str = "404 Not Found"
+    } else if resp.status_code == 401 {
+        status_str = "401 Unauthorized"
+    }
+    val header = "HTTP/1.1 " + status_str + "\r\nContent-Type: " + resp.content_type + "\r\nConnection: close\r\n\r\n"
+    val full_msg = header + resp.body
+    tcp_stream_write(stream, full_msg)
+    tcp_stream_close(stream)
 }
+
+pub fn hyper_openapi_schema(app: HyperApp) str {
+    ret "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"" + app.app_name + "\", \"version\": \"" + app.version + "\"}, \"paths\": {}}"
+}
+

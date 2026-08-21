@@ -1,33 +1,74 @@
 // End Standard Library: std/net/socket.end
-// Native High-Performance Cross-Platform TCP Socket Networking
+// 🌐 Native High-Performance Cross-Platform TCP Socket Networking
 
-st TcpListener {
+pub st TcpListener {
+    handle: i64,
     port: i32,
     is_listening: bool,
 }
 
-st TcpStream {
+pub st TcpStream {
+    handle: i64,
     peer_addr: str,
     is_connected: bool,
 }
 
-fn tcp_listener_bind(port: i32) TcpListener {
+pub fn tcp_listener_bind(port: i32) TcpListener {
+    val h: i64 = end_net_tcp_listen(port, 128)
     ret TcpListener {
+        handle: h,
         port: port,
-        is_listening: true,
+        is_listening: h >= 0,
     }
 }
 
-fn tcp_listener_accept(listener: TcpListener) TcpStream {
+pub fn tcp_listener_accept(listener: TcpListener) TcpStream {
+    if !listener.is_listening {
+        ret TcpStream {
+            handle: -1,
+            peer_addr: "",
+            is_connected: false,
+        }
+    }
+    val client_h: i64 = end_net_tcp_accept(listener.handle)
     ret TcpStream {
-        peer_addr: "127.0.0.1",
-        is_connected: listener.is_listening,
+        handle: client_h,
+        peer_addr: "client",
+        is_connected: client_h >= 0,
     }
 }
 
-fn tcp_stream_write(stream: TcpStream, response_bytes: str) i32 {
-    if stream.is_connected {
-        ret 1
+pub fn tcp_connect(host: str, port: i32) TcpStream {
+    val h: i64 = end_net_tcp_connect(host, port)
+    ret TcpStream {
+        handle: h,
+        peer_addr: host,
+        is_connected: h >= 0,
     }
-    ret 0
+}
+
+pub fn tcp_stream_write(stream: TcpStream, response_bytes: str) i64 {
+    if !stream.is_connected || stream.handle < 0 {
+        ret 0
+    }
+    ret end_net_tcp_send(stream.handle, response_bytes, -1)
+}
+
+pub fn tcp_stream_read(stream: TcpStream, max_bytes: i32) str {
+    if !stream.is_connected || stream.handle < 0 {
+        ret ""
+    }
+    ret end_net_tcp_recv(stream.handle, max_bytes)
+}
+
+pub fn tcp_stream_close(stream: TcpStream) void {
+    if stream.handle >= 0 {
+        end_net_tcp_close(stream.handle)
+    }
+}
+
+pub fn tcp_listener_close(listener: TcpListener) void {
+    if listener.handle >= 0 {
+        end_net_tcp_close(listener.handle)
+    }
 }

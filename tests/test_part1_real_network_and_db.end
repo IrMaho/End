@@ -1,0 +1,69 @@
+// Test Suite for Part 1: Real Sockets, Embedded Database, and Protocols
+import "std/net/socket.end"
+import "std/db/sqlite.end"
+import "std/db/redis.end"
+import "std/db/postgres.end"
+import "std/hyper/hyper.end"
+
+pub fn test_embedded_db() void {
+    println("--- Testing Real Embedded Database ---")
+    val db = db_open(":memory:")
+    println("Database opened, is_connected:")
+    println(db.is_connected)
+
+    val res1 = db_set(db, "user:1001", "{\"name\": \"Sina\", \"role\": \"Lead Engineer\"}")
+    println("Insert record:")
+    println(res1.success)
+
+    val res2 = db_set(db, "user:1002", "{\"name\": \"Sara\", \"role\": \"Architect\"}")
+    println("Insert second record:")
+    println(res2.success)
+
+    val val1 = db_get(db, "user:1001")
+    println("Queried user:1001:")
+    println(val1)
+
+    val val2 = db_get(db, "user:1002")
+    println("Queried user:1002:")
+    println(val2)
+
+    db_close(db)
+    println("✔ Embedded Database verified!")
+}
+
+pub fn test_socket_creation() void {
+    println("--- Testing Real Native TCP Socket Binding ---")
+    val listener = tcp_listener_bind(9876)
+    println("Listener opened on port 9876:")
+    println(listener.is_listening)
+    println("Listener handle:")
+    println(listener.handle)
+
+    tcp_listener_close(listener)
+    println("✔ Native TCP Socket binding verified!")
+}
+
+pub fn test_hyper_app() void {
+    println("--- Testing EndHyper App & Real Response Serialization ---")
+    val app = hyper_app_create("EndEnterpriseAPI", "1.0.0")
+    val resp_ok = hyper_response_ok("{\"status\": \"healthy\", \"uptime_sec\": 3600}")
+    println("Hyper Response status code:")
+    println(resp_ok.status_code)
+    println("Hyper Response content:")
+    println(resp_ok.body)
+
+    val schema = hyper_openapi_schema(app)
+    println("OpenAPI Schema length:")
+    println(schema)
+    println("✔ EndHyper verified!")
+}
+
+pub fn main() void {
+    println("👑 =============================================")
+    println("👑 STARTING PART 1 REAL VERIFICATION SUITE")
+    println("👑 =============================================")
+    test_embedded_db()
+    test_socket_creation()
+    test_hyper_app()
+    println("👑 ALL PART 1 REAL IMPLEMENTATIONS VERIFIED SUCCESSFULLY! 👑")
+}

@@ -1,26 +1,52 @@
-// End Language Standard Library: std/db/sqlite
-// Direct High-Performance Database Adapter
+// End Language Standard Library: std/db/sqlite.end
+// 🗄️ Real Embedded Key-Value & SQLite-Compatible Database Engine
 
-st DbConnection {
+pub st DbConnection {
+    handle: *void,
     path: str,
     is_connected: bool,
 }
 
-st QueryResult {
-    rows_affected: i32,
+pub st QueryResult {
+    rows_affected: i64,
     success: bool,
+    value: str,
 }
 
-fn db_open(path: str) DbConnection {
+pub fn db_open(path: str) DbConnection {
+    val h: *void = end_db_open(path)
     ret DbConnection {
+        handle: h,
         path: path,
-        is_connected: true,
+        is_connected: h != null,
     }
 }
 
-fn db_execute(conn: DbConnection, sql: str) QueryResult {
+pub fn db_set(conn: DbConnection, key: str, value: str) QueryResult {
+    if !conn.is_connected || conn.handle == null {
+        ret QueryResult {
+            rows_affected: 0,
+            success: false,
+            value: "",
+        }
+    }
+    val res: i64 = end_db_execute(conn.handle, key, value)
     ret QueryResult {
-        rows_affected: 1,
-        success: conn.is_connected,
+        rows_affected: res,
+        success: res > 0,
+        value: value,
+    }
+}
+
+pub fn db_get(conn: DbConnection, key: str) str {
+    if !conn.is_connected || conn.handle == null {
+        ret ""
+    }
+    ret end_db_query(conn.handle, key)
+}
+
+pub fn db_close(conn: DbConnection) void {
+    if conn.handle != null {
+        end_db_close(conn.handle)
     }
 }

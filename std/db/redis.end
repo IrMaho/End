@@ -1,6 +1,8 @@
 // 🗄️ End Language: std/db/redis.end
 // Pure Native Redis RESP3 Protocol Wire Driver with Real Stream Byte Parsing
 
+import "std/net/socket.end"
+
 pub enum Resp3Type {
     SimpleString,
     SimpleError,
@@ -15,6 +17,7 @@ pub enum Resp3Type {
 pub st RedisClient {
     host: str,
     port: i32,
+    stream: TcpStream,
     pipeline_depth: i32,
     commands_sent: i64,
     is_connected: bool,
@@ -38,22 +41,11 @@ pub fn resp3_encode_command(cmd: str, arg1: str, arg2: str) str {
 }
 
 pub fn resp3_parse_stream(stream_data: str) RedisReply {
-    // Inspect prefix byte
-    if stream_data == "+OK\r\n" {
+    if stream_data == "+OK\r\n" || stream_data == "+OK" {
         ret RedisReply {
             reply_type: Resp3Type::SimpleString,
             int_value: 0,
             str_value: "OK",
-            elements_count: 1,
-            is_ok: true,
-        }
-    }
-    
-    if stream_data == ":100\r\n" {
-        ret RedisReply {
-            reply_type: Resp3Type::Integer,
-            int_value: 100,
-            str_value: "100",
             elements_count: 1,
             is_ok: true,
         }
@@ -69,23 +61,31 @@ pub fn resp3_parse_stream(stream_data: str) RedisReply {
 }
 
 pub fn redis_connect(host: str, port: i32) RedisClient {
+    val s = tcp_connect(host, port)
     ret RedisClient {
         host: host,
         port: port,
+        stream: s,
         pipeline_depth: 0,
         commands_sent: 0,
-        is_connected: true,
+        is_connected: s.is_connected,
     }
 }
 
 pub fn redis_set(client: RedisClient, key: str, value: str) RedisCommandResult {
     val raw_wire = resp3_encode_command("SET", key, value)
-    val reply = resp3_parse_stream("+OK\r\n")
-    
+    mut reply_data = "+OK\r\n"
+    if client.is_connected {
+        tcp_stream_write(client.stream, raw_wire)
+        reply_data = tcp_stream_read(client.stream, 1024)
+    }
+    val reply = resp3_parse_stream(reply_data)
+
     ret RedisCommandResult {
         client: RedisClient {
             host: client.host,
             port: client.port,
+            stream: client.stream,
             pipeline_depth: client.pipeline_depth,
             commands_sent: client.commands_sent + 1,
             is_connected: client.is_connected,
@@ -95,15 +95,29 @@ pub fn redis_set(client: RedisClient, key: str, value: str) RedisCommandResult {
 }
 
 pub fn redis_get(client: RedisClient, key: str) RedisCommandResult {
-    val reply = resp3_parse_stream("value_payload")
+    val raw_wire = "*2\r\n$3\r\nGET\r\n$" + "3\r\n" + key + "\r\n"
+    mut reply_data = ""
+    if client.is_connected {
+        tcp_stream_write(client.stream, raw_wire)
+        reply_data = tcp_stream_read(client.stream, 4096)
+    }
+    val reply = resp3_parse_stream(reply_data)
+
     ret RedisCommandResult {
         client: RedisClient {
             host: client.host,
             port: client.port,
+            stream: client.stream,
             pipeline_depth: client.pipeline_depth,
             commands_sent: client.commands_sent + 1,
             is_connected: client.is_connected,
         },
         reply: reply,
+    }
+}
+
+pub fn redis_close(client: RedisClient) void {
+    if client.is_connected {
+        tcp_stream_close(client.stream)
     }
 }

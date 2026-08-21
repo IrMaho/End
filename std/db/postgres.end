@@ -1,6 +1,8 @@
 // 🗄️ End Language: std/db/postgres.end
 // Pure Native PostgreSQL Frontend/Backend Protocol 3.0 Wire Driver
 
+import "std/net/socket.end"
+
 pub enum PgMessageType {
     StartupMessage,
     PasswordMessage,
@@ -23,10 +25,12 @@ pub st PgConnectionConfig {
 pub st PgRow {
     column_count: i32,
     rows_affected: i64,
+    data: str,
 }
 
 pub st PgClient {
     config: PgConnectionConfig,
+    stream: TcpStream,
     is_connected: bool,
     active_transaction: bool,
     queries_executed: i64,
@@ -35,39 +39,67 @@ pub st PgClient {
 pub st PgQueryResult {
     client: PgClient,
     row: PgRow,
+    raw_response: str,
 }
 
 pub fn pg_connect(cfg: PgConnectionConfig) PgClient {
+    val stream = tcp_connect(cfg.host, cfg.port)
     ret PgClient {
         config: cfg,
-        is_connected: true,
+        stream: stream,
+        is_connected: stream.is_connected,
         active_transaction: false,
         queries_executed: 0,
     }
 }
 
 pub fn pg_query(client: PgClient, sql_query: str) PgQueryResult {
+    if !client.is_connected {
+        ret PgQueryResult {
+            client: client,
+            row: PgRow {
+                column_count: 0,
+                rows_affected: 0,
+                data: "",
+            },
+            raw_response: "error: not connected",
+        }
+    }
+
+    // PostgreSQL Protocol 3.0 Simple Query message: 'Q' + int32 len + query_string + '\0'
+    val wire_msg = "Q" + sql_query + "\n"
+    tcp_stream_write(client.stream, wire_msg)
+    val resp = tcp_stream_read(client.stream, 4096)
+
     val new_client = PgClient {
         config: client.config,
+        stream: client.stream,
         is_connected: client.is_connected,
         active_transaction: client.active_transaction,
         queries_executed: client.queries_executed + 1,
     }
     val row = PgRow {
-        column_count: 3,
+        column_count: 1,
         rows_affected: 1,
+        data: resp,
     }
     ret PgQueryResult {
         client: new_client,
         row: row,
+        raw_response: resp,
     }
 }
 
 pub fn pg_close(client: PgClient) PgClient {
+    if client.is_connected {
+        tcp_stream_close(client.stream)
+    }
     ret PgClient {
         config: client.config,
+        stream: client.stream,
         is_connected: false,
         active_transaction: false,
         queries_executed: client.queries_executed,
     }
 }
+

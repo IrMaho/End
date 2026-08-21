@@ -854,6 +854,12 @@ fn main() {
                 if strip {
                     gcc_args.push("-s".to_string());
                 }
+                #[cfg(windows)]
+                {
+                    gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-lgdi32".to_string());
+                    gcc_args.push("-luser32".to_string());
+                }
                 gcc_args.push("-o".to_string());
                 gcc_args.push(bin_path.to_str().unwrap().to_string());
 
@@ -1864,22 +1870,35 @@ fn parse_file_line(target: &str) -> (PathBuf, usize) {
 }
 
 fn resolve_import_file(base_dir: &std::path::Path, path_str: &str) -> Option<PathBuf> {
-    // 1. Direct path
+    // 1. Direct path relative to base_dir
     let direct = base_dir.join(path_str);
     if direct.exists() && direct.is_file() {
         return Some(direct);
     }
-    let with_ext = base_dir.join(format!("{}.end", path_str));
+    let with_ext = base_dir.join(format!("{}.end", path_str.trim_end_matches(".end")));
     if with_ext.exists() && with_ext.is_file() {
         return Some(with_ext);
     }
-    // 2. Dot notation: modules.hardware -> modules/hardware.end
-    let dot_path = path_str.replace('.', "/").replace("::", "/");
+
+    // 2. Direct path relative to workspace root
+    let root_direct = std::path::Path::new(path_str);
+    if root_direct.exists() && root_direct.is_file() {
+        return Some(root_direct.to_path_buf());
+    }
+    let root_with_ext = std::path::Path::new(&format!("{}.end", path_str.trim_end_matches(".end"))).to_path_buf();
+    if root_with_ext.exists() && root_with_ext.is_file() {
+        return Some(root_with_ext);
+    }
+
+    // 3. Dot notation: modules.hardware -> modules/hardware.end
+    let stripped = path_str.trim_end_matches(".end");
+    let dot_path = stripped.replace('.', "/").replace("::", "/");
     let dot_file = base_dir.join(format!("{}.end", dot_path));
     if dot_file.exists() && dot_file.is_file() {
         return Some(dot_file);
     }
-    // 3. Workspace std root check
+
+    // 4. Workspace std root check
     let std_candidate = std::path::Path::new("std").join(format!("{}.end", dot_path.trim_start_matches("std/")));
     if std_candidate.exists() && std_candidate.is_file() {
         return Some(std_candidate);
