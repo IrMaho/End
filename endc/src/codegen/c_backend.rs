@@ -565,6 +565,11 @@ impl CBackend {
                     BinaryOp::GreaterEqual => ">=",
                     BinaryOp::And => "&&",
                     BinaryOp::Or => "||",
+                    BinaryOp::Shl => "<<",
+                    BinaryOp::Shr => ">>",
+                    BinaryOp::BitAnd => "&",
+                    BinaryOp::BitOr => "|",
+                    BinaryOp::BitXor => "^",
                 };
                 format!("({} {} {})", l, op_str, r)
             }
@@ -596,6 +601,11 @@ impl CBackend {
                 let obj_str = self.gen_expression(object);
                 format!("{}.{}", obj_str, field)
             }
+            Expression::Index { array, index, .. } => {
+                let arr_str = self.gen_expression(array);
+                let idx_str = self.gen_expression(index);
+                format!("{}[{}]", arr_str, idx_str)
+            }
             Expression::StructInit { name, fields, .. } => {
                 let mut field_inits = Vec::new();
                 for (fname, fval) in fields {
@@ -611,8 +621,9 @@ impl CBackend {
                     format!("({}){{ .tag = {}_{} }}", en, en, variant_name)
                 }
             }
-            Expression::Alloc { target_type, .. } => {
-                format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type))
+            Expression::Alloc { target_type, .. } => match target_type {
+                Type::Array(inner, size) => format!("({}*)malloc({} * sizeof({}))", self.map_type(inner), size, self.map_type(inner)),
+                _ => format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type)),
             }
             Expression::Catch { expr, .. } => {
                 self.gen_expression(expr)

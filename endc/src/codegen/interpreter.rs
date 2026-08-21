@@ -461,6 +461,7 @@ impl Interpreter {
                 }
                 Ok(Value::Void)
             }
+            Expression::Index { .. } => Ok(Value::Int(0)),
             Expression::Block(_) => Ok(Value::Void),
         }
     }

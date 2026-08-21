@@ -821,7 +821,7 @@ impl Parser {
 
     fn parse_logical_or(&mut self) -> Result<Expression, String> {
         let mut left = self.parse_logical_and()?;
-        while self.match_token(&TokenKind::Pipe) {
+        while self.match_token(&TokenKind::PipePipe) {
             let span = self.current_span();
             let right = self.parse_logical_and()?;
             left = Expression::Binary {
@@ -835,13 +835,58 @@ impl Parser {
     }
 
     fn parse_logical_and(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_bitwise_or()?;
+        while self.match_token(&TokenKind::AmpAmp) {
+            let span = self.current_span();
+            let right = self.parse_bitwise_or()?;
+            left = Expression::Binary {
+                left: Box::new(left),
+                op: BinaryOp::And,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(left)
+    }
+
+    fn parse_bitwise_or(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_bitwise_xor()?;
+        while self.match_token(&TokenKind::Pipe) {
+            let span = self.current_span();
+            let right = self.parse_bitwise_xor()?;
+            left = Expression::Binary {
+                left: Box::new(left),
+                op: BinaryOp::BitOr,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(left)
+    }
+
+    fn parse_bitwise_xor(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_bitwise_and()?;
+        while self.match_token(&TokenKind::Caret) {
+            let span = self.current_span();
+            let right = self.parse_bitwise_and()?;
+            left = Expression::Binary {
+                left: Box::new(left),
+                op: BinaryOp::BitXor,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(left)
+    }
+
+    fn parse_bitwise_and(&mut self) -> Result<Expression, String> {
         let mut left = self.parse_equality()?;
         while self.match_token(&TokenKind::Ampersand) {
             let span = self.current_span();
             let right = self.parse_equality()?;
             left = Expression::Binary {
                 left: Box::new(left),
-                op: BinaryOp::And,
+                op: BinaryOp::BitAnd,
                 right: Box::new(right),
                 span,
             };
@@ -871,7 +916,7 @@ impl Parser {
     }
 
     fn parse_comparison(&mut self) -> Result<Expression, String> {
-        let mut left = self.parse_addition()?;
+        let mut left = self.parse_shift()?;
         while self.check(&TokenKind::Less)
             || self.check(&TokenKind::LessEqual)
             || self.check(&TokenKind::Greater)
@@ -886,6 +931,27 @@ impl Parser {
             } else {
                 self.advance();
                 BinaryOp::GreaterEqual
+            };
+            let span = self.current_span();
+            let right = self.parse_shift()?;
+            left = Expression::Binary {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(left)
+    }
+
+    fn parse_shift(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_addition()?;
+        while self.check(&TokenKind::Shl) || self.check(&TokenKind::Shr) {
+            let op = if self.match_token(&TokenKind::Shl) {
+                BinaryOp::Shl
+            } else {
+                self.advance();
+                BinaryOp::Shr
             };
             let span = self.current_span();
             let right = self.parse_addition()?;
@@ -1008,6 +1074,14 @@ impl Parser {
                 expr = Expression::Call {
                     callee: Box::new(expr),
                     args,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::LBracket) {
+                let index = self.parse_expression()?;
+                self.expect(TokenKind::RBracket)?;
+                expr = Expression::Index {
+                    array: Box::new(expr),
+                    index: Box::new(index),
                     span,
                 };
             } else {

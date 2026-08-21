@@ -511,6 +511,11 @@ impl SemanticAnalyzer {
                 self.analyze_expression(object);
                 Type::I32
             }
+            Expression::Index { array, index, .. } => {
+                self.analyze_expression(array);
+                self.analyze_expression(index);
+                Type::I32
+            }
             Expression::StructInit { name, fields, .. } => {
                 for (_, fval) in fields {
                     self.analyze_expression(fval);
@@ -578,6 +583,10 @@ impl SemanticAnalyzer {
             }
             Expression::FieldAccess { object, .. } => {
                 self.extract_symbols_from_expr(object, out);
+            }
+            Expression::Index { array, index, .. } => {
+                self.extract_symbols_from_expr(array, out);
+                self.extract_symbols_from_expr(index, out);
             }
             Expression::StructInit { fields, .. } => {
                 for (_, fval) in fields {

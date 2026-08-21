@@ -1,0 +1,178 @@
+// std.ui.canvas - Hyper-Fast Vector Canvas & CustomPainter Engine for End Language
+
+enum PaintStyle {
+    Fill,
+    Stroke,
+    Glow,
+    Glassmorphism,
+}
+
+st Paint {
+    color: Color,
+    style: PaintStyle,
+    stroke_width: i32,
+    glow_radius: i32,
+    blur_amount: i32,
+}
+
+fn paint_fill(col: Color) Paint {
+    ret Paint {
+        color: col,
+        style: PaintStyle.Fill,
+        stroke_width: 1,
+        glow_radius: 0,
+        blur_amount: 0,
+    }
+}
+
+fn paint_stroke(col: Color, width: i32) Paint {
+    ret Paint {
+        color: col,
+        style: PaintStyle.Stroke,
+        stroke_width: width,
+        glow_radius: 0,
+        blur_amount: 0,
+    }
+}
+
+fn paint_neon_glow(col: Color, glow_radius: i32) Paint {
+    ret Paint {
+        color: col,
+        style: PaintStyle.Glow,
+        stroke_width: 2,
+        glow_radius: glow_radius,
+        blur_amount: 8,
+    }
+}
+
+st Canvas {
+    width: i32,
+    height: i32,
+    pixels: *u32,
+}
+
+fn canvas_create(w: i32, h: i32) Canvas {
+    val total_pixels = w * h
+    val buf: *u32 = alloc(u32)
+    ret Canvas {
+        width: w,
+        height: h,
+        pixels: buf,
+    }
+}
+
+fn canvas_clear(c: Canvas, col: Color) void {
+    val pixel_val: u32 = ((col.a as u32) << 24) | ((col.r as u32) << 16) | ((col.g as u32) << 8) | (col.b as u32)
+    val total = c.width * c.height
+    for i in total {
+        c.pixels[i] = pixel_val
+    }
+}
+
+fn canvas_draw_pixel_blend(c: Canvas, x: i32, y: i32, col: Color) void {
+    if x < 0 || x >= c.width || y < 0 || y >= c.height {
+        ret
+    }
+    val idx = (y * c.width) + x
+    val alpha: i32 = col.a as i32
+    if alpha == 255 {
+        val pv: u32 = (255 << 24) | ((col.r as u32) << 16) | ((col.g as u32) << 8) | (col.b as u32)
+        c.pixels[idx] = pv
+        ret
+    }
+
+    val curr: u32 = c.pixels[idx]
+    val bg_r: i32 = ((curr >> 16) & 255) as i32
+    val bg_g: i32 = ((curr >> 8) & 255) as i32
+    val bg_b: i32 = (curr & 255) as i32
+
+    val inv_a: i32 = 255 - alpha
+    val out_r: u32 = (((col.r as i32 * alpha) + (bg_r * inv_a)) / 255) as u32
+    val out_g: u32 = (((col.g as i32 * alpha) + (bg_g * inv_a)) / 255) as u32
+    val out_b: u32 = (((col.b as i32 * alpha) + (bg_b * inv_a)) / 255) as u32
+
+    c.pixels[idx] = (255 << 24) | (out_r << 16) | (out_g << 8) | out_b
+}
+
+fn canvas_draw_rect(c: Canvas, r: Rect, p: Paint) void {
+    val x_end = r.x + r.width
+    val y_end = r.y + r.height
+
+    for cy in r.height {
+        val y = r.y + cy
+        for cx in r.width {
+            val x = r.x + cx
+            canvas_draw_pixel_blend(c, x, y, p.color)
+        }
+    }
+}
+
+fn canvas_draw_circle(c: Canvas, center_x: i32, center_y: i32, radius: i32, p: Paint) void {
+    val r2 = radius * radius
+    val x_min = center_x - radius
+    val x_max = center_x + radius
+    val y_min = center_y - radius
+    val y_max = center_y + radius
+
+    for y in (radius * 2) {
+        val py = y_min + y
+        val dy = py - center_y
+        val dy2 = dy * dy
+
+        for x in (radius * 2) {
+            val px = x_min + x
+            val dx = px - center_x
+            val dist2 = (dx * dx) + dy2
+
+            if dist2 <= r2 {
+                canvas_draw_pixel_blend(c, px, py, p.color)
+            }
+        }
+    }
+}
+
+fn canvas_draw_neon_glow(c: Canvas, center_x: i32, center_y: i32, radius: i32, col: Color) void {
+    val glow_rad = radius + 16
+    val glow_rad2 = glow_rad * glow_rad
+    val base_rad2 = radius * radius
+
+    for y in (glow_rad * 2) {
+        val py = (center_y - glow_rad) + y
+        val dy = py - center_y
+        val dy2 = dy * dy
+
+        for x in (glow_rad * 2) {
+            val px = (center_x - glow_rad) + x
+            val dx = px - center_x
+            val dist2 = (dx * dx) + dy2
+
+            if dist2 <= glow_rad2 {
+                if dist2 <= base_rad2 {
+                    // Core glow
+                    canvas_draw_pixel_blend(c, px, py, col)
+                } else {
+                    // Soft outer neon falloff
+                    val d: i32 = dist2 / glow_rad2
+                    val alpha_falloff: u8 = ((255 * (glow_rad2 - dist2)) / (glow_rad2 - base_rad2)) as u8
+                    val soft_col = color_rgba(col.r, col.g, col.b, alpha_falloff / 3)
+                    canvas_draw_pixel_blend(c, px, py, soft_col)
+                }
+            }
+        }
+    }
+}
+
+fn canvas_draw_glass_card(c: Canvas, r: Rect, bg: Color, border_color: Color) void {
+    // Backdrop tinted glass
+    val p_glass = paint_fill(bg)
+    canvas_draw_rect(c, r, p_glass)
+
+    // Top border highlight (Light reflection)
+    val p_highlight = paint_fill(border_color)
+    val top_border = rect_from_ltwh(r.x, r.y, r.width, 2)
+    canvas_draw_rect(c, top_border, p_highlight)
+
+    // Left border
+    val left_border = rect_from_ltwh(r.x, r.y, 2, r.height)
+    canvas_draw_rect(c, left_border, p_highlight)
+}

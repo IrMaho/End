@@ -287,6 +287,11 @@ pub enum BinaryOp {
     GreaterEqual,
     And,
     Or,
+    Shl,
+    Shr,
+    BitAnd,
+    BitOr,
+    BitXor,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -320,6 +325,11 @@ pub enum Expression {
     FieldAccess {
         object: Box<Expression>,
         field: String,
+        span: Span,
+    },
+    Index {
+        array: Box<Expression>,
+        index: Box<Expression>,
         span: Span,
     },
     StructInit {
@@ -361,6 +371,7 @@ impl Expression {
             Expression::Unary { span, .. } => span,
             Expression::Call { span, .. } => span,
             Expression::FieldAccess { span, .. } => span,
+            Expression::Index { span, .. } => span,
             Expression::StructInit { span, .. } => span,
             Expression::EnumInit { span, .. } => span,
             Expression::Alloc { span, .. } => span,

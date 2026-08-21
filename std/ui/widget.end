@@ -1,0 +1,54 @@
+// std.ui.widget - Declarative Reactive Widget Tree for End Language (Flutter-like Architecture)
+
+enum WidgetKind {
+    Container,
+    Column,
+    Row,
+    Text,
+    Button,
+    CustomPaintWidget,
+    Card,
+    Center,
+}
+
+st EdgeInsets {
+    top: i32,
+    right: i32,
+    bottom: i32,
+    left: i32,
+}
+
+fn insets_all(padding: i32) EdgeInsets {
+    ret EdgeInsets { top: padding, right: padding, bottom: padding, left: padding }
+}
+
+fn insets_symmetric(vertical: i32, horizontal: i32) EdgeInsets {
+    ret EdgeInsets { top: vertical, right: horizontal, bottom: vertical, left: horizontal }
+}
+
+st WidgetStyle {
+    bg_color: Color,
+    border_color: Color,
+    border_radius: i32,
+    is_glass: bool,
+    neon_glow: bool,
+}
+
+fn default_widget_style() WidgetStyle {
+    ret WidgetStyle {
+        bg_color: color_transparent(),
+        border_color: color_transparent(),
+        border_radius: 0,
+        is_glass: false,
+        neon_glow: false,
+    }
+}
+
+st UIContext {
+    screen_width: i32,
+    screen_height: i32,
+    mouse_x: i32,
+    mouse_y: i32,
+    is_mouse_down: bool,
+    delta_time: f32,
+}

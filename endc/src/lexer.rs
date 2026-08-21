@@ -52,8 +52,10 @@ pub enum TokenKind {
     BangEqual,
     Less,
     LessEqual,
+    Shl,       // '<<'
     Greater,
     GreaterEqual,
+    Shr,       // '>>'
     Arrow,     // '->'
     FatArrow,  // '=>'
     Colon,     // ':'
@@ -61,7 +63,11 @@ pub enum TokenKind {
     Comma,     // ','
     Dot,       // '.'
     Ampersand, // '&'
+    AmpAmp,    // '&&'
     Pipe,      // '|'
+    PipePipe,  // '||'
+    Caret,     // '^'
+    Tilde,     // '~'
     Underscore,// '_'
     LParen,    // '('
     RParen,    // ')'
@@ -353,6 +359,9 @@ impl<'a> Lexer<'a> {
                 if self.peek() == Some('=') {
                     self.advance();
                     TokenKind::LessEqual
+                } else if self.peek() == Some('<') {
+                    self.advance();
+                    TokenKind::Shl
                 } else {
                     TokenKind::Less
                 }
@@ -361,6 +370,9 @@ impl<'a> Lexer<'a> {
                 if self.peek() == Some('=') {
                     self.advance();
                     TokenKind::GreaterEqual
+                } else if self.peek() == Some('>') {
+                    self.advance();
+                    TokenKind::Shr
                 } else {
                     TokenKind::Greater
                 }
@@ -369,8 +381,24 @@ impl<'a> Lexer<'a> {
             ';' => TokenKind::SemiColon,
             ',' => TokenKind::Comma,
             '.' => TokenKind::Dot,
-            '&' => TokenKind::Ampersand,
-            '|' => TokenKind::Pipe,
+            '&' => {
+                if self.peek() == Some('&') {
+                    self.advance();
+                    TokenKind::AmpAmp
+                } else {
+                    TokenKind::Ampersand
+                }
+            }
+            '|' => {
+                if self.peek() == Some('|') {
+                    self.advance();
+                    TokenKind::PipePipe
+                } else {
+                    TokenKind::Pipe
+                }
+            }
+            '^' => TokenKind::Caret,
+            '~' => TokenKind::Tilde,
             '(' => TokenKind::LParen,
             ')' => TokenKind::RParen,
             '{' => TokenKind::LBrace,
