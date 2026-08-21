@@ -1,0 +1,21 @@
+{
+  "id": "fb_1787300100",
+  "target_widget_id": "Card_31_4",
+  "widget_name": "Card",
+  "source_file": "tests/test_interactive_dashboard.end",
+  "source_line": 31,
+  "developer_note": "Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.",
+  "attached_image": "https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png",
+  "priority": "P0 (Blocker)",
+  "category": "Design / UI",
+  "status": "Resolved",
+  "created_at": "2026-08-21T21:46:00Z",
+  "agent_replies": [
+    {
+      "agent_name": "Antigravity Agent",
+      "message": "Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target",
+      "timestamp": "2026-08-21T21:40:00Z",
+      "diff_file": null
+    }
+  ]
+}

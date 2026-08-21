@@ -1,0 +1,129 @@
+// 💼 EndLedger: Declarative UI Module in pure End Language
+// Author: IrMaho
+// Compiler: endc v0.4.0 (EndUI Declarative Engine)
+
+module ui_dashboard;
+
+import main;
+
+// 🌟 Declarative UI Root Component for EndLedger written in pure End Language
+@widget
+pub fn EndLedgerApp(ledger: &AccountingCore) -> Widget {
+    return Scaffold {
+        sidebar: Sidebar {
+            brand: BrandHeader {
+                title: "EndLedger",
+                badge: "Native Engine 120 FPS",
+                icon: "💼",
+            },
+            items: [
+                NavItem { id: "view-overview", title: "📊 Executive Overview", active: true },
+                NavItem { id: "view-invoices", title: "🧾 Invoicing & Tax Terminal" },
+                NavItem { id: "view-ledger",   title: "📖 General Ledger & Audit" },
+                NavItem { id: "view-accounts", title: "🏛️ Chart of Accounts ($59.2k)" },
+                NavItem { id: "view-reports",  title: "📈 Income Statement & Margin" },
+            ],
+            footer: InvariantBadge {
+                label: "Double-Entry Invariant",
+                status: "100% Balanced",
+                details: "Zero-Alloc Arena Memory",
+            },
+        },
+        body: Column {
+            spacing: 24,
+            children: [
+                // Top Action Header
+                TopBar {
+                    title: "💼 EndLedger Enterprise Dashboard",
+                    subtitle: "Real-Time Double-Entry Ledger Invariant: 100% Balanced",
+                    streamTicker: "LIVE STREAM (1.5s)",
+                    actionButton: Button {
+                        text: "⚡ + New Sales Invoice",
+                        variant: "gradient",
+                        onClick: "scrollToInvoice()",
+                    },
+                },
+
+                // 4 Real-time Financial KPI Cards
+                Row {
+                    spacing: 20,
+                    children: [
+                        StatCard {
+                            id: "card_cash",
+                            label: "Operating Cash Reserve",
+                            value: "$59,155.00",
+                            subtext: "↑ +$9,155.00 Net Inflow (+18.3%)",
+                            progress: 82,
+                            accent: "cyan",
+                        },
+                        StatCard {
+                            id: "card_receivables",
+                            label: "Accounts Receivable (AR)",
+                            value: "$10,355.00",
+                            subtext: "★ 1 Active Invoice Billed",
+                            progress: 65,
+                            accent: "indigo",
+                        },
+                        StatCard {
+                            id: "card_revenue",
+                            label: "Total Billed Revenue",
+                            value: "$9,500.00",
+                            subtext: "↑ Net of 5% Early Bird Discount",
+                            progress: 79,
+                            accent: "cyan",
+                        },
+                        StatCard {
+                            id: "card_profit",
+                            label: "Net Operating Income",
+                            value: "$8,300.00",
+                            subtext: "★ 87.36% Profit Margin",
+                            progress: 87,
+                            accent: "emerald",
+                        },
+                    ],
+                },
+
+                // Two-Column Grid for Invoice & General Ledger
+                Row {
+                    spacing: 24,
+                    children: [
+                        // Quick Invoicing & VAT Terminal
+                        Card {
+                            id: "panel_invoice_creator",
+                            title: "🧾 Instant Invoice & Tax Calculation Terminal",
+                            badge: "Double-Entry Linked",
+                            child: Form {
+                                fields: [
+                                    SelectField { id: "client", label: "Client Organization", options: ["ACME Global Tech", "Microsoft Corp", "Apple Inc."] },
+                                    NumberField { id: "units", label: "Service Units (Hours)", defaultValue: 10 },
+                                    NumberField { id: "price", label: "Unit Price ($)", defaultValue: 1000 },
+                                    NumberField { id: "discount", label: "Volume Discount (%)", defaultValue: 5 },
+                                    SelectField { id: "tax_rate", label: "Tax Engine (VAT)", options: ["Standard 9% VAT", "Withholding 15%", "Export 0%"] },
+                                ],
+                                submitButton: Button {
+                                    text: "⚡ Settle & Post to Double-Entry General Ledger",
+                                    onClick: "postInvoice()",
+                                },
+                            },
+                        },
+
+                        // Audited General Ledger Journal
+                        Card {
+                            id: "panel_ledger_table",
+                            title: "📖 Real-Time Double-Entry General Ledger",
+                            badge: "Audited Invariant",
+                            child: Table {
+                                columns: ["Ref #", "Description", "Debit ($)", "Credit ($)", "Audit Status"],
+                                rows: [
+                                    ["TX-001", "Initial Cash Reserve Deposit", "$50,000.00", "-", "Balanced"],
+                                    ["TX-002", "ACME Enterprise Sales Invoice", "$10,355.00", "$10,355.00", "Balanced"],
+                                    ["TX-003", "Cloud Server Hosting Expense", "-", "$1,200.00", "Settled"],
+                                ],
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+    };
+}

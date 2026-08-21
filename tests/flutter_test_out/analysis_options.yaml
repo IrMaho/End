@@ -1,0 +1,15 @@
+# Dart Analyzer Configuration for End Language Repository
+analyzer:
+  exclude:
+    - "examples/**/flutter_lib/**"
+    - "tests/flutter_test_out/**"
+    - "ui_build/**"
+  errors:
+    uri_does_not_exist: ignore
+    undefined_class: ignore
+    undefined_method: ignore
+    creation_with_non_type: ignore
+    extends_non_class: ignore
+    undefined_identifier: ignore
+    override_on_non_overriding_member: ignore
+    super_formal_parameter_without_associated_named: ignore

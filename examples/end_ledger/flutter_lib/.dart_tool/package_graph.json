@@ -1,0 +1,14 @@
+{
+  "roots": [
+    "end_flutter_bridge"
+  ],
+  "packages": [
+    {
+      "name": "end_flutter_bridge",
+      "version": "0.4.0",
+      "dependencies": [],
+      "devDependencies": []
+    }
+  ],
+  "configVersion": 1
+}

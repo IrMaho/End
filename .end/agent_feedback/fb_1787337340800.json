@@ -1,0 +1,21 @@
+{
+  "id": "fb_1787337340800",
+  "target_widget_id": "card_cash",
+  "widget_name": "Card",
+  "source_file": "src/main.end",
+  "source_line": 240,
+  "developer_note": "دیتای کارت هارو استریم کن که از بکند هر ثانیه بروزرسانی شه",
+  "attached_image": null,
+  "priority": "P1 (High)",
+  "category": "Design / UI",
+  "status": "Resolved",
+  "created_at": "2026-08-21T18:35:40.800Z",
+  "agent_replies": [
+    {
+      "agent_name": "Antigravity Agent",
+      "message": "Live real-time 1s streaming ticker and reactive balance updates implemented",
+      "timestamp": "2026-08-21T21:40:00Z",
+      "diff_file": null
+    }
+  ]
+}

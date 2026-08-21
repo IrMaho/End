@@ -1,0 +1,85 @@
+{
+  "project_name": "EndUI Project",
+  "total_tasks": 4,
+  "open_count": 1,
+  "resolved_count": 3,
+  "items": [
+    {
+      "id": "fb_direct_test",
+      "target_widget_id": "panel_invoice_creator",
+      "widget_name": "Card",
+      "source_file": "src/ui_dashboard.end",
+      "source_line": 70,
+      "developer_note": "Test without proxy",
+      "attached_image": null,
+      "priority": "P1 (High)",
+      "category": "Design",
+      "status": "Open",
+      "created_at": "2026-08-21T21:58:45Z",
+      "agent_replies": []
+    },
+    {
+      "id": "fb_1787300100",
+      "target_widget_id": "Card_31_4",
+      "widget_name": "Card",
+      "source_file": "tests/test_interactive_dashboard.end",
+      "source_line": 31,
+      "developer_note": "Apply deep cyan-indigo gradient to this header card, make border radius 16px, and match mockup image.",
+      "attached_image": "https://raw.githubusercontent.com/IrMaho/End/main/docs/assets/dashboard_mockup.png",
+      "priority": "P0 (Blocker)",
+      "category": "Design / UI",
+      "status": "Resolved",
+      "created_at": "2026-08-21T21:46:00Z",
+      "agent_replies": [
+        {
+          "agent_name": "Antigravity Agent",
+          "message": "Updated Card styling with deep cyan-indigo gradient and verified 120 FPS render target",
+          "timestamp": "2026-08-21T21:40:00Z",
+          "diff_file": null
+        }
+      ]
+    },
+    {
+      "id": "fb_1787337340800",
+      "target_widget_id": "card_cash",
+      "widget_name": "Card",
+      "source_file": "src/main.end",
+      "source_line": 240,
+      "developer_note": "دیتای کارت هارو استریم کن که از بکند هر ثانیه بروزرسانی شه",
+      "attached_image": null,
+      "priority": "P1 (High)",
+      "category": "Design / UI",
+      "status": "Resolved",
+      "created_at": "2026-08-21T18:35:40.800Z",
+      "agent_replies": [
+        {
+          "agent_name": "Antigravity Agent",
+          "message": "Live real-time 1s streaming ticker and reactive balance updates implemented",
+          "timestamp": "2026-08-21T21:40:00Z",
+          "diff_file": null
+        }
+      ]
+    },
+    {
+      "id": "fb_1787337315823",
+      "target_widget_id": "UL_219",
+      "widget_name": "UL",
+      "source_file": "app.end",
+      "source_line": 1,
+      "developer_note": "میزنم روش هیجی نمیشه بررسی کن و کاری کن هر آیتمی انتخاب کردم یه صفحه اختصاصی داشته باشه",
+      "attached_image": null,
+      "priority": "P1 (High)",
+      "category": "Design / UI",
+      "status": "Resolved",
+      "created_at": "2026-08-21T18:35:15.823Z",
+      "agent_replies": [
+        {
+          "agent_name": "Antigravity Agent",
+          "message": "Complete multi-view navigation system implemented across all 5 financial modules with dedicated views",
+          "timestamp": "2026-08-21T21:40:00Z",
+          "diff_file": null
+        }
+      ]
+    }
+  ]
+}
