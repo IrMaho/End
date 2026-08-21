@@ -1,0 +1,105 @@
+name: End Language Global Release Matrix
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: end-v1.0.0-windows-x64.zip
+            binary_name: endc.exe
+            use_zip: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: end-v1.0.0-linux-x64.tar.gz
+            binary_name: endc
+            use_zip: false
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: end-v1.0.0-macos-arm64.tar.gz
+            binary_name: endc
+            use_zip: false
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build Release Binary
+        run: |
+          cd endc
+          cargo build --release --target ${{ matrix.target }}
+
+      - name: Stage Artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir staging\bin
+          copy endc\target\${{ matrix.target }}\release\endc.exe staging\bin\endc.exe
+          copy endc\target\${{ matrix.target }}\release\endc.exe staging\bin\end.exe
+          xcopy std staging\std /E /I
+          copy README.md staging\
+          copy LICENSE staging\
+          copy Architecture.toml staging\
+          Compress-Archive -Path staging\* -DestinationPath ${{ matrix.artifact_name }}
+
+      - name: Stage Artifacts (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p staging/bin
+          cp endc/target/${{ matrix.target }}/release/endc staging/bin/endc
+          cp endc/target/${{ matrix.target }}/release/endc staging/bin/end
+          cp -r std staging/std
+          cp README.md LICENSE Architecture.toml staging/
+          cd staging && tar -czf ../${{ matrix.artifact_name }} *
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.artifact_name }}
+          asset_content_type: application/octet-stream
+
+  publish-github-release:
+    name: Create GitHub Release Hub
+    runs-on: ubuntu-latest
+    needs: build-release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "👑 End Language ${{ github.ref_name }} Global Release"
+          body_path: RELEASE_NOTES_v1.0.0.md
+          draft: false
+          prerelease: false
+          files: |
+            dist/*
+            install.ps1
+            install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

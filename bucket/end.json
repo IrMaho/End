@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "description": "The AI-First Zero-GC Systems Programming Language",
+  "homepage": "https://github.com/IrMaho/End",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-windows-x64.zip",
+      "bin": [
+        "bin\\endc.exe",
+        "bin\\end.exe"
+      ]
+    }
+  },
+  "persist": "std",
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/IrMaho/End/releases/download/v$version/end-v$version-windows-x64.zip"
+      }
+    }
+  }
+}

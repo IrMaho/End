@@ -2,6 +2,9 @@
 target/
 endc/target/
 **/target/
+dist/
+release/
+node_modules/
 
 # Binaries and intermediate files
 *.exe
@@ -14,6 +17,8 @@ endc/target/
 *.pdb
 *.obj
 *.o
+*.zip
+*.tar.gz
 app_*
 examples/*.c
 examples/*.exe
@@ -21,6 +26,7 @@ examples/*.exe
 # IDE & system
 /ide
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.swp
 .DS_Store

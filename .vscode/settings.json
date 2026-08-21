@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "*.end": "end"
+  },
+  "editor.semanticHighlighting.enabled": true,
+  "end.compilerPath": "c:\\Users\\ASUS\\Desktop\\flutter_project\\end\\endc\\target\\release\\endc.exe",
+  "end.enableCodeLens": true,
+  "end.enableInlayHints": true
+}
