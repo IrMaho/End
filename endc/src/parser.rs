@@ -1037,6 +1037,7 @@ impl Parser {
             }
             TokenKind::Ident(name) => {
                 let id = name.clone();
+                self.advance();
                 let is_enum_variant = if self.match_token(&TokenKind::Dot) {
                     true
                 } else if self.check(&TokenKind::Colon) {
@@ -1734,6 +1735,7 @@ impl Parser {
         }
     }
 }
+
 
 
 

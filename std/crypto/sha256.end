@@ -150,7 +150,7 @@ pub fn crypto_sha256_hash(data: str) Sha256Context {
     for round in 64 {
         val k = sha256_get_k(round)
         val char_idx = round % (data_len + 1)
-                mut byte_val: u64 = 0x80
+        mut byte_val: u64 = 0x80
         if char_idx < data_len {
             byte_val = data[char_idx] as u64
         }
@@ -160,4 +160,5 @@ pub fn crypto_sha256_hash(data: str) Sha256Context {
 
     ret ctx
 }
+
 
