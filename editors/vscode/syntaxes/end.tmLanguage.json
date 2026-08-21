@@ -45,7 +45,7 @@
       "patterns": [
         {
           "name": "entity.name.tag.decorator.end",
-          "match": "@(get|post|put|delete|ws|test|bench|export|c_export|import_c|inline|watchdog|trace_fn|log_state|target|optimize|align|intrinsic|pure|effect)\\b"
+          "match": "@(get|post|put|delete|ws|test|bench|export|c_export|import_c|link|inline|always_inline|invariant|telemetry|comptime|watchdog|trace_fn|log_state|target|optimize|align|intrinsic|pure|effect)\\b"
         }
       ]
     },
@@ -53,15 +53,15 @@
       "patterns": [
         {
           "name": "keyword.control.end",
-          "match": "\\b(if|else|while|for|in|ret|return|break|continue|match|parallel|defer|unsafe|spawn)\\b"
+          "match": "\\b(if|else|while|for|in|ret|return|break|continue|match|parallel|defer|unsafe|spawn|async|await)\\b"
         },
         {
           "name": "keyword.other.memory.end",
-          "match": "\\b(region|mut|val|pure|effect|alloc|free|promote|catch)\\b"
+          "match": "\\b(region|mut|val|pure|effect|alloc|free|promote|catch|skip)\\b"
         },
         {
           "name": "keyword.declaration.end",
-          "match": "\\b(pub|fn|st|struct|enum|asm|import|as|from)\\b"
+          "match": "\\b(pub|fn|extern|inline_c|st|struct|enum|trait|impl|asm|import|as|from|mod|module|override|extend|bridge|with|derives)\\b"
         },
         {
           "name": "constant.language.boolean.end",
@@ -73,7 +73,7 @@
       "patterns": [
         {
           "name": "storage.type.primitive.end",
-          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|Box|Rc|Arc|Channel|Allocator|Result|EndArena|SocketGuard|CircuitBreaker|TelemetryRingBuffer|WhatIfParameter|StressMetricsReport)\\b"
+          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|Box|Rc|Arc|Channel|Allocator|Result|List|HashMap|DbConnection|KvDatabase|Instant|StreamChunk|SseEvent|EndArena|SocketGuard|CircuitBreaker|TelemetryRingBuffer|WhatIfParameter|StressMetricsReport)\\b"
         },
         {
           "name": "entity.name.type.struct.end",
@@ -85,7 +85,7 @@
       "patterns": [
         {
           "name": "support.function.builtin.end",
-          "match": "\\b(println|print|end_println|inspect|trace|effects|impact|assert|alloc|free|cpu_yield|cpu_relax|cpu_sleep_ms|safe_socket_poll|high_res_time_ns|instant_now|instant_elapsed_micros|socket_guard_create|circuit_breaker_create|ring_buffer_create|hot_reload_store_create)\\b"
+          "match": "\\b(println|print|end_println|inspect|trace|effects|impact|assert|alloc|free|cpu_yield|cpu_relax|cpu_sleep_ms|safe_socket_poll|high_res_time_ns|instant_now|instant_elapsed_micros|instant_elapsed_nanos|instant_elapsed_millis|time_now_nanos|time_now_micros|time_now_millis|list_create|list_push_str|list_get_str|list_len|map_create|map_set|map_get|map_has|map_delete|map_len|db_open|db_set|db_get|db_close|kv_database_open|kv_set|kv_get|kv_has|kv_delete|kv_count|kv_close|ws_handshake_accept|ws_compute_accept_key|argon2_hash_password|argon2_verify|oauth2_generate_pkce|sse_format_event|sse_chunk_encode|socket_guard_create|circuit_breaker_create|ring_buffer_create|hot_reload_store_create)\\b"
         },
         {
           "name": "entity.name.function.end",
@@ -128,7 +128,7 @@
       "patterns": [
         {
           "name": "keyword.operator.end",
-          "match": "(\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>|\\!)"
+          "match": "(\\~\\>|\\<\\+\\=|\\?\\?|\\?|val\\!|\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>|\\!)"
         }
       ]
     }

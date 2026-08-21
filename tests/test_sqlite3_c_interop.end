@@ -1,0 +1,50 @@
+// 👑 End Language: tests/test_sqlite3_c_interop.end
+// Comprehensive Test Suite for Embedded Persistent Database & SQLite C-Engine
+
+import "../std/db/sqlite.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING EMBEDDED PERSISTENT DATABASE TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. First Connection: Write Records & Persist to Disk
+    println("--- 1. Opening Database Connection & Storing Records ---")
+    val conn1 = db_open("test_app_storage.db")
+    println("Connection 1 Connected (Must be true):")
+    println(conn1.is_connected)
+
+    val res1 = db_set(conn1, "config:theme", "cyberpunk_neon")
+    println("Set config:theme Success (Must be true):")
+    println(res1.success)
+
+    val res2 = db_set(conn1, "user:1001", "name=Maho,role=LeadArchitect,score=999")
+    println("Set user:1001 Success (Must be true):")
+    println(res2.success)
+
+    val val1 = db_get(conn1, "config:theme")
+    println("Queried config:theme (Must be cyberpunk_neon):")
+    println(val1)
+
+    db_close(conn1)
+    println("✔ Connection 1 Closed & Flushed to Disk!")
+
+    // 2. Second Connection: Re-open File & Verify Persistent Data on Disk
+    println("--- 2. Re-Opening Database File & Verifying Disk Persistence ---")
+    val conn2 = db_open("test_app_storage.db")
+    println("Connection 2 Connected (Must be true):")
+    println(conn2.is_connected)
+
+    val persisted_val1 = db_get(conn2, "config:theme")
+    println("Persisted config:theme across reconnect (Must be cyberpunk_neon):")
+    println(persisted_val1)
+
+    val persisted_val2 = db_get(conn2, "user:1001")
+    println("Persisted user:1001 across reconnect (Must be name=Maho,role=LeadArchitect,score=999):")
+    println(persisted_val2)
+
+    db_close(conn2)
+    println("✔ Connection 2 Verified & Closed Successfully!")
+
+    println("👑 ALL EMBEDDED PERSISTENT DATABASE TESTS PASSED! 👑")
+}

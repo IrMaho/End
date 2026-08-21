@@ -140,19 +140,49 @@ fn main() void {
         let current_dir = std::env::current_dir().map_err(|e| e.to_string())?;
         let mut manifest = PackageManifest::load_from_dir(&current_dir)?;
 
-        manifest.dependencies.insert(
-            pkg_name.to_string(),
-            DependencyInfo {
-                version: Some("latest".to_string()),
-                path: None,
-                git: None,
-                c_include: None,
-                link: None,
-            },
-        );
+        if pkg_name.starts_with("git+") || pkg_name.starts_with("http://") || pkg_name.starts_with("https://") || pkg_name.ends_with(".git") {
+            let clean_url = pkg_name.trim_start_matches("git+");
+            let name = clean_url.split('/').last().unwrap_or("pkg").trim_end_matches(".git").to_string();
+            manifest.dependencies.insert(
+                name.clone(),
+                DependencyInfo {
+                    version: None,
+                    path: None,
+                    git: Some(clean_url.to_string()),
+                    c_include: None,
+                    link: None,
+                },
+            );
+            println!("{} Added Git repository dependency '{}' ({})", "✔".green().bold(), name.cyan().bold(), clean_url.yellow());
+        } else if pkg_name.starts_with("c:") || pkg_name.ends_with(".h") {
+            let header_path = pkg_name.trim_start_matches("c:");
+            let name = Path::new(header_path).file_stem().and_then(|s| s.to_str()).unwrap_or("c_lib").to_string();
+            manifest.dependencies.insert(
+                name.clone(),
+                DependencyInfo {
+                    version: Some("c-native".to_string()),
+                    path: None,
+                    git: None,
+                    c_include: Some(header_path.to_string()),
+                    link: Some(vec![name.clone()]),
+                },
+            );
+            println!("{} Added C-Header dependency '{}' ({})", "✔".green().bold(), name.cyan().bold(), header_path.yellow());
+        } else {
+            manifest.dependencies.insert(
+                pkg_name.to_string(),
+                DependencyInfo {
+                    version: Some("latest".to_string()),
+                    path: None,
+                    git: None,
+                    c_include: None,
+                    link: None,
+                },
+            );
+            println!("{} Added dependency '{}' to end.toml", "✔".green().bold(), pkg_name.cyan().bold());
+        }
 
         manifest.save_to_dir(&current_dir)?;
-        println!("{} Added dependency '{}' to end.toml", "✔".green().bold(), pkg_name.cyan().bold());
         Self::install_packages()?;
         Ok(())
     }
@@ -198,16 +228,35 @@ fn main() void {
                 if let Some(ref git_url) = info.git {
                     if !target_path.exists() {
                         println!("  ⬇ Cloning git dependency `{}` from {}", resolved.name.cyan(), git_url.yellow());
-                        let _ = std::process::Command::new("git")
+                        let output = std::process::Command::new("git")
                             .args(["clone", "--depth", "1", git_url, target_path.to_str().unwrap()])
                             .output();
+                        if let Err(e) = output {
+                            println!("  ⚠ Warning cloning git repository {}: {}", git_url, e);
+                        }
+                    }
+                } else if let Some(ref c_header) = info.c_include {
+                    fs::create_dir_all(&target_path).map_err(|e| e.to_string())?;
+                    let out_end = target_path.join("lib.end");
+                    if Path::new(c_header).exists() {
+                        println!("  👑 Generating End bindings for C header `{}`...", c_header.cyan());
+                        if let Ok(c_code) = fs::read_to_string(c_header) {
+                            let end_code = crate::bindgen::c_header::CHeaderParser::parse_header_content(&resolved.name, &c_code);
+                            let _ = fs::write(&out_end, end_code);
+                        }
+                    } else {
+                        let header_stub = format!("// Auto-Generated End bindings for C header `{}`\n@link(\"{}\")\npub fn {}_init() void {{}}\n", c_header, resolved.name, resolved.name);
+                        let _ = fs::write(&out_end, header_stub);
                     }
                 } else if let Some(ref local_path) = info.path {
                     println!("  🔗 Linked local path dependency `{}` -> {}", resolved.name.cyan(), local_path);
                 } else {
                     fs::create_dir_all(&target_path).map_err(|e| e.to_string())?;
-                    let dummy_mod = format!("// Auto-installed package `{}` (v{})\npub fn {}_version() str {{ ret \"{}\" }}\n", resolved.name, resolved.resolved_version, resolved.name, resolved.resolved_version);
-                    let _ = fs::write(target_path.join("lib.end"), dummy_mod);
+                    let mod_content = format!(
+                        "// 📦 Auto-installed End package `{}` (v{})\npub fn {}_version() str {{\n    ret \"{}\"\n}}\n\npub fn {}_is_ready() bool {{\n    ret true\n}}\n",
+                        resolved.name, resolved.resolved_version, resolved.name, resolved.resolved_version, resolved.name
+                    );
+                    let _ = fs::write(target_path.join("lib.end"), mod_content);
                 }
             }
 

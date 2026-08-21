@@ -1,4 +1,4 @@
-Write-Host "Deploying End Language Extension (v0.2.0)..." -ForegroundColor Green
+Write-Host "Deploying End Language Extension (v0.4.0)..." -ForegroundColor Green
 
 $CurrentDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $CurrentDir) {
@@ -10,7 +10,7 @@ Set-Location $CurrentDir
 npm run compile
 
 Write-Host "[2/2] Installing extension..." -ForegroundColor Yellow
-$Target = Join-Path $env:USERPROFILE ".vscode\extensions\endlanguage.end-lang-0.2.0"
+$Target = Join-Path $env:USERPROFILE ".vscode\extensions\endlanguage.end-lang-0.4.0"
 
 if (Test-Path $Target) {
     Remove-Item -Path $Target -Recurse -Force
@@ -33,4 +33,4 @@ foreach ($d in $Dirs) {
     }
 }
 
-Write-Host "SUCCESS: End Language Extension (v0.2.0) Installed into $Target" -ForegroundColor Green
+Write-Host "SUCCESS: End Language Extension (v0.4.0) Installed into $Target" -ForegroundColor Green

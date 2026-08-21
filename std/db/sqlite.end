@@ -1,8 +1,13 @@
 // End Language Standard Library: std/db/sqlite.end
-// 🗄️ Real Embedded Key-Value & SQLite-Compatible Database Engine
+// 🗄️ Real Embedded Persistent & SQLite-Compatible Database Engine
+
+pub extern fn end_db_open(path: str) i64
+pub extern fn end_db_execute(db_handle: i64, key: str, val: str) i64
+pub extern fn end_db_query(db_handle: i64, key: str) str
+pub extern fn end_db_close(db_handle: i64) void
 
 pub st DbConnection {
-    handle: *void,
+    handle: i64,
     path: str,
     is_connected: bool,
 }
@@ -14,16 +19,16 @@ pub st QueryResult {
 }
 
 pub fn db_open(path: str) DbConnection {
-    val h: *void = end_db_open(path)
+    val h: i64 = end_db_open(path)
     ret DbConnection {
         handle: h,
         path: path,
-        is_connected: h != null,
+        is_connected: h != 0,
     }
 }
 
 pub fn db_set(conn: DbConnection, key: str, value: str) QueryResult {
-    if !conn.is_connected || conn.handle == null {
+    if !conn.is_connected || conn.handle == 0 {
         ret QueryResult {
             rows_affected: 0,
             success: false,
@@ -39,14 +44,14 @@ pub fn db_set(conn: DbConnection, key: str, value: str) QueryResult {
 }
 
 pub fn db_get(conn: DbConnection, key: str) str {
-    if !conn.is_connected || conn.handle == null {
+    if !conn.is_connected || conn.handle == 0 {
         ret ""
     }
     ret end_db_query(conn.handle, key)
 }
 
 pub fn db_close(conn: DbConnection) void {
-    if conn.handle != null {
+    if conn.handle != 0 {
         end_db_close(conn.handle)
     }
 }

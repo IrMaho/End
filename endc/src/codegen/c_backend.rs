@@ -566,9 +566,9 @@ impl CBackend {
         self.output.push_str("/* End Real Embedded SQLite-Compatible Database Engine Primitives */\n");
         self.output.push_str("typedef struct EndDbRecord { char key[128]; char value[1024]; struct EndDbRecord* next; } EndDbRecord;\n");
         self.output.push_str("typedef struct EndDbHandle { char path[260]; bool is_open; EndDbRecord* head; int64_t rows_count; } EndDbHandle;\n");
-        self.output.push_str("static inline EndDbHandle* end_db_open(const char* path) {\n");
+        self.output.push_str("static inline int64_t end_db_open(const char* path) {\n");
         self.output.push_str("    EndDbHandle* db = (EndDbHandle*)malloc(sizeof(EndDbHandle));\n");
-        self.output.push_str("    if (!db) return NULL;\n");
+        self.output.push_str("    if (!db) return 0;\n");
         self.output.push_str("    strncpy(db->path, path ? path : \":memory:\", sizeof(db->path) - 1);\n");
         self.output.push_str("    db->is_open = true; db->head = NULL; db->rows_count = 0;\n");
         self.output.push_str("    if (path && strcmp(path, \":memory:\") != 0) {\n");
@@ -584,10 +584,11 @@ impl CBackend {
         self.output.push_str("            fclose(f);\n");
         self.output.push_str("        }\n");
         self.output.push_str("    }\n");
-        self.output.push_str("    return db;\n");
+        self.output.push_str("    return (int64_t)(uintptr_t)db;\n");
         self.output.push_str("}\n\n");
 
-        self.output.push_str("static inline int64_t end_db_execute(EndDbHandle* db, const char* key, const char* val) {\n");
+        self.output.push_str("static inline int64_t end_db_execute(int64_t db_handle, const char* key, const char* val) {\n");
+        self.output.push_str("    EndDbHandle* db = (EndDbHandle*)(uintptr_t)db_handle;\n");
         self.output.push_str("    if (!db || !db->is_open || !key) return 0;\n");
         self.output.push_str("    EndDbRecord* curr = db->head;\n");
         self.output.push_str("    while (curr) {\n");
@@ -612,7 +613,8 @@ impl CBackend {
         self.output.push_str("    return 1;\n");
         self.output.push_str("}\n\n");
 
-        self.output.push_str("static inline char* end_db_query(EndDbHandle* db, const char* key) {\n");
+        self.output.push_str("static inline char* end_db_query(int64_t db_handle, const char* key) {\n");
+        self.output.push_str("    EndDbHandle* db = (EndDbHandle*)(uintptr_t)db_handle;\n");
         self.output.push_str("    if (!db || !db->is_open || !key) return (char*)\"\";\n");
         self.output.push_str("    EndDbRecord* curr = db->head;\n");
         self.output.push_str("    while (curr) {\n");
@@ -622,7 +624,8 @@ impl CBackend {
         self.output.push_str("    return (char*)\"\";\n");
         self.output.push_str("}\n\n");
 
-        self.output.push_str("static inline void end_db_close(EndDbHandle* db) {\n");
+        self.output.push_str("static inline void end_db_close(int64_t db_handle) {\n");
+        self.output.push_str("    EndDbHandle* db = (EndDbHandle*)(uintptr_t)db_handle;\n");
         self.output.push_str("    if (!db) return;\n");
         self.output.push_str("    EndDbRecord* curr = db->head;\n");
         self.output.push_str("    while (curr) { EndDbRecord* next = curr->next; free(curr); curr = next; }\n");
