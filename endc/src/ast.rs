@@ -302,6 +302,9 @@ pub enum Statement {
         call: Expression,
         span: Span,
     },
+    Skip {
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -450,6 +453,15 @@ pub enum Expression {
         expr: Box<Expression>,
         span: Span,
     },
+    Cast {
+        expr: Box<Expression>,
+        target_type: Type,
+        span: Span,
+    },
+    Await {
+        expr: Box<Expression>,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -479,6 +491,8 @@ impl Expression {
             Expression::Translate { span, .. } => span,
             Expression::FieldsOf { span, .. } => span,
             Expression::SqlExpr { span, .. } => span,
+            Expression::Cast { span, .. } => span,
+            Expression::Await { span, .. } => span,
         }
     }
 }
@@ -500,6 +514,7 @@ impl Statement {
             Statement::TargetBlock { span, .. } => span,
             Statement::Defer { span, .. } => span,
             Statement::Spawn { span, .. } => span,
+            Statement::Skip { span, .. } => span,
         }
     }
 }
@@ -515,3 +530,5 @@ pub struct Module {
     pub functions: Vec<FunctionDef>,
     pub span: Span,
 }
+
+

@@ -11,6 +11,7 @@ pub enum Value {
     Struct(String, HashMap<String, Value>),
     Enum(Option<String>, String, Option<Box<Value>>),
     Pointer(usize),
+    Array(Vec<Value>),
 }
 
 impl std::fmt::Display for Value {
@@ -40,6 +41,7 @@ impl std::fmt::Display for Value {
                 Ok(())
             }
             Value::Pointer(p) => write!(f, "*0x{:x}", p),
+            Value::Array(items) => write!(f, "[{:?}]", items),
         }
     }
 }
@@ -309,6 +311,7 @@ impl Interpreter {
                 let _ = expr;
                 Ok(None)
             }
+            Statement::Skip { .. } => Ok(None),
             Statement::Spawn { call, .. } => {
                 let _ = self.eval_expression(call)?;
                 Ok(None)
@@ -507,7 +510,33 @@ impl Interpreter {
                 }
                 Ok(Value::Void)
             }
-            Expression::Index { .. } => Ok(Value::Int(0)),
+            Expression::Index { array, index, .. } => {
+                let arr_val = self.eval_expression(array)?;
+                let idx_val = self.eval_expression(index)?;
+                let idx = match idx_val {
+                    Value::Int(i) => i as usize,
+                    _ => 0,
+                };
+                match arr_val {
+                    Value::Array(items) => {
+                        Ok(items.get(idx).cloned().unwrap_or(Value::Int(0)))
+                    }
+                    Value::String(s) => {
+                        let byte = s.as_bytes().get(idx).copied().unwrap_or(0);
+                        Ok(Value::Int(byte as i64))
+                    }
+                    _ => Ok(Value::Int(0)),
+                }
+            }
+            Expression::Cast { expr, target_type, .. } => {
+                let v = self.eval_expression(expr)?;
+                match (v, target_type) {
+                    (Value::Int(n), Type::F32 | Type::F64) => Ok(Value::Float(n as f64)),
+                    (Value::Float(f), Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::U8 | Type::U16 | Type::U32 | Type::U64) => Ok(Value::Int(f as i64)),
+                    (v, _) => Ok(v),
+                }
+            }
+            Expression::Await { expr, .. } => self.eval_expression(expr),
             Expression::Promote { expr, .. } => self.eval_expression(expr),
             Expression::Block(_) => Ok(Value::Void),
             Expression::NameOf { target, .. } => Ok(Value::String(target.clone())),
@@ -550,3 +579,6 @@ impl Interpreter {
         }
     }
 }
+
+
+

@@ -1,5 +1,12 @@
 // std.ui.canvas - Hyper-Fast Vector Canvas & CustomPainter Engine for End Language
 
+pub st Color {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+}
+
 enum PaintStyle {
     Fill,
     Stroke,
@@ -176,3 +183,4 @@ fn canvas_draw_glass_card(c: Canvas, r: Rect, bg: Color, border_color: Color) vo
     val left_border = rect_from_ltwh(r.x, r.y, 2, r.height)
     canvas_draw_rect(c, left_border, p_highlight)
 }
+

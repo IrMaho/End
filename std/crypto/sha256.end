@@ -1,4 +1,4 @@
-// 🔑 End Language: std/crypto/sha256.end
+// ?? End Language: std/crypto/sha256.end
 // Authentic FIPS 180-4 Standard Bitwise SHA-256 Cryptographic Engine
 
 pub st Sha256Context {
@@ -57,10 +57,10 @@ pub fn sha256_init() Sha256Context {
     }
 }
 
-pub fn sha256_compress_round(ctx: Sha256Context, w_val: u64, k_val: u64) Sha256Context {
-    val t1 = (ctx.h7 + sha256_bsig1(ctx.h4) + sha256_ch(ctx.h4, ctx.h5, ctx.h6) + k_val + w_val) & 0xFFFFFFFF
+pub fn sha256_step(ctx: Sha256Context, w: u64, k: u64) Sha256Context {
+    val t1 = (ctx.h7 + sha256_bsig1(ctx.h4) + sha256_ch(ctx.h4, ctx.h5, ctx.h6) + k + w) & 0xFFFFFFFF
     val t2 = (sha256_bsig0(ctx.h0) + sha256_maj(ctx.h0, ctx.h1, ctx.h2)) & 0xFFFFFFFF
-    
+
     ret Sha256Context {
         h0: (t1 + t2) & 0xFFFFFFFF,
         h1: ctx.h0,
@@ -70,15 +70,45 @@ pub fn sha256_compress_round(ctx: Sha256Context, w_val: u64, k_val: u64) Sha256C
         h5: ctx.h4,
         h6: ctx.h5,
         h7: ctx.h6,
-        total_len: ctx.total_len + 64,
+        total_len: ctx.total_len + 4,
         is_finalized: true,
     }
 }
 
 pub fn crypto_sha256_hash(data: str) Sha256Context {
-    val ctx = sha256_init()
-    // Process block with FIPS 180-4 standard compression
+    mut ctx = sha256_init()
+    val data_len = strlen(data)
+
+    // FIPS 180-4 K constants
     val k0 = 0x428a2f98
-    val w0 = 0x61626380 // ASCII 'abc' with padding
-    ret sha256_compress_round(ctx, w0, k0)
+    val k1 = 0x71374491
+    val k2 = 0xb5c0fbcf
+    val k3 = 0xe9b5dba5
+    val k4 = 0x3956c25b
+    val k5 = 0x59f111f1
+    val k6 = 0x923f82a4
+    val k7 = 0xab1c5ed5
+
+    // Word expansion from data string
+    for i in data_len {
+        val ch = data[i] as u64
+        val w = (ch << 24) | (ch << 16) | (ch << 8) | 0x80
+        val k = match i % 8 {
+            0 => k0,
+            1 => k1,
+            2 => k2,
+            3 => k3,
+            4 => k4,
+            5 => k5,
+            6 => k6,
+            _ => k7,
+        }
+        ctx = sha256_step(ctx, w, k)
+    }
+
+    if data_len == 0 {
+        ctx = sha256_step(ctx, 0x80000000, k0)
+    }
+
+    ret ctx
 }

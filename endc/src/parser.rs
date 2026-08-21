@@ -938,6 +938,11 @@ impl Parser {
                 self.match_token(&TokenKind::SemiColon);
                 Ok(Statement::Spawn { call, span })
             }
+            TokenKind::Skip => {
+                self.advance();
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::Skip { span })
+            }
             _ => {
                 let expr = self.parse_expression()?;
                 if self.match_token(&TokenKind::Equal) {
@@ -1330,7 +1335,17 @@ impl Parser {
             });
         }
 
-        self.parse_postfix()
+        let mut expr = self.parse_postfix()?;
+        while self.match_token(&TokenKind::As) {
+            let span = self.current_span();
+            let target_type = self.parse_type()?;
+            expr = Expression::Cast {
+                expr: Box::new(expr),
+                target_type,
+                span,
+            };
+        }
+        Ok(expr)
     }
 
     fn parse_postfix(&mut self) -> Result<Expression, String> {
@@ -1693,7 +1708,11 @@ impl Parser {
             }
             TokenKind::Alloc => {
                 self.advance();
+                let has_paren = self.match_token(&TokenKind::LParen);
                 let target_type = self.parse_type()?;
+                if has_paren {
+                    self.match_token(&TokenKind::RParen);
+                }
                 Ok(Expression::Alloc {
                     allocator: Box::new(Expression::Ident("default_allocator".into(), span.clone())),
                     target_type,
@@ -1707,3 +1726,6 @@ impl Parser {
         }
     }
 }
+
+
+

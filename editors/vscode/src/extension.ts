@@ -335,11 +335,12 @@ class TestItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly duration: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    public readonly iconName: string = 'pass-filled'
   ) {
     super(label, collapsibleState);
     this.description = duration;
-    this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+    this.iconPath = new vscode.ThemeIcon(iconName, new vscode.ThemeColor('testing.iconPassed'));
   }
 }
 
@@ -377,3 +378,4 @@ class TelemetryItem extends vscode.TreeItem {
 }
 
 export function deactivate() {}
+

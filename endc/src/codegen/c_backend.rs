@@ -764,7 +764,8 @@ impl CBackend {
                 let expr_str = self.gen_expression(expr);
                 self.output.push_str(&format!("{}/* defer */ {};\n", self.indent(), expr_str));
             }
-            Statement::Spawn { call, .. } => {
+            Statement::Skip { .. } => { self.output.push_str(&format!("{}{};\n", self.indent(), "continue")); }
+Statement::Spawn { call, .. } => {
                 let call_str = self.gen_expression(call);
                 self.output.push_str(&format!("{}/* spawn */ (void){};\n", self.indent(), call_str));
             }
@@ -916,6 +917,19 @@ impl CBackend {
                 let e = self.gen_expression(expr);
                 format!("\"SELECT * WHERE {}\"", escape_c_string(&e))
             }
+            Expression::Cast { expr, target_type, .. } => {
+                let inner = self.gen_expression(expr);
+                let c_ty = self.map_type(target_type);
+                format!("(({})({}))", c_ty, inner)
+            }
+            Expression::Await { expr, .. } => {
+                self.gen_expression(expr)
+            }
         }
     }
 }
+
+
+
+
+
