@@ -1,0 +1,21 @@
+// 👑 End Language: tests/valid_linter_sample.end
+// This file follows all architectural and style rules:
+// - Struct in PascalCase
+// - Functions in snake_case
+// - Parameters <= 5
+// - Statements per function <= 50
+
+pub struct UserAccount {
+    pub id: i64,
+    pub balance: i64,
+}
+
+pub fn calculate_total(p1: i32, p2: i32, p3: i32) i32 {
+    val total = p1 + p2 + p3
+    ret total
+}
+
+pub fn main() void {
+    val res = calculate_total(10, 20, 30)
+    println(res)
+}

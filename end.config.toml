@@ -1,0 +1,28 @@
+# 👑 End Language Compiler & Architecture Configuration
+# Enforces modularity, line limits, code style, and architectural invariants
+
+[architecture]
+pattern = "clean"                    # Architectural pattern: clean | mvc | mvvm | hexagonal | none
+enforce_layers = true                # Strict layer isolation
+layers = ["domain", "data", "presentation"]
+
+[files]
+max_lines = 200                      # Maximum allowed lines per file (forces modularization)
+max_functions_per_file = 10          # Maximum functions allowed per single file
+max_function_lines = 50              # Maximum statements/lines per function
+max_params = 5                       # Maximum parameters per function
+
+[comments]
+allowed = true                       # Allow comments in codebase
+language = "any"                     # Comment language: en | fa | any
+require_doc_comments = false         # Require documentation comments on pub functions
+
+[naming]
+struct_style = "PascalCase"          # Struct naming convention: PascalCase | snake_case
+function_style = "snake_case"        # Function naming convention: snake_case | camelCase
+variable_style = "snake_case"        # Variable naming convention: snake_case | camelCase
+
+[quality]
+max_cyclomatic_complexity = 10       # Maximum cyclomatic complexity per function (1-20)
+no_dead_code = true                  # Warn/error on unused functions
+no_unused_imports = true             # Warn/error on unused imports

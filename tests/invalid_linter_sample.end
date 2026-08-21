@@ -1,0 +1,23 @@
+// 👑 End Language: tests/invalid_linter_sample.end
+// This file intentionally violates several rules to verify the Linter engine:
+// 1. Non-snake_case function: calculateTotalAmount
+// 2. Struct in snake_case: user_account_record (expected PascalCase)
+// 3. Excess parameters (> 5 params)
+// 4. Persian comment when language="en"
+
+// این یک کامنت به زبان فارسی است برای تست لسیستم کامپایلر
+
+pub struct user_account_record {
+    pub id: i64,
+    pub balance: i64,
+}
+
+pub fn calculateTotalAmount(p1: i32, p2: i32, p3: i32, p4: i32, p5: i32, p6: i32) i32 {
+    val total = p1 + p2 + p3 + p4 + p5 + p6
+    ret total
+}
+
+pub fn main() void {
+    val res = calculateTotalAmount(1, 2, 3, 4, 5, 6)
+    println(res)
+}

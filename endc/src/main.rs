@@ -10,9 +10,11 @@ mod architecture;
 mod ast;
 mod bindgen;
 mod codegen;
+mod config;
 mod diagnostics;
 mod fuzz;
 mod lexer;
+mod linter;
 mod lsp;
 mod mobile;
 pub mod docgen;
@@ -30,9 +32,11 @@ use agent_api::{AgentApi, MicroEvaluator, SelfHealingEngine, SemanticCodeSlicer,
 use architecture::ArchitectureEngine;
 use bindgen::UniversalBindgen;
 use codegen::{CBackend, CraneliftBackend, Interpreter, LlvmBackend};
+use config::CompilerConfig;
 use diagnostics::Diagnostic;
 use fuzz::FuzzRunner;
 use lexer::Lexer;
+use linter::Linter;
 use lsp::LanguageServer;
 use mobile::MobilePackager;
 use package::PackageManager;
@@ -445,6 +449,17 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         json: bool,
     },
+    /// Lint project files against end.config.toml rules (max lines, naming, comments, complexity)
+    Lint {
+        /// Path to .end file or project directory
+        #[arg(default_value = ".")]
+        path: PathBuf,
+        /// Format as JSON for AI Agent integration
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Generate a default end.config.toml configuration file
+    ConfigInit,
 }
 
 fn main() {
@@ -1899,6 +1914,121 @@ fn run_app() {
                 println!("  ✔ 100% Intent alignment verified across formal contracts (0 contradictions)");
             }
         }
+        Commands::ConfigInit => {
+            let config_path = PathBuf::from("end.config.toml");
+            if config_path.exists() {
+                println!("{} `end.config.toml` already exists in this directory.", "ℹ".yellow().bold());
+            } else {
+                let default_content = r#"# 👑 End Language Compiler & Architecture Configuration
+# Enforces modularity, line limits, code style, and architectural invariants
+
+[architecture]
+pattern = "clean"                    # Architectural pattern: clean | mvc | mvvm | hexagonal | none
+enforce_layers = true                # Strict layer isolation
+layers = ["domain", "data", "presentation"]
+
+[files]
+max_lines = 200                      # Maximum allowed lines per file (forces modularization)
+max_functions_per_file = 10          # Maximum functions allowed per single file
+max_function_lines = 50              # Maximum statements/lines per function
+max_params = 5                       # Maximum parameters per function
+
+[comments]
+allowed = true                       # Allow comments in codebase
+language = "any"                     # Comment language: en | fa | any
+require_doc_comments = false         # Require documentation comments on pub functions
+
+[naming]
+struct_style = "PascalCase"          # Struct naming convention: PascalCase | snake_case
+function_style = "snake_case"        # Function naming convention: snake_case | camelCase
+variable_style = "snake_case"        # Variable naming convention: snake_case | camelCase
+
+[quality]
+max_cyclomatic_complexity = 10       # Maximum cyclomatic complexity per function (1-20)
+no_dead_code = true                  # Warn/error on unused functions
+no_unused_imports = true             # Warn/error on unused imports
+"#;
+                if let Err(e) = fs::write(&config_path, default_content) {
+                    eprintln!("{} Failed to create `end.config.toml`: {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+                println!("👑 {} Generated `{}` with enterprise architectural guardrails!", "Config Init:".green().bold(), "end.config.toml".cyan().bold());
+            }
+        }
+        Commands::Lint { path, json } => {
+            let config = CompilerConfig::load_from_project(std::path::Path::new("."));
+            let mut total_errors = 0;
+            let mut total_warnings = 0;
+            let mut all_violations = Vec::new();
+
+            let files = if path.is_file() {
+                vec![path.clone()]
+            } else {
+                find_all_end_files(&path)
+            };
+
+            if files.is_empty() {
+                println!("{} No .end files found to lint in {:?}", "ℹ".yellow().bold(), path);
+                return;
+            }
+
+            for file in &files {
+                let file_str = file.to_string_lossy().to_string();
+                if let Ok(source) = fs::read_to_string(file) {
+                    let mut lexer = Lexer::new(&file_str, &source);
+                    if let Ok(tokens) = lexer.tokenize_all() {
+                        let mut parser = EndParser::new(&file_str, tokens);
+                        if let Ok(module) = parser.parse_module("main") {
+                            let mut linter = Linter::new(config.clone(), &file_str);
+                            linter.lint_source_and_ast(&source, &module);
+
+                            if json {
+                                for v in linter.violations() {
+                                    all_violations.push(v.clone());
+                                }
+                            } else if !linter.violations().is_empty() {
+                                linter.print_violations();
+                            }
+
+                            for v in linter.violations() {
+                                match v.severity {
+                                    linter::LintSeverity::Error => total_errors += 1,
+                                    linter::LintSeverity::Warning => total_warnings += 1,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if json {
+                let violations_json: Vec<String> = all_violations.iter().map(|v| {
+                    format!(
+                        r#"{{"file":"{}","line":{},"rule":"{}","severity":"{}","message":"{}","suggestion":"{}"}}"#,
+                        v.file.replace('\\', "\\\\").replace('"', "\\\""),
+                        v.line,
+                        v.rule,
+                        match v.severity { linter::LintSeverity::Error => "error", linter::LintSeverity::Warning => "warning" },
+                        v.message.replace('"', "\\\""),
+                        v.suggestion.replace('"', "\\\""),
+                    )
+                }).collect();
+                println!("[{}]", violations_json.join(","));
+            } else {
+                println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                println!("🔍 {} Scanned {} file(s) against end.config.toml", "End Linter Summary:".cyan().bold(), files.len());
+                if total_errors == 0 && total_warnings == 0 {
+                    println!("✨ {} All files comply with architectural and code quality rules!", "PASSED:".green().bold());
+                } else {
+                    println!("  Total Issues: {} error(s), {} warning(s)", total_errors.to_string().bright_red(), total_warnings.to_string().bright_yellow());
+                }
+                println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            }
+
+            if total_errors > 0 {
+                std::process::exit(1);
+            }
+        }
     }
 }
 
@@ -1909,6 +2039,25 @@ fn parse_file_line(target: &str) -> (PathBuf, usize) {
         std::process::exit(1);
     }
     (PathBuf::from(parts[0]), parts[1].parse().unwrap_or(0))
+}
+
+fn find_all_end_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let dirname = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                // Skip hidden folders and target/dist/build
+                if !dirname.starts_with('.') && dirname != "target" && dirname != "dist" && dirname != "build" && dirname != "ui_build" {
+                    files.extend(find_all_end_files(&path));
+                }
+            } else if path.extension().and_then(|s| s.to_str()) == Some("end") {
+                files.push(path);
+            }
+        }
+    }
+    files
 }
 
 fn resolve_import_file(base_dir: &std::path::Path, path_str: &str) -> Option<PathBuf> {
@@ -2018,6 +2167,20 @@ fn load_module_recursive(
             return Err(format!("Parsing failed for '{}'", file_str));
         }
     };
+
+    // Enforce end.config.toml rules if config file is present in project
+    let config_path = std::path::Path::new("end.config.toml");
+    if config_path.exists() {
+        let config = CompilerConfig::load_from_project(std::path::Path::new("."));
+        let mut linter = Linter::new(config, &file_str);
+        linter.lint_source_and_ast(&source, &module);
+        if linter.has_errors() {
+            linter.print_violations();
+            return Err(format!("end.config.toml policy violation in '{}'", file_str));
+        } else if !linter.violations().is_empty() {
+            linter.print_violations();
+        }
+    }
 
     let base_dir = file.parent().unwrap_or_else(|| std::path::Path::new("."));
 
