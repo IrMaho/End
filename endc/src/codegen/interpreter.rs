@@ -312,6 +312,7 @@ impl Interpreter {
                 Ok(None)
             }
             Statement::Skip { .. } => Ok(None),
+            Statement::InlineC { .. } => Ok(None),
             Statement::Spawn { call, .. } => {
                 let _ = self.eval_expression(call)?;
                 Ok(None)
@@ -575,6 +576,11 @@ impl Interpreter {
             Expression::SqlExpr { expr, .. } => {
                 let _ = self.eval_expression(expr)?;
                 Ok(Value::String("SELECT * FROM table".to_string()))
+            }
+            Expression::InlineC { .. } => Ok(Value::Void),
+            Expression::Pipe { lhs, rhs, .. } => {
+                let _ = self.eval_expression(lhs)?;
+                self.eval_expression(rhs)
             }
         }
     }

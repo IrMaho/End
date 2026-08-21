@@ -1,10 +1,12 @@
 use crate::ast::*;
 use crate::lexer::{Token, TokenKind};
+use std::collections::HashSet;
 
 pub struct Parser {
     tokens: Vec<Token>,
     cursor: usize,
     pub filename: String,
+    pub enum_names: HashSet<String>,
 }
 
 impl Parser {
@@ -13,6 +15,7 @@ impl Parser {
             tokens,
             cursor: 0,
             filename: filename.into(),
+            enum_names: HashSet::new(),
         }
     }
 
@@ -74,6 +77,8 @@ impl Parser {
         let mut traits = Vec::new();
         let mut impls = Vec::new();
         let mut functions = Vec::new();
+        let mut modules = Vec::new();
+        let mut extensions = Vec::new();
         let start_span = self.current_span();
 
         while !self.check(&TokenKind::EOF) {
@@ -166,6 +171,12 @@ impl Parser {
                 TokenKind::Fn => {
                     functions.push(self.parse_function(false, pending_directives)?);
                 }
+                TokenKind::Mod => {
+                    modules.push(self.parse_module_def(false, pending_directives)?);
+                }
+                TokenKind::Extend => {
+                    extensions.push(self.parse_extension_block()?);
+                }
                 TokenKind::Pub => {
                     self.advance();
                     match self.peek_kind() {
@@ -180,6 +191,9 @@ impl Parser {
                         }
                         TokenKind::Fn => {
                             functions.push(self.parse_function(true, pending_directives)?);
+                        }
+                        TokenKind::Mod => {
+                            modules.push(self.parse_module_def(true, pending_directives)?);
                         }
                         other => {
                             return Err(format!(
@@ -213,6 +227,8 @@ impl Parser {
             traits,
             impls,
             functions,
+            modules,
+            extensions,
             span: start_span,
         })
     }
@@ -401,6 +417,7 @@ impl Parser {
             TokenKind::Ident(n) => n,
             other => return Err(format!("Expected enum name, found {:?} at line {}", other, span.line)),
         };
+        self.enum_names.insert(name.clone());
 
         let mut generic_params = Vec::new();
         if self.match_token(&TokenKind::Less) {
@@ -545,8 +562,9 @@ impl Parser {
 
         while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
             let p_span = self.current_span();
+            let is_ref = self.match_token(&TokenKind::Ampersand);
             let is_mut = self.match_token(&TokenKind::Mut);
-            let param_name = match self.advance().kind {
+            let mut param_name = match self.advance().kind {
                 TokenKind::Ident(n) => n,
                 TokenKind::Struct => "st".to_string(),
                 TokenKind::Val => "val".to_string(),
@@ -559,10 +577,15 @@ impl Parser {
                 TokenKind::Region => "region".to_string(),
                 other => return Err(format!("Expected parameter name, found {:?}", other)),
             };
+            if is_ref {
+                param_name = format!("&{}", param_name);
+            }
 
             let mut param_type = Type::Void;
             if self.match_token(&TokenKind::Colon) {
                 param_type = self.parse_type()?;
+            } else if param_name == "&self" || param_name == "self" {
+                param_type = Type::Custom("Self".to_string());
             }
 
             params.push(FunctionParam {
@@ -701,6 +724,135 @@ impl Parser {
             generic_params,
             is_pub,
             methods,
+            span,
+        })
+    }
+
+    fn parse_module_def(&mut self, is_pub: bool, _directives: Vec<Directive>) -> Result<ModuleDef, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::Mod)?;
+        let name = match self.advance().kind {
+            TokenKind::Ident(n) => n,
+            other => return Err(format!("Expected module name, found {:?}", other)),
+        };
+        let mut parent = None;
+        if self.match_token(&TokenKind::Derives) {
+            parent = match self.advance().kind {
+                TokenKind::Ident(p) => Some(p),
+                other => return Err(format!("Expected parent module name after derives, found {:?}", other)),
+            };
+        }
+        self.expect(TokenKind::LBrace)?;
+        let mut structs = Vec::new();
+        let mut functions = Vec::new();
+        let mut overrides = Vec::new();
+
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            let mut pending_directives = Vec::new();
+            while let TokenKind::Directive(d) = self.peek_kind() {
+                let dir_name = d.clone();
+                let dir_span = self.current_span();
+                self.advance();
+                pending_directives.push(Directive {
+                    name: dir_name,
+                    args: Vec::new(),
+                    span: dir_span,
+                });
+            }
+            match self.peek_kind() {
+                TokenKind::Struct => {
+                    structs.push(self.parse_struct(false, pending_directives)?);
+                }
+                TokenKind::Fn => {
+                    functions.push(self.parse_function(false, pending_directives)?);
+                }
+                TokenKind::Override => {
+                    self.advance();
+                    if self.check(&TokenKind::Fn) {
+                        overrides.push(self.parse_function(false, pending_directives)?);
+                    } else {
+                        self.advance();
+                    }
+                }
+                TokenKind::Pub => {
+                    self.advance();
+                    match self.peek_kind() {
+                        TokenKind::Struct => {
+                            structs.push(self.parse_struct(true, pending_directives)?);
+                        }
+                        TokenKind::Fn => {
+                            functions.push(self.parse_function(true, pending_directives)?);
+                        }
+                        TokenKind::Override => {
+                            self.advance();
+                            overrides.push(self.parse_function(true, pending_directives)?);
+                        }
+                        _ => { self.advance(); }
+                    }
+                }
+                TokenKind::SemiColon => { self.advance(); }
+                _ => { self.advance(); }
+            }
+        }
+        self.expect(TokenKind::RBrace)?;
+        Ok(ModuleDef {
+            name,
+            parent,
+            is_pub,
+            structs,
+            functions,
+            overrides,
+            span,
+        })
+    }
+
+    fn parse_extension_block(&mut self) -> Result<ExtensionBlock, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::Extend)?;
+        let is_struct = if self.match_token(&TokenKind::Struct) {
+            true
+        } else if self.match_token(&TokenKind::Mod) {
+            false
+        } else {
+            true
+        };
+        let target = match self.advance().kind {
+            TokenKind::Ident(n) => n,
+            other => return Err(format!("Expected target identifier in extend block, found {:?}", other)),
+        };
+        self.expect(TokenKind::LBrace)?;
+        let mut functions = Vec::new();
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            let mut pending_directives = Vec::new();
+            while let TokenKind::Directive(d) = self.peek_kind() {
+                let dir_name = d.clone();
+                let dir_span = self.current_span();
+                self.advance();
+                pending_directives.push(Directive {
+                    name: dir_name,
+                    args: Vec::new(),
+                    span: dir_span,
+                });
+            }
+            match self.peek_kind() {
+                TokenKind::Fn => {
+                    functions.push(self.parse_function(false, pending_directives)?);
+                }
+                TokenKind::Pub => {
+                    self.advance();
+                    if self.check(&TokenKind::Fn) {
+                        functions.push(self.parse_function(true, pending_directives)?);
+                    }
+                }
+                TokenKind::SemiColon => { self.advance(); }
+                _ => { self.advance(); }
+            }
+        }
+        self.expect(TokenKind::RBrace)?;
+        Ok(ExtensionBlock {
+            target,
+            is_struct,
+            functions,
             span,
         })
     }
@@ -883,6 +1035,27 @@ impl Parser {
                     body,
                     span,
                 })
+            }
+            TokenKind::InlineC => {
+                let span = self.current_span();
+                self.advance();
+                self.expect(TokenKind::LBrace)?;
+                let mut code = String::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    match self.peek_kind() {
+                        TokenKind::StringLit(s) => {
+                            code.push_str(s);
+                            code.push('\n');
+                            self.advance();
+                        }
+                        _ => {
+                            self.advance();
+                        }
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::InlineC { code, span })
             }
             TokenKind::Asm => {
                 self.advance();
@@ -1073,7 +1246,21 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> Result<Expression, String> {
-        self.parse_catch_expr()
+        self.parse_pipe_expr()
+    }
+
+    fn parse_pipe_expr(&mut self) -> Result<Expression, String> {
+        let mut expr = self.parse_catch_expr()?;
+        while self.match_token(&TokenKind::PipeGreater) {
+            let span = self.current_span();
+            let rhs = self.parse_catch_expr()?;
+            expr = Expression::Pipe {
+                lhs: Box::new(expr),
+                rhs: Box::new(rhs),
+                span,
+            };
+        }
+        Ok(expr)
     }
 
     fn parse_catch_expr(&mut self) -> Result<Expression, String> {
@@ -1672,16 +1859,12 @@ impl Parser {
                 }
 
                 // Check for Enum Qualified Init: `Status.Pending` or `Status::Ok`
-                let is_enum_access = if id.chars().next().map_or(false, |c| c.is_uppercase()) {
+                let is_enum_access = if self.enum_names.contains(&id) {
                     if self.match_token(&TokenKind::Dot) {
                         true
                     } else if self.check(&TokenKind::Colon) {
                         self.advance();
-                        if self.match_token(&TokenKind::Colon) {
-                            true
-                        } else {
-                            false
-                        }
+                        self.match_token(&TokenKind::Colon)
                     } else {
                         false
                     }

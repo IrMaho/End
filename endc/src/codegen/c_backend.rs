@@ -1,5 +1,5 @@
 use crate::ast::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct CBackend {
     output: String,
@@ -9,6 +9,8 @@ pub struct CBackend {
     is_lib: bool,
     pub var_types: HashMap<String, Type>,
     pub active_regions: Vec<String>,
+    pub struct_methods: HashMap<String, HashSet<String>>,
+    pub module_methods: HashMap<String, HashSet<String>>,
 }
 
 fn escape_c_string(s: &str) -> String {
@@ -37,6 +39,8 @@ impl CBackend {
             is_lib: false,
             var_types: HashMap::new(),
             active_regions: Vec::new(),
+            struct_methods: HashMap::new(),
+            module_methods: HashMap::new(),
         }
     }
 
@@ -460,9 +464,110 @@ impl CBackend {
             self.header_output.push_str("\n#ifdef __cplusplus\n}\n#endif\n");
         }
 
+        // Process Extensions
+        for ext in &module.extensions {
+            for f in &ext.functions {
+                self.struct_methods.entry(ext.target.clone()).or_default().insert(f.name.clone());
+                let mangled_name = format!("{}_{}", ext.target, f.name);
+                let ret_type = self.map_type(&f.return_type);
+                let mut params_str = Vec::new();
+                for (idx, p) in f.params.iter().enumerate() {
+                    if idx == 0 && (p.name == "self" || p.name == "&self") {
+                        params_str.push(format!("{}* self", ext.target));
+                    } else {
+                        params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                    }
+                }
+                if params_str.is_empty() { params_str.push("void".to_string()); }
+                self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+            }
+        }
+
+        // Process Modules
+        for m in &module.modules {
+            for f in &m.functions {
+                self.module_methods.entry(m.name.clone()).or_default().insert(f.name.clone());
+                let mangled_name = format!("{}_{}", m.name, f.name);
+                let ret_type = self.map_type(&f.return_type);
+                let mut params_str = Vec::new();
+                for p in &f.params {
+                    params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                }
+                if params_str.is_empty() { params_str.push("void".to_string()); }
+                self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+            }
+            for ov in &m.overrides {
+                self.module_methods.entry(m.name.clone()).or_default().insert(ov.name.clone());
+                let mangled_name = format!("{}_{}", m.name, ov.name);
+                let ret_type = self.map_type(&ov.return_type);
+                let mut params_str = Vec::new();
+                for p in &ov.params {
+                    params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                }
+                if params_str.is_empty() { params_str.push("void".to_string()); }
+                self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+            }
+        }
+        self.output.push('\n');
+
         // Function Bodies
         for f in &module.functions {
             self.gen_function(f);
+        }
+
+        // Extension Bodies
+        for ext in &module.extensions {
+            for f in &ext.functions {
+                let mut ext_fn = f.clone();
+                ext_fn.name = format!("{}_{}", ext.target, f.name);
+                if let Some(first_p) = ext_fn.params.first_mut() {
+                    if first_p.name == "self" || first_p.name == "&self" {
+                        first_p.name = "self".to_string();
+                        first_p.param_type = Type::Pointer(Box::new(Type::Custom(ext.target.clone())));
+                    }
+                }
+                self.gen_function(&ext_fn);
+            }
+        }
+
+        // Module Function Bodies & Derived Inheritance
+        for m in &module.modules {
+            for f in &m.functions {
+                let mut mod_fn = f.clone();
+                mod_fn.name = format!("{}_{}", m.name, f.name);
+                self.gen_function(&mod_fn);
+            }
+            for ov in &m.overrides {
+                let mut ov_fn = ov.clone();
+                ov_fn.name = format!("{}_{}", m.name, ov.name);
+                self.gen_function(&ov_fn);
+            }
+            if let Some(parent_name) = &m.parent {
+                if let Some(parent_mod) = module.modules.iter().find(|pm| pm.name == *parent_name) {
+                    for pf in &parent_mod.functions {
+                        if !m.functions.iter().any(|f| f.name == pf.name) && !m.overrides.iter().any(|ov| ov.name == pf.name) {
+                            let mut inherited_fn = pf.clone();
+                            inherited_fn.name = format!("{}_{}", m.name, pf.name);
+                            let parent_fn_call = format!("{}_{}", parent_name, pf.name);
+                            let args_call = pf.params.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ");
+                            inherited_fn.body = Block {
+                                statements: vec![
+                                    Statement::Return {
+                                        value: Some(Expression::Call {
+                                            callee: Box::new(Expression::Ident(parent_fn_call, pf.span.clone())),
+                                            args: pf.params.iter().map(|p| Expression::Ident(p.name.clone(), p.span.clone())).collect(),
+                                            span: pf.span.clone(),
+                                        }),
+                                        span: pf.span.clone(),
+                                    }
+                                ],
+                                span: pf.span.clone(),
+                            };
+                            self.gen_function(&inherited_fn);
+                        }
+                    }
+                }
+            }
         }
 
         (
@@ -581,6 +686,8 @@ impl CBackend {
             } => {
                 if let Some(t) = var_type {
                     self.var_types.insert(name.clone(), t.clone());
+                } else if let Some(Expression::StructInit { name: st_name, .. }) = initializer {
+                    self.var_types.insert(name.clone(), Type::Custom(st_name.clone()));
                 } else if let Some(Expression::Alloc { target_type, .. }) = initializer {
                     self.var_types.insert(name.clone(), Type::Pointer(Box::new(target_type.clone())));
                 } else if let Some(Expression::Promote { expr, .. }) = initializer {
@@ -785,6 +892,9 @@ impl CBackend {
                     name
                 ));
             }
+            Statement::InlineC { code, .. } => {
+                self.output.push_str(&format!("{}{}\n", self.indent(), code));
+            }
             Statement::AsmBlock { arch, code, .. } => {
                 self.output.push_str(&format!(
                     "{}/* Inline Assembly: {} */\n",
@@ -889,6 +999,46 @@ Statement::Spawn { call, .. } => {
                     }
                 }
 
+                // Check for struct extension methods & module methods
+                if let Expression::FieldAccess { object, field, .. } = callee.as_ref() {
+                    let obj_str = self.gen_expression(object);
+
+                    // 1. Check if object is a module name, e.g. MathModule.calc(...)
+                    if let Expression::Ident(mod_name, _) = object.as_ref() {
+                        if self.module_methods.contains_key(mod_name) {
+                            let mut mod_args = Vec::new();
+                            for a in args {
+                                mod_args.push(self.gen_expression(a));
+                            }
+                            return format!("{}_{}({})", mod_name, field, mod_args.join(", "));
+                        }
+                    }
+
+                    // 2. Struct Method / Extension method dispatch
+                    let is_ptr = if let Expression::Ident(id, _) = object.as_ref() {
+                        self.var_types.get(id).map_or(false, |t| matches!(t, Type::Pointer(_) | Type::Box(_) | Type::Rc(_) | Type::Arc(_)))
+                    } else {
+                        false
+                    };
+                    let receiver_arg = if is_ptr { obj_str.clone() } else { format!("&{}", obj_str) };
+                    let mut ext_args = vec![receiver_arg];
+                    for a in args {
+                        ext_args.push(self.gen_expression(a));
+                    }
+
+                    if let Expression::Ident(id, _) = object.as_ref() {
+                        if let Some(Type::Custom(struct_name)) = self.var_types.get(id) {
+                            return format!("{}_{}({})", struct_name, field, ext_args.join(", "));
+                        }
+                    }
+
+                    for (st_name, methods) in &self.struct_methods {
+                        if methods.contains(field) {
+                            return format!("{}_{}({})", st_name, field, ext_args.join(", "));
+                        }
+                    }
+                }
+
                 let mut args_str = Vec::new();
                 for a in args {
                     args_str.push(self.gen_expression(a));
@@ -897,6 +1047,11 @@ Statement::Spawn { call, .. } => {
             }
             Expression::FieldAccess { object, field, .. } => {
                 let obj_str = self.gen_expression(object);
+                if let Expression::Ident(mod_name, _) = object.as_ref() {
+                    if self.module_methods.contains_key(mod_name) {
+                        return format!("{}_{}", mod_name, field);
+                    }
+                }
                 if let Expression::Ident(name, _) = object.as_ref() {
                     if let Some(ty) = self.var_types.get(name) {
                         match ty {
@@ -927,6 +1082,27 @@ Statement::Spawn { call, .. } => {
                     format!("({}){{ .tag = {}_{}, .data.{} = {} }}", en, en, variant_name, variant_name, self.gen_expression(p))
                 } else {
                     format!("({}){{ .tag = {}_{} }}", en, en, variant_name)
+                }
+            }
+            Expression::InlineC { code, .. } => code.clone(),
+            Expression::Pipe { lhs, rhs, .. } => {
+                let lhs_str = self.gen_expression(lhs.as_ref());
+                match rhs.as_ref() {
+                    Expression::Call { callee, args, .. } => {
+                        let callee_str = self.gen_expression(callee.as_ref());
+                        let mut all_args = vec![lhs_str];
+                        for a in args {
+                            all_args.push(self.gen_expression(a));
+                        }
+                        format!("{}({})", callee_str, all_args.join(", "))
+                    }
+                    Expression::Ident(name, _) => {
+                        format!("{}({})", name, lhs_str)
+                    }
+                    _ => {
+                        let rhs_str = self.gen_expression(rhs.as_ref());
+                        format!("{}({})", rhs_str, lhs_str)
+                    }
                 }
             }
             Expression::Alloc { target_type, .. } => {

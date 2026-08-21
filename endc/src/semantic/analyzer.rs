@@ -139,6 +139,57 @@ impl SemanticAnalyzer {
             self.graph.symbols.insert(e.name.clone(), info);
         }
 
+        // Register Extensions
+        for ext in &module.extensions {
+            let info = SymbolInfo {
+                name: format!("extend_{}", ext.target),
+                kind: "extension".to_string(),
+                type_signature: format!("extend {}", ext.target),
+                file: ext.span.file.clone(),
+                defined_at_line: ext.span.line,
+                callers: Vec::new(),
+                callees: Vec::new(),
+                effects: Vec::new(),
+                is_pure: true,
+                memory_region: None,
+                capabilities: CapabilityContract::default(),
+            };
+            self.graph.symbols.insert(format!("extend_{}", ext.target), info);
+            for f in &ext.functions {
+                let mangled = format!("{}_{}", ext.target, f.name);
+                let param_types = f.params.iter().map(|p| p.param_type.clone()).collect();
+                self.function_signatures.insert(mangled.clone(), (param_types, f.return_type.clone(), true));
+            }
+        }
+
+        // Register Modules
+        for m in &module.modules {
+            let info = SymbolInfo {
+                name: m.name.clone(),
+                kind: "module".to_string(),
+                type_signature: format!("mod {} derives {:?}", m.name, m.parent),
+                file: m.span.file.clone(),
+                defined_at_line: m.span.line,
+                callers: Vec::new(),
+                callees: Vec::new(),
+                effects: Vec::new(),
+                is_pure: true,
+                memory_region: None,
+                capabilities: CapabilityContract::default(),
+            };
+            self.graph.symbols.insert(m.name.clone(), info);
+            for f in &m.functions {
+                let mangled = format!("{}_{}", m.name, f.name);
+                let param_types = f.params.iter().map(|p| p.param_type.clone()).collect();
+                self.function_signatures.insert(mangled, (param_types, f.return_type.clone(), true));
+            }
+            for ov in &m.overrides {
+                let mangled = format!("{}_{}", m.name, ov.name);
+                let param_types = ov.params.iter().map(|p| p.param_type.clone()).collect();
+                self.function_signatures.insert(mangled, (param_types, ov.return_type.clone(), true));
+            }
+        }
+
         // 2. Register Structs
         for s in &module.structs {
             self.structs.insert(s.name.clone(), s.clone());

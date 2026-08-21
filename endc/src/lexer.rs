@@ -34,6 +34,13 @@ pub enum TokenKind {
     Impl,     // 'impl'
     Async,    // 'async'
     Await,    // 'await'
+    Mod,      // 'mod' or 'module'
+    Derives,  // 'derives'
+    Override, // 'override'
+    Extend,   // 'extend'
+    Bridge,   // 'bridge'
+    With,     // 'with'
+    InlineC,  // 'inline_c'
 
     // Meta-Syntax & Reflection Macros
     NameOf,       // 'nameof!'
@@ -82,6 +89,7 @@ pub enum TokenKind {
     AmpAmp,    // '&&'
     Pipe,      // '|'
     PipePipe,  // '||'
+    PipeGreater, // '|>'
     Caret,     // '^'
     Tilde,     // '~'
     Underscore,// '_'
@@ -292,6 +300,13 @@ impl<'a> Lexer<'a> {
                     "impl" => TokenKind::Impl,
                     "async" => TokenKind::Async,
                     "await" => TokenKind::Await,
+                    "mod" | "module" => TokenKind::Mod,
+                    "derives" => TokenKind::Derives,
+                    "override" => TokenKind::Override,
+                    "extend" => TokenKind::Extend,
+                    "bridge" => TokenKind::Bridge,
+                    "with" => TokenKind::With,
+                    "inline_c" => TokenKind::InlineC,
                     _ => TokenKind::Ident(ident),
                 }
             };
@@ -465,6 +480,9 @@ impl<'a> Lexer<'a> {
                 if self.peek() == Some('|') {
                     self.advance();
                     TokenKind::PipePipe
+                } else if self.peek() == Some('>') {
+                    self.advance();
+                    TokenKind::PipeGreater
                 } else {
                     TokenKind::Pipe
                 }

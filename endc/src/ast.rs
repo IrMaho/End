@@ -190,6 +190,25 @@ pub struct ImplBlock {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModuleDef {
+    pub name: String,
+    pub parent: Option<String>,
+    pub is_pub: bool,
+    pub structs: Vec<StructDef>,
+    pub functions: Vec<FunctionDef>,
+    pub overrides: Vec<FunctionDef>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExtensionBlock {
+    pub target: String,
+    pub is_struct: bool,
+    pub functions: Vec<FunctionDef>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ImportStmt {
     pub kind: ImportKind,
     pub path: String,
@@ -303,6 +322,10 @@ pub enum Statement {
         span: Span,
     },
     Skip {
+        span: Span,
+    },
+    InlineC {
+        code: String,
         span: Span,
     },
 }
@@ -463,6 +486,15 @@ pub enum Expression {
         expr: Box<Expression>,
         span: Span,
     },
+    Pipe {
+        lhs: Box<Expression>,
+        rhs: Box<Expression>,
+        span: Span,
+    },
+    InlineC {
+        code: String,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -491,6 +523,8 @@ impl Expression {
             Expression::AssertDebug { span, .. } => span,
             Expression::Translate { span, .. } => span,
             Expression::FieldsOf { span, .. } => span,
+            Expression::Pipe { span, .. } => span,
+            Expression::InlineC { span, .. } => span,
             Expression::SqlExpr { span, .. } => span,
             Expression::Cast { span, .. } => span,
             Expression::Await { span, .. } => span,
@@ -516,6 +550,7 @@ impl Statement {
             Statement::Defer { span, .. } => span,
             Statement::Spawn { span, .. } => span,
             Statement::Skip { span, .. } => span,
+            Statement::InlineC { span, .. } => span,
         }
     }
 }
@@ -529,6 +564,8 @@ pub struct Module {
     pub traits: Vec<TraitDef>,
     pub impls: Vec<ImplBlock>,
     pub functions: Vec<FunctionDef>,
+    pub modules: Vec<ModuleDef>,
+    pub extensions: Vec<ExtensionBlock>,
     pub span: Span,
 }
 

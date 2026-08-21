@@ -1,0 +1,64 @@
+// Test suite for End Next-Gen Modular & Vibe Coding Features
+
+st Vector3 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+// 1. Cross-File Struct Extension Block
+extend st Vector3 {
+    pub fn length_squared(&self) f64 {
+        ret self.x * self.x + self.y * self.y + self.z * self.z
+    }
+}
+
+// 2. Base Abstract Blueprint Module
+pub mod HttpServiceBase {
+    pub fn handle(code: i64) i64 {
+        ret code + 100
+    }
+}
+
+// 3. Derived Customized Module
+pub mod OrderService derives HttpServiceBase {
+    override fn handle(code: i64) i64 {
+        ret code + 500
+    }
+}
+
+pub fn double_val(x: i64) i64 {
+    ret x * 2
+}
+
+pub fn add_five(x: i64) i64 {
+    ret x + 5
+}
+
+pub fn main() i32 {
+    println("--- Testing End Modular & Vibe Coding Features ---")
+
+    // 1. Struct Extension Method Call
+    val v = Vector3 { x: 3.0, y: 4.0, z: 0.0 }
+    val sq = v.length_squared()
+    println(sq)
+
+    // 2. Base Module Method Call
+    val base_res = HttpServiceBase.handle(10)
+    println(base_res)
+
+    // 3. Derived Custom Module Method Call (Overridden)
+    val order_res = OrderService.handle(10)
+    println(order_res)
+
+    // 4. Vibe Coding Pipe Operator (|>)
+    val pipe_res = 10 |> double_val |> add_five
+    println(pipe_res)
+
+    // 5. Inline C Low-Level Bare-Metal Block
+    inline_c {
+        "printf(\"[INLINE-C] Direct C execution verified!\\n\");"
+    }
+
+    ret 0
+}

@@ -1660,6 +1660,8 @@ fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer), S
         traits: Vec::new(),
         impls: Vec::new(),
         functions: Vec::new(),
+        modules: Vec::new(),
+        extensions: Vec::new(),
         span: ast::Span::new(file.to_string_lossy().to_string(), 1, 1),
     };
 
@@ -1736,6 +1738,8 @@ fn load_module_recursive(
     merged.traits.extend(module.traits);
     merged.impls.extend(module.impls);
     merged.functions.extend(module.functions);
+    merged.modules.extend(module.modules);
+    merged.extensions.extend(module.extensions);
 
     Ok(())
 }

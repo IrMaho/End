@@ -37,6 +37,8 @@ impl TreeShaker {
             traits: module.traits.clone(),
             impls: module.impls.clone(),
             functions: pruned_functions,
+            modules: module.modules.clone(),
+            extensions: module.extensions.clone(),
             span: module.span.clone(),
         };
 
