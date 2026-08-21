@@ -1,33 +1,44 @@
 // 🧬 End Language Collections: std/collections/map.end
-// SwissTable SIMD-Hashed Fast Hash Table
+// SwissTable SIMD / FNV-1a Hashed Fast Hash Table
 
-pub st HashMap<K, V> {
-    entries_count: i64,
-    buckets_capacity: i64,
-    load_factor_pct: i32,
+pub extern fn end_map_create(cap: i64) i64
+pub extern fn end_map_set_str(handle: i64, key: str, val: str) void
+pub extern fn end_map_get_str(handle: i64, key: str) str
+pub extern fn end_map_has(handle: i64, key: str) bool
+pub extern fn end_map_delete(handle: i64, key: str) bool
+pub extern fn end_map_len(handle: i64) i64
+pub extern fn end_map_free(handle: i64) void
+
+pub st HashMap {
+    handle: i64,
 }
 
-pub fn map_create<K, V>(initial_buckets: i64) HashMap<K, V> {
-    ret HashMap<K, V> {
-        entries_count: 0,
-        buckets_capacity: initial_buckets,
-        load_factor_pct: 75,
+pub fn map_create(initial_buckets: i64) HashMap {
+    ret HashMap {
+        handle: end_map_create(initial_buckets),
     }
 }
 
-pub fn map_insert<K, V>(map: HashMap<K, V>, key: K, value: V) HashMap<K, V> {
-    val new_count = map.entries_count + 1
-    ret HashMap<K, V> {
-        entries_count: new_count,
-        buckets_capacity: map.buckets_capacity,
-        load_factor_pct: map.load_factor_pct,
-    }
+pub fn map_set(map: HashMap, key: str, value: str) void {
+    end_map_set_str(map.handle, key, value)
 }
 
-pub fn map_len<K, V>(map: HashMap<K, V>) i64 {
-    ret map.entries_count
+pub fn map_get(map: HashMap, key: str) str {
+    ret end_map_get_str(map.handle, key)
 }
 
-pub fn map_contains_key<K, V>(map: HashMap<K, V>, key: K) bool {
-    ret map.entries_count > 0
+pub fn map_has(map: HashMap, key: str) bool {
+    ret end_map_has(map.handle, key)
+}
+
+pub fn map_delete(map: HashMap, key: str) bool {
+    ret end_map_delete(map.handle, key)
+}
+
+pub fn map_len(map: HashMap) i64 {
+    ret end_map_len(map.handle)
+}
+
+pub fn map_free(map: HashMap) void {
+    end_map_free(map.handle)
 }

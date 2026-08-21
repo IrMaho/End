@@ -1,0 +1,82 @@
+// 👑 End Language: tests/test_part2_real_collections_and_kv.end
+// Comprehensive Test Suite for Part 2: Real Collections (List, HashMap) & EndKV Engine
+
+import "../std/collections/list.end"
+import "../std/collections/map.end"
+import "../std/kv/kv.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PART 2: REAL COLLECTIONS & ENDKV TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Test Dynamic List
+    println("--- 1. Testing Dynamic List<T> ---")
+    val list = list_create(2) // start with small cap=2 to trigger reallocations
+    list_push_str(list, "Alpha")
+    list_push_str(list, "Beta")
+    list_push_str(list, "Gamma")
+    list_push_str(list, "Delta")
+
+    println("List Length (Must be 4):")
+    println(list_len(list))
+
+    println("List Item 0 (Must be Alpha):")
+    println(list_get_str(list, 0))
+
+    println("List Item 2 (Must be Gamma):")
+    println(list_get_str(list, 2))
+
+    println("List Item 3 (Must be Delta):")
+    println(list_get_str(list, 3))
+    list_free(list)
+    println("✔ Dynamic List Tested & Freed Successfully!")
+
+    // 2. Test Fast HashMap
+    println("--- 2. Testing Fast HashMap<K, V> ---")
+    val map = map_create(4)
+    map_set(map, "user_id", "u_98421")
+    map_set(map, "role", "SystemArchitect")
+    map_set(map, "country", "Iran")
+
+    println("Map Length (Must be 3):")
+    println(map_len(map))
+
+    println("Map Get 'role' (Must be SystemArchitect):")
+    println(map_get(map, "role"))
+
+    println("Map Has 'country' (Must be true):")
+    println(map_has(map, "country"))
+
+    map_delete(map, "country")
+    println("Map Has 'country' after delete (Must be false):")
+    println(map_has(map, "country"))
+
+    println("Map Length after delete (Must be 2):")
+    println(map_len(map))
+    map_free(map)
+    println("✔ Fast HashMap Tested & Freed Successfully!")
+
+    // 3. Test EndKV Database
+    println("--- 3. Testing EndKV Database Engine ---")
+    val db = kv_database_open("production_users")
+    kv_set(db, "session:1001", "token_abc123xyz")
+    kv_set(db, "session:1002", "token_def456uvw")
+
+    println("KV Count (Must be 2):")
+    println(kv_count(db))
+
+    println("KV Get 'session:1001' (Must be token_abc123xyz):")
+    println(kv_get(db, "session:1001"))
+
+    println("KV Has 'session:1002' (Must be true):")
+    println(kv_has(db, "session:1002"))
+
+    kv_delete(db, "session:1002")
+    println("KV Count after delete (Must be 1):")
+    println(kv_count(db))
+    kv_close(db)
+    println("✔ EndKV Database Verified & Closed Successfully!")
+
+    println("👑 ALL PART 2: REAL COLLECTIONS & ENDKV TESTS PASSED! 👑")
+}

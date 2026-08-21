@@ -396,6 +396,14 @@ enum Commands {
         #[arg(long)]
         lib_name: Option<String>,
     },
+    /// Parse C/C++ Header (.h/.hpp) and auto-generate typed End Language bindings
+    CBindgen {
+        /// Path to C header file (.h or .hpp)
+        header: PathBuf,
+        /// Output file for generated End bindings (default: <header_name>.end)
+        #[arg(short, long)]
+        out: Option<PathBuf>,
+    },
     /// Automated security fuzz testing engine (AddressSanitizer & UBSan enabled)
     Fuzz {
         /// Path to .end source file
@@ -440,6 +448,17 @@ enum Commands {
 }
 
 fn main() {
+    let builder = std::thread::Builder::new().stack_size(16 * 1024 * 1024);
+    let handler = builder.spawn(|| {
+        run_app();
+    }).unwrap();
+    if let Err(e) = handler.join() {
+        eprintln!("Fatal error in End compiler execution: {:?}", e);
+        std::process::exit(1);
+    }
+}
+
+fn run_app() {
     let cli = Cli::parse();
 
     match cli.command {
@@ -1750,6 +1769,29 @@ fn main() {
                 }
                 Err(e) => {
                     eprintln!("{} Failed to generate bindings: {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::CBindgen { header, out } => {
+            println!("🔍 {} Scanning and parsing C header at {:?}", "Universal C-Bindgen:".cyan().bold(), header);
+            match bindgen::CHeaderParser::parse_header_file(&header) {
+                Ok(generated_code) => {
+                    let out_path = out.unwrap_or_else(|| {
+                        let stem = header.file_stem().and_then(|s| s.to_str()).unwrap_or("c_bindings");
+                        PathBuf::from(format!("{}.end", stem))
+                    });
+                    if let Some(parent) = out_path.parent() {
+                        let _ = fs::create_dir_all(parent);
+                    }
+                    if let Err(e) = fs::write(&out_path, &generated_code) {
+                        eprintln!("❌ Failed to write generated bindings: {}", e);
+                        std::process::exit(1);
+                    }
+                    println!("👑 {} Successfully generated native End module at {:?}", "Universal C-Bindgen:".green().bold(), out_path);
+                }
+                Err(e) => {
+                    eprintln!("❌ C Header Bindgen error: {}", e);
                     std::process::exit(1);
                 }
             }

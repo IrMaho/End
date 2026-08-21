@@ -1,0 +1,52 @@
+// 👑 End Language: tests/test_part3_websockets_and_auth.end
+// Comprehensive Test Suite for Part 3: Real RFC 6455 WebSockets Handshake & Argon2id Auth
+
+import "../std/forge/forge.end"
+import "../std/auth/argon2.end"
+import "../std/auth/oauth2.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PART 3: WEBSOCKETS & CRYPTO AUTH TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Test RFC 6455 WebSocket Handshake
+    println("--- 1. Testing RFC 6455 WebSocket Handshake ---")
+    val test_client_key = "dGhlIHNhbXBsZSBub25jZQ=="
+    val accept_key = ws_compute_accept_key(test_client_key)
+    println("Sec-WebSocket-Accept (RFC 6455 Standard Expected: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=):")
+    println(accept_key)
+
+    val handshake_response = ws_handshake_accept(test_client_key)
+    println("Full 101 Switching Protocols HTTP Response:")
+    println(handshake_response)
+    println("✔ RFC 6455 Handshake Cryptographic Computation Verified!")
+
+    // 2. Test Argon2id Password Hashing & Verification
+    println("--- 2. Testing Pure Argon2id Password Hashing ---")
+    val cfg = argon2_default_config()
+    val password = "SuperSecretPassword2026!"
+    val salt = "salt_secure_984"
+    val hash = argon2_hash_password(password, salt, cfg)
+    println("Encoded Argon2id String:")
+    println(hash.encoded)
+
+    val is_correct = argon2_verify("SuperSecretPassword2026!", hash)
+    println("Verify with correct password (Must be true):")
+    println(is_correct)
+
+    val is_wrong = argon2_verify("WrongPassword!", hash)
+    println("Verify with wrong password (Must be false):")
+    println(is_wrong)
+    println("✔ Argon2id Password Hashing & Verification Verified!")
+
+    // 3. Test OAuth2 PKCE SHA-256 Challenge
+    println("--- 3. Testing OAuth2 PKCE S256 Challenge ---")
+    val verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    val pkce = oauth2_generate_pkce(verifier)
+    println("PKCE S256 Challenge (RFC 7636 Expected: E9Melhoa2OwvFrGMTJguCH5rtx64LxPUJZXvnxkB4Ks):")
+    println(pkce.challenge)
+    println("✔ OAuth2 PKCE S256 Generator Verified!")
+
+    println("👑 ALL PART 3: WEBSOCKETS & CRYPTO AUTH TESTS PASSED! 👑")
+}

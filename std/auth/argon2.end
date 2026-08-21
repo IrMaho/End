@@ -1,5 +1,8 @@
-// ?? End Language: std/auth/argon2.end
-// Pure Native Argon2id Password Hashing (Cryptographic GPU-Resistance)
+// 🔐 End Language: std/auth/argon2.end
+// Pure Native Argon2id / Cryptographic Password Hashing & Verification
+
+pub extern fn end_auth_hash_password(password: str, salt: str) str
+pub extern fn end_auth_verify_password(password: str, hash: str) bool
 
 pub st Argon2Config {
     time_cost: i32,
@@ -23,12 +26,13 @@ pub fn argon2_default_config() Argon2Config {
 }
 
 pub fn argon2_hash_password(password: str, salt: str, cfg: Argon2Config) Argon2Hash {
+    val h = end_auth_hash_password(password, salt)
     ret Argon2Hash {
-        encoded: "$argon2id$v=19$m=65536,t=3,p=4$random_salt_16b$hashed_digest",
+        encoded: h,
         is_valid: true,
     }
 }
 
 pub fn argon2_verify(password: str, hash: Argon2Hash) bool {
-    ret hash.is_valid
+    ret end_auth_verify_password(password, hash.encoded)
 }

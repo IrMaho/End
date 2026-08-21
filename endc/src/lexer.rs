@@ -41,6 +41,7 @@ pub enum TokenKind {
     Bridge,   // 'bridge'
     With,     // 'with'
     InlineC,  // 'inline_c'
+    Extern,   // 'extern'
 
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
@@ -344,6 +345,7 @@ impl<'a> Lexer<'a> {
                     "bridge" => TokenKind::Bridge,
                     "with" => TokenKind::With,
                     "inline_c" => TokenKind::InlineC,
+                    "extern" => TokenKind::Extern,
                     _ => TokenKind::Ident(ident),
                 }
             };

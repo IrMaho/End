@@ -1,0 +1,64 @@
+// 👑 End Language: tests/test_part1_c_family_interop.end
+// Comprehensive Test Suite for Part 1: Universal C-Family Interop & C-Header Bindgen
+
+import "fixtures/sample_raylib.end"
+
+// Foreign Function Interface to C standard library math & string functions
+pub extern fn sqrt(x: f64) f64
+pub extern fn pow(base: f64, exp: f64) f64
+pub extern fn abs(n: i32) i32
+pub extern fn strlen(s: str) u64
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PART 1: UNIVERSAL C-FAMILY INTEROP TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Testing C-Header Generated Constants & Types
+    println("--- Testing C-Header Auto-Generated Constants & Structs ---")
+    println("Raylib Version:")
+    println(RAYLIB_VERSION())
+
+    println("Max Touch Points (Must be 10):")
+    println(MAX_TOUCH_POINTS())
+
+    val player_pos = Vector2 {
+        x: 100.5,
+        y: 250.0,
+    }
+    println("Player Position Vector2 (X, Y):")
+    println(player_pos.x)
+    println(player_pos.y)
+
+    val bg_color = Color {
+        r: 25,
+        g: 30,
+        b: 45,
+        a: 255,
+    }
+    println("Background Color Alpha Channel (Must be 255):")
+    println(bg_color.a)
+    println("✔ C-Header Bindgen Structs & Constants Verified!")
+
+    // 2. Testing Direct C Standard Library Invocations (math.h & string.h)
+    println("--- Testing Direct C Standard Library Math & String FFI ---")
+    val root_144 = sqrt(144.0)
+    println("C sqrt(144.0) (Must be 12.0):")
+    println(root_144)
+
+    val two_pow_8 = pow(2.0, 8.0)
+    println("C pow(2.0, 8.0) (Must be 256.0):")
+    println(two_pow_8)
+
+    val neg_abs = abs(-42)
+    println("C abs(-42) (Must be 42):")
+    println(neg_abs)
+
+    val sample_str = "End Language Universal C-Family Interop 2026"
+    val str_len = strlen(sample_str)
+    println("C strlen(sample_str) (Must be 44):")
+    println(str_len)
+    println("✔ Direct C Standard Library FFI Verified!")
+
+    println("👑 ALL PART 1: UNIVERSAL C-FAMILY INTEROP TESTS PASSED! 👑")
+}

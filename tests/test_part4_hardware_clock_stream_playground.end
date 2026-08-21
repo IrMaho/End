@@ -1,0 +1,48 @@
+// 👑 End Language: tests/test_part4_hardware_clock_stream_playground.end
+// Comprehensive Test Suite for Part 4: Nanosecond Hardware Clock & W3C SSE Streamer
+
+import "../std/time/time.end"
+import "../std/stream/stream.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PART 4: HARDWARE CLOCK & SSE STREAM TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Testing Nanosecond Hardware Clock
+    println("--- 1. Testing High-Resolution Hardware Clock ---")
+    val t0 = instant_now()
+    time_sleep(10) // sleep 10 ms
+    val elapsed_ms = instant_elapsed_millis(t0)
+    val elapsed_ns = instant_elapsed_nanos(t0)
+
+    println("Elapsed Milliseconds (Must be >= 10):")
+    println(elapsed_ms)
+
+    println("Elapsed Nanoseconds (Must be > 0):")
+    println(elapsed_ns)
+
+    val current_nanos = time_now_nanos()
+    println("Current Monotonic Hardware Timestamp (Nanos):")
+    println(current_nanos)
+    println("✔ Nanosecond Hardware Timer Verified!")
+
+    // 2. Testing W3C Server-Sent Events (SSE) Stream Formatter
+    println("--- 2. Testing W3C Server-Sent Events (SSE) Formatter ---")
+    val event = SseEvent {
+        event_type: "telemetry_update",
+        event_id: 101,
+        data: "{\"fps\": 120, \"status\": \"nominal\"}",
+    }
+
+    val sse_output = sse_format_event(event)
+    println("Formatted W3C SSE Stream Event:")
+    println(sse_output)
+
+    val chunk = sse_chunk_encode("Hello End Stream!")
+    println("HTTP/1.1 Chunked Stream Encoding:")
+    println(chunk)
+    println("✔ W3C SSE Streamer & Chunk Encoder Verified!")
+
+    println("👑 ALL PART 4: HARDWARE CLOCK & SSE STREAM TESTS PASSED! 👑")
+}

@@ -1,31 +1,48 @@
 // 🧬 End Language Collections: std/collections/list.end
 // High-Performance Dynamic Array in Zero-GC Region Arena
 
-pub st List<T> {
-    length: i64,
-    capacity: i64,
+pub extern fn end_list_create(cap: i64) i64
+pub extern fn end_list_push_str(handle: i64, s: str) void
+pub extern fn end_list_get_str(handle: i64, idx: i64) str
+pub extern fn end_list_push_i64(handle: i64, val: i64) void
+pub extern fn end_list_get_i64(handle: i64, idx: i64) i64
+pub extern fn end_list_len(handle: i64) i64
+pub extern fn end_list_free(handle: i64) void
+
+pub st List {
+    handle: i64,
 }
 
-pub fn list_create<T>(initial_cap: i64) List<T> {
-    ret List<T> {
-        length: 0,
-        capacity: initial_cap,
+pub fn list_create(initial_cap: i64) List {
+    ret List {
+        handle: end_list_create(initial_cap),
     }
 }
 
-pub fn list_push<T>(list: List<T>, item: T) List<T> {
-    val new_len = list.length + 1
-    val new_cap = if new_len > list.capacity { list.capacity * 2 } else { list.capacity }
-    ret List<T> {
-        length: new_len,
-        capacity: new_cap,
-    }
+pub fn list_push_str(list: List, item: str) void {
+    end_list_push_str(list.handle, item)
 }
 
-pub fn list_len<T>(list: List<T>) i64 {
-    ret list.length
+pub fn list_get_str(list: List, index: i64) str {
+    ret end_list_get_str(list.handle, index)
 }
 
-pub fn list_is_empty<T>(list: List<T>) bool {
-    ret list.length == 0
+pub fn list_push_i64(list: List, item: i64) void {
+    end_list_push_i64(list.handle, item)
+}
+
+pub fn list_get_i64(list: List, index: i64) i64 {
+    ret end_list_get_i64(list.handle, index)
+}
+
+pub fn list_len(list: List) i64 {
+    ret end_list_len(list.handle)
+}
+
+pub fn list_is_empty(list: List) bool {
+    ret end_list_len(list.handle) == 0
+}
+
+pub fn list_free(list: List) void {
+    end_list_free(list.handle)
 }

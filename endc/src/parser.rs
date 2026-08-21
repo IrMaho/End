@@ -98,6 +98,7 @@ impl Parser {
             TokenKind::Await => Ok("await".to_string()),
             TokenKind::Mod => Ok("mod".to_string()),
             TokenKind::With => Ok("with".to_string()),
+            TokenKind::Extern => Ok("extern".to_string()),
             other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
         }
     }
@@ -203,6 +204,22 @@ impl Parser {
                 TokenKind::Fn => {
                     functions.push(self.parse_function(false, pending_directives)?);
                 }
+                TokenKind::Extern => {
+                    self.advance();
+                    let mut f = self.parse_function(false, pending_directives)?;
+                    f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
+                    functions.push(f);
+                }
+                TokenKind::Val => {
+                    self.advance();
+                    let _name = self.parse_identifier_or_keyword()?;
+                    if self.match_token(&TokenKind::Colon) {
+                        let _ = self.parse_type()?;
+                    }
+                    self.expect(TokenKind::Equal)?;
+                    let _ = self.parse_expression()?;
+                    self.match_token(&TokenKind::SemiColon);
+                }
                 TokenKind::Mod => {
                     modules.push(self.parse_module_def(false, pending_directives)?);
                 }
@@ -224,12 +241,28 @@ impl Parser {
                         TokenKind::Fn => {
                             functions.push(self.parse_function(true, pending_directives)?);
                         }
+                        TokenKind::Extern => {
+                            self.advance();
+                            let mut f = self.parse_function(true, pending_directives)?;
+                            f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
+                            functions.push(f);
+                        }
+                        TokenKind::Val => {
+                            self.advance();
+                            let _name = self.parse_identifier_or_keyword()?;
+                            if self.match_token(&TokenKind::Colon) {
+                                let _ = self.parse_type()?;
+                            }
+                            self.expect(TokenKind::Equal)?;
+                            let _ = self.parse_expression()?;
+                            self.match_token(&TokenKind::SemiColon);
+                        }
                         TokenKind::Mod => {
                             modules.push(self.parse_module_def(true, pending_directives)?);
                         }
                         other => {
                             return Err(format!(
-                                "Expected enum, struct, trait or fn after 'pub', found {:?} at line {}",
+                                "Expected enum, struct, trait, val or fn after 'pub', found {:?} at line {}",
                                 other,
                                 self.current_span().line
                             ))
@@ -469,18 +502,18 @@ impl Parser {
 
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             let vspan = self.current_span();
-            let vname = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                other => return Err(format!("Expected variant name, found {:?}", other)),
-            };
+            let vname = self.parse_identifier_or_keyword()?;
 
             let mut payload = None;
             if self.match_token(&TokenKind::LParen) {
                 payload = Some(self.parse_type()?);
                 self.expect(TokenKind::RParen)?;
+            } else if self.match_token(&TokenKind::Equal) {
+                let _ = self.parse_expression()?;
             }
 
             self.match_token(&TokenKind::Comma);
+            self.match_token(&TokenKind::SemiColon);
 
             variants.push(EnumVariant {
                 name: vname,
@@ -631,7 +664,15 @@ impl Parser {
             Type::Void
         };
 
-        let body = self.parse_block()?;
+        let body = if self.check(&TokenKind::LBrace) {
+            self.parse_block()?
+        } else {
+            self.match_token(&TokenKind::SemiColon);
+            Block {
+                statements: vec![],
+                span: span.clone(),
+            }
+        };
 
         Ok(FunctionDef {
             name,

@@ -1,3 +1,6 @@
+pub mod c_header;
+pub use c_header::CHeaderParser;
+
 use crate::ast::*;
 use std::fs;
 use std::path::{Path, PathBuf};
