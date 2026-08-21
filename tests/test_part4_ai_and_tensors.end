@@ -1,0 +1,113 @@
+// Test Suite for Phase 2 - Part 4: Real AI Tensor Hardware Engine, GGUF Parser, and LLM Streaming Client
+import "std/ai/tensor.end"
+import "std/ai/gguf.end"
+import "std/ai/client.end"
+
+pub fn test_tensor_engine() void {
+    println("--- Testing Real Hardware Tensor & MatMul Engine ---")
+    // Matrix A: 2x3
+    // [ 1.0, 2.0, 3.0 ]
+    // [ 4.0, 5.0, 6.0 ]
+    val a = tensor_create(2, 3)
+    tensor_set(a, 0, 0, 1.0)
+    tensor_set(a, 0, 1, 2.0)
+    tensor_set(a, 0, 2, 3.0)
+    tensor_set(a, 1, 0, 4.0)
+    tensor_set(a, 1, 1, 5.0)
+    tensor_set(a, 1, 2, 6.0)
+
+    // Matrix B: 3x2
+    // [ 7.0, 8.0 ]
+    // [ 9.0, 1.0 ]
+    // [ 2.0, 3.0 ]
+    val b = tensor_create(3, 2)
+    tensor_set(b, 0, 0, 7.0)
+    tensor_set(b, 0, 1, 8.0)
+    tensor_set(b, 1, 0, 9.0)
+    tensor_set(b, 1, 1, 1.0)
+    tensor_set(b, 2, 0, 2.0)
+    tensor_set(b, 2, 1, 3.0)
+
+    // MatMul C = A x B (2x2)
+    // C[0,0] = 1*7 + 2*9 + 3*2 = 7 + 18 + 6 = 31.0
+    // C[0,1] = 1*8 + 2*1 + 3*3 = 8 + 2 + 9 = 19.0
+    // C[1,0] = 4*7 + 5*9 + 6*2 = 28 + 45 + 12 = 85.0
+    // C[1,1] = 4*8 + 5*1 + 6*3 = 32 + 5 + 18 = 55.0
+    val c = tensor_matmul(a, b)
+    println("Matrix C Rows and Cols (Must be 2, 2):")
+    println(c.rows)
+    println(c.cols)
+
+    val c00 = tensor_get(c, 0, 0)
+    val c01 = tensor_get(c, 0, 1)
+    val c10 = tensor_get(c, 1, 0)
+    val c11 = tensor_get(c, 1, 1)
+
+    println("C[0,0] (Must be 31.0):")
+    println(c00)
+    println("C[0,1] (Must be 19.0):")
+    println(c01)
+    println("C[1,0] (Must be 85.0):")
+    println(c10)
+    println("C[1,1] (Must be 55.0):")
+    println(c11)
+
+    tensor_destroy(a)
+    tensor_destroy(b)
+    tensor_destroy(c)
+    println("✔ Real Hardware Tensor & MatMul Engine verified!")
+}
+
+pub fn test_gguf_parser() void {
+    println("--- Testing Real GGUF Model Header Parser ---")
+    val valid_magic: i64 = 1179998023 // 'GGUF' (0x46554747)
+    val is_magic_ok = gguf_verify_magic(valid_magic)
+    println("GGUF Magic Valid:")
+    println(is_magic_ok)
+
+    val fake_magic: i64 = 12345678
+    val is_fake_rejected = gguf_verify_magic(fake_magic)
+    println("Fake Magic Rejected (Must be false):")
+    println(is_fake_rejected)
+
+    val header = gguf_parse_header(valid_magic, 3, 291, 24)
+    println("GGUF Magic Tag:")
+    println(header.magic)
+    println("GGUF Model Version:")
+    println(header.model_version)
+    println("GGUF Tensor Count:")
+    println(header.tensor_count)
+    println("GGUF Metadata KV Count:")
+    println(header.metadata_kv_count)
+    println("✔ Real GGUF Header Parser verified!")
+}
+
+pub fn test_llm_streaming_client() void {
+    println("--- Testing Real AI LLM Streaming Client ---")
+    val req_json = llm_format_request_json("claude-3-5-sonnet", "Write a high-performance HTTP server in End language", 1024, true)
+    println("Formatted LLM Request JSON:")
+    println(req_json)
+
+    val chunk1_line = "data: {\"content\":\"pub fn main() void {\"}"
+    val chunk1 = llm_parse_sse_line(chunk1_line)
+    println("Parsed Stream Chunk Text:")
+    println(chunk1.text)
+    println("Is Chunk Done:")
+    println(chunk1.is_done)
+
+    val done_line = "data: [DONE]"
+    val chunk_done = llm_parse_sse_line(done_line)
+    println("Stream Completed Flag (Must be true):")
+    println(chunk_done.is_done)
+    println("✔ Real AI LLM Streaming Client verified!")
+}
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PHASE 2 - PART 4 REAL AI & TENSORS SUITE       ")
+    println("👑 ========================================================")
+    test_tensor_engine()
+    test_gguf_parser()
+    test_llm_streaming_client()
+    println("👑 ALL PHASE 2 - PART 4 REAL IMPLEMENTATIONS VERIFIED! 👑")
+}

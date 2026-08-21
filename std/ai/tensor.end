@@ -1,61 +1,47 @@
-// 🧠 End Language: std/ai/tensor.end
-// Hardware-Accelerated N-Dimensional Tensor & SIMD MatMul
+// End Standard Library: std/ai/tensor.end
+// Native High-Performance 2D Tensor & SIMD MatMul Engine
 
-pub st TensorShape {
-    dims: i32,
-    rows: i32,
-    cols: i32,
+pub struct Tensor {
+    pub handle: i64,
+    pub rows: i32,
+    pub cols: i32,
+    pub total_elements: i64,
 }
 
-pub st Tensor {
-    shape: TensorShape,
-    total_elements: i64,
-    is_contiguous: bool,
-}
-
-pub fn tensor_2d(rows: i32, cols: i32) Tensor {
-    val total: i64 = rows * cols
+pub fn tensor_create(rows: i32, cols: i32) Tensor {
+    val h = end_tensor_create(rows, cols)
+    val total: i64 = (rows as i64) * (cols as i64)
     ret Tensor {
-        shape: TensorShape {
-            dims: 2,
-            rows: rows,
-            cols: cols,
-        },
+        handle: h,
+        rows: rows,
+        cols: cols,
         total_elements: total,
-        is_contiguous: true,
     }
+}
+
+pub fn tensor_set(t: Tensor, r: i32, c: i32, val_elem: f64) void {
+    end_tensor_set(t.handle, r, c, val_elem)
+}
+
+pub fn tensor_get(t: Tensor, r: i32, c: i32) f64 {
+    ret end_tensor_get(t.handle, r, c)
 }
 
 pub fn tensor_matmul(a: Tensor, b: Tensor) Tensor {
-    // Hardware SIMD AVX-512 / ARM NEON Matrix Multiplication
-    val total: i64 = a.shape.rows * b.shape.cols
+    val out_h = end_tensor_matmul(a.handle, b.handle)
+    val total: i64 = (a.rows as i64) * (b.cols as i64)
     ret Tensor {
-        shape: TensorShape {
-            dims: 2,
-            rows: a.shape.rows,
-            cols: b.shape.cols,
-        },
+        handle: out_h,
+        rows: a.rows,
+        cols: b.cols,
         total_elements: total,
-        is_contiguous: true,
     }
 }
 
-pub fn tensor_relu(t: Tensor) Tensor {
-    ret Tensor {
-        shape: t.shape,
-        total_elements: t.total_elements,
-        is_contiguous: t.is_contiguous,
-    }
+pub fn tensor_relu(t: Tensor) void {
+    end_tensor_relu(t.handle)
 }
 
-pub fn tensor_transpose(t: Tensor) Tensor {
-    ret Tensor {
-        shape: TensorShape {
-            dims: t.shape.dims,
-            rows: t.shape.cols,
-            cols: t.shape.rows,
-        },
-        total_elements: t.total_elements,
-        is_contiguous: true,
-    }
+pub fn tensor_destroy(t: Tensor) void {
+    end_tensor_destroy(t.handle)
 }

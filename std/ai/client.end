@@ -1,0 +1,36 @@
+// End Standard Library: std/ai/client.end
+// Native High-Performance AI & LLM Streaming Client (OpenAI & Anthropic Compatible)
+import "std/json/json.end"
+
+pub struct LlmRequest {
+    pub model: str,
+    pub prompt: str,
+    pub max_tokens: i32,
+    pub stream: bool,
+}
+
+pub struct LlmChunk {
+    pub text: str,
+    pub is_done: bool,
+}
+
+pub fn llm_format_request_json(model: str, prompt: str, max_tokens: i32, is_stream: bool) str {
+    if is_stream == true {
+        ret "{\"model\":\"" + model + "\",\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"stream\":true}"
+    }
+    ret "{\"model\":\"" + model + "\",\"messages\":[{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"stream\":false}"
+}
+
+pub fn llm_parse_sse_line(line: str) LlmChunk {
+    if line == "data: [DONE]" {
+        ret LlmChunk {
+            text: "",
+            is_done: true,
+        }
+    }
+    val content = json_get_string(line, "content")
+    ret LlmChunk {
+        text: content,
+        is_done: false,
+    }
+}

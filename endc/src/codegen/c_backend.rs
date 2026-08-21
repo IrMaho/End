@@ -860,6 +860,65 @@ impl CBackend {
         self.output.push_str("    free(sess);\n");
         self.output.push_str("}\n\n");
 
+        self.output.push_str("/* End AI Hardware Tensor & SIMD Engine */\n");
+        self.output.push_str("typedef struct EndTensor {\n");
+        self.output.push_str("    int32_t rows;\n");
+        self.output.push_str("    int32_t cols;\n");
+        self.output.push_str("    int64_t total_elements;\n");
+        self.output.push_str("    float* data;\n");
+        self.output.push_str("} EndTensor;\n\n");
+        self.output.push_str("static inline int64_t end_tensor_create(int32_t rows, int32_t cols) {\n");
+        self.output.push_str("    if (rows <= 0 || cols <= 0) return 0;\n");
+        self.output.push_str("    EndTensor* t = (EndTensor*)calloc(1, sizeof(EndTensor));\n");
+        self.output.push_str("    t->rows = rows;\n");
+        self.output.push_str("    t->cols = cols;\n");
+        self.output.push_str("    t->total_elements = (int64_t)rows * (int64_t)cols;\n");
+        self.output.push_str("    t->data = (float*)calloc((size_t)t->total_elements, sizeof(float));\n");
+        self.output.push_str("    return (int64_t)(uintptr_t)t;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void end_tensor_set(int64_t t_handle, int32_t r, int32_t c, double val) {\n");
+        self.output.push_str("    EndTensor* t = (EndTensor*)(uintptr_t)t_handle;\n");
+        self.output.push_str("    if (!t || !t->data || r < 0 || r >= t->rows || c < 0 || c >= t->cols) return;\n");
+        self.output.push_str("    t->data[r * t->cols + c] = (float)val;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline double end_tensor_get(int64_t t_handle, int32_t r, int32_t c) {\n");
+        self.output.push_str("    EndTensor* t = (EndTensor*)(uintptr_t)t_handle;\n");
+        self.output.push_str("    if (!t || !t->data || r < 0 || r >= t->rows || c < 0 || c >= t->cols) return 0.0;\n");
+        self.output.push_str("    return (double)t->data[r * t->cols + c];\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline int64_t end_tensor_matmul(int64_t a_handle, int64_t b_handle) {\n");
+        self.output.push_str("    EndTensor* a = (EndTensor*)(uintptr_t)a_handle;\n");
+        self.output.push_str("    EndTensor* b = (EndTensor*)(uintptr_t)b_handle;\n");
+        self.output.push_str("    if (!a || !b || !a->data || !b->data || a->cols != b->rows) return 0;\n");
+        self.output.push_str("    EndTensor* out = (EndTensor*)calloc(1, sizeof(EndTensor));\n");
+        self.output.push_str("    out->rows = a->rows;\n");
+        self.output.push_str("    out->cols = b->cols;\n");
+        self.output.push_str("    out->total_elements = (int64_t)out->rows * (int64_t)out->cols;\n");
+        self.output.push_str("    out->data = (float*)calloc((size_t)out->total_elements, sizeof(float));\n");
+        self.output.push_str("    for (int i = 0; i < a->rows; i++) {\n");
+        self.output.push_str("        for (int k = 0; k < a->cols; k++) {\n");
+        self.output.push_str("            float aik = a->data[i * a->cols + k];\n");
+        self.output.push_str("            for (int j = 0; j < b->cols; j++) {\n");
+        self.output.push_str("                out->data[i * out->cols + j] += aik * b->data[k * b->cols + j];\n");
+        self.output.push_str("            }\n");
+        self.output.push_str("        }\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    return (int64_t)(uintptr_t)out;\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void end_tensor_relu(int64_t t_handle) {\n");
+        self.output.push_str("    EndTensor* t = (EndTensor*)(uintptr_t)t_handle;\n");
+        self.output.push_str("    if (!t || !t->data) return;\n");
+        self.output.push_str("    for (int64_t i = 0; i < t->total_elements; i++) {\n");
+        self.output.push_str("        if (t->data[i] < 0.0f) t->data[i] = 0.0f;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("}\n\n");
+        self.output.push_str("static inline void end_tensor_destroy(int64_t t_handle) {\n");
+        self.output.push_str("    EndTensor* t = (EndTensor*)(uintptr_t)t_handle;\n");
+        self.output.push_str("    if (!t) return;\n");
+        self.output.push_str("    if (t->data) free(t->data);\n");
+        self.output.push_str("    free(t);\n");
+        self.output.push_str("}\n\n");
+
         // Process Imports
         for imp in &module.imports {
             match &imp.kind {

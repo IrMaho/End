@@ -1,60 +1,29 @@
-// 🧠 End Language: std/ai/gguf.end
+// End Standard Library: std/ai/gguf.end
 // GGUF Quantized Model Weights Parser & Zero-Copy Tensor Loader (LLM Inference Engine)
 
-pub enum GgufQuantType {
-    F32,
-    F16,
-    Q4_0,
-    Q4_1,
-    Q5_0,
-    Q5_1,
-    Q8_0,
-    Q4_K,
-    Q5_K,
-    Q6_K,
+pub struct GgufHeader {
+    pub magic: str,
+    pub model_version: i32,
+    pub tensor_count: i64,
+    pub metadata_kv_count: i64,
+    pub is_valid: bool,
 }
 
-pub st GgufTensorInfo {
-    name: str,
-    quant_type: GgufQuantType,
-    offset_bytes: i64,
-    size_bytes: i64,
-}
-
-pub st GgufModel {
-    magic: str,
-    version: i32,
-    tensor_count: i64,
-    metadata_kv_count: i64,
-    is_loaded: bool,
-}
-
-pub fn gguf_verify_magic(magic_bytes: u64) bool {
-    // 0x46554747 is ASCII 'GGUF' in Little Endian
-    ret (magic_bytes & 0xFFFFFFFF) == 0x46554747
-}
-
-pub fn gguf_parse_header_bytes(magic_num: u64, version_num: i32, tensors: i64, kv_count: i64) GgufModel {
-    val is_valid = gguf_verify_magic(magic_num)
-    ret GgufModel {
-        magic: "GGUF",
-        version: version_num,
-        tensor_count: tensors,
-        metadata_kv_count: kv_count,
-        is_loaded: is_valid,
+pub fn gguf_verify_magic(magic_num: i64) bool {
+    // 0x46554747 is ASCII 'GGUF'
+    if magic_num == 1179998023 {
+        ret true
     }
+    ret false
 }
 
-pub fn gguf_load_from_memory(byte_count: i64) GgufModel {
-    ret gguf_parse_header_bytes(0x46554747, 3, 291, 24)
-}
-
-pub fn gguf_get_tensor_info(model: GgufModel, tensor_idx: i64) GgufTensorInfo {
-    val base_offset: i64 = 4096 + (tensor_idx * 1024)
-    ret GgufTensorInfo {
-        name: "blk.0.attn_q.weight",
-        quant_type: GgufQuantType::Q4_K,
-        offset_bytes: base_offset,
-        size_bytes: 8388608,
+pub fn gguf_parse_header(magic_num: i64, ver_num: i32, tensor_count: i64, kv_count: i64) GgufHeader {
+    val valid = gguf_verify_magic(magic_num)
+    ret GgufHeader {
+        magic: "GGUF",
+        model_version: ver_num,
+        tensor_count: tensor_count,
+        metadata_kv_count: kv_count,
+        is_valid: valid,
     }
 }
