@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>main — End Compiler Universal Documentation & Technical Passport</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #07090e;
+            --bg-secondary: #0d121d;
+            --bg-card: rgba(18, 24, 38, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(99, 102, 241, 0.5);
+            --accent-cyan: #06b6d4;
+            --accent-indigo: #6366f1;
+            --accent-purple: #a855f7;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        code, pre, .mono { font-family: 'Fira Code', monospace; }
+
+        /* Top Navigation */
+        .navbar {
+            height: 70px;
+            background: rgba(13, 18, 29, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand { display: flex; align-items: center; gap: 0.75rem; }
+        .brand-logo {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.2rem; color: #fff;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        .brand-title { font-size: 1.2rem; font-weight: 700; background: linear-gradient(90deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge-compiler {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .search-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            width: 320px;
+            color: #fff;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-box:focus { border-color: var(--accent-indigo); box-shadow: 0 0 10px rgba(99, 102, 241, 0.3); }
+
+        /* Main Container & Tabs */
+        .container { display: flex; flex: 1; }
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: #fff;
+            border-left: 3px solid var(--accent-indigo);
+        }
+        .main-content { flex: 1; padding: 2.5rem; overflow-y: auto; max-width: 1400px; margin: 0 auto; }
+
+        /* Hero Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: ''; position: absolute; top: 0; right: 0; width: 60px; height: 60px;
+            background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);
+        }
+        .stat-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fff; margin-top: 0.5rem; }
+        .stat-sub { font-size: 0.78rem; color: var(--accent-green); margin-top: 0.25rem; }
+
+        /* Cards & Section */
+        .section-header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .section-title { font-size: 1.5rem; font-weight: 700; color: #fff; }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(8px);
+        }
+
+        /* OpenAPI Endpoints */
+        .endpoint-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            background: rgba(13, 18, 29, 0.5);
+        }
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .endpoint-header:hover { background: rgba(255, 255, 255, 0.04); }
+        .method-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .method-get { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .method-post { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); border: 1px solid rgba(99, 102, 241, 0.3); }
+        .method-put { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .method-delete { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .endpoint-path { font-size: 1rem; font-weight: 600; color: #fff; margin-left: 1rem; }
+        .endpoint-summary { color: var(--text-secondary); font-size: 0.85rem; margin-left: auto; margin-right: 1rem; }
+
+        /* Memory Layout Visualizer */
+        .memory-layout-bar {
+            display: flex;
+            height: 42px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+        }
+        .memory-chunk {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+        .memory-chunk:hover { opacity: 0.85; }
+
+        /* Tags & Badges */
+        .badge-tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+        }
+        .badge-tier1 { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-tier2 { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-tier3 { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* Action Buttons */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.05); }
+
+        /* Code & Previews */
+        .code-box {
+            background: #05070a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: #38bdf8;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="brand">
+            <div class="brand-logo">E</div>
+            <div>
+                <span class="brand-title">main</span>
+                <span class="badge-compiler">End 0.4.0-alpha (Enterprise Vibe Coding Edition)</span>
+            </div>
+        </div>
+        <input type="text" class="search-box" id="searchBox" placeholder="⚡ Search symbols, endpoints, structs...">
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-outline" onclick="downloadFile('openapi.json', openApiData)">Export OpenAPI 3.1</button>
+            <button class="btn btn-primary" onclick="downloadFile('project_passport.json', passportData)">Export Passport JSON</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="nav-item active" onclick="switchTab('overview', this)">📊 Project Overview</div>
+            <div class="nav-item" onclick="switchTab('api', this)">⚡ API & Endpoints (3)</div>
+            <div class="nav-item" onclick="switchTab('passport', this)">🛡️ AI Agent & Safety Passport</div>
+            <div class="nav-item" onclick="switchTab('structs', this)">📦 Structs & Memory Layout (5)</div>
+            <div class="nav-item" onclick="switchTab('functions', this)">⚡ Functions & Modules (5)</div>
+        </aside>
+
+        <main class="main-content">
+            <!-- TAB 1: OVERVIEW -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Memory Safety Rating</div>
+                        <div class="stat-value" style="color: var(--accent-green);">100.0%</div>
+                        <div class="stat-sub">Tier 1 Arena Scoped (Zero-Alloc)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Concurrency Safety</div>
+                        <div class="stat-value" style="color: var(--accent-cyan);">100.0%</div>
+                        <div class="stat-sub">Race-Condition & Thread Safe</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Symbols</div>
+                        <div class="stat-value">11</div>
+                        <div class="stat-sub">5 functions, 5 structs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">API Endpoints</div>
+                        <div class="stat-value" style="color: var(--accent-indigo);">3</div>
+                        <div class="stat-sub">OpenAPI 3.1 Compatible</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: #fff;">🏛️ Project Identity & Technical Passport</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <tr style="border-bottom: 1px solid var(--border-color); height: 40px;">
+                            <td style="color: var(--text-muted); width: 200px;">Entrypoint File</td>
+                            <td class="mono" style="color: var(--accent-cyan);">C:\Users\ASUS\Desktop\flutter_project\end\tests\test_ecommerce_service.end</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); height: 40px;">
+                            <td style="color: var(--text-muted);">Total Source Lines</td>
+                            <td class="mono">110 lines</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); height: 40px;">
+                            <td style="color: var(--text-muted);">Compiler Engine</td>
+                            <td>End Language Native LLVM & C11 Toolchain (0.4.0-alpha (Enterprise Vibe Coding Edition))</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); height: 40px;">
+                            <td style="color: var(--text-muted);">Architecture Model</td>
+                            <td>Dual-Environment Vibe Coding & Universal Modular Polymorphism</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: API & ENDPOINTS -->
+            <div id="tab-api" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">⚡ Interactive REST API Explorer (OpenAPI 3.1)</h2>
+                    <span class="badge-tag">Swagger UI Compatible</span>
+                </div>
+                <div id="apiEndpointsContainer"></div>
+            </div>
+
+            <!-- TAB 3: AI AGENT PASSPORT -->
+            <div id="tab-passport" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">🛡️ AI Agent Verification & Safety Invariants</h2>
+                    <span class="badge-tag">LLM & Security Scanner Blueprint</span>
+                </div>
+                <div class="card">
+                    <h4 style="color: var(--accent-green); margin-bottom: 0.75rem;">🤖 How AI Agents Leverage this Passport:</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                        This passport exposes deterministic preconditions, purity classifications, memory allocation tiers, and mutation callgraphs. 
+                        AI agents can use this schema to autonomously detect memory leaks, race conditions, generate high-coverage fuzz tests, and verify refactorings without human intervention.
+                    </p>
+                </div>
+                <div id="passportFunctionsContainer"></div>
+            </div>
+
+            <!-- TAB 4: STRUCTS & MEMORY LAYOUT -->
+            <div id="tab-structs" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">📦 Struct Memory Footprint & Byte Alignment</h2>
+                    <span class="badge-tag">Hardware Micro-Optimization View</span>
+                </div>
+                <div id="structsContainer"></div>
+            </div>
+
+            <!-- TAB 5: FUNCTIONS & MODULES -->
+            <div id="tab-functions" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">⚡ Functions, Extension Blocks & Modules</h2>
+                </div>
+                <div id="functionsContainer"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const passportData = {"metadata":{"name":"main","entry_file":"C:\\Users\\ASUS\\Desktop\\flutter_project\\end\\tests\\test_ecommerce_service.end","total_lines":110,"total_structs":5,"total_enums":1,"total_functions":5,"total_modules":0,"total_endpoints":3,"compiler_version":"0.4.0-alpha (Enterprise Vibe Coding Edition)","generation_timestamp":"2026-08-21T21:30:00Z"},"structs":[{"name":"User","is_pub":false,"total_size_bytes":32,"alignment_bytes":8,"fields":[{"name":"id","field_type":"I64","byte_offset":0,"byte_size":8,"alignment":8,"doc":""},{"name":"username","field_type":"Str","byte_offset":8,"byte_size":8,"alignment":8,"doc":""},{"name":"email","field_type":"Str","byte_offset":16,"byte_size":8,"alignment":8,"doc":""},{"name":"is_vip","field_type":"Bool","byte_offset":24,"byte_size":1,"alignment":1,"doc":""}],"is_concurrency_safe":true,"doc":"Core User profile entity"},{"name":"Product","is_pub":false,"total_size_bytes":32,"alignment_bytes":8,"fields":[{"name":"id","field_type":"I64","byte_offset":0,"byte_size":8,"alignment":8,"doc":""},{"name":"name","field_type":"Str","byte_offset":8,"byte_size":8,"alignment":8,"doc":""},{"name":"price_cents","field_type":"I64","byte_offset":16,"byte_size":8,"alignment":8,"doc":""},{"name":"inventory_count","field_type":"I64","byte_offset":24,"byte_size":8,"alignment":8,"doc":""}],"is_concurrency_safe":true,"doc":"Product catalog item with pricing and stock"},{"name":"OrderItem","is_pub":false,"total_size_bytes":24,"alignment_bytes":8,"fields":[{"name":"product_id","field_type":"I64","byte_offset":0,"byte_size":8,"alignment":8,"doc":""},{"name":"quantity","field_type":"I64","byte_offset":8,"byte_size":8,"alignment":8,"doc":""},{"name":"unit_price_cents","field_type":"I64","byte_offset":16,"byte_size":8,"alignment":8,"doc":""}],"is_concurrency_safe":true,"doc":"Individual item in an order line"},{"name":"CreateOrderRequest","is_pub":false,"total_size_bytes":24,"alignment_bytes":8,"fields":[{"name":"user_id","field_type":"I64","byte_offset":0,"byte_size":8,"alignment":8,"doc":""},{"name":"items_count","field_type":"I64","byte_offset":8,"byte_size":8,"alignment":8,"doc":""},{"name":"shipping_address","field_type":"Str","byte_offset":16,"byte_size":8,"alignment":8,"doc":""}],"is_concurrency_safe":true,"doc":"Inbound payload for creating a new order"},{"name":"OrderResponse","is_pub":false,"total_size_bytes":24,"alignment_bytes":8,"fields":[{"name":"order_id","field_type":"I64","byte_offset":0,"byte_size":8,"alignment":8,"doc":""},{"name":"total_amount_cents","field_type":"I64","byte_offset":8,"byte_size":8,"alignment":8,"doc":""},{"name":"status","field_type":"Str","byte_offset":16,"byte_size":8,"alignment":8,"doc":""}],"is_concurrency_safe":true,"doc":"Outbound response for order creation"}],"enums":[{"name":"OrderStatus","is_pub":false,"variants":[{"name":"Pending","payload_type":null,"tag_value":0},{"name":"Processing","payload_type":null,"tag_value":1},{"name":"Shipped","payload_type":null,"tag_value":2},{"name":"Delivered","payload_type":null,"tag_value":3},{"name":"Cancelled","payload_type":null,"tag_value":4}],"memory_size_bytes":16,"doc":"Status of an active or fulfilled customer order"}],"functions":[{"name":"get_health","is_pub":true,"signature":"fn get_health() -> I32","params":[],"return_type":"I32","memory_tier":"Tier 1 (Arena Scoped / Zero-Alloc)","purity":"Pure (Deterministic)","capabilities":["pure","concurrency_safe"],"callers":[],"callees":[],"suggested_test_hints":["Fuzz test with boundary values for params: []"],"invariants":["Idempotent: Identical inputs guarantee identical output with zero side-effects."],"doc":"@get(\"/api/v1/health\")\\n@tag(\"System\")\\n@summary(\"Cluster Health & Node Liveness Check\")"},{"name":"list_products","is_pub":true,"signature":"fn list_products() -> I64","params":[],"return_type":"I64","memory_tier":"Tier 1 (Arena Scoped / Zero-Alloc)","purity":"Pure (Deterministic)","capabilities":["pure","concurrency_safe"],"callers":[],"callees":[],"suggested_test_hints":["Fuzz test with boundary values for params: []"],"invariants":["Idempotent: Identical inputs guarantee identical output with zero side-effects."],"doc":"@get(\"/api/v1/products\")\\n@tag(\"Catalog\")\\n@summary(\"List all active catalog products\")"},{"name":"create_order","is_pub":true,"signature":"fn create_order(req: Custom(\"CreateOrderRequest\")) -> Custom(\"OrderResponse\")","params":[{"name":"req","param_type":"Custom(\"CreateOrderRequest\")","is_mut":false,"is_ref":false}],"return_type":"Custom(\"OrderResponse\")","memory_tier":"Tier 1 (Arena Scoped / Zero-Alloc)","purity":"Pure (Deterministic)","capabilities":["pure","concurrency_safe"],"callers":[],"callees":[],"suggested_test_hints":["Fuzz test with boundary values for params: [\"req\"]"],"invariants":["Idempotent: Identical inputs guarantee identical output with zero side-effects."],"doc":"@post(\"/api/v1/orders\")\\n@tag(\"Orders\")\\n@summary(\"Create and process a new customer order\")"},{"name":"calculate_tax","is_pub":true,"signature":"fn calculate_tax(amount_cents: I64, tax_rate_basis_points: I64) -> I64","params":[{"name":"amount_cents","param_type":"I64","is_mut":false,"is_ref":false},{"name":"tax_rate_basis_points","param_type":"I64","is_mut":false,"is_ref":false}],"return_type":"I64","memory_tier":"Tier 1 (Arena Scoped / Zero-Alloc)","purity":"Pure (Deterministic)","capabilities":["pure","concurrency_safe"],"callers":[],"callees":[],"suggested_test_hints":["Fuzz test with boundary values for params: [\"amount_cents\", \"tax_rate_basis_points\"]"],"invariants":["Idempotent: Identical inputs guarantee identical output with zero side-effects."],"doc":"Pure mathematical validation routine"},{"name":"main","is_pub":true,"signature":"fn main() -> I32","params":[],"return_type":"I32","memory_tier":"Tier 1 (Arena Scoped / Zero-Alloc)","purity":"Pure (Deterministic)","capabilities":["pure","concurrency_safe"],"callers":[],"callees":[],"suggested_test_hints":["Fuzz test with boundary values for params: []"],"invariants":["Idempotent: Identical inputs guarantee identical output with zero side-effects."],"doc":""}],"modules":[],"extensions":[{"target_struct":"Product","extension_methods":["get_discounted_price"]},{"target_struct":"OrderResponse","extension_methods":["is_free_shipping"]}],"endpoints":[{"path":"/api/v1/health","http_method":"GET","summary":"Handler for get_health","tag":"Default","handler_name":"get_health","request_body_type":null,"response_type":"I32","status_code":200,"is_authenticated":false,"doc":"@get(\"/api/v1/health\")\\n@tag(\"System\")\\n@summary(\"Cluster Health & Node Liveness Check\")"},{"path":"/api/v1/products","http_method":"GET","summary":"Handler for list_products","tag":"Default","handler_name":"list_products","request_body_type":null,"response_type":"I64","status_code":200,"is_authenticated":false,"doc":"@get(\"/api/v1/products\")\\n@tag(\"Catalog\")\\n@summary(\"List all active catalog products\")"},{"path":"/api/v1/orders","http_method":"POST","summary":"Handler for create_order","tag":"Default","handler_name":"create_order","request_body_type":"Custom(\"CreateOrderRequest\")","response_type":"Custom(\"OrderResponse\")","status_code":200,"is_authenticated":false,"doc":"@post(\"/api/v1/orders\")\\n@tag(\"Orders\")\\n@summary(\"Create and process a new customer order\")"}],"memory_safety_summary":{"tier1_arena_symbols_count":5,"tier2_arc_symbols_count":0,"tier3_bare_metal_symbols_count":0,"zero_overhead_percentage":100.0},"capability_summary":{"pure_functions_count":5,"io_restricted_functions_count":0,"network_access_functions_count":0,"disk_access_functions_count":0,"concurrency_safe_percentage":100.0}};
+        const openApiData = {"components":{"schemas":{"CreateOrderRequest":{"description":"Inbound payload for creating a new order","properties":{"items_count":{"format":"int64","type":"integer"},"shipping_address":{"type":"string"},"user_id":{"format":"int64","type":"integer"}},"required":["user_id","items_count","shipping_address"],"type":"object"},"OrderItem":{"description":"Individual item in an order line","properties":{"product_id":{"format":"int64","type":"integer"},"quantity":{"format":"int64","type":"integer"},"unit_price_cents":{"format":"int64","type":"integer"}},"required":["product_id","quantity","unit_price_cents"],"type":"object"},"OrderResponse":{"description":"Outbound response for order creation","properties":{"order_id":{"format":"int64","type":"integer"},"status":{"type":"string"},"total_amount_cents":{"format":"int64","type":"integer"}},"required":["order_id","total_amount_cents","status"],"type":"object"},"OrderStatus":{"description":"Status of an active or fulfilled customer order","enum":["Pending","Processing","Shipped","Delivered","Cancelled"],"type":"string"},"Product":{"description":"Product catalog item with pricing and stock","properties":{"id":{"format":"int64","type":"integer"},"inventory_count":{"format":"int64","type":"integer"},"name":{"type":"string"},"price_cents":{"format":"int64","type":"integer"}},"required":["id","name","price_cents","inventory_count"],"type":"object"},"User":{"description":"Core User profile entity","properties":{"email":{"type":"string"},"id":{"format":"int64","type":"integer"},"is_vip":{"type":"boolean"},"username":{"type":"string"}},"required":["id","username","email","is_vip"],"type":"object"}},"securitySchemes":{"BearerAuth":{"bearerFormat":"JWT","scheme":"bearer","type":"http"}}},"info":{"contact":{"name":"End Language Engineering Team","url":"https://github.com/IrMaho/End"},"description":"Auto-generated OpenAPI v3.1 Specification by End Language Compiler (v0.4.0-alpha (Enterprise Vibe Coding Edition)).\nHigh-Performance, Zero-Overhead Compiled Backend Service.","title":"main API Specification","version":"1.0.0"},"openapi":"3.1.0","paths":{"/api/v1/health":{"get":{"description":"@get(\"/api/v1/health\")\\n@tag(\"System\")\\n@summary(\"Cluster Health & Node Liveness Check\")","operationId":"get_health","responses":{"200":{"content":{"application/json":{"schema":{"format":"int64","type":"integer"}}},"description":"Successful operation"},"400":{"content":{"application/json":{"schema":{"properties":{"code":{"type":"integer"},"error":{"type":"string"}},"type":"object"}}},"description":"Bad request or validation error"},"500":{"description":"Internal server error"}},"summary":"Handler for get_health","tags":["Default"]}},"/api/v1/orders":{"post":{"description":"@post(\"/api/v1/orders\")\\n@tag(\"Orders\")\\n@summary(\"Create and process a new customer order\")","operationId":"create_order","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateOrderRequest"}}},"required":true},"responses":{"200":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/OrderResponse"}}},"description":"Successful operation"},"400":{"content":{"application/json":{"schema":{"properties":{"code":{"type":"integer"},"error":{"type":"string"}},"type":"object"}}},"description":"Bad request or validation error"},"500":{"description":"Internal server error"}},"summary":"Handler for create_order","tags":["Default"]}},"/api/v1/products":{"get":{"description":"@get(\"/api/v1/products\")\\n@tag(\"Catalog\")\\n@summary(\"List all active catalog products\")","operationId":"list_products","responses":{"200":{"content":{"application/json":{"schema":{"format":"int64","type":"integer"}}},"description":"Successful operation"},"400":{"content":{"application/json":{"schema":{"properties":{"code":{"type":"integer"},"error":{"type":"string"}},"type":"object"}}},"description":"Bad request or validation error"},"500":{"description":"Internal server error"}},"summary":"Handler for list_products","tags":["Default"]}}},"servers":[{"description":"Local Development Server","url":"http://localhost:8080"},{"description":"Production High-Performance Cluster","url":"https://api.production.internal"}]};
+
+        function switchTab(tabId, elem) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            if (elem) elem.classList.add('active');
+        }
+
+        function downloadFile(filename, data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Render API Endpoints
+        const apiContainer = document.getElementById('apiEndpointsContainer');
+        if (passportData.endpoints.length === 0) {
+            apiContainer.innerHTML = `
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔌</div>
+                    <h3>No HTTP Endpoints Detected</h3>
+                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Use <code>@route("/api/path")</code> or <code>@get("/path")</code> annotations on functions to automatically generate interactive endpoints.</p>
+                </div>`;
+        } else {
+            apiContainer.innerHTML = passportData.endpoints.map(ep => `
+                <div class="endpoint-card">
+                    <div class="endpoint-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        <span class="method-badge method-${ep.http_method.toLowerCase()}">${ep.http_method}</span>
+                        <span class="endpoint-path mono">${ep.path}</span>
+                        <span class="endpoint-summary">${ep.summary}</span>
+                        <span class="badge-tag">${ep.tag}</span>
+                    </div>
+                    <div style="display: none; padding: 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div>
+                                <h5 style="color: var(--text-muted); margin-bottom: 0.5rem;">Handler Function</h5>
+                                <div class="mono" style="color: var(--accent-cyan);">${ep.handler_name}</div>
+                                <h5 style="color: var(--text-muted); margin-top: 1rem; margin-bottom: 0.5rem;">Response Type</h5>
+                                <div class="mono" style="color: var(--accent-green);">${ep.response_type} (HTTP ${ep.status_code})</div>
+                            </div>
+                            <div>
+                                <h5 style="color: var(--text-muted); margin-bottom: 0.5rem;">Interactive Mock Sandbox</h5>
+                                <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.78rem;" onclick="alert('⚡ Live Mock executed for ' + '${ep.path}' + ' -> Status: 200 OK')">⚡ Test Endpoint</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Structs & Memory Layout
+        const structContainer = document.getElementById('structsContainer');
+        structContainer.innerHTML = passportData.structs.map(s => {
+            const colors = ['#06b6d4', '#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899'];
+            const barChunks = s.fields.map((f, i) => `
+                <div class="memory-chunk" style="width: ${(f.byte_size / Math.max(s.total_size_bytes, 1)) * 100}%; background: ${colors[i % colors.length]};" title="${f.name} (${f.field_type}): offset ${f.byte_offset}, ${f.byte_size} bytes">
+                    ${f.name} (${f.byte_size}B)
+                </div>
+            `).join('');
+
+            return `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="mono" style="color: var(--accent-indigo);">${s.name}</h3>
+                        <div>
+                            <span class="badge-tag">Total Size: ${s.total_size_bytes} Bytes</span>
+                            <span class="badge-tag">Alignment: ${s.alignment_bytes}B</span>
+                        </div>
+                    </div>
+                    ${s.doc ? `<p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.88rem;">${s.doc}</p>` : ''}
+                    <div class="memory-layout-bar">${barChunks}</div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem;">
+                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left; height: 32px;">
+                            <th>Offset</th><th>Field Name</th><th>Type</th><th>Size</th><th>Alignment</th>
+                        </tr>
+                        ${s.fields.map(f => `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); height: 36px;">
+                                <td class="mono" style="color: var(--text-muted);">+${f.byte_offset}</td>
+                                <td class="mono" style="color: #fff; font-weight: 600;">${f.name}</td>
+                                <td class="mono" style="color: var(--accent-cyan);">${f.field_type}</td>
+                                <td class="mono">${f.byte_size} Bytes</td>
+                                <td class="mono">${f.alignment}B</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+            `;
+        }).join('');
+
+        // Render AI Agent Passport Functions
+        const passportContainer = document.getElementById('passportFunctionsContainer');
+        passportContainer.innerHTML = passportData.functions.map(f => `
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="mono" style="font-size: 1.05rem; font-weight: 700; color: #fff;">${f.signature}</div>
+                    <div>
+                        <span class="badge-tag ${f.memory_tier.includes('Tier 1') ? 'badge-tier1' : f.memory_tier.includes('Tier 2') ? 'badge-tier2' : 'badge-tier3'}">${f.memory_tier}</span>
+                        <span class="badge-tag">${f.purity}</span>
+                    </div>
+                </div>
+                ${f.doc ? `<p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem;">${f.doc}</p>` : ''}
+                <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
+                    <div style="background: rgba(0,0,0,0.25); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <strong style="color: var(--accent-cyan);">Invariants & Safety Rules:</strong>
+                        <ul style="margin-top: 0.4rem; padding-left: 1.2rem; color: var(--text-secondary);">
+                            ${f.invariants.map(inv => `<li>${inv}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <strong style="color: var(--accent-amber);">Agent Suggested Tests:</strong>
+                        <ul style="margin-top: 0.4rem; padding-left: 1.2rem; color: var(--text-secondary);">
+                            ${f.suggested_test_hints.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Render Functions & Modules
+        const functionsContainer = document.getElementById('functionsContainer');
+        functionsContainer.innerHTML = passportData.functions.map(f => `
+            <div class="card">
+                <div class="mono" style="font-size: 1rem; font-weight: 700; color: var(--accent-cyan);">${f.signature}</div>
+                <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                    ${f.capabilities.map(c => `<span class="badge-tag">${c}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+
+        // Search Filter
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            document.querySelectorAll('.card, .endpoint-card').forEach(el => {
+                el.style.display = el.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

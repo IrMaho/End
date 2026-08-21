@@ -1,0 +1,435 @@
+{
+  "metadata": {
+    "name": "main",
+    "entry_file": "C:\\Users\\ASUS\\Desktop\\flutter_project\\end\\tests\\test_ecommerce_service.end",
+    "total_lines": 110,
+    "total_structs": 5,
+    "total_enums": 1,
+    "total_functions": 5,
+    "total_modules": 0,
+    "total_endpoints": 3,
+    "compiler_version": "0.4.0-alpha (Enterprise Vibe Coding Edition)",
+    "generation_timestamp": "2026-08-21T21:30:00Z"
+  },
+  "structs": [
+    {
+      "name": "User",
+      "is_pub": false,
+      "total_size_bytes": 32,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "username",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "email",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "is_vip",
+          "field_type": "Bool",
+          "byte_offset": 24,
+          "byte_size": 1,
+          "alignment": 1,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Core User profile entity"
+    },
+    {
+      "name": "Product",
+      "is_pub": false,
+      "total_size_bytes": 32,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "name",
+          "field_type": "Str",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "price_cents",
+          "field_type": "I64",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "inventory_count",
+          "field_type": "I64",
+          "byte_offset": 24,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Product catalog item with pricing and stock"
+    },
+    {
+      "name": "OrderItem",
+      "is_pub": false,
+      "total_size_bytes": 24,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "product_id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "quantity",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "unit_price_cents",
+          "field_type": "I64",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Individual item in an order line"
+    },
+    {
+      "name": "CreateOrderRequest",
+      "is_pub": false,
+      "total_size_bytes": 24,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "user_id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "items_count",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "shipping_address",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Inbound payload for creating a new order"
+    },
+    {
+      "name": "OrderResponse",
+      "is_pub": false,
+      "total_size_bytes": 24,
+      "alignment_bytes": 8,
+      "fields": [
+        {
+          "name": "order_id",
+          "field_type": "I64",
+          "byte_offset": 0,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "total_amount_cents",
+          "field_type": "I64",
+          "byte_offset": 8,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        },
+        {
+          "name": "status",
+          "field_type": "Str",
+          "byte_offset": 16,
+          "byte_size": 8,
+          "alignment": 8,
+          "doc": ""
+        }
+      ],
+      "is_concurrency_safe": true,
+      "doc": "Outbound response for order creation"
+    }
+  ],
+  "enums": [
+    {
+      "name": "OrderStatus",
+      "is_pub": false,
+      "variants": [
+        {
+          "name": "Pending",
+          "payload_type": null,
+          "tag_value": 0
+        },
+        {
+          "name": "Processing",
+          "payload_type": null,
+          "tag_value": 1
+        },
+        {
+          "name": "Shipped",
+          "payload_type": null,
+          "tag_value": 2
+        },
+        {
+          "name": "Delivered",
+          "payload_type": null,
+          "tag_value": 3
+        },
+        {
+          "name": "Cancelled",
+          "payload_type": null,
+          "tag_value": 4
+        }
+      ],
+      "memory_size_bytes": 16,
+      "doc": "Status of an active or fulfilled customer order"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_health",
+      "is_pub": true,
+      "signature": "fn get_health() -> I32",
+      "params": [],
+      "return_type": "I32",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@get(\"/api/v1/health\")\\n@tag(\"System\")\\n@summary(\"Cluster Health & Node Liveness Check\")"
+    },
+    {
+      "name": "list_products",
+      "is_pub": true,
+      "signature": "fn list_products() -> I64",
+      "params": [],
+      "return_type": "I64",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@get(\"/api/v1/products\")\\n@tag(\"Catalog\")\\n@summary(\"List all active catalog products\")"
+    },
+    {
+      "name": "create_order",
+      "is_pub": true,
+      "signature": "fn create_order(req: Custom(\"CreateOrderRequest\")) -> Custom(\"OrderResponse\")",
+      "params": [
+        {
+          "name": "req",
+          "param_type": "Custom(\"CreateOrderRequest\")",
+          "is_mut": false,
+          "is_ref": false
+        }
+      ],
+      "return_type": "Custom(\"OrderResponse\")",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: [\"req\"]"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "@post(\"/api/v1/orders\")\\n@tag(\"Orders\")\\n@summary(\"Create and process a new customer order\")"
+    },
+    {
+      "name": "calculate_tax",
+      "is_pub": true,
+      "signature": "fn calculate_tax(amount_cents: I64, tax_rate_basis_points: I64) -> I64",
+      "params": [
+        {
+          "name": "amount_cents",
+          "param_type": "I64",
+          "is_mut": false,
+          "is_ref": false
+        },
+        {
+          "name": "tax_rate_basis_points",
+          "param_type": "I64",
+          "is_mut": false,
+          "is_ref": false
+        }
+      ],
+      "return_type": "I64",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: [\"amount_cents\", \"tax_rate_basis_points\"]"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": "Pure mathematical validation routine"
+    },
+    {
+      "name": "main",
+      "is_pub": true,
+      "signature": "fn main() -> I32",
+      "params": [],
+      "return_type": "I32",
+      "memory_tier": "Tier 1 (Arena Scoped / Zero-Alloc)",
+      "purity": "Pure (Deterministic)",
+      "capabilities": [
+        "pure",
+        "concurrency_safe"
+      ],
+      "callers": [],
+      "callees": [],
+      "suggested_test_hints": [
+        "Fuzz test with boundary values for params: []"
+      ],
+      "invariants": [
+        "Idempotent: Identical inputs guarantee identical output with zero side-effects."
+      ],
+      "doc": ""
+    }
+  ],
+  "modules": [],
+  "extensions": [
+    {
+      "target_struct": "Product",
+      "extension_methods": [
+        "get_discounted_price"
+      ]
+    },
+    {
+      "target_struct": "OrderResponse",
+      "extension_methods": [
+        "is_free_shipping"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/api/v1/health",
+      "http_method": "GET",
+      "summary": "Handler for get_health",
+      "tag": "Default",
+      "handler_name": "get_health",
+      "request_body_type": null,
+      "response_type": "I32",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@get(\"/api/v1/health\")\\n@tag(\"System\")\\n@summary(\"Cluster Health & Node Liveness Check\")"
+    },
+    {
+      "path": "/api/v1/products",
+      "http_method": "GET",
+      "summary": "Handler for list_products",
+      "tag": "Default",
+      "handler_name": "list_products",
+      "request_body_type": null,
+      "response_type": "I64",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@get(\"/api/v1/products\")\\n@tag(\"Catalog\")\\n@summary(\"List all active catalog products\")"
+    },
+    {
+      "path": "/api/v1/orders",
+      "http_method": "POST",
+      "summary": "Handler for create_order",
+      "tag": "Default",
+      "handler_name": "create_order",
+      "request_body_type": "Custom(\"CreateOrderRequest\")",
+      "response_type": "Custom(\"OrderResponse\")",
+      "status_code": 200,
+      "is_authenticated": false,
+      "doc": "@post(\"/api/v1/orders\")\\n@tag(\"Orders\")\\n@summary(\"Create and process a new customer order\")"
+    }
+  ],
+  "memory_safety_summary": {
+    "tier1_arena_symbols_count": 5,
+    "tier2_arc_symbols_count": 0,
+    "tier3_bare_metal_symbols_count": 0,
+    "zero_overhead_percentage": 100.0
+  },
+  "capability_summary": {
+    "pure_functions_count": 5,
+    "io_restricted_functions_count": 0,
+    "network_access_functions_count": 0,
+    "disk_access_functions_count": 0,
+    "concurrency_safe_percentage": 100.0
+  }
+}
