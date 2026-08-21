@@ -1,78 +1,31 @@
-// ⚡ End Language: std/async/fiber.end
-// Lightweight 24-Byte Context Green Fibers & Coroutine Scheduler for 1,000,000+ Tasks
+// End Standard Library: std/async/fiber.end
+// High-Performance Event-Driven Async Event Loop & Non-Blocking Poller
 
-pub enum FiberState {
-    Ready,
-    Running,
-    Suspended,
-    Completed,
+pub struct EventLoop {
+    pub handle: i64,
+    pub is_active: bool,
 }
 
-pub st GreenFiber {
-    fiber_id: i64,
-    stack_frame_bytes: i32,  // 24-byte context frame in zero-GC arena
-    state: FiberState,
-    ticks_yielded: i64,
-}
-
-pub st FiberScheduler {
-    active_fibers: i64,
-    completed_fibers: i64,
-    total_context_switches: i64,
-}
-
-pub st FiberSpawnResult {
-    scheduler: FiberScheduler,
-    fiber: GreenFiber,
-}
-
-pub st FiberYieldResult {
-    scheduler: FiberScheduler,
-    fiber: GreenFiber,
-}
-
-pub fn fiber_scheduler_create() FiberScheduler {
-    ret FiberScheduler {
-        active_fibers: 0,
-        completed_fibers: 0,
-        total_context_switches: 0,
+pub fn event_loop_create() EventLoop {
+    val h = end_event_loop_create() as i64
+    ret EventLoop {
+        handle: h,
+        is_active: true,
     }
 }
 
-pub fn fiber_spawn(sched: FiberScheduler, fiber_id: i64) FiberSpawnResult {
-    val active = sched.active_fibers + 1
-    val fib = GreenFiber {
-        fiber_id: fiber_id,
-        stack_frame_bytes: 24,
-        state: FiberState::Ready,
-        ticks_yielded: 0,
-    }
-    val new_sched = FiberScheduler {
-        active_fibers: active,
-        completed_fibers: sched.completed_fibers,
-        total_context_switches: sched.total_context_switches,
-    }
-    ret FiberSpawnResult {
-        scheduler: new_sched,
-        fiber: fib,
-    }
+pub fn event_loop_add(ev_loop: EventLoop, sock_fd: i64) void {
+    end_event_loop_add(ev_loop.handle, sock_fd)
 }
 
-pub fn fiber_yield_step(sched: FiberScheduler, fib: GreenFiber) FiberYieldResult {
-    val switches = sched.total_context_switches + 1
-    val updated_fib = GreenFiber {
-        fiber_id: fib.fiber_id,
-        stack_frame_bytes: fib.stack_frame_bytes,
-        state: FiberState::Suspended,
-        ticks_yielded: fib.ticks_yielded + 1,
-    }
-    val new_sched = FiberScheduler {
-        active_fibers: sched.active_fibers,
-        completed_fibers: sched.completed_fibers,
-        total_context_switches: switches,
-    }
-    ret FiberYieldResult {
-        scheduler: new_sched,
-        fiber: updated_fib,
-    }
+pub fn event_loop_poll(ev_loop: EventLoop, timeout_ms: i32) i32 {
+    ret end_event_loop_poll(ev_loop.handle, timeout_ms) as i32
+}
+
+pub fn event_loop_get_ready_fd(ev_loop: EventLoop, index: i32) i64 {
+    ret end_event_loop_get_ready(ev_loop.handle, index)
+}
+
+pub fn event_loop_destroy(ev_loop: EventLoop) void {
+    end_event_loop_destroy(ev_loop.handle)
 }

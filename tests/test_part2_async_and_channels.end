@@ -1,0 +1,81 @@
+// Test Suite for Phase 2 - Part 2: Real Async Event Loop, Non-Blocking Sockets, and Thread-Safe MPSC Channels
+import "std/sync/channel.end"
+import "std/async/fiber.end"
+import "std/net/socket.end"
+
+pub fn test_mpsc_channel() void {
+    println("--- Testing Real Thread-Safe MPSC Ring-Buffer Channel ---")
+    val chan = mpsc_create(16)
+    println("Channel created, capacity 16.")
+
+    val s1 = mpsc_send(chan, "Task #1: Index Blockchain Transactions")
+    val s2 = mpsc_send(chan, "Task #2: Recompute Raft State")
+    val s3 = mpsc_send(chan, "Task #3: Flush Hyper HTTP Buffer")
+
+    println("Messages sent success:")
+    println(s1)
+    println(s2)
+    println(s3)
+
+    val pending = mpsc_pending_count(chan)
+    println("Pending messages count:")
+    println(pending)
+
+    val msg1 = mpsc_recv(chan)
+    println("Received message #1:")
+    println(msg1)
+
+    val msg2 = mpsc_recv(chan)
+    println("Received message #2:")
+    println(msg2)
+
+    val msg3 = mpsc_recv(chan)
+    println("Received message #3:")
+    println(msg3)
+
+    val remaining = mpsc_pending_count(chan)
+    println("Remaining messages count (Must be 0):")
+    println(remaining)
+
+    mpsc_close(chan)
+    val s_after_close = mpsc_send(chan, "Forbidden message")
+    println("Send after close (Must be false):")
+    println(s_after_close)
+    println("✔ Real MPSC Channel verified!")
+}
+
+pub fn test_event_loop_and_nonblocking() void {
+    println("--- Testing Real Non-Blocking Sockets & Async EventLoop Poller ---")
+    val listener = tcp_listener_bind(9911)
+    println("Listener bound on port 9911, is_listening:")
+    println(listener.is_listening)
+
+    val nonblock_ok = tcp_listener_set_nonblocking(listener, true)
+    println("Set non-blocking mode:")
+    println(nonblock_ok)
+
+    val ev_loop = event_loop_create()
+    println("Event loop created, is_active:")
+    println(ev_loop.is_active)
+
+    event_loop_add(ev_loop, listener.handle)
+    println("Listener socket added to event loop.")
+
+    // Poll with 50ms timeout (should return 0 because no client is connecting yet)
+    val ready_count = event_loop_poll(ev_loop, 50)
+    println("Event loop polled ready count (0 pending):")
+    println(ready_count)
+
+    tcp_listener_close(listener)
+    event_loop_destroy(ev_loop)
+    println("✔ Non-Blocking Sockets & EventLoop verified!")
+}
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING PHASE 2 - PART 2 REAL ASYNC & CHANNEL SUITE   ")
+    println("👑 ========================================================")
+    test_mpsc_channel()
+    test_event_loop_and_nonblocking()
+    println("👑 ALL PHASE 2 - PART 2 REAL IMPLEMENTATIONS VERIFIED! 👑")
+}

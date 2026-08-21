@@ -1,52 +1,40 @@
-// 🧵 End Language: std/sync/channel.end
-// Multi-Producer Single-Consumer (MPSC) CSP Channel for Lock-Free Thread Communication
+// End Standard Library: std/sync/channel.end
+// Multi-Producer Single-Consumer (MPSC) CSP Thread-Safe Ring-Buffer Channel
 
-pub st Channel<T> {
-    channel_id: i64,
-    capacity: i32,
-    messages_sent: i64,
-    messages_received: i64,
-    is_closed: bool,
+pub struct MpscQueue {
+    pub handle: i64,
+    pub capacity: i32,
+    pub is_closed: bool,
 }
 
-pub fn channel_create<T>(cap: i32) Channel<T> {
-    ret Channel<T> {
-        channel_id: 100,
-        capacity: cap,
-        messages_sent: 0,
-        messages_received: 0,
+pub fn mpsc_create(capacity: i32) MpscQueue {
+    val h = end_channel_create(capacity)
+    ret MpscQueue {
+        handle: h,
+        capacity: capacity,
         is_closed: false,
     }
 }
 
-pub fn channel_send<T>(chan: Channel<T>, item: T) Channel<T> {
-    val sent = chan.messages_sent + 1
-    ret Channel<T> {
-        channel_id: chan.channel_id,
-        capacity: chan.capacity,
-        messages_sent: sent,
-        messages_received: chan.messages_received,
-        is_closed: chan.is_closed,
+pub fn mpsc_send(chan: MpscQueue, item: str) bool {
+    if chan.is_closed {
+        ret false
     }
+    val res = end_channel_send(chan.handle, item)
+    if res == 1 {
+        ret true
+    }
+    ret false
 }
 
-pub fn channel_recv<T>(chan: Channel<T>) Channel<T> {
-    val recvd = chan.messages_received + 1
-    ret Channel<T> {
-        channel_id: chan.channel_id,
-        capacity: chan.capacity,
-        messages_sent: chan.messages_sent,
-        messages_received: recvd,
-        is_closed: chan.is_closed,
-    }
+pub fn mpsc_recv(chan: MpscQueue) str {
+    ret end_channel_recv(chan.handle)
 }
 
-pub fn channel_close<T>(chan: Channel<T>) Channel<T> {
-    ret Channel<T> {
-        channel_id: chan.channel_id,
-        capacity: chan.capacity,
-        messages_sent: chan.messages_sent,
-        messages_received: chan.messages_received,
-        is_closed: true,
-    }
+pub fn mpsc_pending_count(chan: MpscQueue) i32 {
+    ret end_channel_pending(chan.handle) as i32
+}
+
+pub fn mpsc_close(chan: MpscQueue) void {
+    end_channel_close(chan.handle)
 }

@@ -1,16 +1,16 @@
 // End Standard Library: std/net/socket.end
-// 🌐 Native High-Performance Cross-Platform TCP Socket Networking
+// Native High-Performance Cross-Platform TCP Socket Networking
 
-pub st TcpListener {
-    handle: i64,
-    port: i32,
-    is_listening: bool,
+pub struct TcpListener {
+    pub handle: i64,
+    pub port: i32,
+    pub is_listening: bool,
 }
 
-pub st TcpStream {
-    handle: i64,
-    peer_addr: str,
-    is_connected: bool,
+pub struct TcpStream {
+    pub handle: i64,
+    pub peer_addr: str,
+    pub is_connected: bool,
 }
 
 pub fn tcp_listener_bind(port: i32) TcpListener {
@@ -23,7 +23,7 @@ pub fn tcp_listener_bind(port: i32) TcpListener {
 }
 
 pub fn tcp_listener_accept(listener: TcpListener) TcpStream {
-    if !listener.is_listening {
+    if listener.is_listening == false {
         ret TcpStream {
             handle: -1,
             peer_addr: "",
@@ -38,6 +38,21 @@ pub fn tcp_listener_accept(listener: TcpListener) TcpStream {
     }
 }
 
+pub fn tcp_listener_set_nonblocking(listener: TcpListener, is_nonblocking: bool) bool {
+    if is_nonblocking == true {
+        val r1 = end_net_set_nonblocking(listener.handle, 1)
+        if r1 == 1 {
+            ret true
+        }
+        ret false
+    }
+    val r0 = end_net_set_nonblocking(listener.handle, 0)
+    if r0 == 1 {
+        ret true
+    }
+    ret false
+}
+
 pub fn tcp_connect(host: str, port: i32) TcpStream {
     val h: i64 = end_net_tcp_connect(host, port)
     ret TcpStream {
@@ -47,23 +62,38 @@ pub fn tcp_connect(host: str, port: i32) TcpStream {
     }
 }
 
-pub fn tcp_stream_write(stream: TcpStream, response_bytes: str) i64 {
-    if !stream.is_connected || stream.handle < 0 {
+pub fn tcp_stream_set_nonblocking(stream_conn: TcpStream, is_nonblocking: bool) bool {
+    if is_nonblocking == true {
+        val r1 = end_net_set_nonblocking(stream_conn.handle, 1)
+        if r1 == 1 {
+            ret true
+        }
+        ret false
+    }
+    val r0 = end_net_set_nonblocking(stream_conn.handle, 0)
+    if r0 == 1 {
+        ret true
+    }
+    ret false
+}
+
+pub fn tcp_stream_write(stream_conn: TcpStream, response_bytes: str) i64 {
+    if stream_conn.is_connected == false {
         ret 0
     }
-    ret end_net_tcp_send(stream.handle, response_bytes, -1)
+    ret end_net_tcp_send(stream_conn.handle, response_bytes, -1)
 }
 
-pub fn tcp_stream_read(stream: TcpStream, max_bytes: i32) str {
-    if !stream.is_connected || stream.handle < 0 {
+pub fn tcp_stream_read(stream_conn: TcpStream, max_bytes: i32) str {
+    if stream_conn.is_connected == false {
         ret ""
     }
-    ret end_net_tcp_recv(stream.handle, max_bytes)
+    ret end_net_tcp_recv(stream_conn.handle, max_bytes)
 }
 
-pub fn tcp_stream_close(stream: TcpStream) void {
-    if stream.handle >= 0 {
-        end_net_tcp_close(stream.handle)
+pub fn tcp_stream_close(stream_conn: TcpStream) void {
+    if stream_conn.handle >= 0 {
+        end_net_tcp_close(stream_conn.handle)
     }
 }
 

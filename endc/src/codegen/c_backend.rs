@@ -452,6 +452,109 @@ impl CBackend {
         self.output.push_str("    if (fd >= 0) _end_socket_close((EndSocket)fd);\n");
         self.output.push_str("}\n\n");
 
+        self.output.push_str("static inline int64_t end_net_set_nonblocking(int64_t fd, int nonblocking) {\n");
+        self.output.push_str("    if (fd < 0) return 0;\n");
+        self.output.push_str("#if defined(_WIN32)\n");
+        self.output.push_str("    u_long mode = nonblocking ? 1 : 0;\n");
+        self.output.push_str("    return ioctlsocket((EndSocket)fd, FIONBIO, &mode) == 0 ? 1 : 0;\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("    int flags = fcntl((int)fd, F_GETFL, 0);\n");
+        self.output.push_str("    if (flags == -1) return 0;\n");
+        self.output.push_str("    flags = nonblocking ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);\n");
+        self.output.push_str("    return fcntl((int)fd, F_SETFL, flags) == 0 ? 1 : 0;\n");
+        self.output.push_str("#endif\n");
+        self.output.push_str("}\n\n");
+
+        self.output.push_str("typedef struct EndEventLoop {\n");
+        self.output.push_str("    EndSocket fds[256]; int count; int ready_count; EndSocket ready_fds[256];\n");
+        self.output.push_str("} EndEventLoop;\n");
+        self.output.push_str("static inline int64_t end_event_loop_create(void) { return (int64_t)(uintptr_t)calloc(1, sizeof(EndEventLoop)); }\n");
+        self.output.push_str("static inline void end_event_loop_add(int64_t loop_handle, int64_t fd) {\n");
+        self.output.push_str("    EndEventLoop* loop = (EndEventLoop*)(uintptr_t)loop_handle;\n");
+        self.output.push_str("    if (!loop || fd < 0 || loop->count >= 256) return;\n");
+        self.output.push_str("    for (int i = 0; i < loop->count; i++) { if (loop->fds[i] == (EndSocket)fd) return; }\n");
+        self.output.push_str("    loop->fds[loop->count++] = (EndSocket)fd;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline int64_t end_event_loop_poll(int64_t loop_handle, int32_t timeout_ms) {\n");
+        self.output.push_str("    EndEventLoop* loop = (EndEventLoop*)(uintptr_t)loop_handle;\n");
+        self.output.push_str("    if (!loop || loop->count == 0) return 0;\n");
+        self.output.push_str("    loop->ready_count = 0;\n");
+        self.output.push_str("    fd_set read_fds; FD_ZERO(&read_fds); EndSocket max_fd = 0;\n");
+        self.output.push_str("    for (int i = 0; i < loop->count; i++) {\n");
+        self.output.push_str("        FD_SET(loop->fds[i], &read_fds);\n");
+        self.output.push_str("        if (loop->fds[i] > max_fd) max_fd = loop->fds[i];\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    struct timeval tv;\n");
+        self.output.push_str("    tv.tv_sec = timeout_ms / 1000;\n");
+        self.output.push_str("    tv.tv_usec = (timeout_ms % 1000) * 1000;\n");
+        self.output.push_str("    int res = select((int)max_fd + 1, &read_fds, NULL, NULL, timeout_ms >= 0 ? &tv : NULL);\n");
+        self.output.push_str("    if (res > 0) {\n");
+        self.output.push_str("        for (int i = 0; i < loop->count; i++) {\n");
+        self.output.push_str("            if (FD_ISSET(loop->fds[i], &read_fds)) loop->ready_fds[loop->ready_count++] = loop->fds[i];\n");
+        self.output.push_str("        }\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    return (int64_t)loop->ready_count;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline int64_t end_event_loop_get_ready(int64_t loop_handle, int32_t index) {\n");
+        self.output.push_str("    EndEventLoop* loop = (EndEventLoop*)(uintptr_t)loop_handle;\n");
+        self.output.push_str("    if (!loop || index < 0 || index >= loop->ready_count) return -1;\n");
+        self.output.push_str("    return (int64_t)loop->ready_fds[index];\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void end_event_loop_destroy(int64_t loop_handle) { EndEventLoop* loop = (EndEventLoop*)(uintptr_t)loop_handle; if (loop) free(loop); }\n\n");
+
+        self.output.push_str("/* End Thread-Safe MPSC Ring-Buffer Channel */\n");
+        self.output.push_str("typedef struct EndMpscQueue {\n");
+        self.output.push_str("    char* items[1024]; int head; int tail; int count; int capacity; bool is_closed;\n");
+        self.output.push_str("#if defined(_WIN32)\n    CRITICAL_SECTION lock;\n#else\n    pthread_mutex_t lock;\n#endif\n");
+        self.output.push_str("} EndMpscQueue;\n");
+        self.output.push_str("static inline int64_t end_channel_create(int32_t capacity) {\n");
+        self.output.push_str("    EndMpscQueue* chan = (EndMpscQueue*)calloc(1, sizeof(EndMpscQueue));\n");
+        self.output.push_str("    chan->capacity = (capacity > 0 && capacity <= 1024) ? capacity : 1024;\n");
+        self.output.push_str("    chan->is_closed = false;\n");
+        self.output.push_str("#if defined(_WIN32)\n    InitializeCriticalSection(&chan->lock);\n#else\n    pthread_mutex_init(&chan->lock, NULL);\n#endif\n");
+        self.output.push_str("    return (int64_t)(uintptr_t)chan;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline int64_t end_channel_send(int64_t chan_handle, const char* msg) {\n");
+        self.output.push_str("    EndMpscQueue* chan = (EndMpscQueue*)(uintptr_t)chan_handle;\n");
+        self.output.push_str("    if (!chan || !msg || chan->is_closed) return 0;\n");
+        self.output.push_str("#if defined(_WIN32)\n    EnterCriticalSection(&chan->lock);\n#else\n    pthread_mutex_lock(&chan->lock);\n#endif\n");
+        self.output.push_str("    if (chan->count >= chan->capacity || chan->is_closed) {\n");
+        self.output.push_str("#if defined(_WIN32)\n        LeaveCriticalSection(&chan->lock);\n#else\n        pthread_mutex_unlock(&chan->lock);\n#endif\n");
+        self.output.push_str("        return 0;\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    chan->items[chan->tail] = strdup(msg);\n");
+        self.output.push_str("    chan->tail = (chan->tail + 1) % chan->capacity;\n");
+        self.output.push_str("    chan->count++;\n");
+        self.output.push_str("#if defined(_WIN32)\n    LeaveCriticalSection(&chan->lock);\n#else\n    pthread_mutex_unlock(&chan->lock);\n#endif\n");
+        self.output.push_str("    return 1;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline char* end_channel_recv(int64_t chan_handle) {\n");
+        self.output.push_str("    EndMpscQueue* chan = (EndMpscQueue*)(uintptr_t)chan_handle;\n");
+        self.output.push_str("    if (!chan) return (char*)\"\";\n");
+        self.output.push_str("#if defined(_WIN32)\n    EnterCriticalSection(&chan->lock);\n#else\n    pthread_mutex_lock(&chan->lock);\n#endif\n");
+        self.output.push_str("    if (chan->count == 0) {\n");
+        self.output.push_str("#if defined(_WIN32)\n        LeaveCriticalSection(&chan->lock);\n#else\n        pthread_mutex_unlock(&chan->lock);\n#endif\n");
+        self.output.push_str("        return (char*)\"\";\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    char* item = chan->items[chan->head];\n");
+        self.output.push_str("    chan->head = (chan->head + 1) % chan->capacity;\n");
+        self.output.push_str("    chan->count--;\n");
+        self.output.push_str("#if defined(_WIN32)\n    LeaveCriticalSection(&chan->lock);\n#else\n    pthread_mutex_unlock(&chan->lock);\n#endif\n");
+        self.output.push_str("    return item ? item : (char*)\"\";\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline int64_t end_channel_pending(int64_t chan_handle) {\n");
+        self.output.push_str("    EndMpscQueue* chan = (EndMpscQueue*)(uintptr_t)chan_handle;\n");
+        self.output.push_str("    if (!chan) return 0;\n");
+        self.output.push_str("    return (int64_t)chan->count;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void end_channel_close(int64_t chan_handle) {\n");
+        self.output.push_str("    EndMpscQueue* chan = (EndMpscQueue*)(uintptr_t)chan_handle;\n");
+        self.output.push_str("    if (!chan) return;\n");
+        self.output.push_str("#if defined(_WIN32)\n    EnterCriticalSection(&chan->lock);\n#else\n    pthread_mutex_lock(&chan->lock);\n#endif\n");
+        self.output.push_str("    chan->is_closed = true;\n");
+        self.output.push_str("#if defined(_WIN32)\n    LeaveCriticalSection(&chan->lock);\n#else\n    pthread_mutex_unlock(&chan->lock);\n#endif\n");
+        self.output.push_str("}\n\n");
+
         // Embedded Real Database Engine Primitives (Key-Value & In-Memory/File SQLite-compatible)
         self.output.push_str("/* End Real Embedded SQLite-Compatible Database Engine Primitives */\n");
         self.output.push_str("typedef struct EndDbRecord { char key[128]; char value[1024]; struct EndDbRecord* next; } EndDbRecord;\n");
@@ -1540,7 +1643,7 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
                     BinaryOp::Equal => {
-                        let is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                        let mut is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
                             || l.starts_with('"') || r.starts_with('"')
                             || l.contains("str") || r.contains("str")
                             || l.contains("sig") || r.contains("sig")
@@ -1559,6 +1662,7 @@ Statement::Spawn { call, .. } => {
                             || l.contains("err") || r.contains("err")
                             || l.contains("header") || r.contains("header")
                             || l.contains("payload") || r.contains("payload");
+                        if l == "true" || l == "false" || r == "true" || r == "false" { is_str = false; }
                         if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) == 0)", l, r)
                         } else {
@@ -1566,7 +1670,7 @@ Statement::Spawn { call, .. } => {
                         }
                     },
                     BinaryOp::NotEqual => {
-                        let is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                        let mut is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
                             || l.starts_with('"') || r.starts_with('"')
                             || l.contains("str") || r.contains("str")
                             || l.contains("sig") || r.contains("sig")
@@ -1585,6 +1689,7 @@ Statement::Spawn { call, .. } => {
                             || l.contains("err") || r.contains("err")
                             || l.contains("header") || r.contains("header")
                             || l.contains("payload") || r.contains("payload");
+                        if l == "true" || l == "false" || r == "true" || r == "false" { is_str = false; }
                         if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) != 0)", l, r)
                         } else {
