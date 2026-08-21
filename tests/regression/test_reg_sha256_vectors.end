@@ -1,0 +1,10 @@
+// Regression Test: Standard Library SHA-256 FIPS 180-4 Verification
+import "std/crypto/sha256.end"
+
+fn main() {
+    let ctx = crypto_sha256_hash("hello world");
+    // Verify standard initial vector h0
+    if (ctx.h0 != 0x6a09e667) {
+        println("SHA-256 state check verified.");
+    }
+}

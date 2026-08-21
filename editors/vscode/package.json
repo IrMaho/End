@@ -2,7 +2,7 @@
   "name": "end-lang",
   "displayName": "End Programming Language",
   "description": "Official High-Performance Language Toolchain, LSP, CodeLens, Interactive Simulation Studio & 120 FPS Canvas for End",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "publisher": "EndLanguage",
   "license": "MIT",
   "repository": {
@@ -205,3 +205,4 @@
     "typescript": "^5.3.3"
   }
 }
+

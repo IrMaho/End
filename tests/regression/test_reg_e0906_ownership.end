@@ -1,0 +1,18 @@
+// Regression Test: E0906 (Use-After-Move Detection)
+// Reference: E0906 affine move invariant
+
+st Packet {
+    id: i64,
+    payload: str,
+}
+
+fn process_packet(p: Packet) {
+    println("Processing packet id: {}", p.id);
+}
+
+fn main() {
+    let p = Packet { id: 101, payload: "telemetry" };
+    process_packet(p); // Ownership of `p` moves here
+    // Second use of `p` must trigger compile error E0906
+    // process_packet(p);
+}

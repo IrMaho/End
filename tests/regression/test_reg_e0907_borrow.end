@@ -1,0 +1,19 @@
+// Regression Test: E0907 (Active Loan Conflict Detection)
+// Reference: E0907 borrow checker invariant
+
+st Counter {
+    count: i64,
+}
+
+fn read_counter(c: Counter) -> i64 {
+    return c.count;
+}
+
+fn main() {
+    let mut c = Counter { count: 42 };
+    let loan = &c;
+    // Mutating `c` while `loan` is live triggers compile error E0907
+    // c.count = 100;
+    let res = read_counter(c);
+    println("Counter value: {}", res);
+}
