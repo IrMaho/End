@@ -9,7 +9,7 @@
       "include": "#keywords"
     },
     {
-      "include": "#directives"
+      "include": "#decorators"
     },
     {
       "include": "#types"
@@ -22,6 +22,9 @@
     },
     {
       "include": "#functions"
+    },
+    {
+      "include": "#operators"
     }
   ],
   "repository": {
@@ -38,35 +41,55 @@
         }
       ]
     },
+    "decorators": {
+      "patterns": [
+        {
+          "name": "entity.name.tag.decorator.end",
+          "match": "@(target|optimize|align|intrinsic|pure|effect)\\b"
+        }
+      ]
+    },
     "keywords": {
       "patterns": [
         {
           "name": "keyword.control.end",
-          "match": "\\b(fn|st|struct|enum|val|mut|var|ret|return|if|else|while|for|parallel|in|match|defer|region|asm|target|import|as|pub|alloc|catch|spawn|skip)\\b"
+          "match": "\\b(if|else|while|for|in|ret|break|continue|match|parallel)\\b"
         },
         {
-          "name": "constant.language.end",
-          "match": "\\b(true|false|null)\\b"
-        }
-      ]
-    },
-    "directives": {
-      "patterns": [
+          "name": "keyword.other.memory.end",
+          "match": "\\b(region|mut|val|pure|effect)\\b"
+        },
         {
-          "name": "entity.name.tag.directive.end",
-          "match": "@(agent_note|alloc_bound|target|c|zig|rust|go)\\b"
+          "name": "keyword.declaration.end",
+          "match": "\\b(fn|st|enum|asm|import|from)\\b"
+        },
+        {
+          "name": "constant.language.boolean.end",
+          "match": "\\b(true|false|null|void)\\b"
         }
       ]
     },
     "types": {
       "patterns": [
         {
-          "name": "storage.type.end",
-          "match": "\\b(void|bool|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|f32x4|f32x8|i32x4|i32x8|str|string|Allocator|region)\\b"
+          "name": "storage.type.primitive.end",
+          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|SimdVec|Agent)\\b"
         },
         {
-          "name": "entity.name.type.class.end",
+          "name": "entity.name.type.struct.end",
           "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.end",
+          "match": "\\b(println|print|inspect|trace|effects|impact|assert|alloc|free)\\b"
+        },
+        {
+          "name": "entity.name.function.end",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
         }
       ]
     },
@@ -84,20 +107,28 @@
     "numbers": {
       "patterns": [
         {
-          "name": "constant.numeric.float.end",
-          "match": "\\b[0-9]+\\.[0-9]+(f32|f64)?\\b"
+          "name": "constant.numeric.hex.end",
+          "match": "\\b0x[0-9a-fA-F_]+\\b"
         },
         {
-          "name": "constant.numeric.integer.end",
-          "match": "\\b[0-9]+(u8|u16|u32|u64|i8|i16|i32|i64)?\\b"
+          "name": "constant.numeric.binary.end",
+          "match": "\\b0b[01_]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.end",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.decimal.end",
+          "match": "\\b[0-9][0-9_]*\\b"
         }
       ]
     },
-    "functions": {
+    "operators": {
       "patterns": [
         {
-          "name": "entity.name.function.end",
-          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()"
+          "name": "keyword.operator.end",
+          "match": "(\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>)"
         }
       ]
     }
