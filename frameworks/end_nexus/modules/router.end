@@ -1,0 +1,41 @@
+// ============================================================================
+// END NEXUS FRAMEWORK: MODULAR ROUTER & HTTP KERNEL
+// ============================================================================
+
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<string.h>")
+@import_c("<winsock2.h>")
+
+pub fn nexus_send_response(sock: i32, status_code: str, content_type: str, body: str) void {
+    region r {
+        val header_buf: *char = alloc [1024]char
+        val body_len = strlen(body)
+        val crlf = "\r\n"
+        sprintf(header_buf, "HTTP/1.1 %s%sContent-Type: %s%sAccess-Control-Allow-Origin: *%sAccess-Control-Allow-Methods: GET, POST, OPTIONS%sAccess-Control-Allow-Headers: *%sCache-Control: no-store, no-cache%sContent-Length: %d%sConnection: close%s%s", status_code, crlf, content_type, crlf, crlf, crlf, crlf, crlf, body_len, crlf, crlf, crlf)
+        send(sock, header_buf, strlen(header_buf), 0)
+        send(sock, body, body_len, 0)
+    }
+}
+
+pub fn nexus_serve_static(sock: i32, filepath: str, mime: str) void {
+    region r {
+        val f = fopen(filepath, "rb")
+        if f == null {
+            nexus_send_response(sock, "404 Not Found", "text/plain", "404 Not Found")
+            ret
+        }
+        fseek(f, 0, 2)
+        val size = ftell(f)
+        fseek(f, 0, 0)
+        val buf: *char = alloc [524288]char
+        val read_len = fread(buf, 1, size, f)
+        fclose(f)
+
+        val header_buf: *char = alloc [512]char
+        val crlf = "\r\n"
+        sprintf(header_buf, "HTTP/1.1 200 OK%sContent-Type: %s%sAccess-Control-Allow-Origin: *%sCache-Control: no-cache%sContent-Length: %d%sConnection: close%s%s", crlf, mime, crlf, crlf, crlf, read_len, crlf, crlf, crlf)
+        send(sock, header_buf, strlen(header_buf), 0)
+        send(sock, buf, read_len, 0)
+    }
+}

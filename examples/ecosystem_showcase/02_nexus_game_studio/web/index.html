@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus 120 FPS Game & Physics Studio • Powered by EndNexus Framework</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="stars-bg"></div>
+
+    <div class="app-shell">
+        <header class="studio-header">
+            <div class="brand">
+                <div class="logo-orb">🎮</div>
+                <div>
+                    <h1>Nexus Real-Time Game Studio</h1>
+                    <p class="subtitle">توسعه‌یافته با پکیج‌فریمورک انحصاری <span class="badge-framework">EndNexus v1.0.0</span></p>
+                </div>
+            </div>
+            <div class="header-pills">
+                <div class="pill">
+                    <span class="pill-dot live"></span>
+                    <span>120 FPS Physics Loop</span>
+                </div>
+                <div class="pill">
+                    <span class="pill-label">پورت سرور:</span>
+                    <span class="pill-val">5050 (End Native)</span>
+                </div>
+                <a href="http://localhost:5000" class="btn-hub-link" target="_blank">📊 باز کردن داشبورد اصلی (Port 5000)</a>
+            </div>
+        </header>
+
+        <main class="studio-grid">
+            <!-- Game Simulation Canvas Card -->
+            <div class="panel-card canvas-card">
+                <div class="card-head">
+                    <h3>⚡ شبیه‌ساز فیزیک و میدان ذرات بلادرنگ (Particle Field Canvas)</h3>
+                    <div class="canvas-fps-badge" id="canvas-fps">120 FPS</div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="game-canvas" width="800" height="420"></canvas>
+                </div>
+                <div class="canvas-controls">
+                    <button id="btn-spawn" class="btn-action">💥 اسپاون موج ذرات در سرور End</button>
+                    <button id="btn-gravity" class="btn-action secondary">🌀 معکوس کردن گرانش فیزیک</button>
+                    <button id="btn-turbo" class="btn-action accent">⚡ حالت توربو (240 Hz)</button>
+                </div>
+            </div>
+
+            <!-- Side Telemetry & Matchmaker Info -->
+            <div class="panel-card side-card">
+                <div class="card-head">
+                    <h3>🎯 وضعیت بازیکن و اتاق مسابقه (Nexus Engine)</h3>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <span class="lbl">رتبه بازیکن (Rank)</span>
+                        <span class="val highlight" id="player-rank">GrandMaster #1</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="lbl">امتیاز زنده (Score)</span>
+                        <span class="val" id="player-score">--</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="lbl">شناسه اتاق مسابقه</span>
+                        <span class="val" id="room-id">Arena #1042</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="lbl">تاخیر شبکه (Ping)</span>
+                        <span class="val success" id="room-ping">18 ms</span>
+                    </div>
+                </div>
+
+                <div class="engine-features">
+                    <h4>🛠️ ماژول‌های فعال فریمورک EndNexus:</h4>
+                    <ul>
+                        <li><span class="check">✔</span> <strong>modules/physics.end:</strong> انتگرال‌گیری لختی و محاسبه برخوردها</li>
+                        <li><span class="check">✔</span> <strong>modules/storage.end:</strong> بافر چرخشی وضعیت‌ها بدون اشغال Heap</li>
+                        <li><span class="check">✔</span> <strong>modules/security.end:</strong> امضای امن سشن با HMAC-SHA256</li>
+                        <li><span class="check">✔</span> <strong>modules/router.end:</strong> پروتکل HTTP نیتیو و باینری استریم</li>
+                    </ul>
+                </div>
+
+                <div class="code-preview">
+                    <code>// فراخوانی در پروژه:
+import "frameworks/end_nexus/nexus.end"
+val pos = nexus_integrate_physics(x, y, vx, vy, 800, 600)</code>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

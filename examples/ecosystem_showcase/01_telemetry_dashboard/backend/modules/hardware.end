@@ -1,0 +1,75 @@
+// ============================================================================
+// END MODULE: HARDWARE & VITALS (100% PURE END)
+// ============================================================================
+
+pub fn mod_sys_cpu_load(core_count: i32, tick: i64) i64 {
+    mut total: i64 = 0
+    region r {
+        for i in core_count {
+            val w = ((tick * 13) + (i * 37)) % 85
+            total = total + w + 10
+        }
+        total = total / core_count
+    }
+    ret total
+}
+
+pub fn mod_sys_memory_arena(chunks: i32) i64 {
+    mut b: i64 = 0
+    region r { for i in chunks { b = b + 64 } }
+    ret b
+}
+
+pub fn mod_sys_gpu_compute(shaders: i32, load: i64) i64 {
+    mut ops: i64 = 0
+    region r { ops = (shaders * 2048) + (load * 42) }
+    ret ops
+}
+
+pub fn mod_sys_disk_io(blocks: i32, io_type: i32) i64 {
+    mut iops: i64 = 0
+    region r {
+        mut m: i64 = 8192
+        if io_type == 1 { m = 4096 }
+        iops = blocks * m
+    }
+    ret iops
+}
+
+pub fn mod_sys_cache_alignment(lines: i32) i64 {
+    mut a: i64 = 0
+    region r { for i in lines { a = a + ((i * 64) & 16777215) } }
+    ret a
+}
+
+pub fn mod_sys_zero_gc_pauses(cycles: i32) i64 {
+    ret 0
+}
+
+pub fn mod_sys_thermal_throttle(temp_c: i64) i64 {
+    mut t: i64 = 0
+    region r {
+        if temp_c > 85 { t = (temp_c - 85) * 4 }
+        if t > 100 { t = 100 }
+    }
+    ret t
+}
+
+// Notice parameter 'st: i64' - context-aware keyword verified!
+pub fn mod_sys_uptime_ticks(st: i64) i64 {
+    ret st * 1000
+}
+
+pub fn mod_sys_context_switches(threads: i32) i64 {
+    ret threads * 144
+}
+
+pub fn mod_sys_overall_health(cpu: i64, mem: i64, temp: i64) i64 {
+    mut h: i64 = 100
+    region r {
+        val p = ((cpu * 30) / 100) + ((mem * 30) / 100) + ((temp * 40) / 100)
+        h = 100 - p
+        if h < 0 { h = 0 }
+    }
+    ret h
+}

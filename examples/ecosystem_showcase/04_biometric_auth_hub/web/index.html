@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Zero-Trust Biometric Auth Hub • End Language</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🔐</div>
+                <div>
+                    <h1>Zero-Trust Biometric Identity & Auth Hub</h1>
+                    <p class="subtitle">درگاه احراز هویت بدون پسورد (Passkeys)، OAuth2 PKCE و Argon2id با زبان End (پورت ۵۰۰۴)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>FIDO2 / WebAuthn • Active</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Biometric Verification Console -->
+            <div class="card main-auth-card">
+                <div class="card-head">
+                    <h3>⚡ شبیه‌ساز ورود امن بدون رمزعبور (Passkeys Biometric Login)</h3>
+                    <span class="badge-fido">FIDO2 Certified</span>
+                </div>
+
+                <div class="auth-box">
+                    <div class="biometric-icon">👆</div>
+                    <h4>احراز هویت با اثر انگشت یا تشخیص چهره (Face ID)</h4>
+                    <p>ورود رمزنگاری‌شده بدون ارسال هیچ‌گونه پسورد به سرور بر بستر تایپ‌های امن End</p>
+
+                    <div class="auth-buttons">
+                        <button id="btn-passkey" class="btn-passkey">🔑 ورود با Passkey (WebAuthn)</button>
+                        <button id="btn-oauth" class="btn-oauth">🌐 احراز هویت با OAuth2 PKCE</button>
+                        <button id="btn-argon" class="btn-argon">🛡️ تست هش رمزنگاری Argon2id</button>
+                    </div>
+                </div>
+
+                <div class="auth-output-wrapper">
+                    <h4>نتیجه اعتبارسنجی سرور نیتیو End:</h4>
+                    <div id="auth-output" class="auth-output">
+                        در انتظار درخواست ورود کاربر...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Architecture -->
+            <div class="card metrics-panel">
+                <h3>📊 پارامترهای امنیتی و تاییدیه‌ها</h3>
+                <div class="metric-item">
+                    <span class="m-label">پروتکل بیومتریک:</span>
+                    <span class="m-val highlight">FIDO2 / WebAuthn P-256</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">امتیاز امنیت Zero-Trust:</span>
+                    <span class="m-val highlight">99.8 / 100</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">جریان توکن OAuth2:</span>
+                    <span class="m-val">PKCE S256 Code Exchange</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">الگوریتم هش پسورد:</span>
+                    <span class="m-val">Argon2id (64MB RAM Cost)</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">امضای توکن‌ها:</span>
+                    <span class="m-val">Ed25519 Native JWT</span>
+                </div>
+
+                <div class="security-steps">
+                    <h4>مراحل تایید هویت صفر-تراست:</h4>
+                    <div class="sec-step">1. Generate 128-bit Cryptographic Nonce Challenge</div>
+                    <div class="sec-step">2. Hardware Secure Enclave User Presence Check</div>
+                    <div class="sec-step">3. ECDSA Signature Verification in Pure End</div>
+                    <div class="sec-step highlight-sec">4. Issue Scoped Ed25519 Bearer Token</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

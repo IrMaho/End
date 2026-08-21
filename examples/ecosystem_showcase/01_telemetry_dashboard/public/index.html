@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>END OS // داشبورد مانیتورینگ و ۵۰ اندپوینت ماژولار زبان End</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="cyber-grid-bg"></div>
+    <div class="ambient-glow top-left"></div>
+    <div class="ambient-glow bottom-right"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">
+                    <span class="logo-bracket">&lt;</span>
+                    <span class="logo-core">END</span>
+                    <span class="logo-bracket">/&gt;</span>
+                </div>
+                <div class="brand-meta">
+                    <h2>END CORE OS</h2>
+                    <span class="badge-neon">50 Endpoints • Zero-GC</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-tab="tab-dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>داشبورد زنده</span>
+                </a>
+                <a href="#endpoints" class="nav-item" data-tab="tab-endpoints">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <span>۵۰ ماژول و اندپوینت End</span>
+                </a>
+                <a href="#benchmark" class="nav-item" data-tab="tab-benchmark">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>بنچمارک و تست سرعت</span>
+                </a>
+                <a href="#cluster" class="nav-item" data-tab="tab-cluster">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    <span>کلاستر نودها (Nodes)</span>
+                </a>
+                <a href="#analysis" class="nav-item" data-tab="tab-analysis">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <span>تحلیل جامع معماری End</span>
+                </a>
+                <a href="#logs" class="nav-item" data-tab="tab-logs">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    <span>ترمینال لاگ‌های موتور</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="engine-status-card">
+                    <div class="status-dot pulse-emerald"></div>
+                    <div class="status-info">
+                        <span class="status-title">50 End Native Functions</span>
+                        <span class="status-detail">Active C-ABI Engine</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-viewport">
+            <!-- Top App Bar -->
+            <header class="top-bar">
+                <div class="page-title-group">
+                    <h1 id="current-section-title">داشبورد مانیتورینگ بلادرنگ</h1>
+                    <p class="subtitle">تغذیه زنده از موتور ۵۰ اندپوینتی زبان End بر بستر لوکال‌هاست</p>
+                </div>
+                <div class="top-actions">
+                    <div class="telemetry-pill">
+                        <span class="live-badge">LIVE</span>
+                        <span id="pill-rps" class="pill-val">34,600 RPS</span>
+                    </div>
+                    <button id="btn-toggle-stream" class="btn-cyber btn-outline" title="توقف / ادامه استریم زنده">
+                        <span class="icon-pause-play">⏸</span> <span id="stream-status-text">توقف استریم</span>
+                    </button>
+                    <button id="btn-open-endpoints" class="btn-cyber btn-primary">
+                        <span>⚡</span> کاوشگر ۵۰ اندپوینت
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <!-- KPI Stat Cards Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card card-glow-cyan">
+                        <div class="card-header">
+                            <span class="card-label">سلامت کل سیستم (Health)</span>
+                            <span class="card-icon">🛡️</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-value-row">
+                                <span id="val-health" class="stat-num text-cyan">98%</span>
+                                <span class="trend-badge trend-up">عالی</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div id="bar-health" class="progress-bar-fill fill-cyan" style="width: 98%;"></div>
+                            </div>
+                        </div>
+                        <div class="card-footer-meta">
+                            <span>محاسبه با end_mod_sys_overall_health</span>
+                            <span class="meta-tag">Zero-GC</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-glow-emerald">
+                        <div class="card-header">
+                            <span class="card-label">توان عملیاتی (Throughput)</span>
+                            <span class="card-icon">🚀</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-value-row">
+                                <span id="val-rps" class="stat-num text-emerald">34,600</span>
+                                <span class="stat-unit">RPS</span>
+                            </div>
+                            <div class="sparkline-box">
+                                <span class="sparkline-sub">نرخ بدون وقفه در ثانیه</span>
+                            </div>
+                        </div>
+                        <div class="card-footer-meta">
+                            <span>محاسبه با end_mod_net_throughput_rps</span>
+                            <span class="meta-tag">Bare-Metal</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-glow-violet">
+                        <div class="card-header">
+                            <span class="card-label">زمان پاسخ‌دهی (Latency)</span>
+                            <span class="card-icon">⏱️</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-value-row">
+                                <span id="val-latency" class="stat-num text-violet">185</span>
+                                <span class="stat-unit">میکروثانیه (µs)</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div id="bar-latency" class="progress-bar-fill fill-violet" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="card-footer-meta">
+                            <span>حافظه کش خطی L1/L2</span>
+                            <span class="meta-tag">64-byte Align</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-glow-amber">
+                        <div class="card-header">
+                            <span class="card-label">تعداد اندپوینت‌های ماژولار فعال</span>
+                            <span class="card-icon">💎</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-value-row">
+                                <span class="stat-num text-amber">50</span>
+                                <span class="stat-unit">Native Endpoints</span>
+                            </div>
+                            <div class="sparkline-box">
+                                <span class="sparkline-sub">۵ ماژول جامع انترپرایز در زبان End</span>
+                            </div>
+                        </div>
+                        <div class="card-footer-meta">
+                            <span>آماده اجرای زنده و بنچمارک موازی</span>
+                            <span class="meta-tag">5 Modules</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-card glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3>نمودار زنده بار پردازشی و مصرف منابع (Real-Time Telemetry)</h3>
+                                <span class="panel-sub">نوسانات لحظه‌ای پردازنده و رم محاسبه‌شده توسط موتور End</span>
+                            </div>
+                            <div class="chart-legend">
+                                <span class="legend-item"><i class="legend-color col-cyan"></i> پردازنده (CPU)</span>
+                                <span class="legend-item"><i class="legend-color col-violet"></i> حافظه (RAM)</span>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="telemetryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3>توان خروجی تراکنش‌ها (Throughput Curve)</h3>
+                                <span class="panel-sub">نرخ پردازش بدون مکث در ثانیه (RPS)</span>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Benchmark & Mini Cluster View -->
+                <div class="dual-panel-grid">
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3>تست سریع عملکرد موتور (End Quick Bench)</h3>
+                                <span class="panel-sub">اجرای الگوریتم‌های محاسباتی سنگین در آرنای حافظه End</span>
+                            </div>
+                        </div>
+                        <div class="bench-quick-body">
+                            <div class="bench-controls-inline">
+                                <button class="btn-bench-preset active" data-iters="50000">50K عملیات</button>
+                                <button class="btn-bench-preset" data-iters="250000">250K عملیات</button>
+                                <button class="btn-bench-preset" data-iters="1000000">1M عملیات</button>
+                            </div>
+                            <div class="bench-result-display">
+                                <div class="bench-res-item">
+                                    <span class="res-label">مدت زمان اجرا:</span>
+                                    <span id="quick-bench-time" class="res-val text-emerald">--</span>
+                                </div>
+                                <div class="bench-res-item">
+                                    <span class="res-label">سرعت پردازش (Ops/Sec):</span>
+                                    <span id="quick-bench-ops" class="res-val text-cyan">--</span>
+                                </div>
+                                <div class="bench-res-item">
+                                    <span class="res-label">هش نتیجه خروجی:</span>
+                                    <span id="quick-bench-hash" class="res-val font-mono">--</span>
+                                </div>
+                            </div>
+                            <button id="btn-run-quick-bench" class="btn-cyber-primary w-full">
+                        🔥 اجرای تست روی موتور نیتیو End
+                    </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3>وضعیت نودهای پردازشی (Cluster Summary)</h3>
+                                <span class="panel-sub">توزیع بار کاری بین نودهای آرنا</span>
+                            </div>
+                            <button class="btn-cyber-link link-neon" id="link-to-cluster">مشاهده همه نودها &larr;</button>
+                        </div>
+                        <div id="mini-cluster-list" class="mini-nodes-container">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: 50 MODULAR ENDPOINTS EXPLORER -->
+            <section id="tab-endpoints" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2>کاوشگر ۵۰ اندپوینت ماژولار زبان End</h2>
+                            <p class="panel-sub">اصل زبان End: «همه چیز یک ماژول بهینه Zero-GC در آرنای حافظه است». شما می‌توانید تک‌تک اندپوینت‌ها را جداگانه تست کنید یا تست دسته‌جمعی بگیرید.</p>
+                        </div>
+                        <button id="btn-batch-test-all" class="btn-cyber btn-primary btn-lg">
+                            ⚡ اجرای تست دسته‌جمعی تمام ۵۰ اندپوینت
+                        </button>
+                    </div>
+
+                    <!-- Batch Summary Banner -->
+                    <div id="batch-summary-box" class="batch-summary-card" style="display: none;">
+                        <div class="b-stat">
+                            <span class="b-label">تعداد اندپوینت‌های اجرا شده:</span>
+                            <span id="b-total-count" class="b-num text-cyan">50 / 50</span>
+                        </div>
+                        <div class="b-stat">
+                            <span class="b-label">مجموع زمان اجرای هر ۵۰ تابع End:</span>
+                            <span id="b-total-time" class="b-num text-emerald">0.00 µs</span>
+                        </div>
+                        <div class="b-stat">
+                            <span class="b-label">میانگین تاخیر هر اندپوینت:</span>
+                            <span id="b-avg-time" class="b-num text-violet">0.00 µs</span>
+                        </div>
+                    </div>
+
+                    <!-- Filters & Search -->
+                    <div class="endpoints-controls-row">
+                        <div class="search-box-wrapper">
+                            <input type="text" id="endpoint-search" placeholder="🔍 جستجو در نام، ماژول، یا توضیحات ۵۰ اندپوینت..." class="cyber-input">
+                        </div>
+                        <div class="module-filter-buttons">
+                            <button class="btn-mod-filter active" data-mod="ALL">همه (۵۰)</button>
+                            <button class="btn-mod-filter" data-mod="Hardware & Vitals">۱. سخت‌افزار و پایش</button>
+                            <button class="btn-mod-filter" data-mod="Network & Mesh">۲. شبکه و ترافیک</button>
+                            <button class="btn-mod-filter" data-mod="Security & Crypto">۳. امنیت و رمزنگاری</button>
+                            <button class="btn-mod-filter" data-mod="Math & Analytics">۴. محاسبات سنگین و داده</button>
+                            <button class="btn-mod-filter" data-mod="Storage & DB Engine">۵. دیتابیس و کش</button>
+                        </div>
+                    </div>
+
+                    <!-- Endpoints Grid -->
+                    <div id="endpoints-grid-container" class="endpoints-grid">
+                        <!-- 50 Endpoints Injected via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: BENCHMARK SUITE -->
+            <section id="tab-benchmark" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2>مجموعه بنچمارک و ارزیابی سرعت زبان End</h2>
+                            <p class="panel-sub">این ابزار توابع کامپایل شده C-ABI زبان End (end_run_benchmark و end_region_memory_bandwidth) را مستقیماً فراخوانی کرده و توان عملیاتی را اندازه می‌گیرد.</p>
+                        </div>
+                    </div>
+
+                    <div class="benchmark-studio-grid">
+                        <div class="bench-config-box">
+                            <h3>تنظیمات بار کاری (Workload Parameters)</h3>
+                            <div class="form-group">
+                                <label for="bench-slider">تعداد تکرار محاسبات (Iterations):</label>
+                                <div class="slider-row">
+                                    <input type="range" id="bench-slider" min="10000" max="3000000" step="10000" value="500000">
+                                    <span id="slider-val-display" class="slider-badge">500,000</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>نوع ساختار حافظه (Memory Model):</label>
+                                <div class="radio-chips">
+                                    <span class="chip active">Hardware Region Arena (Zero-GC)</span>
+                                </div>
+                            </div>
+                            <button id="btn-start-full-bench" class="btn-cyber btn-primary btn-lg btn-block">
+                                ⚡ آغاز بنچمارک دقیق و سنجش زمان
+                            </button>
+                        </div>
+
+                        <div class="bench-metrics-display">
+                            <div class="metric-box-card">
+                                <span class="m-title">زمان سپری شده (Execution Time)</span>
+                                <div class="m-val-row">
+                                    <span id="full-bench-duration" class="m-big-num text-emerald">0.00</span>
+                                    <span class="m-unit">میکروثانیه (µs)</span>
+                                </div>
+                                <span id="full-bench-ms" class="m-sub">معادل 0.000 میلی‌ثانیه</span>
+                            </div>
+
+                            <div class="metric-box-card">
+                                <span class="m-title">عملیات در هر ثانیه (OPS / Throughput)</span>
+                                <div class="m-val-row">
+                                    <span id="full-bench-ops" class="m-big-num text-cyan">0</span>
+                                    <span class="m-unit">Ops/Sec</span>
+                                </div>
+                                <span class="m-sub text-emerald">سرعت در سطح Bare-Metal و SIMD</span>
+                            </div>
+
+                            <div class="metric-box-card">
+                                <span class="m-title">حجم پردازش حافظه (Bandwidth)</span>
+                                <div class="m-val-row">
+                                    <span id="full-bench-bandwidth" class="m-big-num text-violet">0</span>
+                                    <span class="m-unit">KB Region Buffer</span>
+                                </div>
+                                <span class="m-sub">بدون نیاز به اختصاص و آزادسازی دستی هدر heap</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: CLUSTER NODES -->
+            <section id="tab-cluster" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2>کلاستر نودهای پردازشی (End Engine Cluster)</h2>
+                            <p class="panel-sub">مانیتورینگ نودهای آرنا و توزیع ماتریس بار پردازشی با موتور محاسباتی end_process_cluster_matrix</p>
+                        </div>
+                        <button id="btn-refresh-cluster" class="btn-cyber btn-outline">🔄 تازه‌سازی نودها</button>
+                    </div>
+
+                    <div id="cluster-nodes-grid" class="cluster-cards-grid">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: DEEP ANALYSIS -->
+            <section id="tab-analysis" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2>تحلیل جامع و معماری تخصصی زبان End</h2>
+                            <p class="panel-sub">بررسی فنی ارکان معماری، سیستم حافظه، ابزارهای کامپایلر و قابلیت‌های AI-First</p>
+                        </div>
+                    </div>
+
+                    <div class="analysis-content-grid">
+                        <div class="analysis-card">
+                            <div class="a-icon">🧠</div>
+                            <h3>۱. فلسفه طراحی و Zero-GC Region Scoping</h3>
+                            <p>در End، حافظه درون <code>region name { ... }</code> بر روی کش سخت‌افزاری تراز شده با ۶۴ بایت قرار می‌گیرد و بدون ۱ میکروثانیه تاخیر و بدون نیاز به Garbage Collector پاکسازی می‌گردد.</p>
+                        </div>
+
+                        <div class="analysis-card">
+                            <div class="a-icon">⚡</div>
+                            <h3>۲. سرعت خارق‌العاده و کامپایل به C و ماشین‌کد</h3>
+                            <p>کامپایلر End با دستور <code>end.exe build app.end -o app.exe</code> و خروجی بسیار تمیز C به همراه بهینه‌سازی‌های خودکار کامپایلر (SIMD Auto-Vectorization برای AVX2/AVX-512 و ARM Neon) خروجی باینری با حداقل حجم و حداکثر سرعت تولید می‌کند.</p>
+                        </div>
+
+                        <div class="analysis-card">
+                            <div class="a-icon">🤖</div>
+                            <h3>۳. معماری AI-First و پروتکل هوش مصنوعی</h3>
+                            <p>دستورات درونی <code>inspect</code>, <code>explain</code>, <code>trace</code>, <code>effects</code> و ابزار جدید خودترمیم <code>end.exe fix --apply</code> تحلیل عمیق کدهای سیستم را برای هوش مصنوعی ممکن می‌سازند.</p>
+                        </div>
+
+                        <div class="analysis-card">
+                            <div class="a-icon">📦</div>
+                            <h3>۴. ماکروی @import_c و پکیج منیجر endpm</h3>
+                            <p>با ماکروی <code>@import_c("&lt;math.h&gt;")</code> امکان فراخوانی مستقیم تمامی هدرهای C/C++ بدون نوشتن کدهای چسباننده (Glue Code) فراهم شده است.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: LOGS & TERMINAL -->
+            <section id="tab-logs" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2>ترمینال لاگ‌های زنده موتور (End Engine Console)</h2>
+                            <p class="panel-sub">جریان رویدادها، چرخه‌های آرنا، و تعاملات API لوکال‌هاست</p>
+                        </div>
+                        <div class="log-actions">
+                            <button id="btn-clear-logs" class="btn-cyber btn-outline">پاکسازی کنسول</button>
+                        </div>
+                    </div>
+
+                    <div class="terminal-window">
+                        <div class="terminal-header">
+                            <div class="term-dots">
+                                <span class="dot dot-red"></span>
+                                <span class="dot dot-yellow"></span>
+                                <span class="dot dot-green"></span>
+                            </div>
+                            <span class="term-title">end_engine_stdout // localhost:5000</span>
+                        </div>
+                        <div id="terminal-body" class="terminal-body">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+// ============================================================================
+// PROJECT 2: 120 FPS ECS PHYSICS & RAFT CLUSTER ENGINE (PURE END)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/ecs.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/cluster/raft.end"
+
+pub fn simulate_ecs_tick(particle_count: i32, tick_num: i64) i64 {
+    mut energy_sum: i64 = 0
+    region arena {
+        val world = ecs_world_create(particle_count)
+        val entity_id = ecs_spawn_entity(world)
+        
+        for i in 100 {
+            val vx = (tick_num + i) % 15
+            val vy = (tick_num * 2 + i) % 20
+            val speed_sq = (vx * vx) + (vy * vy)
+            energy_sum = energy_sum + speed_sq
+        }
+    }
+    ret energy_sum
+}
+
+pub fn simulate_raft_leader_election(node_id: i32) i64 {
+    mut term_out: i64 = 1
+    region arena {
+        val node = raft_node_create(node_id, 3)
+        val candidate = raft_start_election(node)
+        val leader = raft_become_leader(candidate)
+        term_out = leader.current_term
+    }
+    ret term_out
+}

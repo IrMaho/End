@@ -1,0 +1,242 @@
+{
+  "C (GCC 15.2)": {
+    "binary_size_kb": 59.9,
+    "endpoints": {
+      "Health Check (Baseline Latency)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 9.135,
+        "median_ms": 13.68,
+        "p95_ms": 16.048,
+        "p99_ms": 24.808,
+        "min_ms": 0.549,
+        "max_ms": 25.02,
+        "stdev_ms": 7.079,
+        "rps": 109.5
+      },
+      "CPU Compute (1M xorshift+LCG)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 13.583,
+        "median_ms": 15.158,
+        "p95_ms": 27.765,
+        "p99_ms": 28.424,
+        "min_ms": 2.642,
+        "max_ms": 29.247,
+        "stdev_ms": 8.589,
+        "rps": 73.6
+      },
+      "JSON Serialization": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 9.558,
+        "median_ms": 14.176,
+        "p95_ms": 16.098,
+        "p99_ms": 26.594,
+        "min_ms": 0.443,
+        "max_ms": 27.73,
+        "stdev_ms": 7.163,
+        "rps": 104.6
+      }
+    },
+    "throughput": {
+      "health_rps": 101.5,
+      "compute_rps": 76.8
+    }
+  },
+  "Zig (0.16.0)": {
+    "binary_size_kb": 193.5,
+    "endpoints": {
+      "Health Check (Baseline Latency)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 9.744,
+        "median_ms": 14.333,
+        "p95_ms": 16.048,
+        "p99_ms": 28.76,
+        "min_ms": 0.387,
+        "max_ms": 30.958,
+        "stdev_ms": 7.188,
+        "rps": 102.6
+      },
+      "CPU Compute (1M xorshift+LCG)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.926,
+        "median_ms": 11.774,
+        "p95_ms": 27.559,
+        "p99_ms": 28.546,
+        "min_ms": 2.589,
+        "max_ms": 31.576,
+        "stdev_ms": 8.45,
+        "rps": 91.5
+      },
+      "JSON Serialization": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.805,
+        "median_ms": 14.819,
+        "p95_ms": 16.06,
+        "p99_ms": 23.854,
+        "min_ms": 0.321,
+        "max_ms": 26.569,
+        "stdev_ms": 6.715,
+        "rps": 92.6
+      }
+    },
+    "throughput": {
+      "health_rps": 96.5,
+      "compute_rps": 87.3
+    }
+  },
+  "Rust (1.89.0)": {
+    "binary_size_kb": 152.5,
+    "endpoints": {
+      "Health Check (Baseline Latency)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.116,
+        "median_ms": 14.706,
+        "p95_ms": 15.964,
+        "p99_ms": 26.308,
+        "min_ms": 0.395,
+        "max_ms": 26.63,
+        "stdev_ms": 7.006,
+        "rps": 98.9
+      },
+      "CPU Compute (1M xorshift+LCG)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 11.665,
+        "median_ms": 12.966,
+        "p95_ms": 27.647,
+        "p99_ms": 28.568,
+        "min_ms": 2.665,
+        "max_ms": 28.569,
+        "stdev_ms": 8.988,
+        "rps": 85.7
+      },
+      "JSON Serialization": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.253,
+        "median_ms": 14.71,
+        "p95_ms": 16.048,
+        "p99_ms": 16.227,
+        "min_ms": 0.35,
+        "max_ms": 23.24,
+        "stdev_ms": 6.801,
+        "rps": 97.5
+      }
+    },
+    "throughput": {
+      "health_rps": 103.6,
+      "compute_rps": 78.0
+    }
+  },
+  "Go (1.25.1)": {
+    "binary_size_kb": 5754.5,
+    "endpoints": {
+      "Health Check (Baseline Latency)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.525,
+        "median_ms": 14.802,
+        "p95_ms": 16.047,
+        "p99_ms": 24.182,
+        "min_ms": 0.4,
+        "max_ms": 25.933,
+        "stdev_ms": 6.807,
+        "rps": 95.0
+      },
+      "CPU Compute (1M xorshift+LCG)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 13.064,
+        "median_ms": 15.152,
+        "p95_ms": 27.947,
+        "p99_ms": 30.846,
+        "min_ms": 2.604,
+        "max_ms": 32.47,
+        "stdev_ms": 8.342,
+        "rps": 76.5
+      },
+      "JSON Serialization": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.053,
+        "median_ms": 14.477,
+        "p95_ms": 16.106,
+        "p99_ms": 21.176,
+        "min_ms": 0.405,
+        "max_ms": 25.889,
+        "stdev_ms": 6.988,
+        "rps": 99.5
+      }
+    },
+    "throughput": {
+      "health_rps": 101.6,
+      "compute_rps": 70.9
+    }
+  },
+  "End Language": {
+    "binary_size_kb": 58.9,
+    "endpoints": {
+      "Health Check (Baseline Latency)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 9.018,
+        "median_ms": 13.819,
+        "p95_ms": 16.025,
+        "p99_ms": 16.699,
+        "min_ms": 0.4,
+        "max_ms": 24.983,
+        "stdev_ms": 7.073,
+        "rps": 110.9
+      },
+      "CPU Compute (1M xorshift+LCG)": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 13.593,
+        "median_ms": 15.271,
+        "p95_ms": 27.822,
+        "p99_ms": 28.345,
+        "min_ms": 2.603,
+        "max_ms": 28.393,
+        "stdev_ms": 7.368,
+        "rps": 73.6
+      },
+      "JSON Serialization": {
+        "total": 200,
+        "ok": 200,
+        "errors": 0,
+        "mean_ms": 10.593,
+        "median_ms": 14.777,
+        "p95_ms": 16.062,
+        "p99_ms": 16.708,
+        "min_ms": 0.418,
+        "max_ms": 16.769,
+        "stdev_ms": 6.687,
+        "rps": 94.4
+      }
+    },
+    "throughput": {
+      "health_rps": 107.7,
+      "compute_rps": 80.0
+    }
+  }
+}

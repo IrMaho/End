@@ -1,0 +1,12 @@
+// ============================================================================
+// 👑 END NEXUS FRAMEWORK: MASTER EXPORT GATEWAY
+// ============================================================================
+
+import "./modules/router.end"
+import "./modules/engine.end"
+import "./modules/storage.end"
+import "./modules/security.end"
+
+pub fn nexus_framework_version() str {
+    ret "EndNexus-v1.0.0-Ultra120FPS"
+}

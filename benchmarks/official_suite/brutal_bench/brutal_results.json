@@ -1,0 +1,132 @@
+{
+  "C (GCC 15.2)": {
+    "raymarcher_3d": {
+      "mean_ms": 61.57,
+      "min_ms": 60.97,
+      "max_ms": 62.06,
+      "stdev_ms": 0.44
+    },
+    "binary_trees_depth16": {
+      "mean_ms": 839.46,
+      "min_ms": 833.87,
+      "max_ms": 848.02,
+      "stdev_ms": 6.16
+    },
+    "hft_order_matching": {
+      "mean_ms": 35.95,
+      "min_ms": 35.76,
+      "max_ms": 36.15,
+      "stdev_ms": 0.16
+    },
+    "binary_size_kb": 67.5,
+    "checksums": {
+      "Raymarch_Checksum": "19100484",
+      "BinaryTrees_Checksum": "-174754",
+      "HFT_Volume_Checksum": "884896326"
+    }
+  },
+  "Zig (0.16.0)": {
+    "raymarcher_3d": {
+      "mean_ms": 67.79,
+      "min_ms": 67.09,
+      "max_ms": 68.69,
+      "stdev_ms": 0.62
+    },
+    "binary_trees_depth16": {
+      "mean_ms": 890.24,
+      "min_ms": 885.75,
+      "max_ms": 894.26,
+      "stdev_ms": 3.12
+    },
+    "hft_order_matching": {
+      "mean_ms": 31.49,
+      "min_ms": 30.99,
+      "max_ms": 31.81,
+      "stdev_ms": 0.3
+    },
+    "binary_size_kb": 831.5,
+    "checksums": {
+      "Raymarch_Checksum": "19100484",
+      "BinaryTrees_Checksum": "-174754",
+      "HFT_Volume_Checksum": "884896326"
+    }
+  },
+  "Rust (1.89.0)": {
+    "raymarcher_3d": {
+      "mean_ms": 68.91,
+      "min_ms": 67.84,
+      "max_ms": 69.85,
+      "stdev_ms": 0.72
+    },
+    "binary_trees_depth16": {
+      "mean_ms": 884.74,
+      "min_ms": 875.03,
+      "max_ms": 898.43,
+      "stdev_ms": 10.46
+    },
+    "hft_order_matching": {
+      "mean_ms": 42.32,
+      "min_ms": 41.59,
+      "max_ms": 42.98,
+      "stdev_ms": 0.58
+    },
+    "binary_size_kb": 153.0,
+    "checksums": {
+      "Raymarch_Checksum": "19100484",
+      "BinaryTrees_Checksum": "-174754",
+      "HFT_Volume_Checksum": "884896326"
+    }
+  },
+  "Go (1.25.1)": {
+    "raymarcher_3d": {
+      "mean_ms": 31.65,
+      "min_ms": 31.09,
+      "max_ms": 32.44,
+      "stdev_ms": 0.56
+    },
+    "binary_trees_depth16": {
+      "mean_ms": 628.36,
+      "min_ms": 616.05,
+      "max_ms": 640.2,
+      "stdev_ms": 11.48
+    },
+    "hft_order_matching": {
+      "mean_ms": 33.82,
+      "min_ms": 33.08,
+      "max_ms": 34.7,
+      "stdev_ms": 0.65
+    },
+    "binary_size_kb": 1570.5,
+    "checksums": {
+      "Raymarch_Checksum": "19100484",
+      "BinaryTrees_Checksum": "-174754",
+      "HFT_Volume_Checksum": "884896326"
+    }
+  },
+  "End Language": {
+    "raymarcher_3d": {
+      "mean_ms": 66.84,
+      "min_ms": 65.75,
+      "max_ms": 67.75,
+      "stdev_ms": 0.89
+    },
+    "binary_trees_depth16": {
+      "mean_ms": 785.27,
+      "min_ms": 762.85,
+      "max_ms": 809.71,
+      "stdev_ms": 21.58
+    },
+    "hft_order_matching": {
+      "mean_ms": 24.04,
+      "min_ms": 23.38,
+      "max_ms": 24.95,
+      "stdev_ms": 0.78
+    },
+    "binary_size_kb": 30.0,
+    "checksums": {
+      "Raymarch_Checksum": "19100484",
+      "BinaryTrees_Checksum": "-174754",
+      "HFT_Volume_Checksum": "884896326"
+    }
+  }
+}

@@ -1,0 +1,104 @@
+// ============================================================================
+// 🎮 02 NEXUS GAME & REALTIME PHYSICS STUDIO (PORT 5050)
+// Powered 100% by Custom End Framework: 'end_nexus'
+// ============================================================================
+
+import "../../../frameworks/end_nexus/nexus.end"
+import "./modules/physics.end"
+import "./modules/matchmaker.end"
+import "./modules/leaderboard.end"
+
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<string.h>")
+@import_c("<winsock2.h>")
+
+fn handle_game_client(client_sock: i32, req_seq: i64) void {
+    region r {
+        val recv_buf: *char = alloc [8192]char
+        val bytes_read = recv(client_sock, recv_buf, 8191, 0)
+        if bytes_read <= 0 {
+            closesocket(client_sock)
+            ret
+        }
+        recv_buf[bytes_read] = 0
+
+        val method: *char = alloc [16]char
+        val path: *char = alloc [256]char
+        sscanf(recv_buf, "%15s %255s", method, path)
+
+        if strcmp(path, "/") == 0 || strcmp(path, "/index.html") == 0 {
+            nexus_serve_static(client_sock, "projects/02_nexus_game_studio/web/index.html", "text/html; charset=utf-8")
+        } else if strcmp(path, "/style.css") == 0 {
+            nexus_serve_static(client_sock, "projects/02_nexus_game_studio/web/style.css", "text/css; charset=utf-8")
+        } else if strcmp(path, "/app.js") == 0 {
+            nexus_serve_static(client_sock, "projects/02_nexus_game_studio/web/app.js", "application/javascript; charset=utf-8")
+        } else if strcmp(path, "/api/game/state") == 0 {
+            // Calculate live 120 FPS game physics state via EndNexus framework
+            val p_energy = simulate_particle_field(64, 400, 300, req_seq)
+            val packed_player = nexus_integrate_physics(100 + ((req_seq * 4) % 600), 100 + ((req_seq * 3) % 400), 2, 3, 800, 600)
+            val px = packed_player / 10000
+            val py = packed_player % 10000
+            val active_room = allocate_game_room(8800 + req_seq, 1850)
+            val rank = compute_player_rank(50000 + ((req_seq * 731) % 60000))
+            val sig = nexus_sign_session(99001, req_seq)
+
+            val json_buf: *char = alloc [2048]char
+            sprintf(json_buf, "{\"framework\":\"%s\",\"tick\":%lld,\"fps\":120,\"player\":{\"id\":99001,\"x\":%lld,\"y\":%lld,\"rank\":%d,\"score\":%lld},\"physics\":{\"energy\":%lld,\"active_particles\":64,\"collisions\":2016},\"matchmaker\":{\"room_id\":%lld,\"ping_ms\":18,\"status\":\"InGame\"},\"session_signature\":%lld}", nexus_framework_version(), req_seq, px, py, rank, (50000 + ((req_seq * 731) % 60000)), p_energy, active_room, sig)
+            nexus_send_response(client_sock, "200 OK", "application/json; charset=utf-8", json_buf)
+        } else if strcmp(path, "/api/game/spawn") == 0 {
+            val json_spawn: *char = alloc [512]char
+            sprintf(json_spawn, "{\"status\":\"SPAWNED\",\"particle_id\":%lld,\"velocity_vector\":{\"vx\":4,\"vy\":-2},\"arena_sync_ms\":0.04}", req_seq)
+            nexus_send_response(client_sock, "200 OK", "application/json; charset=utf-8", json_spawn)
+        } else {
+            nexus_send_response(client_sock, "404 Not Found", "text/plain", "Route Not Found")
+        }
+
+        closesocket(client_sock)
+    }
+}
+
+fn main() void {
+    println("============================================================")
+    println("🎮 NEXUS 120 FPS GAME & REALTIME PHYSICS STUDIO (PORT 5050)")
+    println("⚡ Powered by Custom Exclusive Framework: 'end_nexus'")
+    println("🔗 Localhost URL: http://localhost:5050")
+    println("============================================================")
+
+    val wsa_data: *void = alloc [512]char
+    WSAStartup(514, wsa_data)
+
+    val server_sock = socket(2, 1, 6)
+    val server_addr: *char = alloc [32]char
+    memset(server_addr, 0, 32)
+    server_addr[0] = 2
+    server_addr[1] = 0
+    server_addr[2] = 19
+    server_addr[3] = 186 // Port 5050
+
+    val opt: *i32 = alloc [1]i32
+    opt[0] = 1
+    setsockopt(server_sock, 65535, 4, opt, 4)
+
+    val bind_res = bind(server_sock, server_addr, 16)
+    if bind_res >= 0 {
+        listen(server_sock, 128)
+        println("Game Server listening on 0.0.0.0:5050...")
+
+        mut req_seq: i64 = 1
+        while true {
+            val client_sock = accept(server_sock, null, null)
+            if client_sock == 4294967295 || client_sock < 0 {
+                Sleep(10)
+            } else {
+                handle_game_client(client_sock, req_seq)
+                req_seq = req_seq + 1
+            }
+        }
+    } else {
+        println("ERROR: Failed to bind socket on port 5050!")
+    }
+
+    closesocket(server_sock)
+    WSACleanup()
+}

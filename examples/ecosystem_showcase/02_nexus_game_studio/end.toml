@@ -1,0 +1,8 @@
+[package]
+name = "nexus_game_studio"
+version = "1.0.0"
+authors = ["End Developer"]
+entry = "server/main.end"
+
+[dependencies.end_nexus]
+path = "../../frameworks/end_nexus"

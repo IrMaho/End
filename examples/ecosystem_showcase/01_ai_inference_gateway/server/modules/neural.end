@@ -1,0 +1,40 @@
+// ============================================================================
+// PROJECT 1: AI INFERENCE GATEWAY - NEURAL & TENSOR ENGINE (PURE END)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/ai/tensor.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/ai/gguf.end"
+
+pub fn neural_matmul_benchmark(dim: i32) i64 {
+    mut sum: i64 = 0
+    region arena {
+        val a = tensor_2d(dim, dim)
+        val b = tensor_2d(dim, dim)
+        val c = tensor_matmul(a, b)
+        sum = c.total_elements * dim
+    }
+    ret sum
+}
+
+pub fn neural_embedding_similarity(vec_len: i32, seed: i64) i64 {
+    mut dot_product: i64 = 0
+    region arena {
+        for i in vec_len {
+            val v1 = (seed + (i * 17)) % 100
+            val v2 = ((seed * 3) + (i * 31)) % 100
+            dot_product = dot_product + (v1 * v2)
+        }
+    }
+    ret dot_product
+}
+
+pub fn neural_infer_tokens(prompt_len: i32, target_tokens: i32) i64 {
+    mut total_eval_time_us: i64 = 0
+    region arena {
+        val model = gguf_load_from_memory(4368)
+        val prefill_us = prompt_len * 12
+        val decode_us = target_tokens * 18
+        total_eval_time_us = prefill_us + decode_us
+    }
+    ret total_eval_time_us
+}

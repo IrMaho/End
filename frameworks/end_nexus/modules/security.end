@@ -1,0 +1,13 @@
+// ============================================================================
+// END NEXUS FRAMEWORK: CRYPTO & SESSION RATE-LIMITER
+// ============================================================================
+
+pub fn nexus_sign_session(player_id: i64, secret_seed: i64) i64 {
+    val h: i64 = 0x9E3779B9
+    ret (player_id ^ secret_seed) + h
+}
+
+pub fn nexus_rate_check(tokens: i32, cost: i32) bool {
+    if tokens >= cost { ret true }
+    ret false
+}

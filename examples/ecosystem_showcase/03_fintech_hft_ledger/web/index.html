@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💹 HFT Ledger & Order Matching Terminal • End Language</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">💹</div>
+                <div>
+                    <h1>High-Frequency Trading Ledger & Matching Engine</h1>
+                    <p class="subtitle">موتور تطبیق سفارشات مالی ۱۰۰,۰۰۰ TPS و دفترکل توزیع‌شده با زبان End (پورت ۵۰۰۳)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>104,250 TPS • PostgreSQL & Redis RESP3</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Order Matching Terminal -->
+            <div class="card main-trading-card">
+                <div class="card-head">
+                    <h3>⚡ ترمینال ثبت سفارش و تطبیق آنی (Live Order Execution)</h3>
+                    <div class="trade-controls">
+                        <button id="btn-buy" class="btn-buy">🟢 ثبت سفارش خرید (Buy BTC)</button>
+                        <button id="btn-sell" class="btn-sell">🔴 ثبت سفارش فروش (Sell BTC)</button>
+                    </div>
+                </div>
+
+                <div class="orderbook-wrapper">
+                    <div class="ob-column">
+                        <h4 class="ask-header">سفارشات فروش (Asks / Sell Depth)</h4>
+                        <div class="ob-row ask-row"><span>$65,435</span><span>41.6 BTC</span></div>
+                        <div class="ob-row ask-row"><span>$65,430</span><span>22.8 BTC</span></div>
+                        <div class="ob-row ask-row"><span>$65,425</span><span>12.1 BTC</span></div>
+                    </div>
+                    <div class="spread-indicator">
+                        <span>اسپرد بازار: $5.00</span>
+                        <span class="latency-tag">تاخیر تطبیق: 1.8 µs</span>
+                    </div>
+                    <div class="ob-column">
+                        <h4 class="bid-header">سفارشات خرید (Bids / Buy Depth)</h4>
+                        <div class="ob-row bid-row"><span>$65,420</span><span>14.5 BTC</span></div>
+                        <div class="ob-row bid-row"><span>$65,415</span><span>28.2 BTC</span></div>
+                        <div class="ob-row bid-row"><span>$65,410</span><span>55.0 BTC</span></div>
+                    </div>
+                </div>
+
+                <div class="recent-trades">
+                    <h4>آخرین تراکنش‌های ثبت‌شده در بلاک‌چین End:</h4>
+                    <div id="trade-log" class="trade-log">
+                        در انتظار ثبت سفارش جدید...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ledger & DB Metrics -->
+            <div class="card metrics-panel">
+                <h3>📊 آمار دفترکل و پایگاه‌های داده</h3>
+                <div class="metric-item">
+                    <span class="m-label">پروتکل دیتابیس:</span>
+                    <span class="m-val highlight">Pure PostgreSQL 3.0 Wire</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">کش لایه حافظه:</span>
+                    <span class="m-val highlight">Pure Redis RESP3 Zero-Alloc</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">ارتفاع دفترکل (Block Height):</span>
+                    <span class="m-val" id="val-block-height">#142,001</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تراکنش بر ثانیه (TPS):</span>
+                    <span class="m-val" id="val-tps">104,250 TPS</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">هش ریشه مرکل (Merkle Root):</span>
+                    <span class="m-val" id="val-merkle" style="font-size: 11px;">0x8F4A2C19BEEF102</span>
+                </div>
+
+                <div class="ledger-diagram">
+                    <h4>معماری تراکنش‌های مالی End:</h4>
+                    <div class="step-box">1. Zero-Copy TCP Order Packet Ingestion</div>
+                    <div class="step-box">2. In-Memory Atomic Matching (1.8 µs Latency)</div>
+                    <div class="step-box">3. Redis RESP3 Pipeline Broadcast</div>
+                    <div class="step-box highlight-step">4. PostgreSQL 3.0 Binary WAL Append</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+:root {
+    --bg-dark: #060b13;
+    --card-bg: rgba(10, 20, 35, 0.75);
+    --border: rgba(16, 185, 129, 0.2);
+    --green: #10b981;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', 'Outfit', sans-serif; }
+body { background: var(--bg-dark); color: var(--text); min-height: 100vh; position: relative; overflow-x: hidden; }
+
+.glow-bg {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.1), transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08), transparent 50%);
+    pointer-events: none;
+}
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+.app-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 24px; backdrop-filter: blur(12px); margin-bottom: 24px;
+}
+
+.brand { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 32px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); border-radius: 14px; }
+.brand h1 { font-size: 22px; font-weight: 800; }
+.subtitle { font-size: 13px; color: var(--text-muted); }
+
+.status-badge { display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); color: var(--green); padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+.pulse-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(12px); }
+
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.trade-controls { display: flex; gap: 12px; }
+.btn-buy { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+.btn-sell { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+
+.orderbook-wrapper { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.ob-column h4 { font-size: 13px; margin-bottom: 8px; }
+.ask-header { color: var(--red); }
+.bid-header { color: var(--green); }
+.ob-row { display: flex; justify-content: space-between; font-family: 'Fira Code', monospace; font-size: 13px; padding: 4px 8px; border-radius: 4px; margin-bottom: 2px; }
+.ask-row { background: rgba(239, 68, 68, 0.08); color: var(--red); }
+.bid-row { background: rgba(16, 185, 129, 0.08); color: var(--green); }
+
+.spread-indicator { display: flex; justify-content: space-between; padding: 8px 12px; margin: 8px 0; background: rgba(255, 255, 255, 0.04); border-radius: 6px; font-size: 12px; color: var(--text-muted); font-family: 'Fira Code', monospace; }
+.latency-tag { color: var(--cyan); }
+
+.recent-trades h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.trade-log { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'Fira Code', monospace; font-size: 13px; min-height: 100px; color: #cbd5e1; white-space: pre-wrap; line-height: 1.6; }
+
+.metric-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.m-label { font-size: 13px; color: var(--text-muted); }
+.m-val { font-family: 'Fira Code', monospace; font-weight: 600; color: #fff; }
+.highlight { color: var(--green); }
+
+.ledger-diagram { margin-top: 24px; }
+.ledger-diagram h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+.step-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; font-family: 'Fira Code', monospace; }
+.highlight-step { border-color: var(--green); color: var(--green); background: rgba(16, 185, 129, 0.05); }

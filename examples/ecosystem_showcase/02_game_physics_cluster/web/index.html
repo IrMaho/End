@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 120 FPS Game Physics & Raft Cluster • End Language</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🎮</div>
+                <div>
+                    <h1>120 FPS ECS Physics & Raft Cluster Studio</h1>
+                    <p class="subtitle">موتور فیزیک موازی و همگام‌سازی کلاستر توزیع‌شده با زبان End (پورت ۵۰۰۲)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>120.0 FPS • Zero-Alloc Arena</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Game Arena Canvas Card -->
+            <div class="card main-canvas-card">
+                <div class="card-head">
+                    <h3>⚡ شبیه‌ساز فیزیک ذرات در زمان واقعی (Real-Time Physics Arena)</h3>
+                    <div class="canvas-controls">
+                        <button id="btn-burst" class="btn-primary">💥 انفجار ۵,۰۰۰ ذره فیزیکی</button>
+                        <button id="btn-raft" class="btn-secondary">🌐 رای‌گیری لیدر Raft</button>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="game-canvas" width="800" height="420"></canvas>
+                </div>
+
+                <div class="telemetry-bar">
+                    <div>نرخ فریم: <b id="val-fps" class="highlight">120 FPS</b></div>
+                    <div>زمان فریم بک‌اند: <b id="val-frame-time">82.4 µs</b></div>
+                    <div>تعداد ذرات فعال: <b id="val-particles">5,000</b></div>
+                    <div>وضعیت کلاستر: <b id="val-raft-status" class="highlight">Raft Leader (Node 1)</b></div>
+                </div>
+            </div>
+
+            <!-- Cluster & ECS Metrics -->
+            <div class="card metrics-panel">
+                <h3>📊 آمار معماری ECS و کلاستر Raft</h3>
+                <div class="metric-item">
+                    <span class="m-label">پترن معماری:</span>
+                    <span class="m-val highlight">Pure End ECS (`std/patterns/ecs`)</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">انرژی جنبشی فیزیک:</span>
+                    <span class="m-val" id="val-energy">0 J</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">دوره کلاستر (Raft Term):</span>
+                    <span class="m-val" id="val-term">Term 2</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تاخیر همگام‌سازی نودها:</span>
+                    <span class="m-val">18.5 µs</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">خط لوله رندرینگ:</span>
+                    <span class="m-val">WebGPU Native Buffer</span>
+                </div>
+
+                <div class="raft-diagram">
+                    <h4>ساختار کلاستر سرورهای بازی:</h4>
+                    <div class="raft-node leader-node">Node 1 (👑 Leader • Quorum Master)</div>
+                    <div class="raft-node">Node 2 (Follower • Log Synced)</div>
+                    <div class="raft-node">Node 3 (Follower • Log Synced)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

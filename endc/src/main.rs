@@ -596,9 +596,46 @@ fn main() {
                 }
             }
 
+            // Fallback to GCC if Clang / Zig CC failed
+            if !compiled {
+                let mut gcc_args = vec![
+                    "-O3".to_string(),
+                    "-march=native".to_string(),
+                    "-flto".to_string(),
+                    "-funroll-loops".to_string(),
+                    "-fomit-frame-pointer".to_string(),
+                    "-finline-functions".to_string(),
+                    "-fno-math-errno".to_string(),
+                    "-Wno-incompatible-pointer-types".to_string(),
+                    c_file_path.to_str().unwrap().to_string(),
+                ];
+                if is_library_mode {
+                    gcc_args.push("-shared".to_string());
+                }
+                if strip {
+                    gcc_args.push("-s".to_string());
+                }
+                #[cfg(windows)]
+                {
+                    gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-luser32".to_string());
+                    gcc_args.push("-lgdi32".to_string());
+                }
+                gcc_args.push("-o".to_string());
+                gcc_args.push(bin_path.to_str().unwrap().to_string());
+
+                let gcc_refs: Vec<&str> = gcc_args.iter().map(|s| s.as_str()).collect();
+                if let Ok(status) = Command::new("gcc").args(&gcc_refs).status() {
+                    if status.success() {
+                        compiled = true;
+                        println!("{} Native Binary compiled via GCC (Ultra-Optimized) at {:?}", "👑".green().bold(), bin_path);
+                    }
+                }
+            }
+
             if !compiled {
                 println!(
-                    "{} C code is ready at {:?}. To compile natively, run: `zig cc {:?} -o {:?}`",
+                    "{} C code is ready at {:?}. To compile natively, run: `gcc -O3 {:?} -o {:?}`",
                     "ℹ".cyan().bold(),
                     c_file_path,
                     c_file_path,

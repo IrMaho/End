@@ -1,0 +1,21 @@
+// ============================================================================
+// SAMPLE APP 1: CLEAN E-COMMERCE API (REPOSITORY + PIPELINE + DI PATTERNS)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/repository.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/pipeline.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/di.end"
+
+pub fn ecommerce_process_order(item_id: i64, price: i64, qty: i64) i64 {
+    mut total_charged: i64 = 0
+    region arena {
+        val repo = repository_create("orders", "order_id")
+        val di = di_container_create()
+        val pipe = pipeline_create()
+        val p2 = pipeline_pipe(pipe)
+        val p3 = pipeline_pipe(p2)
+        
+        total_charged = (price * qty) + 15
+    }
+    ret total_charged
+}

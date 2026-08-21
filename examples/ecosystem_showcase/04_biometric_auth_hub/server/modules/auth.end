@@ -1,0 +1,37 @@
+// ============================================================================
+// PROJECT 4: BIOMETRIC AUTH HUB & ZERO-TRUST GATEWAY (PURE END)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/auth/passkey.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/auth/oauth2.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/auth/argon2.end"
+
+pub fn auth_verify_passkey_login(user_id: str) bool {
+    mut verified: bool = false
+    region arena {
+        val challenge = passkey_create_challenge("nexus.end.auth", user_id)
+        val cred = passkey_register_credential(challenge, "cred_fido2_key_01", "spki_pub_key")
+        val assertion = passkey_verify_assertion(cred, challenge)
+        verified = assertion.is_valid
+    }
+    ret verified
+}
+
+pub fn auth_generate_oauth_pkce() bool {
+    mut is_ok: bool = false
+    region arena {
+        val pkce = oauth2_generate_pkce()
+        is_ok = pkce.method == "S256"
+    }
+    ret is_ok
+}
+
+pub fn auth_hash_argon2_password(password: str) bool {
+    mut hashed: bool = false
+    region arena {
+        val cfg = argon2_default_config()
+        val hash = argon2_hash_password(password, "random_salt_16b", cfg)
+        hashed = argon2_verify(password, hash)
+    }
+    ret hashed
+}

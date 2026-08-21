@@ -1,0 +1,22 @@
+// ============================================================================
+// SAMPLE APP 3: EVENT-DRIVEN IOT PIPELINE (PIPELINE + FSM + DI PATTERNS)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/pipeline.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/state_machine.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/di.end"
+
+pub fn iot_process_sensor_event(device_id: i64, temp_c: i64, pressure_kpa: i64) i64 {
+    mut anomaly_score: i64 = 0
+    region arena {
+        val pipe = pipeline_create()
+        val p2 = pipeline_pipe(pipe)
+        val fsm = state_machine_create(1) // State: Streaming
+        val di = di_container_create()
+        
+        if temp_c > 85 {
+            anomaly_score = (temp_c - 85) * 10
+        }
+    }
+    ret anomaly_score
+}

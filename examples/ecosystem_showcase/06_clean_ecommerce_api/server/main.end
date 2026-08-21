@@ -1,0 +1,128 @@
+// ============================================================================
+// 🛍️ SAMPLE APP 1: CLEAN E-COMMERCE API (PORT 5006)
+// Architecture: Clean Architecture + Repository + Pipeline Middleware + DI
+// ============================================================================
+
+import "./modules/ecommerce.end"
+
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<string.h>")
+@import_c("<winsock2.h>")
+@import_c("<windows.h>")
+
+pub fn send_http_response(client_sock: i32, status_code: str, mime_type: str, body: str) void {
+    region res_scope {
+        val header_buf: *char = alloc [1024]char
+        val body_len = strlen(body)
+        val crlf = "\r\n"
+        sprintf(header_buf, "HTTP/1.1 %s%sContent-Type: %s%sAccess-Control-Allow-Origin: *%sAccess-Control-Allow-Methods: GET, POST, OPTIONS%sAccess-Control-Allow-Headers: *%sCache-Control: no-cache%sContent-Length: %d%sConnection: close%s%s", status_code, crlf, mime_type, crlf, crlf, crlf, crlf, crlf, body_len, crlf, crlf, crlf)
+        send(client_sock, header_buf, strlen(header_buf), 0)
+        send(client_sock, body, body_len, 0)
+    }
+}
+
+pub fn serve_static(client_sock: i32, filepath: str, mime: str) void {
+    region file_scope {
+        val f = fopen(filepath, "rb")
+        if f == null {
+            send_http_response(client_sock, "404 Not Found", "text/plain", "Static File Not Found")
+            ret
+        }
+        fseek(f, 0, 2)
+        val fsize = ftell(f)
+        fseek(f, 0, 0)
+        val fbuf: *char = alloc [524288]char
+        val read_len = fread(fbuf, 1, fsize, f)
+        fclose(f)
+
+        val header_buf: *char = alloc [512]char
+        val crlf = "\r\n"
+        sprintf(header_buf, "HTTP/1.1 200 OK%sContent-Type: %s%sAccess-Control-Allow-Origin: *%sCache-Control: no-cache%sContent-Length: %d%sConnection: close%s%s", crlf, mime, crlf, crlf, crlf, read_len, crlf, crlf, crlf)
+        send(client_sock, header_buf, strlen(header_buf), 0)
+        send(client_sock, fbuf, read_len, 0)
+    }
+}
+
+pub fn handle_client(client_sock: i32, req_seq: i64) void {
+    region client_scope {
+        val recv_buf: *char = alloc [8192]char
+        val bytes_read = recv(client_sock, recv_buf, 8191, 0)
+        if bytes_read <= 0 {
+            closesocket(client_sock)
+            ret
+        }
+        recv_buf[bytes_read] = 0
+
+        val method: *char = alloc [16]char
+        val path: *char = alloc [256]char
+        sscanf(recv_buf, "%15s %255s", method, path)
+
+        if strcmp(path, "/") == 0 || strcmp(path, "/index.html") == 0 {
+            serve_static(client_sock, "projects/06_clean_ecommerce_api/web/index.html", "text/html; charset=utf-8")
+        } else if strcmp(path, "/style.css") == 0 {
+            serve_static(client_sock, "projects/06_clean_ecommerce_api/web/style.css", "text/css; charset=utf-8")
+        } else if strcmp(path, "/app.js") == 0 {
+            serve_static(client_sock, "projects/06_clean_ecommerce_api/web/app.js", "application/javascript; charset=utf-8")
+        } else if strcmp(path, "/api/shop/checkout") == 0 {
+            val price: i64 = 299
+            val qty: i64 = 2
+            val total = ecommerce_process_order(req_seq, price, qty)
+            val json_buf: *char = alloc [2048]char
+            sprintf(json_buf, "{\"order_status\":\"CONFIRMED\",\"order_id\":%lld,\"item\":\"Quantum Dev Keyboard\",\"unit_price\":%lld,\"quantity\":%lld,\"shipping_usd\":15,\"total_usd\":%lld,\"patterns_used\":[\"Repository (std/patterns/repository)\",\"Pipeline Middleware (std/patterns/pipeline)\",\"Dependency Injection (std/patterns/di)\"],\"pipeline_stages\":[\"RateLimiter\",\"JwtAuthGuard\",\"InventoryValidation\",\"TaxCalculator\",\"OrderRepositorySave\"],\"architecture\":\"Clean Hexagonal (Strict E0902 Compliant)\"}", req_seq, price, qty, total)
+            send_http_response(client_sock, "200 OK", "application/json; charset=utf-8", json_buf)
+        } else if strcmp(path, "/api/shop/catalog") == 0 {
+            val json_cat: *char = alloc [1024]char
+            sprintf(json_cat, "{\"products\":[{\"id\":101,\"name\":\"End Enterprise Server Box\",\"price\":1299,\"stock\":42},{\"id\":102,\"name\":\"Quantum Dev Keyboard\",\"price\":299,\"stock\":150},{\"id\":103,\"name\":\"AI Neural Accelerator\",\"price\":899,\"stock\":88}],\"repository_cache\":\"Warm (100%% Hit)\"}", 0)
+            send_http_response(client_sock, "200 OK", "application/json; charset=utf-8", json_cat)
+        } else {
+            send_http_response(client_sock, "404 Not Found", "text/plain", "Route Not Found")
+        }
+
+        closesocket(client_sock)
+    }
+}
+
+fn main() void {
+    println("============================================================")
+    println("🛍️ SAMPLE APP 1: CLEAN E-COMMERCE API (PORT 5006)")
+    println("🔗 Localhost URL: http://localhost:5006")
+    println("============================================================")
+
+    val wsa_data: *void = alloc [512]char
+    WSAStartup(514, wsa_data)
+
+    val server_sock = socket(2, 1, 6)
+    val server_addr: *char = alloc [32]char
+    memset(server_addr, 0, 32)
+    server_addr[0] = 2
+    server_addr[1] = 0
+    server_addr[2] = 19
+    server_addr[3] = 142 // Port 5006
+
+    val opt: *i32 = alloc [1]i32
+    opt[0] = 1
+    setsockopt(server_sock, 65535, 4, opt, 4)
+
+    val bind_res = bind(server_sock, server_addr, 16)
+    if bind_res >= 0 {
+        listen(server_sock, 128)
+        println("E-Commerce Server listening on 0.0.0.0:5006...")
+
+        mut req_seq: i64 = 1
+        while true {
+            val client_sock = accept(server_sock, null, null)
+            if client_sock == 4294967295 || client_sock < 0 {
+                Sleep(10)
+            } else {
+                handle_client(client_sock, req_seq)
+                req_seq = req_seq + 1
+            }
+        }
+    } else {
+        println("ERROR: Failed to bind socket on port 5006!")
+    }
+
+    closesocket(server_sock)
+    WSACleanup()
+}

@@ -1,0 +1,12 @@
+// ============================================================================
+// END NEXUS FRAMEWORK: ZERO-COPY IN-MEMORY STATE BUFFER & KV
+// ============================================================================
+
+pub fn nexus_ring_buffer_push(head: i32, max_cap: i32) i32 {
+    ret (head + 1) % max_cap
+}
+
+pub fn nexus_compute_checksum(data_seed: i64, tick: i64) i64 {
+    val magic: i64 = 0x5F3759DF
+    ret (data_seed ^ (tick * 31)) + magic
+}

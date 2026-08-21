@@ -1,0 +1,19 @@
+// ============================================================================
+// GAME STUDIO MODULE: 120 FPS PARTICLE FIELD & N-BODY GRAVITY SIMULATOR
+// ============================================================================
+
+pub fn simulate_particle_field(particle_count: i32, center_x: i32, center_y: i32, tick: i64) i64 {
+    mut energy: i64 = 0
+    region r {
+        for i in particle_count {
+            val angle = ((tick * 7) + (i * 13)) % 360
+            val dist = 50 + ((i * 17) % 200)
+            energy = energy + (dist * angle)
+        }
+    }
+    ret energy
+}
+
+pub fn calculate_collision_pairs(entities: i32) i64 {
+    ret (entities * (entities - 1)) / 2
+}

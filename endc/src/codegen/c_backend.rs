@@ -8,6 +8,7 @@ pub struct CBackend {
     enums: Vec<EnumDef>,
     is_lib: bool,
     pub var_types: HashMap<String, Type>,
+    pub active_regions: Vec<String>,
 }
 
 fn escape_c_string(s: &str) -> String {
@@ -35,6 +36,7 @@ impl CBackend {
             enums: Vec::new(),
             is_lib: false,
             var_types: HashMap::new(),
+            active_regions: Vec::new(),
         }
     }
 
@@ -132,25 +134,46 @@ impl CBackend {
         self.output.push_str("    char*: _end_print_str, \\\n");
         self.output.push_str("    const char*: _end_print_str)(X)\n\n");
 
-        // Runtime memory primitives (Region & Allocator support)
-        self.output.push_str("/* End Memory Primitives (64-byte Cache-Line Aligned) */\n");
+        // Runtime memory primitives (Hardware Scratchpad TLS Bump Arena)
+        self.output.push_str("/* End Zero-Cost Memory Primitives (64-byte Cache-Line Aligned) */\n");
         self.output.push_str("typedef struct { void* (*alloc)(size_t); void (*free)(void*); } EndAllocator;\n");
-        self.output.push_str("typedef struct { char* buffer; size_t capacity; size_t offset; } EndArena;\n");
-        self.output.push_str("static EndArena* end_arena_create(size_t cap) {\n");
+        self.output.push_str("typedef struct { char* buffer; size_t capacity; size_t offset; bool is_heap; } EndArena;\n");
+        self.output.push_str("#if defined(_MSC_VER)\n");
+        self.output.push_str("    static __declspec(thread) char _end_tls_scratchpad[4 * 1024 * 1024];\n");
+        self.output.push_str("    static __declspec(thread) size_t _end_tls_offset = 0;\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("    static __thread char _end_tls_scratchpad[4 * 1024 * 1024];\n");
+        self.output.push_str("    static __thread size_t _end_tls_offset = 0;\n");
+        self.output.push_str("#endif\n\n");
+        self.output.push_str("static inline EndArena* end_arena_create(size_t cap) {\n");
+        self.output.push_str("    if (_end_tls_offset + sizeof(EndArena) + cap <= sizeof(_end_tls_scratchpad)) {\n");
+        self.output.push_str("        EndArena* a = (EndArena*)(_end_tls_scratchpad + _end_tls_offset);\n");
+        self.output.push_str("        _end_tls_offset += (sizeof(EndArena) + 63) & ~63;\n");
+        self.output.push_str("        a->buffer = _end_tls_scratchpad + _end_tls_offset;\n");
+        self.output.push_str("        _end_tls_offset += (cap + 63) & ~63;\n");
+        self.output.push_str("        a->capacity = cap;\n");
+        self.output.push_str("        a->offset = 0;\n");
+        self.output.push_str("        a->is_heap = false;\n");
+        self.output.push_str("        return a;\n");
+        self.output.push_str("    }\n");
         self.output.push_str("    EndArena* a = (EndArena*)malloc(sizeof(EndArena));\n");
         self.output.push_str("    a->buffer = (char*)malloc(cap);\n");
         self.output.push_str("    a->capacity = cap;\n");
         self.output.push_str("    a->offset = 0;\n");
+        self.output.push_str("    a->is_heap = true;\n");
         self.output.push_str("    return a;\n");
         self.output.push_str("}\n");
-        self.output.push_str("static void* end_arena_alloc(EndArena* a, size_t size) {\n");
-        self.output.push_str("    if (a->offset + size > a->capacity) return NULL;\n");
+        self.output.push_str("static inline void* end_arena_alloc(EndArena* a, size_t size) {\n");
+        self.output.push_str("    size_t aligned = (size + 63) & ~63;\n");
+        self.output.push_str("    if (a->offset + aligned > a->capacity) return NULL;\n");
         self.output.push_str("    void* ptr = (void*)(a->buffer + a->offset);\n");
-        self.output.push_str("    a->offset += (size + 63) & ~63;\n");
+        self.output.push_str("    a->offset += aligned;\n");
         self.output.push_str("    return ptr;\n");
         self.output.push_str("}\n");
-        self.output.push_str("static void end_arena_destroy(EndArena* a) {\n");
-        self.output.push_str("    if (a) { free(a->buffer); free(a); }\n");
+        self.output.push_str("static inline void end_arena_destroy(EndArena* a) {\n");
+        self.output.push_str("    if (!a) return;\n");
+        self.output.push_str("    if (a->is_heap) { free(a->buffer); free(a); }\n");
+        self.output.push_str("    else { _end_tls_offset = 0; }\n");
         self.output.push_str("}\n\n");
 
         // Native Desktop Windowing & GUI Runtime
@@ -720,15 +743,17 @@ impl CBackend {
                     name
                 ));
                 self.output.push_str(&format!(
-                    "{}EndArena* region_{} = end_arena_create(64 * 1024);\n",
+                    "{}EndArena* region_{} = end_arena_create(512 * 1024);\n",
                     self.indent(),
                     name
                 ));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.active_regions.push(name.clone());
                 for s in &body.statements {
                     self.gen_statement(s);
                 }
+                self.active_regions.pop();
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
                 self.output.push_str(&format!(
@@ -881,9 +906,18 @@ Statement::Spawn { call, .. } => {
                     format!("({}){{ .tag = {}_{} }}", en, en, variant_name)
                 }
             }
-            Expression::Alloc { target_type, .. } => match target_type {
-                Type::Array(inner, size) => format!("({}*)malloc({} * sizeof({}))", self.map_type(inner), size, self.map_type(inner)),
-                _ => format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type)),
+            Expression::Alloc { target_type, .. } => {
+                if let Some(curr_region) = self.active_regions.last() {
+                    match target_type {
+                        Type::Array(inner, size) => format!("({}*)end_arena_alloc(region_{}, (size_t)({}) * sizeof({}))", self.map_type(inner), curr_region, size, self.map_type(inner)),
+                        _ => format!("({}*)end_arena_alloc(region_{}, sizeof({}))", self.map_type(target_type), curr_region, self.map_type(target_type)),
+                    }
+                } else {
+                    match target_type {
+                        Type::Array(inner, size) => format!("({}*)malloc((size_t)({}) * sizeof({}))", self.map_type(inner), size, self.map_type(inner)),
+                        _ => format!("({}*)malloc(sizeof({}))", self.map_type(target_type), self.map_type(target_type)),
+                    }
+                }
             }
             Expression::Promote { expr, target_region, .. } => {
                 let e = self.gen_expression(expr);

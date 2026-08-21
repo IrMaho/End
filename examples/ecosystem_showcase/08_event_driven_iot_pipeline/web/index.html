@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 Event-Driven IoT Pipeline SCADA • End Language</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🏭</div>
+                <div>
+                    <h1>Event-Driven Industrial IoT Pipeline & SCADA Control</h1>
+                    <p class="subtitle">سیستم مانیتورینگ بلادرنگ سنسورها با پترن‌های Pipeline + FSM + DI در زبان End
+                        (پورت ۵۰۰۸)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>Turbine Node 08 • FSM Active</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Sensor Telemetry Screen -->
+            <div class="card scada-card">
+                <div class="card-head">
+                    <h3>⚡ جریان رویدادهای زنده سنسورها (Real-Time Ingestion Pipeline)</h3>
+                    <button id="btn-sample" class="btn-primary">📡 ارسال پکت تلمتری سنسور (Stream Sensor Event)</button>
+                </div>
+
+                <div class="gauges-grid">
+                    <div class="gauge-box">
+                        <h4>دما (Temperature)</h4>
+                        <div id="val-temp" class="gauge-value">79 °C</div>
+                        <div class="gauge-bar">
+                            <div id="bar-temp" class="bar-fill" style="width: 79%;"></div>
+                        </div>
+                    </div>
+                    <div class="gauge-box">
+                        <h4>فشار (Pressure)</h4>
+                        <div id="val-pressure" class="gauge-value">1,024 kPa</div>
+                        <div class="gauge-bar">
+                            <div id="bar-pressure" class="bar-fill" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                    <div class="gauge-box">
+                        <h4>شاخص ناهنجاری (Anomaly)</h4>
+                        <div id="val-anomaly" class="gauge-value highlight">0.00 (Normal)</div>
+                        <div class="gauge-bar">
+                            <div id="bar-anomaly" class="bar-fill" style="width: 5%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="iot-log-box">
+                    <h4>خروجی پایپ‌لاین فیلترینگ و هشدار (SCADA Event Log):</h4>
+                    <div id="iot-output" class="iot-output">
+                        در حال گوش دادن به پکت‌های شبکه صنعتی...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patterns & FSM Engine -->
+            <div class="card metrics-panel">
+                <h3>🏛️ الگوهای طراحی سیستم Event-Driven</h3>
+                <div class="metric-item">
+                    <span class="m-label">الگوی خط لوله (Pipeline):</span>
+                    <span class="m-val highlight">std/patterns/pipeline</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">ماشین حالت سخت‌افزار:</span>
+                    <span class="m-val highlight">std/patterns/state_machine</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تزریق وابستگی سنسور:</span>
+                    <span class="m-val highlight">std/patterns/di</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تاخیر پردازش پکت:</span>
+                    <span class="m-val">3.4 µs</span>
+                </div>
+
+                <div class="iot-fsm-diagram">
+                    <h4>وضعیت‌های چرخه حیات سنسور (FSM States):</h4>
+                    <div class="iot-node">1. DeviceState::Offline</div>
+                    <div class="iot-node active-iot" id="fsm-node-display">2. DeviceState::NormalStreaming</div>
+                    <div class="iot-node">3. DeviceState::OverheatAlert</div>
+                    <div class="iot-node">4. DeviceState::SafeShutdown</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

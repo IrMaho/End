@@ -1,0 +1,65 @@
+{
+  "modules": {
+    "Hardware & Vitals": [
+      {"id": "sys_cpu_load", "name": "CPU Core Load Vector", "unit": "% Load", "desc": "محاسبه بار پردازشی هشت هسته در کش سخت‌افزاری", "default_args": [8, 100]},
+      {"id": "sys_memory_arena", "name": "Zero-GC Arena Allocator", "unit": "Bytes (64-byte Aligned)", "desc": "تخصیص بلوک‌های ۶۴ بایتی تراز شده بدون زباله‌روب", "default_args": [1024]},
+      {"id": "sys_gpu_compute", "name": "GPU Compute Shaders", "unit": "GFLOPS", "desc": "شبیه‌سازی خطوط رندر سایه‌زن گرافیکی", "default_args": [64, 45]},
+      {"id": "sys_disk_io", "name": "NVMe Direct Storage I/O", "unit": "IOPS", "desc": "محاسبه توان عملیاتی خواندن/نوشتن مستقیم دیسک", "default_args": [256, 1]},
+      {"id": "sys_cache_alignment", "name": "L1/L2 Cache Line Verifier", "unit": "Aligned Cycles", "desc": "تایید تراز خطوط کش ۶۴ بایتی پردازنده", "default_args": [512]},
+      {"id": "sys_zero_gc_pauses", "name": "GC Stop-the-World Monitor", "unit": "0.00 ns Pause", "desc": "سنجش مکث زباله‌روب (کاملاً صفر در زبان End)", "default_args": [1000]},
+      {"id": "sys_thermal_throttle", "name": "Dynamic Thermal Throttler", "unit": "% Throttle", "desc": "سنسور حرارتی و پیش‌بینی توان حرارتی هسته‌ها", "default_args": [74]},
+      {"id": "sys_uptime_ticks", "name": "High-Res Hardware Timer", "unit": "Microseconds", "desc": "تایمر نانوثانیه‌ای سخت‌افزاری پایدار", "default_args": [3600]},
+      {"id": "sys_context_switches", "name": "Zero-Cost Context Switcher", "unit": "Switches/sec", "desc": "شبیه‌سازی تعویض کانتکست فوق‌سریع در فیبرها", "default_args": [32]},
+      {"id": "sys_overall_health", "name": "Holistic Machine Health", "unit": "% Score", "desc": "ارزیابی سلامت سخت‌افزار با ضریب وزنی Region", "default_args": [28, 42, 55]}
+    ],
+    "Network & Mesh": [
+      {"id": "net_throughput_rps", "name": "Mesh Throughput RPS", "unit": "RPS", "desc": "محاسبه توان انتقال شبکه در نودهای کلاستر", "default_args": [15000, 8]},
+      {"id": "net_bandwidth_mbps", "name": "Backbone Bandwidth", "unit": "Mbps", "desc": "پهنای باند خطی بسته‌های داده بدون تاخیر", "default_args": [8000, 12345]},
+      {"id": "net_packet_loss", "name": "Jitter & Packet Drop Metric", "unit": "PPM (Parts Per Million)", "desc": "محاسبه افت پکت در ترافیک پرفشار", "default_args": [2]},
+      {"id": "net_latency_matrix", "name": "Inter-Node Latency Matrix", "unit": "µs Round-Trip", "desc": "ماتریس تاخیر نود به نود در شبکه محلی", "default_args": [1, 7]},
+      {"id": "net_dns_resolution", "name": "Zero-Copy DNS Resolver", "unit": "µs Duration", "desc": "پردازش کوئری‌های DNS در حافظه آرنا", "default_args": [500]},
+      {"id": "net_active_sockets", "name": "Epoll/IOCP Socket Multiplexer", "unit": "Sockets", "desc": "توزیع کلاینت‌ها روی سوکت‌های غیرمسدودکننده", "default_args": [2048]},
+      {"id": "net_edge_gateway", "name": "Edge Gateway Route Optimizer", "unit": "Route Weight", "desc": "مسیریابی هوشمند لبه با کمترین سربار", "default_args": [64]},
+      {"id": "net_geo_routing", "name": "Anycast Geo-Routing Proximity", "unit": "Km Proximity", "desc": "محاسبه نزدیک‌ترین سرور جغرافیایی", "default_args": [12]},
+      {"id": "net_bgp_peers", "name": "BGP Peer Table Synchronizer", "unit": "Prefixes", "desc": "همگام‌سازی جدول پیشوندهای روتینگ اینترنت", "default_args": [16]},
+      {"id": "net_websocket_heartbeat", "name": "WebSocket Realtime Pings", "unit": "Frames/sec", "desc": "پایش فریم‌های زنده وب‌سوکت با حافظه تراز", "default_args": [1000]}
+    ],
+    "Security & Crypto": [
+      {"id": "sec_sha256_bench", "name": "SIMD SHA-256 Digest Engine", "unit": "Hash Digest", "desc": "محاسبه چک‌سام SHA256 با وکتورهای سیمدی", "default_args": [4096]},
+      {"id": "sec_aes_latency", "name": "Hardware AES-GCM Pipeline", "unit": "Nanoseconds", "desc": "رمزنگاری بلادرنگ سخت‌افزاری در سطح نانوثانیه", "default_args": [1024]},
+      {"id": "sec_token_verifier", "name": "Zero-Alloc JWT Token Verifier", "unit": "Verified (1=True)", "desc": "اعتبارسنجی توکن دسترسی در آرنای موقت", "default_args": [884422]},
+      {"id": "sec_anomaly_score", "name": "AI Intrusion Anomaly Detector", "unit": "% Anomaly", "desc": "تشخیص نفوذ و رفتارهای غیرعادی ترافیک", "default_args": [10000, 25]},
+      {"id": "sec_threat_radar", "name": "Threat Intelligence Radar", "unit": "Threat Level", "desc": "رادار شناسایی حملات سایبری و بدافزارها", "default_args": [987654]},
+      {"id": "sec_rate_limiter", "name": "Leaky Bucket Rate Limiter", "unit": "Allowed (1/0)", "desc": "کنترل نرخ درخواست‌های آی‌پی با سرعت فوق‌العاده", "default_args": [192168, 120]},
+      {"id": "sec_acl_eval", "name": "Bitmask RBAC Access Control", "unit": "Authorized (1/0)", "desc": "بررسی دسترسی نقش‌ها با عملیات بیتی بدون شرط", "default_args": [3, 15]},
+      {"id": "sec_ip_blacklist", "name": "O(1) IP Firewall Filter", "unit": "Blocked (1/0)", "desc": "فیلترینگ لیست سیاه در کسری از میکروثانیه", "default_args": [104281]},
+      {"id": "sec_zero_trust_score", "name": "Zero-Trust Device Scorer", "unit": "Trust Score", "desc": "امتیازدهی امنیتی دستگاه بدون نگه‌داری نشست", "default_args": [554433]},
+      {"id": "sec_tls_handshake", "name": "TLS 1.3 Fast Handshake", "unit": "µs Handshake", "desc": "هندشیک امنیتی در زمان رکوردی", "default_args": [4]}
+    ],
+    "Math & Analytics": [
+      {"id": "math_matrix_multiply", "name": "Cache-Oblivious Matrix Multiply", "unit": "FLOPs", "desc": "ضرب ماتریس‌های بزرگ روی کش سخت‌افزاری", "default_args": [64]},
+      {"id": "math_fast_fourier", "name": "Fast Fourier Transform (FFT)", "unit": "Operations", "desc": "تبدیل سریع فوریه برای پردازش سیگنال و داده", "default_args": [2048]},
+      {"id": "math_monte_carlo", "name": "Monte Carlo Risk Simulator", "unit": "Hits in Circle", "desc": "شبیه‌سازی مونت‌کارلو برای پیش‌بینی ریسک", "default_args": [50000]},
+      {"id": "math_linear_regression", "name": "Streaming Linear Regression", "unit": "Sum XY", "desc": "رگرسیون خطی زنده بدون تخصیص آرایه اضافه", "default_args": [5000]},
+      {"id": "math_sort_benchmark", "name": "Zero-Alloc Dual-Pivot Sort", "unit": "Comparisons", "desc": "مرتب‌سازی سریع در آرنای موقت", "default_args": [10000]},
+      {"id": "math_lossless_compress", "name": "LZ4-Style Stream Compressor", "unit": "Compressed Bytes", "desc": "فشرده‌سازی جریان داده با نسبت بالا", "default_args": [1024]},
+      {"id": "math_prime_sieve", "name": "Sieve of Eratosthenes", "unit": "Primes Found", "desc": "غربال اعداد اول با استفاده از بیتی‌های سریع", "default_args": [20000]},
+      {"id": "math_vector_dot", "name": "Vector Dot Product (SIMD)", "unit": "Scalar Result", "desc": "محاسبه ضرب داخلی بردارها با موازی‌سازی", "default_args": [8192]},
+      {"id": "math_simd_bandwidth", "name": "Memory Bandwidth Benchmark", "unit": "Bytes Processed", "desc": "سنجش پهنای باند حافظه اصلی در هر ثانیه", "default_args": [128]},
+      {"id": "math_graph_pathfind", "name": "Dijkstra Graph Pathfinding", "unit": "Edges Traversed", "desc": "پیمایش سریع کوتاه‌ترین مسیر روی گراف شبکه", "default_args": [1000]}
+    ],
+    "Storage & DB Engine": [
+      {"id": "db_kv_cache_hit", "name": "In-Memory KV Cache Ratio", "unit": "Cache Hits", "desc": "نرخ پاسخ‌دهی کلید/مقدار درون حافظه موقت", "default_args": [10000]},
+      {"id": "db_wal_sync", "name": "Write-Ahead Log (WAL) Sync", "unit": "µs Sync Time", "desc": "همگام‌سازی لاگ تراکنش‌ها روی دیسک", "default_args": [500]},
+      {"id": "db_tps_throughput", "name": "ACID Transaction Engine", "unit": "TPS", "desc": "تراکنش‌های اسید پایدار در هر ثانیه", "default_args": [16]},
+      {"id": "db_shard_balance", "name": "Consistent Hash Shard Balancer", "unit": "Rows/Shard", "desc": "توزیع بار رکوردها بین شاردها", "default_args": [8, 1000000]},
+      {"id": "db_buffer_pool_hit", "name": "B-Tree Buffer Pool Hits", "unit": "% Hit Ratio", "desc": "درصد نگه‌داری صفحات بی‌ترای در بافر پول", "default_args": [4096]},
+      {"id": "db_query_planner", "name": "Cost-Based Query Optimizer", "unit": "Cost Points", "desc": "تخمین هزینه و بهینه‌سازی مسیر کوئری SQL", "default_args": [4]},
+      {"id": "db_bloom_filter", "name": "Probabilistic Bloom Filter", "unit": "Exists (1/0)", "desc": "تشخیص احتمال وجود کلید بدون رجوع به دیسک", "default_args": [65536, 123456]},
+      {"id": "db_lsm_compaction", "name": "LSM-Tree Compactor Engine", "unit": "MB Reclaimed", "desc": "فشرده‌سازی جدول‌های SSTable در پایگاه داده", "default_args": [12]},
+      {"id": "db_key_eviction", "name": "LRU/LFU Key Eviction Policy", "unit": "Evicted Keys", "desc": "آزادسازی کلیدهای منقضی شده با سیاست LRU", "default_args": [10000, 450]},
+      {"id": "db_lock_contention", "name": "Row-Level Lock Contention", "unit": "ns Wait Time", "desc": "مدیریت قفل‌های چندتردی با حداقل انتظار", "default_args": [64, 16]}
+    ]
+  },
+  "total": 50
+}

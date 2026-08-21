@@ -1,0 +1,25 @@
+// ============================================================================
+// PROJECT 5: CLOUD OBSERVABILITY SENTINEL MESH (PURE END)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/collections/ring_buffer.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/test/patrol.end"
+
+pub fn sentinel_sweep_health(iterations: i32) bool {
+    mut is_healthy: bool = true
+    region arena {
+        val patrol = patrol_create("mesh_sentinel", iterations)
+        is_healthy = patrol.is_healthy
+    }
+    ret is_healthy
+}
+
+pub fn sentinel_ring_event_count(cap: i64) i64 {
+    mut count: i64 = 0
+    region arena {
+        val ring = ring_create(cap)
+        val r2 = ring_push(ring, 1001)
+        count = r2.head
+    }
+    ret count
+}

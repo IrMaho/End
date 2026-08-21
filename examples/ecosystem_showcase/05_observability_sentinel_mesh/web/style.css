@@ -1,0 +1,65 @@
+:root {
+    --bg-dark: #040810;
+    --card-bg: rgba(8, 18, 36, 0.75);
+    --border: rgba(59, 130, 246, 0.2);
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --green: #10b981;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', 'Outfit', sans-serif; }
+body { background: var(--bg-dark); color: var(--text); min-height: 100vh; position: relative; overflow-x: hidden; }
+
+.glow-bg {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.12), transparent 50%),
+                radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.08), transparent 50%);
+    pointer-events: none;
+}
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+.app-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 24px; backdrop-filter: blur(12px); margin-bottom: 24px;
+}
+
+.brand { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 32px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue); border-radius: 14px; }
+.brand h1 { font-size: 22px; font-weight: 800; }
+.subtitle { font-size: 13px; color: var(--text-muted); }
+
+.status-badge { display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); color: var(--green); padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+.pulse-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(12px); }
+
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.mesh-actions { display: flex; gap: 10px; }
+.btn-sweep { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.btn-ring { background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+
+.services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.service-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; }
+.active-service { border-color: var(--blue); background: rgba(59, 130, 246, 0.08); }
+.s-top { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; margin-bottom: 6px; }
+.status-online { color: var(--green); font-size: 11px; font-family: 'Fira Code', monospace; }
+.s-desc { font-size: 11px; color: var(--text-muted); font-family: 'Fira Code', monospace; }
+
+.patrol-log-wrapper h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.patrol-output { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 13px; min-height: 100px; color: #cbd5e1; white-space: pre-wrap; line-height: 1.6; }
+
+.metric-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.m-label { font-size: 13px; color: var(--text-muted); }
+.m-val { font-family: 'Fira Code', monospace; font-weight: 600; color: #fff; }
+.highlight { color: var(--green); }
+
+.mesh-architecture { margin-top: 24px; }
+.mesh-architecture h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+.mesh-step { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; font-family: 'Fira Code', monospace; }
+.highlight-mesh { border-color: var(--green); color: var(--green); background: rgba(16, 185, 129, 0.05); }

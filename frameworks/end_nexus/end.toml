@@ -1,0 +1,8 @@
+[package]
+name = "end_nexus"
+version = "1.0.0"
+authors = ["End Core Architecture Team"]
+description = "Exclusive Ultra-High Performance 120 FPS Modular Real-Time Game & Microservices Framework for End Language"
+entry = "nexus.end"
+
+[dependencies]

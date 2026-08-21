@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Edge AI Tensor Inference Gateway • End Language</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🧠</div>
+                <div>
+                    <h1>Edge AI Tensor Inference Gateway</h1>
+                    <p class="subtitle">موتور استنتاج محلی مدل‌های زبانی کوانتیزه با زبان End (پورت ۵۰۰۱)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>Zero-GC Tensor Arena • Active</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Inference Console Card -->
+            <div class="card main-console">
+                <div class="card-head">
+                    <h3>⚡ کنسول استنتاج بلادرنگ هوش مصنوعی (Local AI Prompt Engine)</h3>
+                    <span class="chip">LLaMA 3 (Q4_K MMap)</span>
+                </div>
+                <div class="prompt-box">
+                    <label>پرامپت ورودی به مدل:</label>
+                    <textarea id="ai-prompt" rows="3">الگوریتم ضرب ماتریسی SIMD در زبان End چگونه کار می‌کند؟</textarea>
+                    <div class="prompt-actions">
+                        <button id="btn-infer" class="btn-primary">🚀 اجرای استنتاج هوش مصنوعی (Infer Tokens)</button>
+                        <button id="btn-sim" class="btn-secondary">🔍 محاسبه شباهت برداری (Cosine Similarity)</button>
+                    </div>
+                </div>
+
+                <div class="output-box">
+                    <div class="output-head">
+                        <span>خروجی تولید شده توسط هسته نیتیو End:</span>
+                        <span id="infer-speed" class="speed-tag">0 tokens/sec</span>
+                    </div>
+                    <div id="ai-output" class="output-content">
+                        در انتظار ارسال پرامپت...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="card metrics-panel">
+                <h3>📊 بنچمارک بلادرنگ تنسور و سخت‌افزار</h3>
+                <div class="metric-item">
+                    <span class="m-label">زمان اجرای استنتاج (Latency):</span>
+                    <span class="m-val" id="val-latency">0 µs</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تعداد توکن‌های خروجی:</span>
+                    <span class="m-val" id="val-tokens">0 tok</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">امتیاز ضرب ماتریسی (MatMul):</span>
+                    <span class="m-val" id="val-matmul">0 GFLOPS</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">وقفه جمع‌آوری زباله (GC Pause):</span>
+                    <span class="m-val highlight">0.000 ms (Zero-GC)</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">شتاب‌دهنده سخت‌افزاری:</span>
+                    <span class="m-val">AVX-512 / ARM NEON</span>
+                </div>
+
+                <div class="layer-diagram">
+                    <h4>معماری لایه‌ای Pure End Tensor:</h4>
+                    <div class="layer">Input Buffer → Contiguous Memory Layout</div>
+                    <div class="layer">SIMD MatMul Kernel (AVX-512 Vectorized)</div>
+                    <div class="layer">Quantized Dequantization (Q4_K Block MMap)</div>
+                    <div class="layer highlight-layer">Zero-GC Local Arena Destruction (0 µs overhead)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

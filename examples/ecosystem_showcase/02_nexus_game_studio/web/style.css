@@ -1,0 +1,305 @@
+:root {
+    --bg-main: #05070e;
+    --card-bg: rgba(12, 18, 34, 0.75);
+    --border-color: rgba(0, 240, 255, 0.15);
+    --cyan: #00f0ff;
+    --magenta: #ff007f;
+    --yellow: #ffe600;
+    --green: #00ffaa;
+    --text: #f0f4ff;
+    --text-muted: #7e8cba;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Vazirmatn', 'Outfit', sans-serif;
+}
+
+body {
+    background: var(--bg-main);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+.stars-bg {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.08), transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 127, 0.06), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.app-shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    margin-bottom: 24px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo-orb {
+    font-size: 32px;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--cyan);
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.brand h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.badge-framework {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 0, 127, 0.2));
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+}
+
+.header-pills {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 14px;
+    border-radius: 30px;
+    font-size: 13px;
+}
+
+.pill-dot.live {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.btn-hub-link {
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    padding: 8px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.btn-hub-link:hover {
+    background: var(--cyan);
+    color: #000;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.studio-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+}
+
+.panel-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    padding: 20px;
+}
+
+.card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.card-head h3 {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.canvas-fps-badge {
+    background: rgba(0, 255, 170, 0.1);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+
+.canvas-wrapper {
+    background: #020408;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+#game-canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.canvas-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action {
+    flex: 1;
+    background: linear-gradient(135deg, var(--cyan), #00a2ff);
+    color: #000;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.btn-action.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.btn-action.accent {
+    background: linear-gradient(135deg, var(--magenta), #ff4d00);
+    color: #fff;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-box .lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.stat-box .val {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Fira Code', monospace;
+}
+
+.stat-box .val.highlight { color: var(--yellow); }
+.stat-box .val.success { color: var(--green); }
+
+.engine-features {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.engine-features h4 {
+    font-size: 13px;
+    color: var(--cyan);
+    margin-bottom: 10px;
+}
+
+.engine-features ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.engine-features li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.check { color: var(--green); font-weight: bold; }
+
+.code-preview {
+    background: #020408;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.code-preview code {
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}

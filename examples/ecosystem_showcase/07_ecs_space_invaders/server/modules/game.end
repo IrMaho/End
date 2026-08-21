@@ -1,0 +1,17 @@
+// ============================================================================
+// SAMPLE APP 2: ECS SPACE INVADERS (ECS + FSM PATTERNS)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/ecs.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/state_machine.end"
+
+pub fn space_invaders_tick(enemy_count: i32, wave: i64) i64 {
+    mut score: i64 = 0
+    region arena {
+        val world = ecs_world_create(enemy_count)
+        val fsm = state_machine_create(2) // State: InGame
+        
+        score = (enemy_count * 10) + (wave * 50)
+    }
+    ret score
+}

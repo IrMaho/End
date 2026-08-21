@@ -1,0 +1,291 @@
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<math.h>")
+@import_c("<stdint.h>")
+@import_c("<windows.h>")
+
+// ============================================================================
+// 1. Raymarcher 3D (250K Rays)
+// ============================================================================
+st Vec3 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+pub fn v3(x: f64, y: f64, z: f64) Vec3 { ret Vec3 { x: x, y: y, z: z } }
+pub fn v_add(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z } }
+pub fn v_sub(a: Vec3, b: Vec3) Vec3 { ret Vec3 { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z } }
+pub fn v_mul(a: Vec3, s: f64) Vec3 { ret Vec3 { x: a.x * s, y: a.y * s, z: a.z * s } }
+pub fn v_dot(a: Vec3, b: Vec3) f64 { ret a.x * b.x + a.y * b.y + a.z * b.z }
+pub fn v_len(a: Vec3) f64 { ret sqrt(v_dot(a, a)) }
+pub fn v_norm(a: Vec3) Vec3 {
+    val l = v_len(a)
+    if l > 0.000000001 {
+        ret v_mul(a, 1.0 / l)
+    }
+    ret a
+}
+
+pub fn sdf_sphere(p: Vec3, center: Vec3, r: f64) f64 {
+    ret v_len(v_sub(p, center)) - r
+}
+
+pub fn sdf_torus(p: Vec3, tx: f64, ty: f64) f64 {
+    val qx = sqrt(p.x * p.x + p.z * p.z) - tx
+    ret sqrt(qx * qx + p.y * p.y) - ty
+}
+
+pub fn sdf_scene(p: Vec3) f64 {
+    val d1 = sdf_sphere(p, v3(0.0, 0.0, 3.0), 0.8)
+    val d2 = sdf_torus(v_sub(p, v3(0.0, -0.2, 3.0)), 1.2, 0.25)
+    val d3 = p.y + 1.2
+    mut d: f64 = d1
+    if d2 < d {
+        d = d2
+    }
+    if d3 < d {
+        d = d3
+    }
+    ret d
+}
+
+pub fn calc_normal(p: Vec3) Vec3 {
+    val eps = 0.001
+    val d = sdf_scene(p)
+    val n = Vec3 {
+        x: sdf_scene(v3(p.x + eps, p.y, p.z)) - d,
+        y: sdf_scene(v3(p.x, p.y + eps, p.z)) - d,
+        z: sdf_scene(v3(p.x, p.y, p.z + eps)) - d,
+    }
+    ret v_norm(n)
+}
+
+pub fn bench_raymarch(width: i32, height: i32) u64 {
+    val ro = v3(0.0, 0.5, -1.5)
+    val light_pos = v3(2.0, 4.0, -1.0)
+    mut total_lum: u64 = 0
+
+    mut y: i32 = 0
+    while y < height {
+        val ny = (((y * 1.0) / (height * 1.0)) * 2.0) - 1.0
+        mut x: i32 = 0
+        while x < width {
+            val nx = (((x * 1.0) / (width * 1.0)) * 2.0) - 1.0
+            val rd = v_norm(v3(nx * 1.2, -ny, 1.5))
+
+            mut t: f64 = 0.0
+            mut hit: f64 = 0.0
+            mut step: i32 = 0
+            while step < 64 {
+                val p = v_add(ro, v_mul(rd, t))
+                val d = sdf_scene(p)
+                if d < 0.001 {
+                    val n = calc_normal(p)
+                    val ld = v_norm(v_sub(light_pos, p))
+                    mut diff = v_dot(n, ld)
+                    if diff < 0.0 {
+                        diff = 0.0
+                    }
+                    hit = diff * 255.0
+                    step = 64
+                } else {
+                    t = t + d
+                    if t > 20.0 {
+                        step = 64
+                    } else {
+                        step = step + 1
+                    }
+                }
+            }
+            total_lum = total_lum + (hit as u64)
+            x = x + 1
+        }
+        y = y + 1
+    }
+    ret total_lum
+}
+
+// ============================================================================
+// 2. Binary Trees (Depth 16) - 100% Region Scoped
+// ============================================================================
+st TreeNode {
+    item: i32,
+    left: *TreeNode,
+    right: *TreeNode,
+}
+
+pub fn create_tree(item: i32, depth: i32) *TreeNode {
+    val n: *TreeNode = alloc [1]TreeNode
+    n[0].item = item
+    if depth > 0 {
+        n[0].left = create_tree((2 * item) - 1, depth - 1)
+        n[0].right = create_tree(2 * item, depth - 1)
+    } else {
+        n[0].left = null
+        n[0].right = null
+    }
+    ret n
+}
+
+pub fn check_tree(n: *TreeNode) i64 {
+    if n == null {
+        ret 0
+    }
+    mut sum: i64 = n[0].item
+    if n[0].left != null {
+        sum = sum + (check_tree(n[0].left) - check_tree(n[0].right))
+    }
+    ret sum
+}
+
+pub fn bench_binary_trees(max_depth: i32) i64 {
+    val min_depth = 4
+    mut grand_sum: i64 = 0
+
+    // Stretch tree
+    region stretch_scope {
+        val stretch = create_tree(0, max_depth + 1)
+        grand_sum = grand_sum + check_tree(stretch)
+    }
+
+    // Long lived tree
+    region long_lived_scope {
+        val long_lived = create_tree(0, max_depth)
+
+        mut depth = min_depth
+        while depth <= max_depth {
+            val iterations = 1 << (max_depth - depth + min_depth)
+            mut check: i64 = 0
+            mut i = 1
+            while i <= iterations {
+                region batch_tree_scope {
+                    val t1 = create_tree(i, depth)
+                    check = check + check_tree(t1)
+
+                    val t2 = create_tree(-i, depth)
+                    check = check + check_tree(t2)
+                }
+                i = i + 1
+            }
+            grand_sum = grand_sum + check
+            depth = depth + 2
+        }
+
+        grand_sum = grand_sum + check_tree(long_lived)
+    }
+
+    ret grand_sum
+}
+
+// ============================================================================
+// 3. HFT Order Matching Engine (1,000,000 Orders)
+// ============================================================================
+pub fn bench_hft_engine(num_orders: i32) i64 {
+    val bids: *i32 = alloc [100]i32
+    val asks: *i32 = alloc [100]i32
+    memset(bids, 0, 400)
+    memset(asks, 0, 400)
+
+    mut total_trades: i64 = 0
+    mut total_volume: i64 = 0
+    mut rng: u64 = 0x123456789abcdef
+
+    mut i: i32 = 0
+    while i < num_orders {
+        rng = rng ^ (rng << 13)
+        rng = rng ^ (rng >> 7)
+        rng = rng ^ (rng << 17)
+
+        val is_buy = (rng & 1) == 1
+        val price = 20 + ((rng >> 1) % 60)
+        mut qty = 1 + ((rng >> 8) % 100)
+        val is_cancel = ((rng >> 16) % 10) == 0
+
+        if is_cancel {
+            if is_buy && bids[price] > 0 {
+                if bids[price] > qty {
+                    bids[price] = bids[price] - qty
+                } else {
+                    bids[price] = 0
+                }
+            } else if !is_buy && asks[price] > 0 {
+                if asks[price] > qty {
+                    asks[price] = asks[price] - qty
+                } else {
+                    asks[price] = 0
+                }
+            }
+        } else if is_buy {
+            mut p = 0
+            while p <= price && qty > 0 {
+                if asks[p] > 0 {
+                    mut trade_qty = qty
+                    if asks[p] < trade_qty {
+                        trade_qty = asks[p]
+                    }
+                    asks[p] = asks[p] - trade_qty
+                    qty = qty - trade_qty
+                    total_trades = total_trades + 1
+                    total_volume = total_volume + (trade_qty * p)
+                }
+                p = p + 1
+            }
+            if qty > 0 {
+                bids[price] = bids[price] + qty
+            }
+        } else {
+            mut p = 99
+            while p >= price && qty > 0 {
+                if bids[p] > 0 {
+                    mut trade_qty = qty
+                    if bids[p] < trade_qty {
+                        trade_qty = bids[p]
+                    }
+                    bids[p] = bids[p] - trade_qty
+                    qty = qty - trade_qty
+                    total_trades = total_trades + 1
+                    total_volume = total_volume + (trade_qty * p)
+                }
+                p = p - 1
+            }
+            if qty > 0 {
+                asks[price] = asks[price] + qty
+            }
+        }
+
+        i = i + 1
+    }
+
+    ret total_volume
+}
+
+pub fn main() void {
+    printf("=== BRUTAL BENCHMARK: End Language (Ultra-Optimized) ===\n")
+
+    val freq: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+    val t0: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+    val t1: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+    QueryPerformanceFrequency(freq)
+
+    // 1. Raymarcher
+    QueryPerformanceCounter(t0)
+    val res1 = bench_raymarch(500, 500)
+    QueryPerformanceCounter(t1)
+    val dt1 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    printf("1. Raymarcher 3D (250K rays): %.2f ms | Checksum: %llu\n", dt1, res1)
+
+    // 2. Binary Trees
+    QueryPerformanceCounter(t0)
+    val res2 = bench_binary_trees(16)
+    QueryPerformanceCounter(t1)
+    val dt2 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    printf("2. Binary Trees (Depth 16):   %.2f ms | Checksum: %lld\n", dt2, res2)
+
+    // 3. HFT Engine
+    QueryPerformanceCounter(t0)
+    val res3 = bench_hft_engine(1000000)
+    QueryPerformanceCounter(t1)
+    val dt3 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    printf("3. HFT Order Matching (1M):   %.2f ms | Vol: %lld\n", dt3, res3)
+}

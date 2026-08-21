@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 ECS Space Invaders 120 FPS • End Language</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🚀</div>
+                <div>
+                    <h1>120 FPS ECS Space Invaders Arcade</h1>
+                    <p class="subtitle">بازی اکشن فضایی بر پایه پترن‌های ECS Engine و State Machine (FSM) در زبان End
+                        (پورت ۵۰۰۷)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>120.0 FPS • ECS State Machine</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Game Arcade Screen -->
+            <div class="card game-card">
+                <div class="card-head">
+                    <h3>⚡ عرصه نبرد فضایی (Space Arena Canvas)</h3>
+                    <div class="game-actions">
+                        <button id="btn-wave" class="btn-primary">👾 احضار موج جدید انتیتی‌ها (Spawn ECS Wave)</button>
+                        <button id="btn-fire" class="btn-fire">🔥 شلیک پلاسما (Fire Laser)</button>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="space-canvas" width="800" height="400"></canvas>
+                </div>
+
+                <div class="game-hud">
+                    <div>موج جاری: <b id="val-wave" class="highlight">Wave 1</b></div>
+                    <div>امتیاز کل: <b id="val-score">370 Pts</b></div>
+                    <div>وضعیت ماشین حالت (FSM): <b id="val-fsm" class="highlight">GameState::InGame</b></div>
+                    <div>سیستم‌های فعال: <b>Movement, Render, Collision</b></div>
+                </div>
+            </div>
+
+            <!-- ECS & FSM Architecture -->
+            <div class="card metrics-panel">
+                <h3>🏛️ پترن‌های گیم‌دولپمنت زبان End</h3>
+                <div class="metric-item">
+                    <span class="m-label">موتور موجودیت-مؤلفه:</span>
+                    <span class="m-val highlight">std/patterns/ecs (Zero-GC)</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">ماشین حالت متناهی:</span>
+                    <span class="m-val highlight">std/patterns/state_machine</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">نرخ فریم شبیه‌سازی:</span>
+                    <span class="m-val highlight">120 FPS (8.33ms Budget)</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تخصیص حافظه حین بازی:</span>
+                    <span class="m-val">0 Bytes (Preallocated Pool)</span>
+                </div>
+
+                <div class="fsm-diagram">
+                    <h4>ترنزیشن‌های ماشین حالت (FSM Transitions):</h4>
+                    <div class="fsm-node">1. GameState::Lobby</div>
+                    <div class="fsm-node active-fsm">2. GameState::InGame (Active)</div>
+                    <div class="fsm-node">3. GameState::BossFight</div>
+                    <div class="fsm-node">4. GameState::Victory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

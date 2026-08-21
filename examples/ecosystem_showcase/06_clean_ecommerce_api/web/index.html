@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛍️ Clean E-Commerce Store • End Language</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🛍️</div>
+                <div>
+                    <h1>Clean Architecture E-Commerce Hub</h1>
+                    <p class="subtitle">فروشگاه آنلاین بر پایه پترن‌های Repository + Pipeline + DI در زبان End (پورت
+                        ۵۰۰۶)</p>
+                </div>
+            </div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>Clean Hexagonal • E0902 Verified</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Catalog & Checkout -->
+            <div class="card catalog-card">
+                <div class="card-head">
+                    <h3>⚡ کاتالوگ محصولات با کش مخزن (Repository Pattern Store)</h3>
+                    <button id="btn-checkout" class="btn-checkout">🛒 تکمیل خرید نهایی (Checkout Order)</button>
+                </div>
+
+                <div class="products-grid">
+                    <div class="product-item">
+                        <div class="p-icon">💻</div>
+                        <h4>End Enterprise Server Box</h4>
+                        <p class="p-price">$1,299.00</p>
+                        <span class="p-stock">موجودی: ۴۲ عدد در انبار</span>
+                    </div>
+                    <div class="product-item selected-item">
+                        <div class="p-icon">⌨️</div>
+                        <h4>Quantum Dev Keyboard</h4>
+                        <p class="p-price">$299.00 (x2 در سبد)</p>
+                        <span class="p-stock">موجودی: ۱۵۰ عدد در انبار</span>
+                    </div>
+                    <div class="product-item">
+                        <div class="p-icon">🧠</div>
+                        <h4>AI Neural Accelerator</h4>
+                        <p class="p-price">$899.00</p>
+                        <span class="p-stock">موجودی: ۸۸ عدد در انبار</span>
+                    </div>
+                </div>
+
+                <div class="checkout-log-box">
+                    <h4>نتیجه اجرای خط لوله سفارش (Pipeline Execution Result):</h4>
+                    <div id="checkout-output" class="checkout-output">
+                        برای ثبت سفارش، دکمه تکمیل خرید را فشار دهید...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architecture & Patterns Breakdown -->
+            <div class="card metrics-panel">
+                <h3>🏛️ الگوهای طراحی پیاده‌سازی شده</h3>
+                <div class="metric-item">
+                    <span class="m-label">الگوی مخزن (Repository):</span>
+                    <span class="m-val highlight">std/patterns/repository</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">میدلورها (Pipeline):</span>
+                    <span class="m-val highlight">std/patterns/pipeline</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">تزریق وابستگی (DI):</span>
+                    <span class="m-val highlight">std/patterns/di</span>
+                </div>
+                <div class="metric-item">
+                    <span class="m-label">پریست معماری:</span>
+                    <span class="m-val">Clean Hexagonal</span>
+                </div>
+
+                <div class="pipeline-flow">
+                    <h4>مراحل ۵ گانه خط لوله پردازش سفارش:</h4>
+                    <div class="pipe-step">1. RateLimiter Middleware (Token Bucket)</div>
+                    <div class="pipe-step">2. JwtAuthGuard Middleware (Ed25519)</div>
+                    <div class="pipe-step">3. InventoryValidation (Repository Check)</div>
+                    <div class="pipe-step">4. Tax & Shipping Calculator ($15.00)</div>
+                    <div class="pipe-step highlight-pipe">5. OrderRepository.Save() & UoW Commit</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

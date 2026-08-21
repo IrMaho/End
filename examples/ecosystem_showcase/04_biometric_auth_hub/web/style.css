@@ -1,0 +1,66 @@
+:root {
+    --bg-dark: #0a0712;
+    --card-bg: rgba(22, 16, 36, 0.75);
+    --border: rgba(236, 72, 153, 0.2);
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --green: #10b981;
+    --text: #f8fafc;
+    --text-muted: #a1a1aa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', 'Outfit', sans-serif; }
+body { background: var(--bg-dark); color: var(--text); min-height: 100vh; position: relative; overflow-x: hidden; }
+
+.glow-bg {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 10% 80%, rgba(236, 72, 153, 0.1), transparent 50%),
+                radial-gradient(circle at 90% 20%, rgba(6, 182, 212, 0.08), transparent 50%);
+    pointer-events: none;
+}
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+.app-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 24px; backdrop-filter: blur(12px); margin-bottom: 24px;
+}
+
+.brand { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 32px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; background: rgba(236, 72, 153, 0.1); border: 1px solid var(--pink); border-radius: 14px; }
+.brand h1 { font-size: 22px; font-weight: 800; }
+.subtitle { font-size: 13px; color: var(--text-muted); }
+
+.status-badge { display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); color: var(--green); padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+.pulse-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(12px); }
+
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.badge-fido { background: rgba(236, 72, 153, 0.15); color: var(--pink); border: 1px solid var(--pink); padding: 4px 10px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 12px; }
+
+.auth-box { text-align: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); border-radius: 14px; padding: 28px 20px; margin-bottom: 20px; }
+.biometric-icon { font-size: 48px; margin-bottom: 12px; filter: drop-shadow(0 0 12px var(--pink)); }
+.auth-box h4 { font-size: 16px; margin-bottom: 6px; }
+.auth-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+.auth-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.btn-passkey { background: linear-gradient(135deg, #ec4899, #db2777); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+.btn-oauth { background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); color: var(--cyan); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+.btn-argon { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+
+.auth-output-wrapper h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.auth-output { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 13px; min-height: 100px; color: #cbd5e1; white-space: pre-wrap; line-height: 1.6; }
+
+.metric-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.m-label { font-size: 13px; color: var(--text-muted); }
+.m-val { font-family: 'Fira Code', monospace; font-weight: 600; color: #fff; }
+.highlight { color: var(--green); }
+
+.security-steps { margin-top: 24px; }
+.security-steps h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+.sec-step { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; font-family: 'Fira Code', monospace; }
+.highlight-sec { border-color: var(--green); color: var(--green); background: rgba(16, 185, 129, 0.05); }

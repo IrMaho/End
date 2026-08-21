@@ -1,0 +1,107 @@
+@import_c("<stdio.h>")
+@import_c("<stdlib.h>")
+@import_c("<string.h>")
+@import_c("<stdint.h>")
+@import_c("<winsock2.h>")
+@import_c("<windows.h>")
+
+// Fast XorShift128+ LCG Compute
+pub fn xorshift_compute(iterations: u64) u64 {
+    mut state: u64 = 0x853c49e6748fea9b
+    mut i: u64 = 0
+    while i < iterations {
+        state = state ^ (state << 13)
+        state = state ^ (state >> 7)
+        state = state ^ (state << 17)
+        state = state * 6364136223846793005 + 1442695040888963407
+        i = i + 1
+    }
+    ret state
+}
+
+pub fn main() void {
+    val wsa_data: *void = alloc [512]char
+    WSAStartup(514, wsa_data)
+
+    val server_sock = socket(2, 1, 6)
+
+    // 1. Socket Reuse
+    val opt: *i32 = alloc [1]i32
+    opt[0] = 1
+    setsockopt(server_sock, 65535, 4, opt, 4)
+
+    // 2. TCP_NODELAY (Level 6 IPPROTO_TCP, optname 1 TCP_NODELAY) -> Instant Packet Flush
+    val nodelay_opt: *i32 = alloc [1]i32
+    nodelay_opt[0] = 1
+    setsockopt(server_sock, 6, 1, nodelay_opt, 4)
+
+    // 3. Bind on 0.0.0.0:9005
+    val server_addr: *char = alloc [32]char
+    memset(server_addr, 0, 32)
+    server_addr[0] = 2
+    server_addr[1] = 0
+    server_addr[2] = 35
+    server_addr[3] = 45 // Port 9005
+
+    val bind_res = bind(server_sock, server_addr, 16)
+    if bind_res >= 0 {
+        listen(server_sock, 512)
+        printf("[End] Ultra-Optimized HTTP Server listening on :9005\n")
+        fflush(stdout)
+
+        // Pre-baked static responses for Zero-Cost single-syscall dispatch
+        val health_response: str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: 35\r\n\r\n{\"status\":\"ok\",\"lang\":\"End Language\"}"
+        val health_len: i32 = strlen(health_response)
+
+        val json_response: str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: 290\r\n\r\n{\"server\":\"End HTTP Backend\",\"version\":\"1.0\",\"users\":[{\"id\":1,\"name\":\"Alice\",\"score\":9850,\"active\":true},{\"id\":2,\"name\":\"Bob\",\"score\":8720,\"active\":true},{\"id\":3,\"name\":\"Charlie\",\"score\":7630,\"active\":false},{\"id\":4,\"name\":\"Diana\",\"score\":9210,\"active\":true},{\"id\":5,\"name\":\"Eve\",\"score\":8890,\"active\":true}],\"metadata\":{\"total_users\":5,\"avg_score\":8860,\"active_count\":4,\"server_uptime\":99.97}}"
+        val json_len: i32 = strlen(json_response)
+
+        val not_found_resp: str = "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: 21\r\n\r\n{\"error\":\"not found\"}"
+        val not_found_len: i32 = strlen(not_found_resp)
+
+        // Pre-allocated Hardware Cache Scratchpad (Zero dynamic allocation on hot path)
+        val scratch_buf: *char = alloc [4096]char
+        val compute_res_buf: *char = alloc [512]char
+        val freq: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+        val t0: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+        val t1: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
+        QueryPerformanceFrequency(freq)
+
+        while true {
+            val client_sock = accept(server_sock, null, null)
+            if client_sock != 4294967295 && client_sock >= 0 {
+                // Enable TCP_NODELAY on accepted client socket
+                setsockopt(client_sock, 6, 1, nodelay_opt, 4)
+
+                region request_scope {
+                    val n = recv(client_sock, scratch_buf, 4095, 0)
+                    if n > 0 {
+                        scratch_buf[n] = 0
+                        if strstr(scratch_buf, "/health") != null {
+                            send(client_sock, health_response, health_len, 0)
+                        } else if strstr(scratch_buf, "/json") != null {
+                            send(client_sock, json_response, json_len, 0)
+                        } else if strstr(scratch_buf, "/compute") != null {
+                            QueryPerformanceCounter(t0)
+                            val hash = xorshift_compute(1000000)
+                            QueryPerformanceCounter(t1)
+                            val time_us = ((t1[0].QuadPart - t0[0].QuadPart) * 1000000) / freq[0].QuadPart
+
+                            val body_len = sprintf(scratch_buf, "{\"hash\":%llu,\"time_us\":%lld,\"lang\":\"End Language\"}", hash, time_us)
+                            val full_len = sprintf(compute_res_buf, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: %d\r\n\r\n%s", body_len, scratch_buf)
+                            send(client_sock, compute_res_buf, full_len, 0)
+                        } else {
+                            send(client_sock, not_found_resp, not_found_len, 0)
+                        }
+                    }
+                }
+                closesocket(client_sock)
+            }
+        }
+    } else {
+        printf("ERROR: Failed to bind socket on port 9005!\n")
+    }
+
+    closesocket(server_sock)
+    WSACleanup()
+}

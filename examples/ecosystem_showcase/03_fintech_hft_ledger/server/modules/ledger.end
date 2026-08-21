@@ -1,0 +1,26 @@
+// ============================================================================
+// PROJECT 3: FINTECH HFT LEDGER & ORDER MATCHING ENGINE (PURE END)
+// ============================================================================
+
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/patterns/repository.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/db/postgres.end"
+import "c:/Users/ASUS/Desktop/flutter_project/end/std/db/redis.end"
+
+pub fn ledger_match_order(order_id: i64, price: i64, quantity: i64) i64 {
+    mut matched_volume: i64 = 0
+    region arena {
+        val repo = repository_create("orders", "order_id")
+        matched_volume = price * quantity
+    }
+    ret matched_volume
+}
+
+pub fn ledger_merkle_block_hash(block_index: i64, prev_hash: i64) i64 {
+    mut block_hash: i64 = 0
+    region arena {
+        val h1 = prev_hash ^ (block_index * 2654435761)
+        val h2 = (h1 * 31) ^ 0x5A5A5A5A
+        block_hash = h2
+    }
+    ret block_hash
+}

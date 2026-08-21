@@ -1,0 +1,25 @@
+// ============================================================================
+// END NEXUS FRAMEWORK: 120 FPS PHYSICS & STATE SYNC ENGINE
+// ============================================================================
+
+pub fn nexus_integrate_physics(x: i32, y: i32, vx: i32, vy: i32, bound_w: i32, bound_h: i32) i64 {
+    mut nx = x + vx
+    mut ny = y + vy
+    
+    // Elastic boundary collision
+    if nx < 0 { nx = 0 }
+    else if nx > bound_w { nx = bound_w }
+    
+    if ny < 0 { ny = 0 }
+    else if ny > bound_h { ny = bound_h }
+    
+    // Pack 2D position into a single 64-bit atomic integer for zero-alloc sync
+    val packed_pos: i64 = (nx * 10000) + ny
+    ret packed_pos
+}
+
+pub fn nexus_calculate_distance(x1: i32, y1: i32, x2: i32, y2: i32) i64 {
+    val dx = x1 - x2
+    val dy = y1 - y2
+    ret (dx * dx) + (dy * dy)
+}

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Backend Benchmark Dashboard | 5 Languages</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e17;
+            color: #e0e6f0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0f1629 0%, #1a1f3a 50%, #0d1025 100%);
+            border-bottom: 1px solid rgba(99, 130, 255, 0.15);
+            padding: 32px 48px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c8cff, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        
+        .header .subtitle {
+            color: #8892b0;
+            font-size: 14px;
+            font-weight: 400;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #131832 0%, #1a2040 100%);
+            border: 1px solid rgba(99, 130, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 130, 255, 0.3);
+        }
+        
+        .stat-card .lang-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #f0f4ff;
+            margin-bottom: 4px;
+        }
+        
+        .stat-card .stat-label {
+            font-size: 11px;
+            color: #6b7394;
+            font-weight: 500;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .chart-card {
+            background: linear-gradient(135deg, #131832 0%, #1a2040 100%);
+            border: 1px solid rgba(99, 130, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #c4ccdf;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(99, 130, 255, 0.08);
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+        }
+        
+        .chart-wrapper.tall {
+            height: 400px;
+        }
+        
+        /* Table styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: rgba(99, 130, 255, 0.08);
+            color: #8892b0;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(99, 130, 255, 0.1);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .data-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(99, 130, 255, 0.05);
+            color: #c4ccdf;
+        }
+        
+        .data-table tr:hover td {
+            background: rgba(99, 130, 255, 0.04);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge-gold { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+        .badge-silver { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+        .badge-bronze { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+        
+        .methodology {
+            background: linear-gradient(135deg, #131832 0%, #1a2040 100%);
+            border: 1px solid rgba(99, 130, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            margin-top: 24px;
+        }
+        
+        .methodology h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 16px;
+        }
+        
+        .methodology p, .methodology li {
+            font-size: 13px;
+            color: #8892b0;
+            line-height: 1.7;
+        }
+        
+        .methodology ul { padding-left: 20px; margin: 8px 0; }
+        
+        .env-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .env-item {
+            background: rgba(99, 130, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        .env-item strong { color: #a78bfa; }
+        
+        #loading {
+            text-align: center;
+            padding: 80px;
+            color: #6b7394;
+            font-size: 16px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(99, 130, 255, 0.15);
+            border-top: 3px solid #6c8cff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HTTP Backend Benchmark Dashboard</h1>
+        <p class="subtitle">Real-time Performance Comparison: C vs Zig vs Rust vs Go vs End Language</p>
+    </div>
+    
+    <div class="container" id="app">
+        <div id="loading">
+            <div class="spinner"></div>
+            Loading benchmark results...
+        </div>
+    </div>
+
+<script>
+const LANG_COLORS = {
+    'C (GCC 15.2)':  { bg: 'rgba(99, 130, 255, 0.7)',  border: '#6382ff' },
+    'Zig (0.16.0)':  { bg: 'rgba(251, 191, 36, 0.7)',  border: '#fbbf24' },
+    'Rust (1.89.0)': { bg: 'rgba(248, 113, 113, 0.7)', border: '#f87171' },
+    'Go (1.25.1)':   { bg: 'rgba(52, 211, 153, 0.7)',  border: '#34d399' },
+    'End Language':  { bg: 'rgba(167, 139, 250, 0.7)', border: '#a78bfa' },
+};
+
+const LANG_ORDER = ['C (GCC 15.2)', 'Zig (0.16.0)', 'Rust (1.89.0)', 'Go (1.25.1)', 'End Language'];
+
+Chart.defaults.color = '#8892b0';
+Chart.defaults.borderColor = 'rgba(99, 130, 255, 0.08)';
+Chart.defaults.font.family = 'Inter';
+
+function loadResults() {
+    fetch('benchmark_results.json')
+        .then(r => r.json())
+        .then(data => render(data))
+        .catch(e => {
+            document.getElementById('loading').innerHTML = 
+                '<p style="color:#f87171">Error loading results: ' + e.message + '</p>' +
+                '<p style="margin-top:8px">Make sure benchmark_results.json exists in the same directory.</p>';
+        });
+}
+
+function render(data) {
+    const langs = LANG_ORDER.filter(l => data[l]);
+    const app = document.getElementById('app');
+    
+    // Stats cards - throughput for each language
+    let statsHtml = '<div class="stats-grid">';
+    langs.forEach(lang => {
+        const d = data[lang];
+        const rps = d.throughput?.health_rps || 0;
+        statsHtml += `
+            <div class="stat-card">
+                <div class="lang-name">${lang}</div>
+                <div class="stat-value">${rps.toLocaleString()}</div>
+                <div class="stat-label">Requests/sec (Health)</div>
+            </div>`;
+    });
+    statsHtml += '</div>';
+    
+    // Charts
+    let chartsHtml = '<div class="charts-grid">';
+    
+    // Chart 1: Mean Latency per Endpoint
+    chartsHtml += `
+        <div class="chart-card">
+            <h3>Mean Latency by Endpoint (ms) - Lower is Better</h3>
+            <div class="chart-wrapper"><canvas id="chart-latency"></canvas></div>
+        </div>`;
+    
+    // Chart 2: P99 Latency
+    chartsHtml += `
+        <div class="chart-card">
+            <h3>P99 Latency by Endpoint (ms) - Lower is Better</h3>
+            <div class="chart-wrapper"><canvas id="chart-p99"></canvas></div>
+        </div>`;
+    
+    // Chart 3: Throughput (RPS)
+    chartsHtml += `
+        <div class="chart-card">
+            <h3>Max Throughput - Requests Per Second - Higher is Better</h3>
+            <div class="chart-wrapper"><canvas id="chart-throughput"></canvas></div>
+        </div>`;
+    
+    // Chart 4: Binary Size
+    chartsHtml += `
+        <div class="chart-card">
+            <h3>Compiled Binary Size (KB) - Lower is Better</h3>
+            <div class="chart-wrapper"><canvas id="chart-binary"></canvas></div>
+        </div>`;
+    
+    // Chart 5: Full Latency Comparison (Grouped)
+    chartsHtml += `
+        <div class="chart-card full-width">
+            <h3>Complete Latency Profile: Min / Mean / P95 / P99 / Max (ms)</h3>
+            <div class="chart-wrapper tall"><canvas id="chart-profile"></canvas></div>
+        </div>`;
+    
+    chartsHtml += '</div>';
+    
+    // Data Table
+    let tableHtml = `
+        <div class="chart-card full-width" style="margin-bottom:24px">
+            <h3>Detailed Results Table</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Language</th>
+                        <th>Endpoint</th>
+                        <th>Mean (ms)</th>
+                        <th>Median (ms)</th>
+                        <th>P95 (ms)</th>
+                        <th>P99 (ms)</th>
+                        <th>Min (ms)</th>
+                        <th>Max (ms)</th>
+                        <th>Stdev</th>
+                        <th>RPS</th>
+                        <th>Errors</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+    
+    langs.forEach(lang => {
+        const eps = data[lang].endpoints || {};
+        Object.keys(eps).forEach(epName => {
+            const r = eps[epName];
+            if (r.error) {
+                tableHtml += `<tr><td>${lang}</td><td>${epName}</td><td colspan="9" style="color:#f87171">${r.error}</td></tr>`;
+            } else {
+                tableHtml += `
+                    <tr>
+                        <td><strong>${lang}</strong></td>
+                        <td>${epName}</td>
+                        <td>${r.mean_ms?.toFixed(2)}</td>
+                        <td>${r.median_ms?.toFixed(2)}</td>
+                        <td>${r.p95_ms?.toFixed(2)}</td>
+                        <td>${r.p99_ms?.toFixed(2)}</td>
+                        <td>${r.min_ms?.toFixed(2)}</td>
+                        <td>${r.max_ms?.toFixed(2)}</td>
+                        <td>${r.stdev_ms?.toFixed(2)}</td>
+                        <td>${r.rps?.toFixed(0)}</td>
+                        <td>${r.errors}</td>
+                    </tr>`;
+            }
+        });
+    });
+    
+    tableHtml += '</tbody></table></div>';
+    
+    // Methodology
+    let methHtml = `
+        <div class="methodology">
+            <h3>Benchmark Methodology & Environment</h3>
+            <p>All servers implement identical HTTP endpoints with the same computation logic. Each benchmark iteration uses sequential HTTP requests to measure true end-to-end latency without client-side bottlenecks.</p>
+            <ul>
+                <li><strong>Warmup:</strong> 50 requests before measurement</li>
+                <li><strong>Measurement:</strong> 500 sequential requests per endpoint</li>
+                <li><strong>Throughput:</strong> 5-second burst test (max requests/sec)</li>
+                <li><strong>Endpoints:</strong> /health (baseline), /compute?n=1000000 (CPU), /json (serialization)</li>
+                <li><strong>All servers are single-threaded</strong> for fair comparison of raw language performance</li>
+            </ul>
+            <div class="env-info">
+                <div class="env-item"><strong>C:</strong> GCC 15.2 | -O3 -march=native -flto</div>
+                <div class="env-item"><strong>Zig:</strong> 0.16.0 | -O ReleaseFast</div>
+                <div class="env-item"><strong>Rust:</strong> 1.89.0 | -O -C target-cpu=native -C lto=fat</div>
+                <div class="env-item"><strong>Go:</strong> 1.25.1 | -ldflags="-s -w"</div>
+                <div class="env-item"><strong>End:</strong> end.exe transpile + GCC -O3</div>
+                <div class="env-item"><strong>OS:</strong> Windows x86_64</div>
+            </div>
+        </div>`;
+    
+    app.innerHTML = statsHtml + chartsHtml + tableHtml + methHtml;
+    
+    // Render charts
+    renderLatencyChart('chart-latency', data, langs, 'mean_ms');
+    renderLatencyChart('chart-p99', data, langs, 'p99_ms');
+    renderThroughputChart('chart-throughput', data, langs);
+    renderBinaryChart('chart-binary', data, langs);
+    renderProfileChart('chart-profile', data, langs);
+}
+
+function renderLatencyChart(canvasId, data, langs, metric) {
+    const endpoints = Object.keys(data[langs[0]].endpoints || {});
+    const datasets = langs.map(lang => ({
+        label: lang,
+        data: endpoints.map(ep => data[lang]?.endpoints?.[ep]?.[metric] || 0),
+        backgroundColor: LANG_COLORS[lang]?.bg || 'rgba(128,128,128,0.5)',
+        borderColor: LANG_COLORS[lang]?.border || '#888',
+        borderWidth: 1,
+        borderRadius: 4,
+    }));
+    
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: { labels: endpoints.map(e => e.replace(' (Baseline Latency)', '').replace(' (1M xorshift+LCG)', '')), datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { padding: 16, font: { size: 11 } } } },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Milliseconds (ms)' } },
+                x: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+function renderThroughputChart(canvasId, data, langs) {
+    const metrics = ['health_rps', 'compute_rps'];
+    const labels = ['Health (Baseline)', 'Compute (CPU-Bound)'];
+    
+    const datasets = langs.map(lang => ({
+        label: lang,
+        data: metrics.map(m => data[lang]?.throughput?.[m] || 0),
+        backgroundColor: LANG_COLORS[lang]?.bg || 'rgba(128,128,128,0.5)',
+        borderColor: LANG_COLORS[lang]?.border || '#888',
+        borderWidth: 1,
+        borderRadius: 4,
+    }));
+    
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { padding: 16, font: { size: 11 } } } },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Requests / Second' } },
+            }
+        }
+    });
+}
+
+function renderBinaryChart(canvasId, data, langs) {
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: {
+            labels: langs,
+            datasets: [{
+                label: 'Binary Size (KB)',
+                data: langs.map(l => data[l]?.binary_size_kb || 0),
+                backgroundColor: langs.map(l => LANG_COLORS[l]?.bg || 'rgba(128,128,128,0.5)'),
+                borderColor: langs.map(l => LANG_COLORS[l]?.border || '#888'),
+                borderWidth: 1,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, title: { display: true, text: 'Kilobytes (KB)' } },
+            }
+        }
+    });
+}
+
+function renderProfileChart(canvasId, data, langs) {
+    const ep = Object.keys(data[langs[0]].endpoints || {})[0];
+    if (!ep) return;
+    
+    const metrics = ['min_ms', 'mean_ms', 'p95_ms', 'p99_ms', 'max_ms'];
+    const metricLabels = ['Min', 'Mean', 'P95', 'P99', 'Max'];
+    
+    const datasets = langs.map(lang => ({
+        label: lang,
+        data: metrics.map(m => data[lang]?.endpoints?.[ep]?.[m] || 0),
+        backgroundColor: LANG_COLORS[lang]?.bg || 'rgba(128,128,128,0.5)',
+        borderColor: LANG_COLORS[lang]?.border || '#888',
+        borderWidth: 1,
+        borderRadius: 4,
+    }));
+    
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: { labels: metricLabels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: `Endpoint: ${ep}`, color: '#6b7394', font: { size: 12 } },
+                legend: { position: 'top', labels: { padding: 16, font: { size: 11 } } }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Milliseconds (ms)' } },
+            }
+        }
+    });
+}
+
+loadResults();
+</script>
+</body>
+</html>
