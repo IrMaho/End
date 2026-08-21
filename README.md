@@ -27,18 +27,17 @@
 
 ## 📊 Multi-Language Performance Matrix
 
-Performance measurements conform to the statistical specification in [BENCHMARKS.md](BENCHMARKS.md) and can be reproduced locally via powershell -File .\benchmark\run_benchmarks.ps1.
+Performance measurements conform to the statistical specification in [BENCHMARKS.md](BENCHMARKS.md) and can be reproduced locally via `powershell -File .enchmarkun_benchmarks.ps1`.
 
-| Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Verification Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 👑 **End (C11 Backend)** | 10M Reduction | **7.05 ms** | **19.96 ms** | **7.77 ms** | **2.52 ms** | ✔ Live Measured |
-| **C (GCC 15.2 -O3)** | 10M Reduction | 12.61 ms | 27.25 ms | 13.70 ms | 3.15 ms | ✔ Live Measured |
-| **Zig (ReleaseFast)** | 10M Reduction | 4.11 ms | 5.19 ms | 4.17 ms | 0.25 ms | ✔ Live Measured |
-| **Rust (Release -O3)** | 10M Reduction | 4.33 ms | 30.48 ms | 5.15 ms | 3.71 ms | ✔ Live Measured |
-| **Go (1.25.1)** | 10M Reduction | 35.34 ms | 50.15 ms | 36.59 ms | 3.88 ms | ✔ Live Measured |
+| Language / Backend | Workload | P50 Latency (ms) | P99 Latency (ms) | Mean (ms) | StdDev (ms) | Source Code Reference | Verification Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| ⚡ **Zig (ReleaseFast)** | 10M Reduction | **4.11 ms** | 5.19 ms | 4.17 ms | 0.25 ms | [`benchmark/bench_zig.zig`](benchmark/bench_zig.zig) | ✔ Live Measured |
+| ⚡ **Rust (Release -O3)** | 10M Reduction | **4.33 ms** | 30.48 ms | 5.15 ms | 3.71 ms | [`benchmark/bench_rust.rs`](benchmark/bench_rust.rs) | ✔ Live Measured |
+| 👑 **End (C11 Backend)** | 10M Reduction | **7.05 ms** | 19.96 ms | 7.77 ms | 2.52 ms | [`benchmark/bench_end.end`](benchmark/bench_end.end) | ✔ Live Measured |
+| ⚡ **C (GCC 15.2 -O3)** | 10M Reduction | **12.61 ms** | 27.25 ms | 13.70 ms | 3.15 ms | [`benchmark/bench_c.c`](benchmark/bench_c.c) | ✔ Live Measured |
+| ⚡ **Go (1.25.1)** | 10M Reduction | **35.34 ms** | 50.15 ms | 36.59 ms | 3.88 ms | [`benchmark/bench_go.go`](benchmark/bench_go.go) | ✔ Live Measured |
 
-> Raw machine-readable benchmark outputs, hardware metadata, and execution percentiles are automatically generated in [enchmark/benchmark_results.json](benchmark/benchmark_results.json).
-
+> 📁 **Verification Datasets & Specifications:** Raw machine-readable outputs, execution percentiles, and hardware metadata are saved in [benchmark/benchmark_results.json](benchmark/benchmark_results.json). Comprehensive multi-suite specifications (HTTP, HFT, 3D Raymarching, Memory Torture) are detailed in [BENCHMARKS.md](BENCHMARKS.md).
 
 ---
 
