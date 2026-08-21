@@ -136,20 +136,20 @@ impl CBackend {
         self.output.push_str("/* End Memory Primitives (64-byte Cache-Line Aligned) */\n");
         self.output.push_str("typedef struct { void* (*alloc)(size_t); void (*free)(void*); } EndAllocator;\n");
         self.output.push_str("typedef struct { char* buffer; size_t capacity; size_t offset; } EndArena;\n");
-        self.output.push_str("static inline __attribute__((always_inline)) EndArena* end_arena_create(size_t cap) {\n");
+        self.output.push_str("static EndArena* end_arena_create(size_t cap) {\n");
         self.output.push_str("    EndArena* a = (EndArena*)malloc(sizeof(EndArena));\n");
         self.output.push_str("    a->buffer = (char*)malloc(cap);\n");
         self.output.push_str("    a->capacity = cap;\n");
         self.output.push_str("    a->offset = 0;\n");
         self.output.push_str("    return a;\n");
         self.output.push_str("}\n");
-        self.output.push_str("static inline __attribute__((always_inline)) void* end_arena_alloc(EndArena* a, size_t size) {\n");
+        self.output.push_str("static void* end_arena_alloc(EndArena* a, size_t size) {\n");
         self.output.push_str("    if (a->offset + size > a->capacity) return NULL;\n");
         self.output.push_str("    void* ptr = (void*)(a->buffer + a->offset);\n");
         self.output.push_str("    a->offset += (size + 63) & ~63;\n");
         self.output.push_str("    return ptr;\n");
         self.output.push_str("}\n");
-        self.output.push_str("static inline __attribute__((always_inline)) void end_arena_destroy(EndArena* a) {\n");
+        self.output.push_str("static void end_arena_destroy(EndArena* a) {\n");
         self.output.push_str("    if (a) { free(a->buffer); free(a); }\n");
         self.output.push_str("}\n\n");
 
@@ -418,7 +418,7 @@ impl CBackend {
                     self.header_output.push_str(&format!("END_API {} {}({});\n", ret_type, f.name, params_str.join(", ")));
                 }
             } else {
-                self.output.push_str(&format!("static inline __attribute__((always_inline)) {} {}({});\n", ret_type, f.name, params_str.join(", ")));
+                self.output.push_str(&format!("static {} {}({});\n", ret_type, f.name, params_str.join(", ")));
             }
         }
         self.output.push('\n');
@@ -498,7 +498,7 @@ impl CBackend {
         } else if is_exported {
             "END_API ".to_string()
         } else {
-            "static inline __attribute__((always_inline)) ".to_string()
+            "static ".to_string()
         };
 
         let clean_file = func.span.file.replace('\\', "/");

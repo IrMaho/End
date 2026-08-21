@@ -1,60 +1,22 @@
-// 📐 End Language: std/patterns/repository.end
-// Native Zero-GC Repository & Unit of Work Design Pattern
+// ?? End Language: std/patterns/repository.end
+// Generic Repository & Unit of Work Pattern
 
-pub st Repository<T, ID> {
+pub st Repository {
     table_name: str,
     id_field: str,
-    total_records: i64,
-    is_active: bool,
+    cached_entities: i32,
+    is_connected: bool,
 }
 
-pub st UnitOfWork<T> {
-    pending_commits: i32,
-    is_transaction_active: bool,
-}
-
-pub fn repository_create<T, ID>(table: str, id_col: str) Repository<T, ID> {
-    ret Repository<T, ID> {
+pub fn repository_create(table: str, key_field: str) Repository {
+    ret Repository {
         table_name: table,
-        id_field: id_col,
-        total_records: 0,
-        is_active: true,
+        id_field: key_field,
+        cached_entities: 0,
+        is_connected: true,
     }
 }
 
-pub fn repository_save<T, ID>(repo: Repository<T, ID>, entity: T) Repository<T, ID> {
-    ret Repository<T, ID> {
-        table_name: repo.table_name,
-        id_field: repo.id_field,
-        total_records: repo.total_records + 1,
-        is_active: true,
-    }
-}
-
-pub fn repository_find_by_id<T, ID>(repo: Repository<T, ID>, id: ID) bool {
-    ret repo.is_active
-}
-
-pub fn repository_delete<T, ID>(repo: Repository<T, ID>, id: ID) Repository<T, ID> {
-    val recs = if repo.total_records > 0 { repo.total_records - 1 } else { 0 }
-    ret Repository<T, ID> {
-        table_name: repo.table_name,
-        id_field: repo.id_field,
-        total_records: recs,
-        is_active: true,
-    }
-}
-
-pub fn uow_create<T>() UnitOfWork<T> {
-    ret UnitOfWork<T> {
-        pending_commits: 0,
-        is_transaction_active: true,
-    }
-}
-
-pub fn uow_commit<T>(uow: UnitOfWork<T>) UnitOfWork<T> {
-    ret UnitOfWork<T> {
-        pending_commits: 0,
-        is_transaction_active: false,
-    }
+pub fn repository_count(repo: Repository) i64 {
+    ret repo.cached_entities
 }

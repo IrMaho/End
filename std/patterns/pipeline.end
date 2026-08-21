@@ -1,28 +1,28 @@
-// 📐 End Language: std/patterns/pipeline.end
+// ?? End Language: std/patterns/pipeline.end
 // Middleware Pipeline & Chain of Responsibility Pattern
 
-pub st Pipeline<TIn, TOut> {
+pub st Pipeline {
     pipeline_id: i64,
     middleware_stages: i32,
     is_sealed: bool,
 }
 
-pub fn pipeline_create<TIn, TOut>() Pipeline<TIn, TOut> {
-    ret Pipeline<TIn, TOut> {
+pub fn pipeline_create() Pipeline {
+    ret Pipeline {
         pipeline_id: 101,
         middleware_stages: 0,
         is_sealed: false,
     }
 }
 
-pub fn pipeline_pipe<TIn, TOut>(pipe: Pipeline<TIn, TOut>) Pipeline<TIn, TOut> {
-    ret Pipeline<TIn, TOut> {
+pub fn pipeline_pipe(pipe: Pipeline) Pipeline {
+    ret Pipeline {
         pipeline_id: pipe.pipeline_id,
         middleware_stages: pipe.middleware_stages + 1,
         is_sealed: pipe.is_sealed,
     }
 }
 
-pub fn pipeline_execute<TIn, TOut>(pipe: Pipeline<TIn, TOut>, input: TIn) bool {
+pub fn pipeline_execute(pipe: Pipeline) bool {
     ret pipe.middleware_stages > 0
 }

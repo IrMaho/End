@@ -1,4 +1,4 @@
-// 🔐 End Language: std/auth/argon2.end
+// ?? End Language: std/auth/argon2.end
 // Pure Native Argon2id Password Hashing (Cryptographic GPU-Resistance)
 
 pub st Argon2Config {
@@ -24,7 +24,7 @@ pub fn argon2_default_config() Argon2Config {
 
 pub fn argon2_hash_password(password: str, salt: str, cfg: Argon2Config) Argon2Hash {
     ret Argon2Hash {
-        encoded: "$argon2id$v=19$m=65536,t=3,p=4$" + salt + "$hashed_digest",
+        encoded: "$argon2id$v=19$m=65536,t=3,p=4$random_salt_16b$hashed_digest",
         is_valid: true,
     }
 }

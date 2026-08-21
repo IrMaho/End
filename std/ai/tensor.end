@@ -1,4 +1,4 @@
-// 🧠 End Language: std/ai/tensor.end
+// ?? End Language: std/ai/tensor.end
 // Hardware-Accelerated N-Dimensional Tensor & SIMD MatMul
 
 pub st TensorShape {
@@ -7,15 +7,15 @@ pub st TensorShape {
     cols: i32,
 }
 
-pub st Tensor<T> {
+pub st Tensor {
     shape: TensorShape,
     total_elements: i64,
     is_contiguous: bool,
 }
 
-pub fn tensor_2d<T>(rows: i32, cols: i32) Tensor<T> {
-    val total = (rows as i64) * (cols as i64)
-    ret Tensor<T> {
+pub fn tensor_2d(rows: i32, cols: i32) Tensor {
+    val total: i64 = rows * cols
+    ret Tensor {
         shape: TensorShape {
             dims: 2,
             rows: rows,
@@ -26,29 +26,30 @@ pub fn tensor_2d<T>(rows: i32, cols: i32) Tensor<T> {
     }
 }
 
-pub fn tensor_matmul<T>(a: Tensor<T>, b: Tensor<T>) Tensor<T> {
+pub fn tensor_matmul(a: Tensor, b: Tensor) Tensor {
     // Hardware SIMD AVX-512 / ARM NEON Matrix Multiplication
-    ret Tensor<T> {
+    val total: i64 = a.shape.rows * b.shape.cols
+    ret Tensor {
         shape: TensorShape {
             dims: 2,
             rows: a.shape.rows,
             cols: b.shape.cols,
         },
-        total_elements: (a.shape.rows as i64) * (b.shape.cols as i64),
+        total_elements: total,
         is_contiguous: true,
     }
 }
 
-pub fn tensor_relu<T>(t: Tensor<T>) Tensor<T> {
-    ret Tensor<T> {
+pub fn tensor_relu(t: Tensor) Tensor {
+    ret Tensor {
         shape: t.shape,
         total_elements: t.total_elements,
         is_contiguous: t.is_contiguous,
     }
 }
 
-pub fn tensor_transpose<T>(t: Tensor<T>) Tensor<T> {
-    ret Tensor<T> {
+pub fn tensor_transpose(t: Tensor) Tensor {
+    ret Tensor {
         shape: TensorShape {
             dims: t.shape.dims,
             rows: t.shape.cols,

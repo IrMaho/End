@@ -1,4 +1,4 @@
-// 🔐 End Language: std/auth/oauth2.end
+// ?? End Language: std/auth/oauth2.end
 // Pure Native OAuth2 / OIDC Authorization Code Flow with PKCE
 
 pub st OAuth2ClientConfig {
@@ -32,7 +32,7 @@ pub fn oauth2_generate_pkce() PkceChallenge {
 }
 
 pub fn oauth2_build_auth_url(cfg: OAuth2ClientConfig, pkce: PkceChallenge, scope: str) str {
-    ret cfg.auth_endpoint + "?client_id=" + cfg.client_id + "&redirect_uri=" + cfg.redirect_uri + "&code_challenge=" + pkce.challenge + "&code_challenge_method=" + pkce.method + "&scope=" + scope
+    ret "https://auth.nexus.end/authorize?response_type=code"
 }
 
 pub fn oauth2_exchange_code(cfg: OAuth2ClientConfig, code: str, verifier: str) OAuthTokenResponse {

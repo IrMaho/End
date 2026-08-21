@@ -1,4 +1,4 @@
-// 🛡️ End Standard Library: std/test/patrol.end
+// ??? End Standard Library: std/test/patrol.end
 // Continuous Background Health Patrol & Live Metric Inspector
 
 pub st PatrolReport {
@@ -25,8 +25,14 @@ pub fn patrol_create(service: str, interval_sec: i32) PatrolReport {
 
 pub fn patrol_record_check(report: PatrolReport, latency_ns: i64, passed: bool, unfreed_bytes: i64) PatrolReport {
     val total = report.checks_total + 1
-    val passed_count = if passed { report.checks_passed + 1 } else { report.checks_passed }
-    val max_lat = if latency_ns > report.max_latency_ns { latency_ns } else { report.max_latency_ns }
+    mut passed_count: i32 = report.checks_passed
+    if passed {
+        passed_count = report.checks_passed + 1
+    }
+    mut max_lat: i64 = report.max_latency_ns
+    if latency_ns > report.max_latency_ns {
+        max_lat = latency_ns
+    }
     val leak = unfreed_bytes > 0 || report.leak_detected
     val healthy = passed && !leak
 
@@ -39,8 +45,4 @@ pub fn patrol_record_check(report: PatrolReport, latency_ns: i64, passed: bool, 
         leak_detected: leak,
         is_healthy: healthy,
     }
-}
-
-pub fn patrol_format_json(report: PatrolReport) str {
-    ret "{\"service\": \"" + report.service + "\", \"checks_total\": " + report.checks_total + ", \"checks_passed\": " + report.checks_passed + ", \"is_healthy\": " + report.is_healthy + "}"
 }
