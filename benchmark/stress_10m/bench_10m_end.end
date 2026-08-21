@@ -1,0 +1,37 @@
+// Ultra-Heavy 10M Benchmark: End Language with Region Scoping (Zero GC)
+st Request {
+    id: u64,
+    payload_size: i32,
+    checksum: i64,
+}
+
+fn process_request(id: u64, size: i32) Request {
+    mut hash: i64 = 17
+    for j in 32 {
+        hash = (hash * 31) + id + j
+    }
+
+    val req = Request {
+        id: id,
+        payload_size: size,
+        checksum: hash,
+    }
+    ret req
+}
+
+fn main() void {
+    val iterations: i32 = 10000000
+    mut total_checksum: i64 = 0
+
+    println("Running End 10,000,000 Heavy Backend Requests Benchmark...")
+
+    region bench_scope {
+        for i in iterations {
+            val req = process_request(i, 256)
+            total_checksum = total_checksum + req.checksum
+        }
+    }
+
+    println("End 10M Benchmark Finished. Total Checksum:")
+    println(total_checksum)
+}
