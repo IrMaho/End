@@ -1318,6 +1318,14 @@ impl Parser {
                 span,
             });
         }
+        if self.match_token(&TokenKind::Tilde) {
+            let expr = self.parse_unary()?;
+            return Ok(Expression::Unary {
+                op: UnaryOp::BitNot,
+                expr: Box::new(expr),
+                span,
+            });
+        }
         if self.match_token(&TokenKind::Ampersand) {
             let expr = self.parse_unary()?;
             return Ok(Expression::Unary {
@@ -1726,6 +1734,7 @@ impl Parser {
         }
     }
 }
+
 
 
 

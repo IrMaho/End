@@ -1,4 +1,4 @@
-// 🎮 End Language: std/gpu/webgpu.end
+// ?? End Language: std/gpu/webgpu.end
 // Pure Native WebGPU & Vulkan GPU Compute / Graphics Abstraction
 
 pub enum GpuBackendType {
@@ -60,15 +60,21 @@ pub fn gpu_create_buffer(device: GpuDevice, size: i64, usage: BufferUsage) GpuBu
 pub fn gpu_create_compute_pipeline(device: GpuDevice, entry_point: str) ComputePipeline {
     ret ComputePipeline {
         shader_entry_point: entry_point,
-        workgroup_size_x: 256,
+        workgroup_size_x: 64,
         workgroup_size_y: 1,
         workgroup_size_z: 1,
         is_compiled: true,
     }
 }
 
-pub fn gpu_dispatch_compute(pipeline: ComputePipeline, workgroups_x: i32) CommandEncoder {
+pub fn gpu_create_command_encoder(device: GpuDevice) CommandEncoder {
     ret CommandEncoder {
-        dispatches_recorded: workgroups_x,
+        dispatches_recorded: 0,
+    }
+}
+
+pub fn gpu_dispatch_compute(encoder: CommandEncoder, pipeline: ComputePipeline, x: i32, y: i32, z: i32) CommandEncoder {
+    ret CommandEncoder {
+        dispatches_recorded: encoder.dispatches_recorded + 1,
     }
 }

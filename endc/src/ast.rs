@@ -344,6 +344,7 @@ pub enum UnaryOp {
     Not,
     AddressOf,
     Deref,
+    BitNot,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -530,5 +531,6 @@ pub struct Module {
     pub functions: Vec<FunctionDef>,
     pub span: Span,
 }
+
 
 

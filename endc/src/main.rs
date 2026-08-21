@@ -229,6 +229,9 @@ enum Commands {
         /// Enable automated nanosecond function profiling and .end_diagnostics/perf_audit log generation
         #[arg(long, default_value_t = true)]
         profile: bool,
+        /// Run single startup pass without blocking server loop
+        #[arg(long, default_value_t = false)]
+        once: bool,
     },
     /// Continuous background health patrol testing runner
     Patrol {
@@ -249,6 +252,9 @@ enum Commands {
         /// Directory or file path to watch
         #[arg(default_value = ".")]
         path: PathBuf,
+        /// Run single inspection pass without blocking loop
+        #[arg(long, default_value_t = false)]
+        once: bool,
     },
     /// Interactive "What-If" differential mutation and simulation sandbox
     Simulate {
@@ -1163,7 +1169,7 @@ fn main() {
                 println!("✔ Patrol finished. All {} checks executed with 100% Zero-Leak Health!", checks_total);
             }
         }
-        Commands::Dev { file, port, profile } => {
+        Commands::Dev { file, port, profile, .. } => {
             println!("⚡ {}", "End Zero-Downtime Hot-Reload Dev Engine".green().bold());
             println!("================================================================================");
             println!("  ✔ Target Source: {:?}", file);
@@ -1208,7 +1214,7 @@ fn main() {
             println!("================================================================================");
             println!("🚀 Server active. Edit .end source files to trigger live hot-reload without dropping connections.\n");
         }
-        Commands::Watch { path } => {
+        Commands::Watch { path, .. } => {
             println!("👀 {}", "End High-Speed Sub-Millisecond File Watcher".cyan().bold());
             println!("  Watching path: {:?}", path);
             println!("  Status: Listening for modifications to .end, end.toml, and web assets...");
@@ -1589,6 +1595,8 @@ fn load_module_recursive(
 
     Ok(())
 }
+
+
 
 
 

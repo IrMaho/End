@@ -1,4 +1,4 @@
-// 🌐 End Language: std/cluster/raft.end
+// ?? End Language: std/cluster/raft.end
 // Distributed Raft Consensus Protocol & Clustered State Machine
 
 pub enum RaftRole {
@@ -47,6 +47,44 @@ pub fn raft_start_election(node: RaftNode) RaftNode {
         commit_index: node.commit_index,
         cluster_size: node.cluster_size,
     }
+}
+
+pub fn raft_handle_request_vote(node: RaftNode, candidate_id: i32, candidate_term: i64) RequestVoteResult {
+    if candidate_term > node.current_term {
+        ret RequestVoteResult {
+            term: candidate_term,
+            vote_granted: true,
+        }
+    }
+    if candidate_term == node.current_term {
+        if node.voted_for == 0 || node.voted_for == candidate_id {
+            ret RequestVoteResult {
+                term: node.current_term,
+                vote_granted: true,
+            }
+        }
+    }
+    ret RequestVoteResult {
+        term: node.current_term,
+        vote_granted: false,
+    }
+}
+
+pub fn raft_handle_append_entries(node: RaftNode, leader_term: i64, leader_commit: i64) AppendEntriesResult {
+    if leader_term < node.current_term {
+        ret AppendEntriesResult {
+            term: node.current_term,
+            success: false,
+        }
+    }
+    ret AppendEntriesResult {
+        term: leader_term,
+        success: true,
+    }
+}
+
+pub fn raft_calculate_quorum(cluster_size: i32) i32 {
+    ret (cluster_size / 2) + 1
 }
 
 pub fn raft_become_leader(node: RaftNode) RaftNode {

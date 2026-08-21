@@ -829,6 +829,7 @@ Statement::Spawn { call, .. } => {
                     UnaryOp::Not => format!("(!{})", e),
                     UnaryOp::AddressOf => format!("(&{})", e),
                     UnaryOp::Deref => format!("(*{})", e),
+                    UnaryOp::BitNot => format!("(~{})", e),
                 }
             }
             Expression::Call { callee, args, .. } => {
@@ -891,7 +892,53 @@ Statement::Spawn { call, .. } => {
             Expression::Catch { expr, .. } => {
                 self.gen_expression(expr)
             }
-            Expression::Match { .. } => "0".to_string(),
+                        Expression::Match { expr, arms, .. } => {
+                let target = self.gen_expression(expr);
+                let mut result = String::new();
+                let mut open_parens = 0;
+                for arm in arms {
+                    let arm_val = if let Some(last) = arm.body.statements.last() {
+                        match last {
+                            Statement::Expression(e) => self.gen_expression(e),
+                            Statement::Return { value: Some(e), .. } => self.gen_expression(e),
+                            _ => "0".to_string(),
+                        }
+                    } else {
+                        "0".to_string()
+                    };
+
+                    match &arm.pattern {
+                        Pattern::Literal(lit) => {
+                            let lit_str = match lit {
+                                Literal::Int(n) => n.to_string(),
+                                Literal::Float(f) => format!("{:.6}f", f),
+                                Literal::Bool(b) => if *b { "1".into() } else { "0".into() },
+                                Literal::String(s) => format!("\"{}\"", escape_c_string(s)),
+                                Literal::Null => "0".into(),
+                            };
+                            result.push_str(&format!("(({} == {}) ? ({}) : ", target, lit_str, arm_val));
+                            open_parens += 1;
+                        }
+                        Pattern::Wildcard | Pattern::Ident(_) => {
+                            result.push_str(&format!("({})", arm_val));
+                            for _ in 0..open_parens {
+                                result.push(')');
+                            }
+                            return result;
+                        }
+                        Pattern::Variant { variant_name, enum_name, .. } => {
+                            let en = enum_name.clone().unwrap_or_else(|| self.find_enum_for_variant(variant_name));
+                            result.push_str(&format!("(({}.tag == {}_{}) ? ({}) : ", target, en, variant_name, arm_val));
+                            open_parens += 1;
+                        }
+                    }
+                }
+                result.push_str("0");
+                for _ in 0..open_parens {
+                    result.push(')');
+                }
+                result
+            }
             Expression::Block(_) => "0".to_string(),
             Expression::NameOf { target, .. } => format!("\"{}\"", escape_c_string(target)),
             Expression::PathOf { target, .. } => format!("\"{}\"", escape_c_string(target)),
@@ -928,6 +975,10 @@ Statement::Spawn { call, .. } => {
         }
     }
 }
+
+
+
+
 
 
 
