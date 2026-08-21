@@ -100,6 +100,73 @@ impl CBackend {
         self.output.push_str("    if (a) { free(a->buffer); free(a); }\n");
         self.output.push_str("}\n\n");
 
+        // Native Desktop Windowing & GUI Runtime
+        self.output.push_str("/* End Native Desktop Windowing Runtime */\n");
+        self.output.push_str("#if defined(_WIN32)\n");
+        self.output.push_str("#define WIN32_LEAN_AND_MEAN\n");
+        self.output.push_str("#include <windows.h>\n");
+        self.output.push_str("typedef struct EndWindow {\n");
+        self.output.push_str("    HWND hwnd;\n");
+        self.output.push_str("    HDC hdc;\n");
+        self.output.push_str("    int32_t width;\n");
+        self.output.push_str("    int32_t height;\n");
+        self.output.push_str("    bool is_open;\n");
+        self.output.push_str("    BITMAPINFO bmi;\n");
+        self.output.push_str("} EndWindow;\n");
+        self.output.push_str("static LRESULT CALLBACK EndWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {\n");
+        self.output.push_str("    if (msg == WM_DESTROY || msg == WM_CLOSE) { PostQuitMessage(0); return 0; }\n");
+        self.output.push_str("    return DefWindowProcA(hWnd, msg, wParam, lParam);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline EndWindow* window_create(const char* title, int32_t width, int32_t height) {\n");
+        self.output.push_str("    EndWindow* win = (EndWindow*)malloc(sizeof(EndWindow));\n");
+        self.output.push_str("    win->width = width;\n");
+        self.output.push_str("    win->height = height;\n");
+        self.output.push_str("    win->is_open = true;\n");
+        self.output.push_str("    HINSTANCE hInstance = GetModuleHandle(NULL);\n");
+        self.output.push_str("    WNDCLASSEXA wc = {0};\n");
+        self.output.push_str("    wc.cbSize = sizeof(WNDCLASSEXA);\n");
+        self.output.push_str("    wc.lpfnWndProc = EndWndProc;\n");
+        self.output.push_str("    wc.hInstance = hInstance;\n");
+        self.output.push_str("    wc.hCursor = LoadCursor(NULL, IDC_ARROW);\n");
+        self.output.push_str("    wc.lpszClassName = \"EndNativeWindow\";\n");
+        self.output.push_str("    RegisterClassExA(&wc);\n");
+        self.output.push_str("    win->bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);\n");
+        self.output.push_str("    win->bmi.bmiHeader.biWidth = width;\n");
+        self.output.push_str("    win->bmi.bmiHeader.biHeight = -height;\n");
+        self.output.push_str("    win->bmi.bmiHeader.biPlanes = 1;\n");
+        self.output.push_str("    win->bmi.bmiHeader.biBitCount = 32;\n");
+        self.output.push_str("    win->bmi.bmiHeader.biCompression = BI_RGB;\n");
+        self.output.push_str("    win->hwnd = CreateWindowExA(0, \"EndNativeWindow\", title, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, width + 16, height + 39, NULL, NULL, hInstance, NULL);\n");
+        self.output.push_str("    win->hdc = GetDC(win->hwnd);\n");
+        self.output.push_str("    ShowWindow(win->hwnd, SW_SHOW);\n");
+        self.output.push_str("    UpdateWindow(win->hwnd);\n");
+        self.output.push_str("    return win;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline bool window_poll(EndWindow* win) {\n");
+        self.output.push_str("    if (!win) return false;\n");
+        self.output.push_str("    MSG msg;\n");
+        self.output.push_str("    while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {\n");
+        self.output.push_str("        if (msg.message == WM_QUIT) { win->is_open = false; return false; }\n");
+        self.output.push_str("        TranslateMessage(&msg);\n");
+        self.output.push_str("        DispatchMessageA(&msg);\n");
+        self.output.push_str("    }\n");
+        self.output.push_str("    return win->is_open;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void window_present(EndWindow* win, uint32_t* pixels) {\n");
+        self.output.push_str("    if (!win || !win->is_open || !pixels) return;\n");
+        self.output.push_str("    StretchDIBits(win->hdc, 0, 0, win->width, win->height, 0, 0, win->width, win->height, pixels, &win->bmi, DIB_RGB_COLORS, SRCCOPY);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void window_sleep(int32_t ms) {\n");
+        self.output.push_str("    Sleep(ms);\n");
+        self.output.push_str("}\n");
+        self.output.push_str("#else\n");
+        self.output.push_str("typedef struct EndWindow { int32_t width; int32_t height; bool is_open; } EndWindow;\n");
+        self.output.push_str("static inline EndWindow* window_create(const char* title, int32_t width, int32_t height) { EndWindow* w = (EndWindow*)malloc(sizeof(EndWindow)); w->width = width; w->height = height; w->is_open = true; return w; }\n");
+        self.output.push_str("static inline bool window_poll(EndWindow* win) { return false; }\n");
+        self.output.push_str("static inline void window_present(EndWindow* win, uint32_t* pixels) {}\n");
+        self.output.push_str("static inline void window_sleep(int32_t ms) {}\n");
+        self.output.push_str("#endif\n\n");
+
         // Process Imports
         for imp in &module.imports {
             match &imp.kind {

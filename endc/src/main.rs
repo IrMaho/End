@@ -227,8 +227,17 @@ fn main() {
             if let Some(ref t) = target {
                 zig_args.push("-target".to_string());
                 zig_args.push(t.clone());
+                if t.contains("windows") {
+                    zig_args.push("-lgdi32".to_string());
+                    zig_args.push("-luser32".to_string());
+                }
             } else {
                 zig_args.push("-march=native".to_string());
+                #[cfg(windows)]
+                {
+                    zig_args.push("-lgdi32".to_string());
+                    zig_args.push("-luser32".to_string());
+                }
             }
 
             zig_args.push("-o".to_string());
