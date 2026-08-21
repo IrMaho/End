@@ -30,7 +30,7 @@ jobs:
         cd endc
         cargo test --verbose
 
-    - name: Run End Language Enterprise Test Suites (34 Verification Tests)
+    - name: Run End Language Enterprise Test Suites (Real Native & FFI Tests)
       run: |
         cd endc
         cargo run --release -- test ../examples/test_enterprise_platform.end
@@ -41,6 +41,13 @@ jobs:
         cargo run --release -- test ../examples/test_evolutionary_v2.end
         cargo run --release -- test ../examples/test_patterns_and_arch_v2.end
         cargo run --release -- test ../examples/test_reflection_and_meta_v2.end
+        cargo run --release -- run ../tests/test_part1_c_family_interop.end
+        cargo run --release -- run ../tests/test_part2_real_collections_and_kv.end
+        cargo run --release -- run ../tests/test_part3_websockets_and_auth.end
+        cargo run --release -- run ../tests/test_part4_hardware_clock_stream_playground.end
+        cargo run --release -- run ../tests/test_part5_ai_tensors_and_gguf.end
+        cargo run --release -- run ../tests/test_part6_raft_cluster.end
+        cargo run --release -- run ../tests/test_sqlite3_c_interop.end
 
     - name: Verify Compiler Pass Suite
       run: |

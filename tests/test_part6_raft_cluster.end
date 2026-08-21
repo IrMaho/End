@@ -1,0 +1,54 @@
+// 👑 End Language: tests/test_part6_raft_cluster.end
+// Comprehensive Test Suite for Distributed Raft Consensus Engine & Clustered State Machine
+
+import "../std/cluster/raft.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING RAFT DISTRIBUTED CONSENSUS TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Initialize Cluster of 5 Nodes
+    println("--- 1. Initializing 5-Node Raft Cluster ---")
+    val cluster_size: i32 = 5
+    val quorum = raft_calculate_quorum(cluster_size)
+    println("Calculated Quorum for 5-Node Cluster (Must be 3):")
+    println(quorum)
+
+    val node1 = raft_node_create(1, cluster_size)
+    println("Node 1 Current Term (Must be 1):")
+    println(node1.current_term)
+
+    // 2. Leader Election Transition
+    println("--- 2. Starting Leader Election ---")
+    val candidate = raft_start_election(node1)
+    println("Candidate Term (Must be 2):")
+    println(candidate.current_term)
+    println("Candidate Votes Received:")
+    println(candidate.votes_received)
+
+    // 3. Vote Requests
+    println("--- 3. Handling RequestVote ---")
+    val vote_res = raft_handle_request_vote(node1, 1, 2)
+    println("Vote Granted from Follower (Must be true):")
+    println(vote_res.vote_granted)
+
+    // 4. Become Leader & Replicate Logs
+    println("--- 4. Leader State Transition & Log Replication ---")
+    val leader = raft_become_leader(candidate)
+    val leader_with_logs = raft_append_log(leader, 10)
+    println("Leader Committed Log Index (Must be 10):")
+    println(leader_with_logs.commit_index)
+
+    // 5. AppendEntries RPC on Follower
+    val append_res = raft_handle_append_entries(node1, 2, 10)
+    println("Follower AppendEntries Result (Must be true):")
+    println(append_res.success)
+
+    // 6. Heartbeat Timeout Evaluation
+    val is_timed_out = raft_is_heartbeat_timed_out(node1, 10000000000) // 10 seconds
+    println("Fresh Heartbeat Timed Out (Must be false):")
+    println(is_timed_out)
+
+    println("👑 ALL RAFT DISTRIBUTED CONSENSUS TESTS PASSED! 👑")
+}

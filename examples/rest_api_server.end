@@ -1,0 +1,64 @@
+// 👑 End Language: examples/rest_api_server.end
+// Enterprise High-Performance REST API Server with SQLite Storage & Argon2id Auth
+
+import "../std/net/http.end"
+import "../std/db/sqlite.end"
+import "../std/auth/argon2.end"
+
+pub fn handle_api_request(req: HttpRequest, db: DbConnection) HttpResponse {
+    if req.path == "/api/v1/users/admin" {
+        val role = db_get(db, "user:admin:role")
+        val json_res = "{\"status\":\"success\",\"user\":\"admin\",\"role\":\"" + role + "\"}"
+        ret http_ok_json(json_res)
+    }
+    ret http_not_found()
+}
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING END ENTERPRISE REST API & PERSISTENT DB DEMO")
+    println("👑 ========================================================")
+
+    // 1. Initialize Persistent SQLite Database
+    println("--- 1. Initializing Database ---")
+    val db = db_open("production_app.db")
+    println("Database Connected:")
+    println(db.is_connected)
+
+    // 2. Hash User Password with Real Argon2id
+    println("--- 2. Cryptographic Security & Argon2id Password Hashing ---")
+    val raw_pw = "EndSecureSuperPassword2026!"
+    val cfg = argon2_default_config()
+    val hash = argon2_hash_password(raw_pw, "end_crypto_salt_999", cfg)
+    println("Generated Argon2id Hash:")
+    println(hash.encoded)
+
+    // Store in Database
+    db_set(db, "user:admin:password_hash", hash.encoded)
+    db_set(db, "user:admin:role", "LeadPlatformArchitect")
+    println("Stored user credentials securely in database.")
+
+    // 3. Authenticate User
+    println("--- 3. User Authentication Flow ---")
+    val is_auth_valid = argon2_verify(raw_pw, hash)
+    println("Password Verification Result (Must be true):")
+    println(is_auth_valid)
+
+    // 4. REST Router Simulation
+    println("--- 4. REST Routing & Response Generation ---")
+    val req = HttpRequest {
+        method: "GET",
+        path: "/api/v1/users/admin",
+        body: "",
+    }
+
+    val res = handle_api_request(req, db)
+    println("Generated HTTP Response Status (Must be 200):")
+    println(res.status_code)
+    println("HTTP Response Body:")
+    println(res.body)
+
+    db_close(db)
+    println("✔ Database Cleanly Flushed & Closed!")
+    println("👑 REST API & PERSISTENT DB SHOWCASE COMPLETED! 👑")
+}

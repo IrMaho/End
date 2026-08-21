@@ -1,23 +1,45 @@
 // End Standard Library: std/ai/gguf.end
 // GGUF Quantized Model Weights Parser & Zero-Copy Tensor Loader (LLM Inference Engine)
 
+pub enum GgufTensorType {
+    GGML_TYPE_F32,
+    GGML_TYPE_F16,
+    GGML_TYPE_Q4_0,
+    GGML_TYPE_Q4_1,
+    GGML_TYPE_Q5_0,
+    GGML_TYPE_Q5_1,
+    GGML_TYPE_Q8_0,
+    GGML_TYPE_Q4_K,
+    GGML_TYPE_Q5_K,
+    GGML_TYPE_Q6_K,
+}
+
+pub struct GgufTensorInfo {
+    pub name: str,
+    pub n_dimensions: i32,
+    pub dimensions_shape: str,
+    pub tensor_type: str,
+    pub offset_bytes: i64,
+}
+
 pub struct GgufHeader {
     pub magic: str,
     pub model_version: i32,
     pub tensor_count: i64,
     pub metadata_kv_count: i64,
     pub is_valid: bool,
+    pub architecture: str,
 }
 
 pub fn gguf_verify_magic(magic_num: i64) bool {
-    // 0x46554747 is ASCII 'GGUF'
+    // 0x46554747 is ASCII 'GGUF' (1179998023)
     if magic_num == 1179998023 {
         ret true
     }
     ret false
 }
 
-pub fn gguf_parse_header(magic_num: i64, ver_num: i32, tensor_count: i64, kv_count: i64) GgufHeader {
+pub fn gguf_parse_header(magic_num: i64, ver_num: i32, tensor_count: i64, kv_count: i64, arch: str) GgufHeader {
     val valid = gguf_verify_magic(magic_num)
     ret GgufHeader {
         magic: "GGUF",
@@ -25,5 +47,16 @@ pub fn gguf_parse_header(magic_num: i64, ver_num: i32, tensor_count: i64, kv_cou
         tensor_count: tensor_count,
         metadata_kv_count: kv_count,
         is_valid: valid,
+        architecture: arch,
+    }
+}
+
+pub fn gguf_describe_tensor(name: str, dims: str, t_type: str, offset: i64) GgufTensorInfo {
+    ret GgufTensorInfo {
+        name: name,
+        n_dimensions: 2,
+        dimensions_shape: dims,
+        tensor_type: t_type,
+        offset_bytes: offset,
     }
 }

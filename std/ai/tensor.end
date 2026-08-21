@@ -1,6 +1,13 @@
 // End Standard Library: std/ai/tensor.end
 // Native High-Performance 2D Tensor & SIMD MatMul Engine
 
+pub extern fn end_tensor_create(rows: i32, cols: i32) i64
+pub extern fn end_tensor_set(handle: i64, r: i32, c: i32, val_elem: f64) void
+pub extern fn end_tensor_get(handle: i64, r: i32, c: i32) f64
+pub extern fn end_tensor_matmul(h_a: i64, h_b: i64) i64
+pub extern fn end_tensor_relu(handle: i64) void
+pub extern fn end_tensor_destroy(handle: i64) void
+
 pub struct Tensor {
     pub handle: i64,
     pub rows: i32,

@@ -1,10 +1,19 @@
-// ?? End Language: std/cluster/raft.end
+// 👑 End Language: std/cluster/raft.end
 // Distributed Raft Consensus Protocol & Clustered State Machine
+
+import "../time/time.end"
 
 pub enum RaftRole {
     Follower,
     Candidate,
     Leader,
+}
+
+pub st RaftLogEntry {
+    index: i64,
+    term: i64,
+    command: str,
+    payload: str,
 }
 
 pub st RaftNode {
@@ -14,6 +23,8 @@ pub st RaftNode {
     role: RaftRole,
     commit_index: i64,
     cluster_size: i32,
+    last_heartbeat_time: i64,
+    votes_received: i32,
 }
 
 pub st RequestVoteResult {
@@ -34,6 +45,8 @@ pub fn raft_node_create(node_id: i32, cluster_size: i32) RaftNode {
         role: RaftRole::Follower,
         commit_index: 0,
         cluster_size: cluster_size,
+        last_heartbeat_time: time_now_nanos(),
+        votes_received: 0,
     }
 }
 
@@ -46,6 +59,8 @@ pub fn raft_start_election(node: RaftNode) RaftNode {
         role: RaftRole::Candidate,
         commit_index: node.commit_index,
         cluster_size: node.cluster_size,
+        last_heartbeat_time: time_now_nanos(),
+        votes_received: 1,
     }
 }
 
@@ -95,6 +110,8 @@ pub fn raft_become_leader(node: RaftNode) RaftNode {
         role: RaftRole::Leader,
         commit_index: node.commit_index,
         cluster_size: node.cluster_size,
+        last_heartbeat_time: time_now_nanos(),
+        votes_received: node.votes_received,
     }
 }
 
@@ -107,5 +124,13 @@ pub fn raft_append_log(node: RaftNode, entry_count: i64) RaftNode {
         role: node.role,
         commit_index: new_commit,
         cluster_size: node.cluster_size,
+        last_heartbeat_time: time_now_nanos(),
+        votes_received: node.votes_received,
     }
+}
+
+pub fn raft_is_heartbeat_timed_out(node: RaftNode, timeout_nanos: i64) bool {
+    val now = time_now_nanos()
+    val elapsed = now - node.last_heartbeat_time
+    ret elapsed > timeout_nanos
 }
