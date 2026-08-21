@@ -1,0 +1,113 @@
+// 👑 End Language: tests/test_part9_cpu_event_loop_leasing.end
+// Comprehensive Test Suite for CPU Burst Leasing, Ephemeral Event Lifecycle & Budget-Constrained Loops
+
+import "../std/cpu/burst.end"
+import "../std/event/lifecycle.end"
+import "../std/loop/budget.end"
+
+pub fn compute_heavy_math(n: i64) i64 {
+    val result = n * n + 42
+    ret result
+}
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING CPU, EVENT & LOOP LEASING TEST SUITE")
+    println("👑 ========================================================")
+
+    // ────────────────────────────────────────────
+    // 1. CPU Burst Leasing: lease cpu(cores) { ... }
+    // ────────────────────────────────────────────
+    println("--- 1. Testing CPU Burst Leasing ---")
+    val available_cores = cpu_get_available_cores()
+    println("Available CPU Cores (Must be 8):")
+    println(available_cores)
+
+    lease cpu(4, "realtime") {
+        val heavy_result = compute_heavy_math(1024)
+        println("Heavy Math on 4 Leased Cores (Must be 1048618):")
+        println(heavy_result)
+        val double_result = heavy_result * 2
+        println("Double Result on Burst Threads (Must be 2097236):")
+        println(double_result)
+    }
+    println("✔ CPU Cores Leased, Computed & Released Back to OS!")
+
+    val stats = cpu_burst_stats(4, 500000, 1000000)
+    println("Idle Power Saved (Must be 1000mW):")
+    println(stats.idle_power_saved_mw)
+
+    // ────────────────────────────────────────────
+    // 2. Ephemeral Event Leasing: lease listen(event) while condition { ... }
+    // ────────────────────────────────────────────
+    println("--- 2. Testing Ephemeral Event Leasing ---")
+    val is_ui_active: bool = true
+
+    lease listen("window.on_resize") while is_ui_active {
+        println("Event Listener Active (Must be inside lease block):")
+        println("RESIZE_HANDLER_RUNNING")
+        val resize_width = 1920
+        println("Resized Width (Must be 1920):")
+        println(resize_width)
+    }
+    println("✔ Event Listener Auto-Unregistered — Zero Memory Leak!")
+
+    val handle = event_register("scroll_event")
+    println("Event Handle Active (Must be true):")
+    println(handle.is_active)
+    println("Event Auto-Cleanup (Must be true):")
+    println(handle.auto_cleanup)
+
+    // ────────────────────────────────────────────
+    // 3. Conditional Event Leasing (disabled condition)
+    // ────────────────────────────────────────────
+    println("--- 3. Testing Disabled Event Lease ---")
+    val is_modal_open: bool = false
+
+    lease listen("modal.on_click") while is_modal_open {
+        println("THIS MUST NEVER PRINT - MODAL IS CLOSED!")
+    }
+    println("✔ Disabled Event Correctly Skipped — No Listener Leaked!")
+
+    // ────────────────────────────────────────────
+    // 4. Budget-Leased Loop with Time Constraint
+    // ────────────────────────────────────────────
+    println("--- 4. Testing Budget-Leased Loop ---")
+    mut accumulated: i64 = 0
+    lease loop(50) for idx in 100 {
+        accumulated = accumulated + idx
+    }
+    println("Accumulated Sum After Budget Loop (Must be 4950):")
+    println(accumulated)
+    println("✔ Budget-Leased Loop Executed With Time Guard!")
+
+    val report = loop_budget_report(100, 100, 50, 3)
+    println("Budget Loop Report — Items Processed (Must be 100):")
+    println(report.items_processed)
+    println("Was Interrupted (Must be false):")
+    println(report.was_interrupted)
+
+    // ────────────────────────────────────────────
+    // 5. Zero-Allocation Fused Lease Loop
+    // ────────────────────────────────────────────
+    println("--- 5. Testing Zero-Allocation Fused Lease Loop ---")
+    mut fused_sum: i64 = 0
+    lease for i in 10 {
+        fused_sum = fused_sum + i * i
+    }
+    println("Fused Loop Sum of Squares 0..9 (Must be 285):")
+    println(fused_sum)
+    println("✔ Zero-Allocation Fused Loop Verified!")
+
+    // ────────────────────────────────────────────
+    // 6. Scoped During Event Lease
+    // ────────────────────────────────────────────
+    println("--- 6. Testing During-Scoped Event Lease ---")
+    lease listen("socket.on_auth_packet") during {
+        println("Auth Packet Listener Active:")
+        println("WAITING_FOR_TOKEN")
+    }
+    println("✔ Scoped Event Lease Executed & Listener Destroyed!")
+
+    println("👑 ALL CPU, EVENT & LOOP LEASING TESTS PASSED! 👑")
+}

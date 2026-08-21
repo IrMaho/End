@@ -338,6 +338,25 @@ pub enum Statement {
         body: Block,
         span: Span,
     },
+    LeaseCpu {
+        cores: Expression,
+        priority: Option<Expression>,
+        body: Block,
+        span: Span,
+    },
+    LeaseEvent {
+        event_expr: Expression,
+        condition: Option<Expression>,
+        body: Block,
+        span: Span,
+    },
+    LeaseLoop {
+        budget: Option<Expression>,
+        item_name: String,
+        iterable: Expression,
+        body: Block,
+        span: Span,
+    },
     QuantumUnwrap {
         name: String,
         var_type: Option<Type>,
@@ -587,6 +606,9 @@ impl Statement {
             Statement::Skip { span, .. } => span,
             Statement::InlineC { span, .. } => span,
             Statement::LeaseBlock { span, .. } => span,
+            Statement::LeaseCpu { span, .. } => span,
+            Statement::LeaseEvent { span, .. } => span,
+            Statement::LeaseLoop { span, .. } => span,
             Statement::QuantumUnwrap { span, .. } => span,
             Statement::AtomicOp { span, .. } => span,
         }

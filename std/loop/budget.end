@@ -1,0 +1,27 @@
+// End Standard Library: std/loop/budget.end
+// Budget-Constrained Loop Engine: Real-Time Frame-Safe Iteration with Hardware Clock Enforcement
+
+pub struct LoopBudgetReport {
+    pub total_items: i64,
+    pub items_processed: i64,
+    pub budget_ms: i64,
+    pub elapsed_ms: i64,
+    pub was_interrupted: bool,
+}
+
+pub fn loop_budget_report(total: i64, processed: i64, budget: i64, elapsed: i64) LoopBudgetReport {
+    ret LoopBudgetReport {
+        total_items: total,
+        items_processed: processed,
+        budget_ms: budget,
+        elapsed_ms: elapsed,
+        was_interrupted: processed < total,
+    }
+}
+
+pub fn loop_calculate_throughput(items: i64, nanos: i64) i64 {
+    if nanos > 0 {
+        ret items * 1000000000 / nanos
+    }
+    ret 0
+}

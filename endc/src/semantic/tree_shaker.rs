@@ -158,6 +158,33 @@ impl TreeShaker {
                     Self::visit_statement(s, reachable_fn, reachable_st, module);
                 }
             }
+            Statement::LeaseCpu { cores, priority, body, .. } => {
+                Self::visit_expression(cores, reachable_fn, reachable_st, module);
+                if let Some(p) = priority {
+                    Self::visit_expression(p, reachable_fn, reachable_st, module);
+                }
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
+            Statement::LeaseEvent { event_expr, condition, body, .. } => {
+                Self::visit_expression(event_expr, reachable_fn, reachable_st, module);
+                if let Some(c) = condition {
+                    Self::visit_expression(c, reachable_fn, reachable_st, module);
+                }
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
+            Statement::LeaseLoop { budget, iterable, body, .. } => {
+                if let Some(b) = budget {
+                    Self::visit_expression(b, reachable_fn, reachable_st, module);
+                }
+                Self::visit_expression(iterable, reachable_fn, reachable_st, module);
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
             Statement::AtomicOp { value, .. } => {
                 Self::visit_expression(value, reachable_fn, reachable_st, module);
             }

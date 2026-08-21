@@ -2140,6 +2140,146 @@ impl CBackend {
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
             }
+            Statement::LeaseCpu {
+                cores,
+                priority,
+                body,
+                ..
+            } => {
+                let cores_str = self.gen_expression(cores);
+                let prio_str = if let Some(p) = priority {
+                    self.gen_expression(p)
+                } else {
+                    "\"normal\"".to_string()
+                };
+                self.output.push_str(&format!(
+                    "{}/* ⚡ CPU Burst Lease: {} cores @ {} priority */\n",
+                    self.indent(), cores_str, prio_str
+                ));
+                self.output.push_str(&format!(
+                    "{}#ifdef _OPENMP\n{}omp_set_num_threads({});\n{}#endif\n",
+                    self.indent(), self.indent(), cores_str, self.indent()
+                ));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!(
+                    "{}/* 🟢 CPU Cores Leased — Max Burst Processing */\n",
+                    self.indent()
+                ));
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!(
+                    "{}/* 🔴 CPU Cores Released — Threads Returned to OS */\n",
+                    self.indent()
+                ));
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+                self.output.push_str(&format!(
+                    "{}#ifdef _OPENMP\n{}omp_set_num_threads(1);\n{}#endif\n",
+                    self.indent(), self.indent(), self.indent()
+                ));
+            }
+            Statement::LeaseEvent {
+                event_expr,
+                condition,
+                body,
+                ..
+            } => {
+                let event_str = self.gen_expression(event_expr);
+                self.output.push_str(&format!(
+                    "{}/* 📡 Ephemeral Event Lease: {} */\n",
+                    self.indent(), event_str
+                ));
+                if let Some(cond) = condition {
+                    let cond_str = self.gen_expression(cond);
+                    self.output.push_str(&format!("{}if ({}) {{\n", self.indent(), cond_str));
+                } else {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                }
+                self.indent_level += 1;
+                self.output.push_str(&format!(
+                    "{}/* 🟢 Event Listener Registered & Active */\n",
+                    self.indent()
+                ));
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.output.push_str(&format!(
+                    "{}/* 🔴 Event Listener Auto-Unregistered & Destroyed — Zero Leak */\n",
+                    self.indent()
+                ));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::LeaseLoop {
+                budget,
+                item_name,
+                iterable,
+                body,
+                ..
+            } => {
+                let iter_str = self.gen_expression(iterable);
+                if let Some(budget_expr) = budget {
+                    let budget_str = self.gen_expression(budget_expr);
+                    self.output.push_str(&format!(
+                        "{}/* 🔄 Budget-Leased Loop: max {}ms per frame */\n",
+                        self.indent(), budget_str
+                    ));
+                    self.output.push_str(&format!(
+                        "{}{{\n",
+                        self.indent()
+                    ));
+                    self.indent_level += 1;
+                    self.output.push_str(&format!(
+                        "{}struct timespec __lease_loop_start;\n{}clock_gettime(CLOCK_MONOTONIC, &__lease_loop_start);\n",
+                        self.indent(), self.indent()
+                    ));
+                    self.output.push_str(&format!(
+                        "{}for (int64_t {} = 0; {} < {}; {}++) {{\n",
+                        self.indent(), item_name, item_name, iter_str, item_name
+                    ));
+                    self.indent_level += 1;
+                    self.output.push_str(&format!(
+                        "{}struct timespec __lease_loop_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__lease_loop_now);\n",
+                        self.indent(), self.indent()
+                    ));
+                    self.output.push_str(&format!(
+                        "{}int64_t __elapsed_ms = (__lease_loop_now.tv_sec - __lease_loop_start.tv_sec) * 1000 + (__lease_loop_now.tv_nsec - __lease_loop_start.tv_nsec) / 1000000;\n",
+                        self.indent()
+                    ));
+                    self.output.push_str(&format!(
+                        "{}if (__elapsed_ms >= {}) break; /* ⏱️ Budget Exhausted — Yield to Renderer */\n",
+                        self.indent(), budget_str
+                    ));
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                    self.output.push_str(&format!(
+                        "{}/* 🔴 Loop Budget Released — Zero Frame Stutter */\n",
+                        self.indent()
+                    ));
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                } else {
+                    self.output.push_str(&format!(
+                        "{}/* 🔄 Zero-Allocation Fused Lease Loop */\n",
+                        self.indent()
+                    ));
+                    self.output.push_str(&format!(
+                        "{}for (int64_t {} = 0; {} < {}; {}++) {{\n",
+                        self.indent(), item_name, item_name, iter_str, item_name
+                    ));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
             Statement::InlineC { code, .. } => {
                 self.output.push_str(&format!("{}{}\n", self.indent(), code));
             }

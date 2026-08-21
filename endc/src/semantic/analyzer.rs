@@ -497,6 +497,36 @@ impl SemanticAnalyzer {
                 self.analyze_block(body);
                 self.pop_scope();
             }
+            Statement::LeaseCpu { cores, priority, body, span } => {
+                self.analyze_expression(cores);
+                if let Some(p) = priority {
+                    self.analyze_expression(p);
+                }
+                self.push_scope();
+                self.declare_var("__lease_cpu_cores", Type::I32, span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
+            }
+            Statement::LeaseEvent { event_expr, condition, body, span } => {
+                self.analyze_expression(event_expr);
+                if let Some(c) = condition {
+                    self.analyze_expression(c);
+                }
+                self.push_scope();
+                self.declare_var("__lease_event_handle", Type::I64, span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
+            }
+            Statement::LeaseLoop { budget, item_name, iterable, body, span } => {
+                if let Some(b) = budget {
+                    self.analyze_expression(b);
+                }
+                self.analyze_expression(iterable);
+                self.push_scope();
+                self.declare_var(item_name, Type::I64, span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
+            }
             _ => {}
         }
     }

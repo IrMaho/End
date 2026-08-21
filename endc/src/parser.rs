@@ -993,6 +993,93 @@ impl Parser {
             }
             TokenKind::Lease | TokenKind::Borrow => {
                 self.advance();
+
+                // lease cpu(cores, priority) { body }
+                if let TokenKind::Ident(ref peek_id) = self.peek_kind().clone() {
+                    if peek_id == "cpu" {
+                        self.advance(); // consume "cpu"
+                        self.expect(TokenKind::LParen)?;
+                        let cores = self.parse_expression()?;
+                        let priority = if self.match_token(&TokenKind::Comma) {
+                            Some(self.parse_expression()?)
+                        } else {
+                            None
+                        };
+                        self.expect(TokenKind::RParen)?;
+                        let body = self.parse_block()?;
+                        return Ok(Statement::LeaseCpu {
+                            cores,
+                            priority,
+                            body,
+                            span,
+                        });
+                    }
+
+                    // lease listen(event_expr) while condition { body }
+                    if peek_id == "listen" {
+                        self.advance(); // consume "listen"
+                        self.expect(TokenKind::LParen)?;
+                        let event_expr = self.parse_expression()?;
+                        self.expect(TokenKind::RParen)?;
+                        let mut condition = None;
+                        if self.match_token(&TokenKind::While) || self.match_token(&TokenKind::During) {
+                            if !self.check(&TokenKind::LBrace) {
+                                condition = Some(self.parse_expression()?);
+                            }
+                        }
+                        let body = self.parse_block()?;
+                        return Ok(Statement::LeaseEvent {
+                            event_expr,
+                            condition,
+                            body,
+                            span,
+                        });
+                    }
+
+                    // lease loop(budget) for item in iterable { body }
+                    if peek_id == "loop" {
+                        self.advance(); // consume "loop"
+                        self.expect(TokenKind::LParen)?;
+                        let budget = self.parse_expression()?;
+                        self.expect(TokenKind::RParen)?;
+                        self.expect(TokenKind::For)?;
+                        let item_name = match self.advance().kind {
+                            TokenKind::Ident(n) => n,
+                            other => return Err(format!("Expected item name in lease loop, found {:?}", other)),
+                        };
+                        self.expect(TokenKind::In)?;
+                        let iterable = self.parse_expression()?;
+                        let body = self.parse_block()?;
+                        return Ok(Statement::LeaseLoop {
+                            budget: Some(budget),
+                            item_name,
+                            iterable,
+                            body,
+                            span,
+                        });
+                    }
+                }
+
+                // lease for item in iterable { body }  (zero-allocation fused loop)
+                if self.check(&TokenKind::For) {
+                    self.advance(); // consume "for"
+                    let item_name = match self.advance().kind {
+                        TokenKind::Ident(n) => n,
+                        other => return Err(format!("Expected item name in lease for, found {:?}", other)),
+                    };
+                    self.expect(TokenKind::In)?;
+                    let iterable = self.parse_expression()?;
+                    let body = self.parse_block()?;
+                    return Ok(Statement::LeaseLoop {
+                        budget: None,
+                        item_name,
+                        iterable,
+                        body,
+                        span,
+                    });
+                }
+
+                // Existing: lease val name = expr { body } / lease val name = expr;
                 let is_mut = if self.match_token(&TokenKind::Mut) {
                     true
                 } else {

@@ -306,6 +306,53 @@ impl Interpreter {
                 self.pop_scope();
                 Ok(None)
             }
+            Statement::LeaseCpu { body, .. } => {
+                self.push_scope();
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            Statement::LeaseEvent { condition, body, .. } => {
+                if let Some(cond_expr) = condition {
+                    let cond_val = self.eval_expression(cond_expr)?;
+                    if let Value::Bool(false) = cond_val {
+                        return Ok(None);
+                    }
+                }
+                self.push_scope();
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            Statement::LeaseLoop { item_name, iterable, body, .. } => {
+                let iter_val = self.eval_expression(iterable)?;
+                let count = match iter_val {
+                    Value::Int(n) => n,
+                    _ => 0,
+                };
+                self.push_scope();
+                for i in 0..count {
+                    self.set_var(item_name, Value::Int(i));
+                    for s in &body.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
             Statement::RegionBlock { name, body, .. } => {
                 self.push_scope();
                 self.set_var(&format!("region_{}", name), Value::String(format!("Region<{}>", name)));
