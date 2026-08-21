@@ -287,6 +287,25 @@ impl Interpreter {
                 }
                 Ok(None)
             }
+            Statement::LeaseBlock { name, initializer, condition, body, .. } => {
+                let init_val = self.eval_expression(initializer)?;
+                if let Some(cond_expr) = condition {
+                    let cond_val = self.eval_expression(cond_expr)?;
+                    if let Value::Bool(false) = cond_val {
+                        return Ok(None);
+                    }
+                }
+                self.push_scope();
+                self.set_var(name, init_val);
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
             Statement::RegionBlock { name, body, .. } => {
                 self.push_scope();
                 self.set_var(&format!("region_{}", name), Value::String(format!("Region<{}>", name)));

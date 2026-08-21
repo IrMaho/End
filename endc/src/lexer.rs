@@ -42,6 +42,9 @@ pub enum TokenKind {
     With,     // 'with'
     InlineC,  // 'inline_c'
     Extern,   // 'extern'
+    Lease,    // 'lease'
+    Borrow,   // 'borrow'
+    During,   // 'during'
 
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
@@ -346,6 +349,9 @@ impl<'a> Lexer<'a> {
                     "with" => TokenKind::With,
                     "inline_c" => TokenKind::InlineC,
                     "extern" => TokenKind::Extern,
+                    "lease" => TokenKind::Lease,
+                    "borrow" => TokenKind::Borrow,
+                    "during" => TokenKind::During,
                     _ => TokenKind::Ident(ident),
                 }
             };

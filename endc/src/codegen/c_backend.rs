@@ -1660,6 +1660,7 @@ impl CBackend {
                                     name: morphic_var.clone(),
                                     var_type: Some(Type::Str),
                                     is_mut: false,
+                                    is_lease: false,
                                     initializer: Some(Expression::Lit(
                                         Literal::String(concrete_value.to_string()),
                                         mt.span.clone(),
@@ -2089,6 +2090,55 @@ impl CBackend {
                     self.indent(),
                     name
                 ));
+            }
+            Statement::LeaseBlock {
+                name,
+                var_type,
+                initializer,
+                condition,
+                body,
+                ..
+            } => {
+                if let Some(t) = var_type {
+                    self.var_types.insert(name.clone(), t.clone());
+                } else {
+                    let inferred = self.infer_type(initializer);
+                    if inferred != Type::Void {
+                        self.var_types.insert(name.clone(), inferred);
+                    }
+                }
+
+                let ty_str = if let Some(t) = var_type {
+                    self.map_type(t)
+                } else {
+                    "__auto_type".to_string()
+                };
+                let init_str = self.gen_expression(initializer);
+
+                if let Some(cond) = condition {
+                    let cond_str = self.gen_expression(cond);
+                    self.output.push_str(&format!("{}if ({}) {{\n", self.indent(), cond_str));
+                    self.indent_level += 1;
+                    self.output.push_str(&format!("{}/* 🟢 JIT Memory Lease Acquisition: {} */\n", self.indent(), name));
+                    self.output.push_str(&format!("{}{} {} = {};\n", self.indent(), ty_str, name, init_str));
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.output.push_str(&format!("{}/* 🔴 Immediate Memory Release & Destruction */\n", self.indent()));
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                } else {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    self.output.push_str(&format!("{}/* 🟢 JIT Scoped Memory Lease Acquisition: {} */\n", self.indent(), name));
+                    self.output.push_str(&format!("{}{} {} = {};\n", self.indent(), ty_str, name, init_str));
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.output.push_str(&format!("{}/* 🔴 Immediate Memory Release & Destruction */\n", self.indent()));
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
             }
             Statement::InlineC { code, .. } => {
                 self.output.push_str(&format!("{}{}\n", self.indent(), code));

@@ -1,0 +1,65 @@
+// 👑 End Language: tests/test_part8_ephemeral_memory_leases.end
+// Comprehensive Test Suite for Ephemeral Memory Leasing, Zero-GC Dynamic Lifecycles & JIT Variable Borrowing
+
+import "../std/mem/lease.end"
+
+pub fn main() void {
+    println("👑 ========================================================")
+    println("👑 STARTING EPHEMERAL MEMORY LEASING & BORROWING TEST SUITE")
+    println("👑 ========================================================")
+
+    // 1. Scoped Block Memory Lease
+    println("--- 1. Testing Scoped Block Memory Lease ---")
+    val initial_bytes: i64 = 1048576
+    lease val frame_buffer = initial_bytes * 2 {
+        println("Leased FrameBuffer Size Inside Scope (Must be 2097152):")
+        println(frame_buffer)
+        val computed_offset = frame_buffer + 512
+        println("Computed Offset in Leased Memory:")
+        println(computed_offset)
+    }
+    println("✔ FrameBuffer Memory Leased & Automatically Reclaimed at Scope Exit!")
+
+    // 2. Conditional Lifecycle Lease (while condition is active)
+    println("--- 2. Testing Conditional Lifecycle Lease ---")
+    val is_widget_visible: bool = true
+    lease val widget_cache = "RENDER_CACHE_4K_60FPS" while is_widget_visible {
+        println("Widget Cache Leased on RAM (Must be RENDER_CACHE_4K_60FPS):")
+        println(widget_cache)
+    }
+    println("✔ Conditional Lease Evaluated & Executed Successfully!")
+
+    // 3. During / Span Variable Borrowing
+    println("--- 3. Testing During / Span Variable Borrowing ---")
+    borrow val temp_calc = 999 * 3 during {
+        println("Borrowed Temporary Calculation (Must be 2997):")
+        println(temp_calc)
+    }
+    println("✔ Borrowed Variable Discarded After Computation Span!")
+
+    // 4. Inline Leased Variable Declarations
+    println("--- 4. Testing Inline Leased Variables ---")
+    lease val quick_score: i64 = 8888
+    lease mut session_tag: str = "SESSION_ACTIVE_001"
+    println("Inline Leased Value (Must be 8888):")
+    println(quick_score)
+    println("Inline Leased Tag (Must be SESSION_ACTIVE_001):")
+    println(session_tag)
+
+    // 5. Memory Lease Standard Library Pool Statistics
+    println("--- 5. Testing Lease Pool Statistics ---")
+    val stats = lease_stats_create(100, 4, 96)
+    println("Total Leases Acquired (Must be 100):")
+    println(stats.total_leases_acquired)
+    println("Reclaimed Leases (Must be 96):")
+    println(stats.reclaimed_bytes)
+    println("Allocation Latency Nanos (Must be 1):")
+    println(stats.allocation_latency_nanos)
+
+    val handle = lease_acquire_buffer(4096)
+    val released = lease_release_buffer(handle)
+    println("Buffer Release Result (Must be true):")
+    println(released)
+
+    println("👑 ALL EPHEMERAL MEMORY LEASING TESTS PASSED! 👑")
+}

@@ -215,6 +215,20 @@ impl LlvmBackend {
                 }
                 false
             }
+            Statement::LeaseBlock { name, var_type, initializer, body, .. } => {
+                let ty = var_type.as_ref().map(|t| self.map_type_to_llvm(t)).unwrap_or_else(|| "i64".to_string());
+                let ptr_reg = format!("%{}", name);
+                writeln!(self.output, "  {} = alloca {}", ptr_reg, ty).unwrap();
+                self.variables.insert(name.clone(), (ty.clone(), ptr_reg.clone()));
+
+                let (init_val, _) = self.generate_expression(initializer);
+                writeln!(self.output, "  store {} {}, {}* {}", ty, init_val, ty, ptr_reg).unwrap();
+
+                for s in &body.statements {
+                    self.generate_statement(s);
+                }
+                false
+            }
             _ => false,
         }
     }

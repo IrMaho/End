@@ -83,7 +83,7 @@ impl AstLowering {
 
     fn lower_statement(stmt: &Statement, var_ctx: &mut HashMap<String, HirType>) -> HirStatement {
         match stmt {
-            Statement::VarDecl { name, var_type, is_mut, initializer, span } => {
+            Statement::VarDecl { name, var_type, is_mut, is_lease: _, initializer, span } => {
                 let init = initializer.as_ref().map(|i| Self::lower_expr(i, var_ctx));
                 let ty = if let Some(v_ty) = var_type {
                     Self::lower_type(v_ty)

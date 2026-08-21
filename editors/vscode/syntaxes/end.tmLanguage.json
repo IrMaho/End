@@ -57,7 +57,7 @@
         },
         {
           "name": "keyword.other.memory.end",
-          "match": "\\b(region|mut|val|pure|effect|alloc|free|promote|catch|skip)\\b"
+          "match": "\\b(region|lease|borrow|during|mut|val|pure|effect|alloc|free|promote|catch|skip)\\b"
         },
         {
           "name": "keyword.declaration.end",

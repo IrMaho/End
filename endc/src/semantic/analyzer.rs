@@ -303,7 +303,7 @@ impl SemanticAnalyzer {
 
     fn analyze_statement(&mut self, stmt: &Statement) {
         match stmt {
-            Statement::VarDecl { name, var_type, is_mut, initializer, span } => {
+            Statement::VarDecl { name, var_type, is_mut, is_lease: _, initializer, span } => {
                 let inferred_ty = if let Some(init) = initializer {
                     self.analyze_expression(init)
                 } else {
@@ -485,6 +485,17 @@ impl SemanticAnalyzer {
             }
             Statement::Defer { expr, .. } => {
                 self.analyze_expression(expr);
+            }
+            Statement::LeaseBlock { name, var_type, initializer, condition, body, span } => {
+                let inferred_ty = self.analyze_expression(initializer);
+                if let Some(c) = condition {
+                    self.analyze_expression(c);
+                }
+                self.push_scope();
+                let ty = var_type.clone().unwrap_or(inferred_ty);
+                self.declare_var(name, ty, span.line, false);
+                self.analyze_block(body);
+                self.pop_scope();
             }
             _ => {}
         }

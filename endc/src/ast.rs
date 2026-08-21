@@ -258,6 +258,7 @@ pub enum Statement {
         name: String,
         var_type: Option<Type>,
         is_mut: bool,
+        is_lease: bool,
         initializer: Option<Expression>,
         span: Span,
     },
@@ -327,6 +328,14 @@ pub enum Statement {
     },
     InlineC {
         code: String,
+        span: Span,
+    },
+    LeaseBlock {
+        name: String,
+        var_type: Option<Type>,
+        initializer: Expression,
+        condition: Option<Expression>,
+        body: Block,
         span: Span,
     },
     QuantumUnwrap {
@@ -577,6 +586,7 @@ impl Statement {
             Statement::Spawn { span, .. } => span,
             Statement::Skip { span, .. } => span,
             Statement::InlineC { span, .. } => span,
+            Statement::LeaseBlock { span, .. } => span,
             Statement::QuantumUnwrap { span, .. } => span,
             Statement::AtomicOp { span, .. } => span,
         }

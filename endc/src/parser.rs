@@ -991,6 +991,57 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::Lease | TokenKind::Borrow => {
+                self.advance();
+                let is_mut = if self.match_token(&TokenKind::Mut) {
+                    true
+                } else {
+                    self.match_token(&TokenKind::Val);
+                    false
+                };
+
+                let name = match self.advance().kind {
+                    TokenKind::Ident(n) => n,
+                    other => return Err(format!("Expected variable name after lease/borrow, found {:?}", other)),
+                };
+
+                let mut var_type = None;
+                if self.match_token(&TokenKind::Colon) {
+                    var_type = Some(self.parse_type()?);
+                }
+
+                self.expect(TokenKind::Equal)?;
+                let initializer = self.parse_expression()?;
+
+                let mut condition = None;
+                if self.match_token(&TokenKind::While) || self.match_token(&TokenKind::During) {
+                    if !self.check(&TokenKind::LBrace) {
+                        condition = Some(self.parse_expression()?);
+                    }
+                }
+
+                if self.check(&TokenKind::LBrace) {
+                    let body = self.parse_block()?;
+                    Ok(Statement::LeaseBlock {
+                        name,
+                        var_type,
+                        initializer,
+                        condition,
+                        body,
+                        span,
+                    })
+                } else {
+                    self.match_token(&TokenKind::SemiColon);
+                    Ok(Statement::VarDecl {
+                        name,
+                        var_type,
+                        is_mut,
+                        is_lease: true,
+                        initializer: Some(initializer),
+                        span,
+                    })
+                }
+            }
             TokenKind::Val | TokenKind::Mut => {
                 let is_mut = self.peek_kind() == &TokenKind::Mut;
                 self.advance();
@@ -1016,6 +1067,7 @@ impl Parser {
                     name,
                     var_type,
                     is_mut,
+                    is_lease: false,
                     initializer,
                     span,
                 })

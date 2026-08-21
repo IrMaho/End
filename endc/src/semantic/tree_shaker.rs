@@ -149,6 +149,15 @@ impl TreeShaker {
                 Self::visit_expression(expr, reachable_fn, reachable_st, module);
                 Self::visit_expression(fallback, reachable_fn, reachable_st, module);
             }
+            Statement::LeaseBlock { initializer, condition, body, .. } => {
+                Self::visit_expression(initializer, reachable_fn, reachable_st, module);
+                if let Some(c) = condition {
+                    Self::visit_expression(c, reachable_fn, reachable_st, module);
+                }
+                for s in &body.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
             Statement::AtomicOp { value, .. } => {
                 Self::visit_expression(value, reachable_fn, reachable_st, module);
             }

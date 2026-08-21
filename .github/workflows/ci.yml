@@ -47,6 +47,7 @@ jobs:
         cargo run --release -- run ../tests/test_part4_hardware_clock_stream_playground.end
         cargo run --release -- run ../tests/test_part5_ai_tensors_and_gguf.end
         cargo run --release -- run ../tests/test_part6_raft_cluster.end
+        cargo run --release -- run ../tests/test_part8_ephemeral_memory_leases.end
         cargo run --release -- run ../tests/test_sqlite3_c_interop.end
 
     - name: Verify Compiler Pass Suite
