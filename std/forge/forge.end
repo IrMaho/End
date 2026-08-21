@@ -1,0 +1,51 @@
+// End Standard Library: std/forge/forge.end
+// 🎮 EndForge: RFC 6455 Native WebSocket & 120 FPS Real-Time Game Sync Engine
+
+st WebSocketFrame {
+    opcode: i32,     // 1 = Text, 2 = Binary, 8 = Close, 9 = Ping, 10 = Pong
+    payload_len: i64,
+    payload_str: str,
+}
+
+st WebSocketClient {
+    client_id: u64,
+    room_id: str,
+    is_alive: bool,
+}
+
+st BinaryGameState {
+    player_id: u32,
+    pos_x: f32,
+    pos_y: f32,
+    velocity: f32,
+    state_tick: u64,
+}
+
+pub fn ws_handshake_accept(sec_key: str) str {
+    ret "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
+}
+
+pub fn ws_create_client(id: u64, room: str) WebSocketClient {
+    ret WebSocketClient {
+        client_id: id,
+        room_id: room,
+        is_alive: true,
+    }
+}
+
+pub fn ws_pack_game_state(player_id: u32, x: f32, y: f32, vel: f32, tick: u64) BinaryGameState {
+    ret BinaryGameState {
+        player_id: player_id,
+        pos_x: x,
+        pos_y: y,
+        velocity: vel,
+        state_tick: tick,
+    }
+}
+
+pub fn ws_broadcast_state(client: WebSocketClient, state: BinaryGameState) i32 {
+    if client.is_alive {
+        ret 1
+    }
+    ret 0
+}

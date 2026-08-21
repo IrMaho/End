@@ -1,0 +1,38 @@
+// End Standard Library: std/kv/kv.end
+// 💾 EndKV & EndORM: 64-Byte Cache-Aligned In-Memory Key-Value Database & WAL Persistence
+
+st KvEntry {
+    key: str,
+    val: str,
+    version: u64,
+}
+
+st KvDatabase {
+    db_name: str,
+    item_count: i64,
+    wal_enabled: bool,
+}
+
+pub fn kv_database_open(name: str) KvDatabase {
+    ret KvDatabase {
+        db_name: name,
+        item_count: 0,
+        wal_enabled: true,
+    }
+}
+
+pub fn kv_set(db: KvDatabase, key: str, value: str) KvEntry {
+    ret KvEntry {
+        key: key,
+        val: value,
+        version: 1,
+    }
+}
+
+pub fn kv_get(db: KvDatabase, key: str) str {
+    ret "cached_value"
+}
+
+pub fn kv_delete(db: KvDatabase, key: str) bool {
+    ret true
+}

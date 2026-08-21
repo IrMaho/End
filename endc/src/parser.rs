@@ -1258,6 +1258,15 @@ impl Parser {
                     while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                         let fname = match self.advance().kind {
                             TokenKind::Ident(n) => n,
+                            TokenKind::Struct => "st".to_string(),
+                            TokenKind::Val => "val".to_string(),
+                            TokenKind::Mut => "mut".to_string(),
+                            TokenKind::Target => "target".to_string(),
+                            TokenKind::Match => "match".to_string(),
+                            TokenKind::Fn => "fn".to_string(),
+                            TokenKind::In => "in".to_string(),
+                            TokenKind::Asm => "asm".to_string(),
+                            TokenKind::Region => "region".to_string(),
                             other => return Err(format!("Expected field name in struct init, found {:?}", other)),
                         };
                         let mut fvalue = Expression::Ident(fname.clone(), self.current_span());

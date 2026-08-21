@@ -87,7 +87,9 @@ impl CBackend {
         self.output.push_str("static inline void _end_print_str(const char* s) { printf(\"%s\\n\", s); }\n");
         self.output.push_str("static inline void _end_print_int(long long n) { printf(\"%lld\\n\", n); }\n");
         self.output.push_str("static inline void _end_print_float(double f) { printf(\"%f\\n\", f); }\n");
+        self.output.push_str("static inline void _end_print_bool(bool b) { printf(\"%s\\n\", b ? \"true\" : \"false\"); }\n");
         self.output.push_str("#define end_println(X) _Generic((X), \\\n");
+        self.output.push_str("    bool: _end_print_bool, \\\n");
         self.output.push_str("    int: _end_print_int, \\\n");
         self.output.push_str("    long: _end_print_int, \\\n");
         self.output.push_str("    long long: _end_print_int, \\\n");
@@ -750,8 +752,24 @@ impl CBackend {
                     BinaryOp::Mul => format!("({} * {})", l, r),
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
-                    BinaryOp::Equal => format!("({} == {})", l, r),
-                    BinaryOp::NotEqual => format!("({} != {})", l, r),
+                    BinaryOp::Equal => {
+                        if matches!(left.as_ref(), Expression::Lit(Literal::String(_), _))
+                            || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
+                        {
+                            format!("(strcmp({}, {}) == 0)", l, r)
+                        } else {
+                            format!("({} == {})", l, r)
+                        }
+                    }
+                    BinaryOp::NotEqual => {
+                        if matches!(left.as_ref(), Expression::Lit(Literal::String(_), _))
+                            || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
+                        {
+                            format!("(strcmp({}, {}) != 0)", l, r)
+                        } else {
+                            format!("({} != {})", l, r)
+                        }
+                    }
                     BinaryOp::LessThan => format!("({} < {})", l, r),
                     BinaryOp::LessEqual => format!("({} <= {})", l, r),
                     BinaryOp::GreaterThan => format!("({} > {})", l, r),

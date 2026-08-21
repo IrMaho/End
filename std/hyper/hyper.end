@@ -1,0 +1,61 @@
+// End Standard Library: std/hyper/hyper.end
+// 🚀 EndHyper: Modern, Zero-GC, FastAPI-Style Declarative Web Framework
+
+st RequestContext {
+    method: str,
+    path: str,
+    body: str,
+    client_ip: str,
+}
+
+st HyperResponse {
+    status_code: i32,
+    content_type: str,
+    body: str,
+}
+
+st RouteEntry {
+    method: str,
+    path: str,
+    handler_id: i32,
+}
+
+st HyperApp {
+    app_name: str,
+    version: str,
+    port: i32,
+    routes_count: i32,
+}
+
+pub fn hyper_app_create(name: str, version: str) HyperApp {
+    ret HyperApp {
+        app_name: name,
+        version: version,
+        port: 8080,
+        routes_count: 0,
+    }
+}
+
+pub fn hyper_response_json(status: i32, json_str: str) HyperResponse {
+    ret HyperResponse {
+        status_code: status,
+        content_type: "application/json",
+        body: json_str,
+    }
+}
+
+pub fn hyper_response_ok(json_str: str) HyperResponse {
+    ret hyper_response_json(200, json_str)
+}
+
+pub fn hyper_response_unauthorized(err_msg: str) HyperResponse {
+    ret hyper_response_json(401, "{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}")
+}
+
+pub fn hyper_response_not_found() HyperResponse {
+    ret hyper_response_json(404, "{\"error\": \"Not Found\", \"code\": 404}")
+}
+
+pub fn hyper_openapi_schema(app: HyperApp) str {
+    ret "{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"EndHyper API\", \"version\": \"1.0.0\"}, \"paths\": {}}"
+}

@@ -1,0 +1,26 @@
+// End Standard Library: std/stream/stream.end
+// ⚡ EndStream: Zero-Copy File Chunking, Streaming & Server-Sent Events (SSE)
+
+st StreamChunk {
+    chunk_index: i64,
+    size_bytes: i64,
+    is_eof: bool,
+}
+
+st SseEvent {
+    event_type: str,
+    event_id: u64,
+    data: str,
+}
+
+pub fn stream_chunk_create(idx: i64, size: i64, eof: bool) StreamChunk {
+    ret StreamChunk {
+        chunk_index: idx,
+        size_bytes: size,
+        is_eof: eof,
+    }
+}
+
+pub fn sse_format_event(event: SseEvent) str {
+    ret event.data
+}

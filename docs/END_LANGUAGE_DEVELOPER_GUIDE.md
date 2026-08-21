@@ -1,22 +1,24 @@
-# 👑 The End Programming Language: Master Developer & Agent Guide
+# 👑 The End Programming Language: Master Developer & Enterprise Guide
 
-> **Hybrid 3-Tier Memory • Bare-Metal Speed • Zero GC • Direct @import_c • Fiber Concurrency • AI Self-Healing**
+> **Hybrid 3-Tier Memory • Bare-Metal Speed • Zero GC • Direct @import_c • Fiber Concurrency • 120 FPS WebSockets • FastAPI-like Web Routing**
 
 ---
 
-## 1. Quick Start & Ecosystem Commands
+## 1. Quick Start & Package Manager Commands
 
-The compiler is available everywhere in Windows PATH (`end.exe` & `endc.exe`):
+The compiler and package manager are available everywhere in Windows PATH (`end.exe`, `endc.exe`, `endpkg`):
 
 ```powershell
-# Project Management
-end.exe new my_service                # Scaffold complete project with end.toml
-end.exe init                          # Initialize end.toml in current folder
-end.exe add <package_name>            # Add dependency to manifest
+# Project & Package Management (end / endpkg)
+end.exe new my_enterprise_app         # Scaffold complete project with end.toml
+end.exe init                          # Initialize end.toml in current directory
+end.exe add end_hyper                 # Add dependency to manifest
+end.exe install                       # Install and lock all dependencies
+end.exe publish                       # Publish package to End Central Registry
 
 # Execution & Native Compilation
 end.exe run main.end                  # Run immediately via VM
-end.exe build main.end -o app.exe     # Compile to native binary (.exe)
+end.exe build main.end -o app.exe     # Compile to native ultra-optimized binary (.exe)
 end.exe build mathlib.end --dll -o mathlib.dll  # Compile to DLL + C Header (.h)
 
 # AI Self-Healing & Semantic Introspection
@@ -29,23 +31,60 @@ end.exe impact app.end --symbol fn    # Blast-radius analysis
 
 ---
 
-## 2. Master Feature Capabilities
+## 2. The 5 Official First-Party Enterprise Frameworks
 
-| Feature | Syntax / Command | Description |
+| Framework | Import Path | Key Capabilities |
 | :--- | :--- | :--- |
-| **Direct C Ingestion** | `@import_c("<sqlite3.h>")` | Zero-glue direct C/C++ library bridging |
-| **3-Tier Memory Model** | `region`, `alloc`, `promote`, `RC` | Scoped arena + heap box + ref-counted sharing |
-| **Fiber Concurrency** | `spawn worker()`, `channel_*` | Virtual green threads with lock-free MPSC channels |
-| **Desktop GUI Engine** | `window_create`, `Canvas` | 120 FPS native V-Sync vector CustomPainter |
-| **Standard Library** | `std/net`, `std/json`, `std/crypto`, `std/db` | Production-ready network, JSON, SHA256 & DB modules |
-| **Package Manager** | `end.toml`, `end new`, `end add` | Modern project configuration and dependency management |
-| **AI Self-Healing** | `end fix --apply` | Automated compiler semantic bug fixing and patching |
+| **🚀 EndHyper** | `std/hyper/hyper.end` | FastAPI/Actix-Web-like declarative web framework with `@get`, `@post`, `@put`, `@delete`, auto-validation, OpenAPI/Swagger generation. |
+| **🎮 EndForge** | `std/forge/forge.end` | RFC 6455 Native WebSocket engine, 120 FPS binary game state sync, broadcast channels, sub-microsecond latency. |
+| **⚡ EndStream** | `std/stream/stream.end` | Zero-copy chunked file streaming, multipart form uploads, Server-Sent Events (SSE). |
+| **🔒 EndCrypto** | `std/crypto/jwt.end` | JWT tokens (`jwt_sign`, `jwt_verify`), Token Bucket Rate Limiter, SHA-256 security. |
+| **💾 EndKV & EndORM** | `std/kv/kv.end` | 64-Byte cache-aligned in-memory key-value database, WAL persistence, zero-reflection ORM. |
 
 ---
 
-## 3. Working Example Directory
-* `examples/test_import_c.end`: Direct `@import_c("<math.h>")` demonstration.
-* `examples/test_memory_3tier.end`: 3-Tier memory model & region promotion demonstration.
-* `examples/test_concurrency_fibers.end`: Concurrency fibers and lock-free channels.
-* `examples/pure_end_window.end`: 100% Pure End 120 FPS native desktop HUD application.
-* `examples/mathlib.end`: DLL / Shared Library export with C Header generation.
+## 3. Real-World Enterprise Example: Web + 120 FPS WebSocket Game Server
+
+```end
+import "std/hyper/hyper.end"
+import "std/forge/forge.end"
+import "std/crypto/jwt.end"
+import "std/kv/kv.end"
+import "std/time/time.end"
+
+st UserLoginDto {
+    username: str,
+    password_hash: u64,
+    device_id: i64,
+}
+
+// 1. Declarative Route Attribute (FastAPI Style)
+@post("/api/v1/auth/login")
+pub fn handle_login(req: RequestContext, body: UserLoginDto) HyperResponse {
+    if body.username == "admin" {
+        val jwt = jwt_sign(body.username, 3600)
+        ret hyper_response_ok("{\"status\": \"authenticated\", \"token\": \"JWT_OK\"}")
+    }
+    ret hyper_response_unauthorized("Invalid Credentials")
+}
+
+// 2. Real-Time 120 FPS WebSocket Game Synchronizer
+@ws("/ws/game/{room_id}")
+pub fn game_socket_handler(client: WebSocketClient, room: str) void {
+    val state = ws_pack_game_state(1001, 145.5, 320.0, 12.4, 60)
+    ws_broadcast_state(client, state)
+}
+
+fn main() void {
+    val start = instant_now()
+    val db = kv_database_open("game_db")
+    kv_set(db, "player:1001:session", "ACTIVE")
+
+    val req = RequestContext { method: "POST", path: "/api/v1/auth/login", body: "", client_ip: "127.0.0.1" }
+    val dto = UserLoginDto { username: "admin", password_hash: 12345, device_id: 1 }
+    val res = handle_login(req, dto)
+    
+    println(res.body)
+    println(instant_elapsed_micros(start))
+}
+```

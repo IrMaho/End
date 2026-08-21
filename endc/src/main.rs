@@ -129,6 +129,10 @@ enum Commands {
         /// Package name
         package: String,
     },
+    /// Publish the current package to End Central Registry
+    Publish,
+    /// Install and lock all dependencies specified in end.toml
+    Install,
 }
 
 fn main() {
@@ -526,6 +530,18 @@ fn main() {
         }
         Commands::Add { package } => {
             if let Err(e) = PackageManager::add_dependency(&package) {
+                eprintln!("{} {}", "Error:".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Publish => {
+            if let Err(e) = PackageManager::publish_package() {
+                eprintln!("{} {}", "Error:".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Install => {
+            if let Err(e) = PackageManager::install_packages() {
                 eprintln!("{} {}", "Error:".red().bold(), e);
                 std::process::exit(1);
             }
