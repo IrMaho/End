@@ -630,13 +630,11 @@ static inline int64_t bench_3_hft_engine(void) {
             #line 200 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             if ((side == 0)) {
                 #line 201 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                #pragma unroll
-                #pragma GCC ivdep
-                for (int64_t p_down = 0; p_down < (price + 1); p_down++) {
-                    #line 202 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    int32_t p = (price - p_down);
+                int32_t p = price;
+                #line 202 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                while (((p >= 0) && (qty > 0))) {
                     #line 203 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    if (((qty > 0) && (sell_depth[p] > 0))) {
+                    if ((sell_depth[p] > 0)) {
                         #line 204 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         int32_t fill = qty;
                         #line 205 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
@@ -651,850 +649,888 @@ static inline int64_t bench_3_hft_engine(void) {
                         #line 208 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         total_volume = (total_volume + (((int64_t)(fill)) * ((int64_t)((p + 1)))));
                     }
+                    #line 210 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    p = (p - 1);
                 }
-                #line 211 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 212 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((qty > 0)) {
-                    #line 211 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 212 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     buy_depth[price] = (buy_depth[price] + qty);
                 }
             } else {
-                #line 213 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                #pragma unroll
-                #pragma GCC ivdep
-                for (int64_t p_up = 0; p_up < (100 - price); p_up++) {
-                    #line 214 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    int32_t p = (price + p_up);
-                    #line 215 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    if (((qty > 0) && (buy_depth[p] > 0))) {
-                        #line 216 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                        int32_t fill = qty;
+                #line 214 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                int32_t p = price;
+                #line 215 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                while (((p < 100) && (qty > 0))) {
+                    #line 216 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    if ((buy_depth[p] > 0)) {
                         #line 217 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        int32_t fill = qty;
+                        #line 218 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         if ((buy_depth[p] < fill)) {
-                            #line 217 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                            #line 218 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                             fill = buy_depth[p];
                         }
-                        #line 218 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                        buy_depth[p] = (buy_depth[p] - fill);
                         #line 219 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                        qty = (qty - fill);
+                        buy_depth[p] = (buy_depth[p] - fill);
                         #line 220 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        qty = (qty - fill);
+                        #line 221 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         total_volume = (total_volume + (((int64_t)(fill)) * ((int64_t)((p + 1)))));
                     }
-                }
-                #line 223 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                if ((qty > 0)) {
                     #line 223 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    p = (p + 1);
+                }
+                #line 225 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                if ((qty > 0)) {
+                    #line 225 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     sell_depth[price] = (sell_depth[price] + qty);
                 }
             }
         }
     }
-    #line 226 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(buy_depth)));
-    #line 227 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(sell_depth)));
     #line 228 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(buy_depth)));
+    #line 229 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(sell_depth)));
+    #line 230 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return total_volume;
 }
 
-#line 234 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 236 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline uint32_t rotr(uint32_t x, uint32_t n) {
-    #line 234 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 236 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (((uint64_t)((((uint64_t)(x)) >> (n) ))) | ((uint64_t)((((uint64_t)(x)) << ((32 - n)) ))));
 }
 
-#line 236 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 238 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_4_sha256(void) {
-    #line 237 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 239 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint32_t* state = ((uint32_t*)(malloc(32)));
-    #line 238 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 240 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     state[0] = 1779033703;
-    #line 238 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 240 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     state[1] = 3144134277;
-    #line 238 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 240 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     state[2] = 1013904242;
-    #line 238 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 240 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     state[3] = 2773480762;
-    #line 239 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    state[4] = 1359893119;
-    #line 239 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    state[5] = 2600822924;
-    #line 239 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    state[6] = 528734635;
-    #line 239 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    state[7] = 1541459225;
     #line 241 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    state[4] = 1359893119;
+    #line 241 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    state[5] = 2600822924;
+    #line 241 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    state[6] = 528734635;
+    #line 241 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    state[7] = 1541459225;
+    #line 243 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint32_t* k_table = ((uint32_t*)(malloc(256)));
-    #line 242 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[0] = 1116352408;
-    #line 242 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[1] = 1899447441;
-    #line 242 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[2] = 3049323471;
-    #line 242 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[3] = 3921009573;
-    #line 243 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[4] = 961987163;
-    #line 243 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[5] = 1508970993;
-    #line 243 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[6] = 2453635748;
-    #line 243 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[7] = 2870763221;
-    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[8] = 3624381080;
-    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[9] = 310598401;
-    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[10] = 607225278;
-    #line 244 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[11] = 1426881987;
-    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[12] = 1925078388;
-    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[13] = 2162078206;
-    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[14] = 2614888103;
-    #line 245 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[15] = 3248222580;
-    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[16] = 3835390401;
-    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[17] = 4022224774;
-    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[18] = 264347078;
-    #line 246 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[19] = 604807628;
-    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[20] = 770255983;
-    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[21] = 1249150122;
-    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[22] = 1555081692;
-    #line 247 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[23] = 1996064986;
-    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[24] = 2554220882;
-    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[25] = 2821834349;
-    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[26] = 2952996808;
-    #line 248 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[27] = 3210313671;
-    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[28] = 3336571891;
-    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[29] = 3584528711;
-    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[30] = 113926993;
-    #line 249 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[31] = 338241895;
-    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[32] = 666307205;
-    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[33] = 773529912;
-    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[34] = 1294757372;
-    #line 250 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[35] = 1396182291;
-    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[36] = 1695183700;
-    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[37] = 1986661051;
-    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[38] = 2177026350;
-    #line 251 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[39] = 2456956037;
-    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[40] = 2730485921;
-    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[41] = 2820302411;
-    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[42] = 3259730800;
-    #line 252 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[43] = 3345764771;
-    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[44] = 3516065817;
-    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[45] = 3600352804;
-    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[46] = 4094571909;
-    #line 253 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[47] = 275423344;
-    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[48] = 430227734;
-    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[49] = 506948616;
-    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[50] = 659060556;
-    #line 254 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[51] = 883997877;
-    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[52] = 958139571;
-    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[53] = 1322822218;
-    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[54] = 1537002063;
-    #line 255 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[55] = 1747873779;
-    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 258 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[56] = 1955562222;
-    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 258 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[57] = 2024104815;
-    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 258 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[58] = 2227730452;
-    #line 256 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 258 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     k_table[59] = 2361852424;
-    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    k_table[60] = 2428436474;
-    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    k_table[61] = 2756734187;
-    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    k_table[62] = 200251967;
-    #line 257 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    k_table[63] = 3329325298;
     #line 259 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    k_table[60] = 2428436474;
+    #line 259 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    k_table[61] = 2756734187;
+    #line 259 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    k_table[62] = 200251967;
+    #line 259 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    k_table[63] = 3329325298;
+    #line 261 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint32_t* w = ((uint32_t*)(malloc(256)));
-    #line 260 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint64_t prng = -3819410108451629448;
     #line 262 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint64_t prng = -3819410108451629448;
+    #line 264 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t block = 0; block < 500000; block++) {
-        #line 263 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 265 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 16; i++) {
-            #line 263 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 265 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             w[i] = ((uint32_t)(splitmix64((&prng))));
         }
-        #line 264 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 266 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 48; i++) {
-            #line 265 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            int32_t idx = (i + 16);
-            #line 266 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t s0 = (((uint64_t)((((uint64_t)(rotr(w[(idx - 15)], 7))) ^ ((uint64_t)(rotr(w[(idx - 15)], 18)))))) ^ ((uint64_t)((((uint64_t)(w[(idx - 15)])) >> (3) ))));
             #line 267 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t s1 = (((uint64_t)((((uint64_t)(rotr(w[(idx - 2)], 17))) ^ ((uint64_t)(rotr(w[(idx - 2)], 19)))))) ^ ((uint64_t)((((uint64_t)(w[(idx - 2)])) >> (10) ))));
+            int32_t idx = (i + 16);
             #line 268 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            uint32_t s0 = (((uint64_t)((((uint64_t)(rotr(w[(idx - 15)], 7))) ^ ((uint64_t)(rotr(w[(idx - 15)], 18)))))) ^ ((uint64_t)((((uint64_t)(w[(idx - 15)])) >> (3) ))));
+            #line 269 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            uint32_t s1 = (((uint64_t)((((uint64_t)(rotr(w[(idx - 2)], 17))) ^ ((uint64_t)(rotr(w[(idx - 2)], 19)))))) ^ ((uint64_t)((((uint64_t)(w[(idx - 2)])) >> (10) ))));
+            #line 270 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             w[idx] = (((w[(idx - 16)] + s0) + w[(idx - 7)]) + s1);
         }
-        #line 270 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 272 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         uint32_t a = state[0];
-        #line 270 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 272 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         uint32_t b = state[1];
-        #line 270 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 272 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         uint32_t c = state[2];
-        #line 270 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 272 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         uint32_t d = state[3];
-        #line 271 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        uint32_t e = state[4];
-        #line 271 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        uint32_t f = state[5];
-        #line 271 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        uint32_t g = state[6];
-        #line 271 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        uint32_t h = state[7];
         #line 273 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        uint32_t e = state[4];
+        #line 273 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        uint32_t f = state[5];
+        #line 273 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        uint32_t g = state[6];
+        #line 273 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        uint32_t h = state[7];
+        #line 275 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 64; i++) {
-            #line 274 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t s1_rot = (((uint64_t)((((uint64_t)(rotr(e, 6))) ^ ((uint64_t)(rotr(e, 11)))))) ^ ((uint64_t)(rotr(e, 25))));
-            #line 275 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t ch = (((uint64_t)((((uint64_t)(e)) & ((uint64_t)(f))))) ^ ((uint64_t)((((uint64_t)((~e))) & ((uint64_t)(g))))));
             #line 276 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t temp1 = ((((h + s1_rot) + ch) + k_table[i]) + w[i]);
+            uint32_t s1_rot = (((uint64_t)((((uint64_t)(rotr(e, 6))) ^ ((uint64_t)(rotr(e, 11)))))) ^ ((uint64_t)(rotr(e, 25))));
             #line 277 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t s0_rot = (((uint64_t)((((uint64_t)(rotr(a, 2))) ^ ((uint64_t)(rotr(a, 13)))))) ^ ((uint64_t)(rotr(a, 22))));
+            uint32_t ch = (((uint64_t)((((uint64_t)(e)) & ((uint64_t)(f))))) ^ ((uint64_t)((((uint64_t)((~e))) & ((uint64_t)(g))))));
             #line 278 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint32_t maj = (((uint64_t)((((uint64_t)((((uint64_t)(a)) & ((uint64_t)(b))))) ^ ((uint64_t)((((uint64_t)(a)) & ((uint64_t)(c)))))))) ^ ((uint64_t)((((uint64_t)(b)) & ((uint64_t)(c))))));
+            uint32_t temp1 = ((((h + s1_rot) + ch) + k_table[i]) + w[i]);
             #line 279 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            uint32_t s0_rot = (((uint64_t)((((uint64_t)(rotr(a, 2))) ^ ((uint64_t)(rotr(a, 13)))))) ^ ((uint64_t)(rotr(a, 22))));
+            #line 280 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            uint32_t maj = (((uint64_t)((((uint64_t)((((uint64_t)(a)) & ((uint64_t)(b))))) ^ ((uint64_t)((((uint64_t)(a)) & ((uint64_t)(c)))))))) ^ ((uint64_t)((((uint64_t)(b)) & ((uint64_t)(c))))));
+            #line 281 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             uint32_t temp2 = (s0_rot + maj);
-            #line 281 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 283 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             h = g;
-            #line 281 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 283 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             g = f;
-            #line 281 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 283 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             f = e;
-            #line 281 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 283 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             e = (d + temp1);
-            #line 282 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             d = c;
-            #line 282 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             c = b;
-            #line 282 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             b = a;
-            #line 282 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             a = (temp1 + temp2);
         }
-        #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 286 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[0] = (state[0] + a);
-        #line 284 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 286 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[1] = (state[1] + b);
-        #line 285 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 287 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[2] = (state[2] + c);
-        #line 285 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 287 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[3] = (state[3] + d);
-        #line 286 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 288 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[4] = (state[4] + e);
-        #line 286 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 288 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[5] = (state[5] + f);
-        #line 287 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 289 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[6] = (state[6] + g);
-        #line 287 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 289 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         state[7] = (state[7] + h);
     }
-    #line 289 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint64_t res = (((uint64_t)((((uint64_t)(((uint64_t)(state[0])))) << (32) ))) | ((uint64_t)(((uint64_t)(state[7])))));
-    #line 290 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(state)));
     #line 291 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(k_table)));
+    uint64_t res = (((uint64_t)((((uint64_t)(((uint64_t)(state[0])))) << (32) ))) | ((uint64_t)(((uint64_t)(state[7])))));
     #line 292 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(w)));
+    free(((uint8_t*)(state)));
     #line 293 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(k_table)));
+    #line 294 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(w)));
+    #line 295 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return ((int64_t)(res));
 }
 
-#line 299 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 301 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_5_nbody(void) {
-    #line 300 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* pos_x = ((float*)(malloc(4000)));
-    #line 301 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* pos_y = ((float*)(malloc(4000)));
     #line 302 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* pos_z = ((float*)(malloc(4000)));
+    float* pos_x = ((float*)(malloc(4000)));
     #line 303 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* vel_x = ((float*)(malloc(4000)));
+    float* pos_y = ((float*)(malloc(4000)));
     #line 304 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* vel_y = ((float*)(malloc(4000)));
+    float* pos_z = ((float*)(malloc(4000)));
     #line 305 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* vel_z = ((float*)(malloc(4000)));
+    float* vel_x = ((float*)(malloc(4000)));
     #line 306 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float* mass = ((float*)(malloc(4000)));
+    float* vel_y = ((float*)(malloc(4000)));
     #line 307 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint64_t prng = 6149008514797120170;
+    float* vel_z = ((float*)(malloc(4000)));
+    #line 308 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    float* mass = ((float*)(malloc(4000)));
     #line 309 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint64_t prng = 6149008514797120170;
+    #line 311 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i = 0; i < 1000; i++) {
-        #line 310 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        pos_x[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
-        #line 311 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        pos_y[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
         #line 312 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        pos_z[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
+        pos_x[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
         #line 313 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        vel_x[i] = 0.000000f;
-        #line 313 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        vel_y[i] = 0.000000f;
-        #line 313 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        vel_z[i] = 0.000000f;
+        pos_y[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
         #line 314 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        pos_z[i] = ((((float)((splitmix64((&prng)) % 1000))) / 100.000000f) - 5.000000f);
+        #line 315 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        vel_x[i] = 0.000000f;
+        #line 315 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        vel_y[i] = 0.000000f;
+        #line 315 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        vel_z[i] = 0.000000f;
+        #line 316 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         mass[i] = (1.000000f + (((float)((splitmix64((&prng)) % 100))) / 10.000000f));
     }
-    #line 317 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 319 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     float dt = 0.010000f;
-    #line 318 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    float eps2 = 0.001000f;
     #line 320 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    float eps2 = 0.001000f;
+    #line 322 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t step = 0; step < 1000; step++) {
-        #line 321 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 323 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 1000; i++) {
-            #line 322 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float fx = 0.000000f;
-            #line 322 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float fy = 0.000000f;
-            #line 322 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float fz = 0.000000f;
-            #line 323 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float pxi = pos_x[i];
             #line 324 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float pyi = pos_y[i];
+            float fx = 0.000000f;
+            #line 324 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            float fy = 0.000000f;
+            #line 324 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            float fz = 0.000000f;
             #line 325 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            float pzi = pos_z[i];
+            float pxi = pos_x[i];
             #line 326 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            float pyi = pos_y[i];
+            #line 327 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            float pzi = pos_z[i];
+            #line 328 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             #pragma unroll
             #pragma GCC ivdep
             for (int64_t j = 0; j < 1000; j++) {
-                #line 327 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 329 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((i != j)) {
-                    #line 328 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float dx = (pos_x[j] - pxi);
-                    #line 329 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float dy = (pos_y[j] - pyi);
                     #line 330 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float dz = (pos_z[j] - pzi);
+                    float dx = (pos_x[j] - pxi);
                     #line 331 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float dist_sq = ((((dx * dx) + (dy * dy)) + (dz * dz)) + eps2);
+                    float dy = (pos_y[j] - pyi);
                     #line 332 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float dist_inv = (1.000000f / sqrtf(dist_sq));
+                    float dz = (pos_z[j] - pzi);
                     #line 333 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    float f = (mass[j] * ((dist_inv * dist_inv) * dist_inv));
+                    float dist_sq = ((((dx * dx) + (dy * dy)) + (dz * dz)) + eps2);
                     #line 334 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    fx = (fx + (dx * f));
+                    float dist_inv = (1.000000f / sqrtf(dist_sq));
                     #line 335 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    fy = (fy + (dy * f));
+                    float f = (mass[j] * ((dist_inv * dist_inv) * dist_inv));
                     #line 336 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    fx = (fx + (dx * f));
+                    #line 337 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    fy = (fy + (dy * f));
+                    #line 338 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     fz = (fz + (dz * f));
                 }
             }
-            #line 339 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            vel_x[i] = (vel_x[i] + (fx * dt));
-            #line 340 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            vel_y[i] = (vel_y[i] + (fy * dt));
             #line 341 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            vel_x[i] = (vel_x[i] + (fx * dt));
+            #line 342 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            vel_y[i] = (vel_y[i] + (fy * dt));
+            #line 343 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             vel_z[i] = (vel_z[i] + (fz * dt));
         }
-        #line 343 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 345 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 1000; i++) {
-            #line 344 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            pos_x[i] = (pos_x[i] + (vel_x[i] * dt));
-            #line 345 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            pos_y[i] = (pos_y[i] + (vel_y[i] * dt));
             #line 346 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            pos_x[i] = (pos_x[i] + (vel_x[i] * dt));
+            #line 347 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            pos_y[i] = (pos_y[i] + (vel_y[i] * dt));
+            #line 348 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             pos_z[i] = (pos_z[i] + (vel_z[i] * dt));
         }
     }
-    #line 350 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 352 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double total_ke = 0.000000f;
-    #line 351 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 353 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i = 0; i < 1000; i++) {
-        #line 352 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        double vx = ((double)(vel_x[i]));
-        #line 353 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        double vy = ((double)(vel_y[i]));
         #line 354 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        double vz = ((double)(vel_z[i]));
+        double vx = ((double)(vel_x[i]));
         #line 355 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        double vy = ((double)(vel_y[i]));
+        #line 356 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        double vz = ((double)(vel_z[i]));
+        #line 357 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         total_ke = (total_ke + ((0.500000f * ((double)(mass[i]))) * (((vx * vx) + (vy * vy)) + (vz * vz))));
     }
-    #line 357 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(pos_x)));
-    #line 357 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(pos_y)));
-    #line 357 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(pos_z)));
-    #line 358 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(vel_x)));
-    #line 358 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(vel_y)));
-    #line 358 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(vel_z)));
-    #line 358 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    free(((uint8_t*)(mass)));
     #line 359 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(pos_x)));
+    #line 359 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(pos_y)));
+    #line 359 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(pos_z)));
+    #line 360 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(vel_x)));
+    #line 360 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(vel_y)));
+    #line 360 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(vel_z)));
+    #line 360 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(((uint8_t*)(mass)));
+    #line 361 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return ((int64_t)((total_ke * 1000.000000f)));
 }
 
-#line 365 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 367 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_6_ring_buffer(void) {
-    #line 366 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t cap = 65536;
-    #line 367 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t mask_val = (cap - 1);
     #line 368 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t* ring = ((int64_t*)(malloc(524288)));
+    int32_t cap = 65536;
     #line 369 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t total_sum = 0;
+    int32_t mask_val = (cap - 1);
+    #line 370 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int64_t* ring = ((int64_t*)(malloc(524288)));
     #line 371 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t head = 0;
-    #line 372 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t tail = 0;
+    int64_t total_sum = 0;
     #line 373 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int32_t head = 0;
+    #line 374 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int32_t tail = 0;
+    #line 375 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t chunk_idx = 0; chunk_idx < 156250; chunk_idx++) {
-        #line 374 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 376 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         int32_t base_chunk = (chunk_idx * 64);
-        #line 375 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 377 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t k = 0; k < 64; k++) {
-            #line 376 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 378 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             ring[(((uint64_t)((tail + k))) & ((uint64_t)(mask_val)))] = ((((int64_t)((base_chunk + k))) * 31) + 17);
         }
-        #line 378 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 380 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         tail = (tail + 64);
-        #line 379 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 381 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t k = 0; k < 64; k++) {
-            #line 380 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 382 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             total_sum = (total_sum + ring[(((uint64_t)((head + k))) & ((uint64_t)(mask_val)))]);
         }
-        #line 382 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 384 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         head = (head + 64);
     }
-    #line 384 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 386 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(((uint8_t*)(ring)));
-    #line 385 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 387 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return total_sum;
 }
 
-#line 391 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 393 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_7_dna_alignment(void) {
-    #line 392 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t n_size = 1000;
-    #line 393 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t* dp = ((int32_t*)(malloc(4004)));
     #line 394 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint64_t prng = -7378716394768603546;
+    int32_t n_size = 1000;
     #line 395 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s1 = malloc(1000);
+    int32_t* dp = ((int32_t*)(malloc(4004)));
     #line 396 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s2 = malloc(1000);
+    uint64_t prng = -7378716394768603546;
     #line 397 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* bases = ((uint8_t*)("ACGT"));
+    uint8_t* s1 = malloc(1000);
+    #line 398 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint8_t* s2 = malloc(1000);
     #line 399 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint8_t* bases = ((uint8_t*)("ACGT"));
+    #line 401 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t total_distance = 0;
-    #line 400 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 402 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t pair = 0; pair < 1000; pair++) {
-        #line 401 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 403 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t i = 0; i < 1000; i++) {
-            #line 402 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 404 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             s1[i] = bases[((int32_t)((splitmix64((&prng)) % 4)))];
-            #line 403 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            s2[i] = bases[((int32_t)((splitmix64((&prng)) % 4)))];
-        }
-        #line 405 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        #pragma unroll
-        #pragma GCC ivdep
-        for (int64_t j = 0; j < 1001; j++) {
             #line 405 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            dp[j] = j;
+            s2[i] = bases[((int32_t)((splitmix64((&prng)) % 4)))];
         }
         #line 407 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
+        for (int64_t j = 0; j < 1001; j++) {
+            #line 407 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            dp[j] = j;
+        }
+        #line 409 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #pragma unroll
+        #pragma GCC ivdep
         for (int64_t i_idx = 0; i_idx < 1000; i_idx++) {
-            #line 408 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            int32_t i = (i_idx + 1);
-            #line 409 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            int32_t prev = dp[0];
             #line 410 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            dp[0] = i;
+            int32_t i = (i_idx + 1);
             #line 411 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            uint8_t s1_char = s1[(i - 1)];
+            int32_t prev = dp[0];
             #line 412 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            dp[0] = i;
+            #line 413 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            uint8_t s1_char = s1[(i - 1)];
+            #line 414 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             #pragma unroll
             #pragma GCC ivdep
             for (int64_t j_idx = 0; j_idx < 1000; j_idx++) {
-                #line 413 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t j = (j_idx + 1);
-                #line 414 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t temp = dp[j];
                 #line 415 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t cost_val = 1;
+                int32_t j = (j_idx + 1);
                 #line 416 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                if ((s1_char == s2[(j - 1)])) {
-                    #line 416 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                int32_t temp = dp[j];
+                #line 417 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                int32_t cost_val = 1;
+                #line 418 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                if ((s1_char == s2[j_idx])) {
+                    #line 418 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     cost_val = 0;
                 }
-                #line 417 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t d1 = (dp[(j - 1)] + 1);
-                #line 418 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t d2 = (temp + 1);
                 #line 419 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t d3 = (prev + cost_val);
+                int32_t d1 = (dp[j_idx] + 1);
                 #line 420 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                int32_t min_d = d1;
+                int32_t d2 = (temp + 1);
                 #line 421 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                int32_t d3 = (prev + cost_val);
+                #line 422 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                int32_t min_d = d1;
+                #line 423 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((d2 < min_d)) {
-                    #line 421 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 423 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     min_d = d2;
                 }
-                #line 422 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 424 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((d3 < min_d)) {
-                    #line 422 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 424 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     min_d = d3;
                 }
-                #line 423 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 425 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 dp[j] = min_d;
-                #line 424 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 426 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 prev = temp;
             }
         }
-        #line 427 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 429 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         total_distance = (total_distance + ((int64_t)(dp[n_size])));
     }
-    #line 429 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 431 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(((uint8_t*)(dp)));
-    #line 429 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 431 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(s1);
-    #line 429 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 431 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(s2);
-    #line 430 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 432 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return total_distance;
 }
 
-#line 437 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 439 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline __attribute__((always_inline)) int32_t append_str(uint8_t* buf, int32_t offset, uint8_t* s, int32_t slen) {
-    #line 438 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 440 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     memcpy(((void*)((buf + offset))), ((void*)(s)), ((uint64_t)(slen)));
-    #line 439 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 441 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (offset + slen);
 }
 
-#line 443 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 445 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline __attribute__((always_inline)) int32_t append_i32(uint8_t* buf, int32_t offset, int32_t n) {
-    #line 444 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 446 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     if ((n == 0)) {
-        #line 445 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 447 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         buf[offset] = 48;
-        #line 446 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 448 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         return (offset + 1);
     }
-    #line 448 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t v = n;
-    #line 449 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t digits = 0;
     #line 450 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t temp_v = v;
+    int32_t v = n;
     #line 451 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int32_t digits = 0;
+    #line 452 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int32_t temp_v = v;
+    #line 453 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     while ((temp_v > 0)) {
-        #line 452 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 454 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         digits = (digits + 1);
-        #line 453 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 455 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         temp_v = (temp_v / 10);
     }
-    #line 455 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 457 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int32_t pos = ((offset + digits) - 1);
-    #line 456 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 458 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     while ((v > 0)) {
-        #line 457 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        buf[pos] = (((uint8_t)((v % 10))) + 48);
-        #line 458 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        pos = (pos - 1);
         #line 459 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        buf[pos] = (((uint8_t)((v % 10))) + 48);
+        #line 460 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        pos = (pos - 1);
+        #line 461 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         v = (v / 10);
     }
-    #line 461 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 463 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (offset + digits);
 }
 
-#line 465 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 467 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline __attribute__((always_inline)) int32_t append_f64_1dp(uint8_t* buf, int32_t offset, double f) {
-    #line 466 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t total_tenths = ((int64_t)(((f * 10.000000f) + 0.500000f)));
-    #line 467 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t integer_part = ((int32_t)((total_tenths / 10)));
     #line 468 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t frac_part = ((int32_t)((total_tenths % 10)));
+    int64_t total_tenths = ((int64_t)(((f * 10.000000f) + 0.500000f)));
     #line 469 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t cur = append_i32(buf, offset, integer_part);
+    int32_t integer_part = ((int32_t)((total_tenths / 10)));
     #line 470 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    buf[cur] = 46;
+    int32_t frac_part = ((int32_t)((total_tenths % 10)));
     #line 471 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    cur = (cur + 1);
+    int32_t cur = append_i32(buf, offset, integer_part);
     #line 472 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    buf[cur] = (((uint8_t)(frac_part)) + 48);
+    buf[cur] = 46;
     #line 473 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    cur = (cur + 1);
+    #line 474 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    buf[cur] = (((uint8_t)(frac_part)) + 48);
+    #line 475 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (cur + 1);
 }
 
-#line 476 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 478 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_8_json_serializer(void) {
-    #line 477 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 479 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint8_t* buf = malloc(512);
-    #line 478 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t hash = 0;
     #line 480 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s_prefix = ((uint8_t*)("{\"id\":"));
-    #line 481 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s_status = ((uint8_t*)(",\"status\":\"active\",\"latency_us\":"));
+    int64_t hash = 0;
     #line 482 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s_tags = ((uint8_t*)(",\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":"));
+    uint8_t* s_prefix = ((uint8_t*)("{\"id\":"));
     #line 483 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s_mem = ((uint8_t*)(",\"mem\":"));
+    uint8_t* s_status = ((uint8_t*)(",\"status\":\"active\",\"latency_us\":"));
     #line 484 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* s_suffix = ((uint8_t*)("}}"));
+    uint8_t* s_tags = ((uint8_t*)(",\"tags\":[\"prod\",\"edge\",\"v2\"],\"metrics\":{\"cpu\":"));
+    #line 485 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint8_t* s_mem = ((uint8_t*)(",\"mem\":"));
     #line 486 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    uint8_t* s_suffix = ((uint8_t*)("}}"));
+    #line 488 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i = 0; i < 100000; i++) {
-        #line 487 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        int32_t len = 0;
-        #line 488 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_str(buf, len, s_prefix, 6);
         #line 489 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_i32(buf, len, i);
+        int32_t len = 0;
         #line 490 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_str(buf, len, s_status, 32);
+        len = append_str(buf, len, s_prefix, 6);
         #line 491 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_i32(buf, len, ((i * 37) % 500));
+        len = append_i32(buf, len, i);
         #line 492 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_str(buf, len, s_tags, 46);
+        len = append_str(buf, len, s_status, 32);
         #line 493 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_f64_1dp(buf, len, (42.500000f + ((double)((i % 10)))));
+        len = append_i32(buf, len, ((i * 37) % 500));
         #line 494 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_str(buf, len, s_mem, 7);
+        len = append_str(buf, len, s_tags, 46);
         #line 495 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_f64_1dp(buf, len, (128.400000f + ((double)((i % 50)))));
+        len = append_f64_1dp(buf, len, (42.500000f + ((double)((i % 10)))));
         #line 496 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        len = append_str(buf, len, s_suffix, 2);
+        len = append_str(buf, len, s_mem, 7);
+        #line 497 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        len = append_f64_1dp(buf, len, (128.400000f + ((double)((i % 50)))));
         #line 498 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        len = append_str(buf, len, s_suffix, 2);
+        #line 500 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         hash = (((hash * 31) + ((int64_t)(len))) + ((int64_t)(buf[(len / 2)])));
     }
-    #line 500 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 502 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(buf);
-    #line 501 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 503 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return hash;
 }
 
-#line 507 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 509 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_9_fsm_lexer(void) {
-    #line 508 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    uint8_t* sample = ((uint8_t*)("pub fn calculate_metrics(id: u64, active: bool) -> i64 { val base = id * 31; ret base + 10; } "));
-    #line 509 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int32_t sample_len = 98;
     #line 510 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t token_count = 0;
+    uint8_t* sample = ((uint8_t*)("pub fn calculate_metrics(id: u64, active: bool) -> i64 { val base = id * 31; ret base + 10; } "));
     #line 511 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-    int64_t token_hash = 0;
+    uint8_t* char_type = ((uint8_t*)(malloc(256)));
     #line 512 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #pragma unroll
+    #pragma GCC ivdep
+    for (int64_t c = 0; c < 256; c++) {
+        #line 513 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        if (((((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))) || (c == 95))) {
+            #line 513 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            char_type[c] = 1;
+        } else {
+            #line 514 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            if (((c >= 48) && (c <= 57))) {
+                #line 514 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                char_type[c] = 2;
+            } else {
+                #line 515 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                if ((((c == 32) || (c == 10)) || (c == 9))) {
+                    #line 515 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    char_type[c] = 0;
+                } else {
+                    #line 516 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    char_type[c] = 3;
+                }
+            }
+        }
+    }
+    #line 519 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int64_t token_count = 0;
+    #line 520 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int64_t token_hash = 0;
+    #line 521 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int32_t fsm_state = 0;
-    #line 514 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 522 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    int32_t s_idx = 0;
+    #line 524 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i = 0; i < 10000000; i++) {
-        #line 515 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-        uint8_t c = sample[(i % sample_len)];
-        #line 516 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 525 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        uint8_t ct = char_type[((int32_t)(sample[s_idx]))];
+        #line 526 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        s_idx = (s_idx + 1);
+        #line 527 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        if ((s_idx == 98)) {
+            #line 527 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            s_idx = 0;
+        }
+        #line 529 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         if ((fsm_state == 0)) {
-            #line 517 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-            if (((((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))) || (c == 95))) {
-                #line 517 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 530 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            if ((ct == 1)) {
+                #line 530 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 fsm_state = 1;
             } else {
-                #line 518 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                if (((c >= 48) && (c <= 57))) {
-                    #line 518 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 531 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                if ((ct == 2)) {
+                    #line 531 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     fsm_state = 2;
                 } else {
-                    #line 519 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    if ((((c != 32) && (c != 10)) && (c != 9))) {
-                        #line 519 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 532 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    if ((ct == 3)) {
+                        #line 532 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         fsm_state = 3;
                     }
                 }
             }
         } else {
-            #line 520 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 533 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             if ((fsm_state == 1)) {
-                #line 521 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                if ((!(((((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))) || ((c >= 48) && (c <= 57))) || (c == 95)))) {
-                    #line 522 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 534 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                if (((ct != 1) && (ct != 2))) {
+                    #line 535 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     token_count = (token_count + 1);
-                    #line 523 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 536 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     token_hash = ((token_hash * 33) + 1);
-                    #line 524 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 537 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     fsm_state = 0;
                 }
             } else {
-                #line 526 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 539 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((fsm_state == 2)) {
-                    #line 527 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
-                    if ((!((c >= 48) && (c <= 57)))) {
-                        #line 528 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 540 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    if ((ct != 2)) {
+                        #line 541 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         token_count = (token_count + 1);
-                        #line 529 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 542 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         token_hash = ((token_hash * 33) + 2);
-                        #line 530 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 543 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         fsm_state = 0;
                     }
                 } else {
-                    #line 533 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 546 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     token_count = (token_count + 1);
-                    #line 534 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 547 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     token_hash = ((token_hash * 33) + 3);
-                    #line 535 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 548 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     fsm_state = 0;
                 }
             }
         }
     }
-    #line 538 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 551 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    free(char_type);
+    #line 552 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (token_hash + token_count);
 }
 
-#line 544 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 558 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_10_gemm_matrix(void) {
-    #line 545 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 559 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int32_t n_dim = 512;
-    #line 546 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 560 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double* a_mat = ((double*)(malloc(2097152)));
-    #line 547 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 561 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double* b_mat = ((double*)(malloc(2097152)));
-    #line 548 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 562 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double* c_mat = ((double*)(malloc(2097152)));
-    #line 550 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 564 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t idx = 0; idx < 262144; idx++) {
-        #line 551 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 565 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         a_mat[idx] = (((double)((idx % 100))) * 0.010000f);
-        #line 552 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 566 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         b_mat[idx] = (((double)(((idx * 3) % 100))) * 0.010000f);
-        #line 553 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 567 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         c_mat[idx] = 0.000000f;
     }
-    #line 556 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 570 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t b_i = 0; b_i < 16; b_i++) {
-        #line 557 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 571 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         int32_t si = (b_i * 32);
-        #line 558 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 572 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         #pragma unroll
         #pragma GCC ivdep
         for (int64_t b_k = 0; b_k < 16; b_k++) {
-            #line 559 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 573 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             int32_t sk = (b_k * 32);
-            #line 560 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 574 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             #pragma unroll
             #pragma GCC ivdep
             for (int64_t b_j = 0; b_j < 16; b_j++) {
-                #line 561 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 575 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 int32_t sj = (b_j * 32);
-                #line 562 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 576 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 #pragma unroll
                 #pragma GCC ivdep
                 for (int64_t di = 0; di < 32; di++) {
-                    #line 563 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 577 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     int32_t i = (si + di);
-                    #line 564 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 578 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     double* c_row = (c_mat + ((i * n_dim) + sj));
-                    #line 565 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 579 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     #pragma unroll
                     #pragma GCC ivdep
                     for (int64_t dk = 0; dk < 32; dk++) {
-                        #line 566 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 580 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         int32_t k = (sk + dk);
-                        #line 567 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 581 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         double a_ik = a_mat[((i * n_dim) + k)];
-                        #line 568 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 582 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         double* b_row = (b_mat + ((k * n_dim) + sj));
-                        #line 569 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 583 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         #pragma unroll
                         #pragma GCC ivdep
                         for (int64_t dj = 0; dj < 32; dj++) {
-                            #line 570 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                            #line 584 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                             c_row[dj] = (c_row[dj] + (a_ik * b_row[dj]));
                         }
                     }
@@ -1502,217 +1538,217 @@ static inline int64_t bench_10_gemm_matrix(void) {
             }
         }
     }
-    #line 578 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 592 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double trace = 0.000000f;
-    #line 579 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 593 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i = 0; i < 512; i++) {
-        #line 579 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 593 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         trace = (trace + c_mat[((i * n_dim) + i)]);
     }
-    #line 580 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 594 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(((uint8_t*)(a_mat)));
-    #line 580 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 594 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(((uint8_t*)(b_mat)));
-    #line 580 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 594 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     free(((uint8_t*)(c_mat)));
-    #line 581 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 595 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return ((int64_t)((trace * 100.000000f)));
 }
 
-#line 587 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 601 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_11_monte_carlo(void) {
-    #line 588 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 602 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int32_t paths_cnt = 2000000;
-    #line 589 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double s0_price = 100.000000f;
-    #line 589 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double k_strike = 100.000000f;
-    #line 589 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double t_time = 1.000000f;
-    #line 589 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double r = 0.050000f;
-    #line 589 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double sigma = 0.200000f;
-    #line 590 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 604 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double drift = ((r - ((0.500000f * sigma) * sigma)) * t_time);
-    #line 591 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 605 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double vol = (sigma * sqrt(t_time));
-    #line 592 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 606 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double discount = exp(((-r) * t_time));
-    #line 594 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 608 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint64_t prng = -77129852519574988;
-    #line 595 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 609 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double total_payoff = 0.000000f;
-    #line 597 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 611 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t pair = 0; pair < 1000000; pair++) {
-        #line 598 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 612 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double u1 = (((double)(((((uint64_t)(splitmix64((&prng)))) >> (11) ) + 1))) / 9007199254740992.000000f);
-        #line 599 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 613 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double u2 = (((double)(((((uint64_t)(splitmix64((&prng)))) >> (11) ) + 1))) / 9007199254740992.000000f);
-        #line 600 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 614 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double radius = sqrt(((-2.000000f) * log(u1)));
-        #line 601 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 615 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double theta = ((2.000000f * 3.141593f) * u2);
-        #line 602 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 616 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double z1 = (radius * cos(theta));
-        #line 603 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 617 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double z2 = (radius * sin(theta));
-        #line 605 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 619 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double s_t1 = (s0_price * exp((drift + (vol * z1))));
-        #line 606 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 620 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double s_t2 = (s0_price * exp((drift + (vol * z2))));
-        #line 608 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 622 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double payoff1 = 0.000000f;
-        #line 609 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 623 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         if ((s_t1 > k_strike)) {
-            #line 609 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 623 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             payoff1 = (s_t1 - k_strike);
         }
-        #line 610 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 624 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         double payoff2 = 0.000000f;
-        #line 611 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 625 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         if ((s_t2 > k_strike)) {
-            #line 611 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 625 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             payoff2 = (s_t2 - k_strike);
         }
-        #line 613 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 627 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         total_payoff = ((total_payoff + payoff1) + payoff2);
     }
-    #line 615 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 629 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double option_price = ((total_payoff / ((double)(paths_cnt))) * discount);
-    #line 616 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 630 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return ((int64_t)((option_price * 1000000.000000f)));
 }
 
-#line 624 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 638 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline __attribute__((always_inline)) Req12 process_req12(uint64_t id, int32_t size) {
-    #line 625 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 639 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint64_t hash = (((uint64_t)(id)) ^ ((uint64_t)(-7046029254386353131)));
-    #line 626 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 640 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t j = 0; j < 50; j++) {
-        #line 627 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 641 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         hash = (((uint64_t)(hash)) ^ ((uint64_t)((((uint64_t)(hash)) << (13) ))));
-        #line 628 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 642 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         hash = (((uint64_t)(hash)) ^ ((uint64_t)((((uint64_t)(hash)) >> (7) ))));
-        #line 629 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 643 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         hash = (((uint64_t)(hash)) ^ ((uint64_t)((((uint64_t)(hash)) << (17) ))));
-        #line 630 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 644 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         hash = ((hash + ((uint64_t)(j))) + -4658895280553007687);
     }
-    #line 632 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 646 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     __auto_type req = (Req12){ .id = id, .payload_size = size, .checksum = ((int64_t)(hash)) };
-    #line 633 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 647 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return req;
 }
 
-#line 636 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 650 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 static inline int64_t bench_12_reduction(void) {
-    #line 637 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 651 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t sum0 = 0;
-    #line 637 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 651 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t sum1 = 0;
-    #line 637 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 651 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t sum2 = 0;
-    #line 637 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 651 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t sum3 = 0;
-    #line 639 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 653 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     #pragma unroll
     #pragma GCC ivdep
     for (int64_t i_idx = 0; i_idx < 2500000; i_idx++) {
-        #line 640 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 654 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         uint64_t i = (((uint64_t)(i_idx)) * 4);
-        #line 641 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 655 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         sum0 = (sum0 + process_req12(i, 256).checksum);
-        #line 642 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 656 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         sum1 = (sum1 + process_req12((i + 1), 256).checksum);
-        #line 643 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 657 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         sum2 = (sum2 + process_req12((i + 2), 256).checksum);
-        #line 644 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 658 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         sum3 = (sum3 + process_req12((i + 3), 256).checksum);
     }
-    #line 646 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 660 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return (((sum0 + sum1) + sum2) + sum3);
 }
 
-#line 649 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+#line 663 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
 int main(int argc, char** argv) {
-    #line 650 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 664 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     if ((argc < 2)) {
-        #line 651 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 665 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         printf("Usage: suite12_end.exe <id (1..12)>\n");
-        #line 652 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 666 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         return 1;
     }
-    #line 654 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 668 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int32_t id = atoi((*(argv + 1)));
-    #line 655 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 669 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     int64_t check = 0;
-    #line 657 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 671 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint64_t t0 = get_time_ns();
-    #line 658 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 672 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     if ((id == 1)) {
-        #line 658 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 672 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         check = bench_1_raymarcher();
     } else {
-        #line 659 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+        #line 673 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
         if ((id == 2)) {
-            #line 659 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 673 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             check = bench_2_binary_trees();
         } else {
-            #line 660 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+            #line 674 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
             if ((id == 3)) {
-                #line 660 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 674 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 check = bench_3_hft_engine();
             } else {
-                #line 661 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                #line 675 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                 if ((id == 4)) {
-                    #line 661 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 675 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     check = bench_4_sha256();
                 } else {
-                    #line 662 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                    #line 676 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                     if ((id == 5)) {
-                        #line 662 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 676 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         check = bench_5_nbody();
                     } else {
-                        #line 663 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                        #line 677 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                         if ((id == 6)) {
-                            #line 663 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                            #line 677 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                             check = bench_6_ring_buffer();
                         } else {
-                            #line 664 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                            #line 678 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                             if ((id == 7)) {
-                                #line 664 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                #line 678 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                 check = bench_7_dna_alignment();
                             } else {
-                                #line 665 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                #line 679 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                 if ((id == 8)) {
-                                    #line 665 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                    #line 679 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                     check = bench_8_json_serializer();
                                 } else {
-                                    #line 666 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                    #line 680 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                     if ((id == 9)) {
-                                        #line 666 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                        #line 680 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                         check = bench_9_fsm_lexer();
                                     } else {
-                                        #line 667 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                        #line 681 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                         if ((id == 10)) {
-                                            #line 667 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                            #line 681 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                             check = bench_10_gemm_matrix();
                                         } else {
-                                            #line 668 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                            #line 682 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                             if ((id == 11)) {
-                                                #line 668 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                                #line 682 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                                 check = bench_11_monte_carlo();
                                             } else {
-                                                #line 669 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                                #line 683 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                                 if ((id == 12)) {
-                                                    #line 669 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+                                                    #line 683 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
                                                     check = bench_12_reduction();
                                                 }
                                             }
@@ -1726,13 +1762,13 @@ int main(int argc, char** argv) {
             }
         }
     }
-    #line 670 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 684 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     uint64_t t1 = get_time_ns();
-    #line 672 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 686 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     double ms = (((double)((t1 - t0))) / 1000000.000000f);
-    #line 673 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 687 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     printf("RESULT:bench=%d,time_ms=%.3f,checksum=%lld\n", id, ms, check);
-    #line 674 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
+    #line 688 "C:/Users/ASUS/Desktop/flutter_project/end/benchmarks/suite12/suite12_end.end"
     return 0;
     return 0;
 }

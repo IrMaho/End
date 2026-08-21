@@ -549,6 +549,9 @@ fn main() {
                 "-fomit-frame-pointer".to_string(),
                 "-finline-functions".to_string(),
                 "-fno-math-errno".to_string(),
+                "-fno-trapping-math".to_string(),
+                "-ffp-contract=fast".to_string(),
+                "-freciprocal-math".to_string(),
                 "-fwrapv".to_string(),
             ];
 

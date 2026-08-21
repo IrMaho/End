@@ -198,27 +198,29 @@ pub fn bench_3_hft_engine() i64 {
             if side == 0 { buy_depth[price] = 0 }
             else { sell_depth[price] = 0 }
         } else if side == 0 {
-            for p_down in (price + 1) {
-                val p: i32 = price - p_down
-                if qty > 0 && sell_depth[p] > 0 {
+            mut p: i32 = price
+            while p >= 0 && qty > 0 {
+                if sell_depth[p] > 0 {
                     mut fill: i32 = qty
                     if sell_depth[p] < fill { fill = sell_depth[p] }
                     sell_depth[p] = sell_depth[p] - fill
                     qty = qty - fill
                     total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
                 }
+                p = p - 1
             }
             if qty > 0 { buy_depth[price] = buy_depth[price] + qty }
         } else {
-            for p_up in (100 - price) {
-                val p: i32 = price + p_up
-                if qty > 0 && buy_depth[p] > 0 {
+            mut p: i32 = price
+            while p < 100 && qty > 0 {
+                if buy_depth[p] > 0 {
                     mut fill: i32 = qty
                     if buy_depth[p] < fill { fill = buy_depth[p] }
                     buy_depth[p] = buy_depth[p] - fill
                     qty = qty - fill
                     total_volume = total_volume + ((fill as i64) * ((p + 1) as i64))
                 }
+                p = p + 1
             }
             if qty > 0 { sell_depth[price] = sell_depth[price] + qty }
         }
@@ -413,8 +415,8 @@ pub fn bench_7_dna_alignment() i64 {
                 val j: i32 = j_idx + 1
                 val temp: i32 = dp[j]
                 mut cost_val: i32 = 1
-                if s1_char == s2[j - 1] { cost_val = 0 }
-                val d1: i32 = dp[j - 1] + 1
+                if s1_char == s2[j_idx] { cost_val = 0 }
+                val d1: i32 = dp[j_idx] + 1
                 val d2: i32 = temp + 1
                 val d3: i32 = prev + cost_val
                 mut min_d: i32 = d1
@@ -506,25 +508,36 @@ pub fn bench_8_json_serializer() i64 {
 // -----------------------------------------------------------------------------
 pub fn bench_9_fsm_lexer() i64 {
     val sample: *u8 = "pub fn calculate_metrics(id: u64, active: bool) -> i64 { val base = id * 31; ret base + 10; } " as *u8
-    val sample_len: i32 = 98
+    val char_type: *u8 = malloc(256) as *u8
+    for c in 256 {
+        if (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95 { char_type[c] = 1 }
+        else if c >= 48 && c <= 57 { char_type[c] = 2 }
+        else if c == 32 || c == 10 || c == 9 { char_type[c] = 0 }
+        else { char_type[c] = 3 }
+    }
+
     mut token_count: i64 = 0
     mut token_hash: i64 = 0
     mut fsm_state: i32 = 0
+    mut s_idx: i32 = 0
 
     for i in 10000000 {
-        val c: u8 = sample[i % sample_len]
+        val ct: u8 = char_type[sample[s_idx] as i32]
+        s_idx = s_idx + 1
+        if s_idx == 98 { s_idx = 0 }
+
         if fsm_state == 0 {
-            if (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95 { fsm_state = 1 }
-            else if c >= 48 && c <= 57 { fsm_state = 2 }
-            else if c != 32 && c != 10 && c != 9 { fsm_state = 3 }
+            if ct == 1 { fsm_state = 1 }
+            else if ct == 2 { fsm_state = 2 }
+            else if ct == 3 { fsm_state = 3 }
         } else if fsm_state == 1 {
-            if !((c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95) {
+            if ct != 1 && ct != 2 {
                 token_count = token_count + 1
                 token_hash = (token_hash * 33) + 1
                 fsm_state = 0
             }
         } else if fsm_state == 2 {
-            if !(c >= 48 && c <= 57) {
+            if ct != 2 {
                 token_count = token_count + 1
                 token_hash = (token_hash * 33) + 2
                 fsm_state = 0
@@ -535,6 +548,7 @@ pub fn bench_9_fsm_lexer() i64 {
             fsm_state = 0
         }
     }
+    free(char_type)
     ret token_hash + token_count
 }
 
