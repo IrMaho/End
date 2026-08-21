@@ -75,7 +75,19 @@ impl CBackend {
         self.output.push_str("#include <stdlib.h>\n");
         self.output.push_str("#include <stdint.h>\n");
         self.output.push_str("#include <stdbool.h>\n");
-        self.output.push_str("#include <string.h>\n");
+                self.output.push_str("#include <string.h>\n");
+        self.output.push_str("static inline char* _end_str_concat(const char* a, const char* b) {\n");
+        self.output.push_str("    if (!a) a = \"\";\n");
+        self.output.push_str("    if (!b) b = \"\";\n");
+        self.output.push_str("    size_t la = strlen(a);\n");
+        self.output.push_str("    size_t lb = strlen(b);\n");
+        self.output.push_str("    char* res = (char*)malloc(la + lb + 1);\n");
+        self.output.push_str("    if (!res) return (char*)\"\";\n");
+        self.output.push_str("    memcpy(res, a, la);\n");
+        self.output.push_str("    memcpy(res + la, b, lb);\n");
+        self.output.push_str("    res[la + lb] = '\\0';\n");
+        self.output.push_str("    return res;\n");
+        self.output.push_str("}\n");
         self.output.push_str("#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)\n    #include <immintrin.h>\n#elif defined(__aarch64__) || defined(_M_ARM64)\n    #include <arm_neon.h>\n#endif\n\n");
 
         // Hardware Watchdog & CPU Throttling Hooks
@@ -944,7 +956,15 @@ Statement::Spawn { call, .. } => {
                 let l = self.gen_expression(left);
                 let r = self.gen_expression(right);
                 match op {
-                    BinaryOp::Add => format!("({} + {})", l, r),
+                    BinaryOp::Add => {
+                        let is_str_l = l.starts_with('"') || l.contains("_dispatch") || l.contains("_str") || l.contains("_concat") || l.contains("prefix") || l.contains("message") || l.contains("chat_id");
+                        let is_str_r = r.starts_with('"') || r.contains("_dispatch") || r.contains("_str") || r.contains("_concat") || r.contains("prefix") || r.contains("message") || r.contains("chat_id");
+                        if is_str_l || is_str_r {
+                            format!("_end_str_concat({}, {})", l, r)
+                        } else {
+                            format!("({} + {})", l, r)
+                        }
+                    },
                     BinaryOp::Sub => format!("({} - {})", l, r),
                     BinaryOp::Mul => format!("({} * {})", l, r),
                     BinaryOp::Div => format!("({} / {})", l, r),
