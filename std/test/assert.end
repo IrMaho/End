@@ -1,0 +1,58 @@
+// 🧪 End Standard Library: std/test/assert.end
+// Native High-Performance Assertion and Leak Verification Primitives
+
+pub fn assert_true(cond: bool) bool {
+    if !cond {
+        println("❌ Assertion Failed: expected true, got false")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_false(cond: bool) bool {
+    if cond {
+        println("❌ Assertion Failed: expected false, got true")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_eq_i64(actual: i64, expected: i64) bool {
+    if actual != expected {
+        println("❌ Assertion Failed: value equality mismatch")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_eq_str(actual: str, expected: str) bool {
+    if actual != expected {
+        println("❌ Assertion Failed: string equality mismatch")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_gt_i64(actual: i64, threshold: i64) bool {
+    if actual <= threshold {
+        println("❌ Assertion Failed: expected value to be strictly greater than threshold")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_lt_i64(actual: i64, threshold: i64) bool {
+    if actual >= threshold {
+        println("❌ Assertion Failed: expected value to be strictly less than threshold")
+        ret false
+    }
+    ret true
+}
+
+pub fn assert_alloc_zero(unfreed_bytes: i64) bool {
+    if unfreed_bytes != 0 {
+        println("🚨 ZERO-LEAK VIOLATION: Memory Arena has uncollected bytes at scope exit!")
+        ret false
+    }
+    ret true
+}

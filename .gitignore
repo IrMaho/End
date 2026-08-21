@@ -5,6 +5,7 @@ endc/target/
 dist/
 release/
 node_modules/
+.end_diagnostics/
 
 # Binaries and intermediate files
 *.exe

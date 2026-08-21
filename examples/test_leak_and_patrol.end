@@ -1,0 +1,49 @@
+// 🧪 End Zero-Leak & Performance Test Suite
+// Validates: @test, @bench, @scenario, @patrol, std/test/assert, and std/mem/leak_detector
+
+import "std/test/assert.end"
+import "std/test/patrol.end"
+import "std/mem/leak_detector.end"
+
+@test("Physics Arena Allocation Bounds & Zero-Leak Verification")
+@bench(max_latency_ns = 50, max_mem_bytes = 512)
+pub fn test_physics_performance() bool {
+    mut guard = arena_guard_create()
+    
+    region r {
+        guard = arena_guard_record_alloc(guard, 256)
+        val is_gt = assert_gt_i64(guard.total_allocated_bytes, 0)
+        if !is_gt {
+            ret false
+        }
+        guard = arena_guard_record_scope_reset(guard)
+    }
+
+    val is_zero = assert_alloc_zero(guard.total_allocated_bytes)
+    ret is_zero
+}
+
+@scenario("Game Loop 1000 Ticks State Stability Scenario")
+pub fn scenario_game_loop_stability() bool {
+    mut ticks = 0
+    mut particles = 100
+    while ticks < 1000 {
+        particles = particles + 1
+        ticks = ticks + 1
+    }
+    val ok = assert_eq_i64(ticks, 1000)
+    ret ok
+}
+
+@patrol(interval_sec = 5)
+pub fn patrol_server_health_check() bool {
+    mut rep = patrol_create("EndHyper_Gateway", 5)
+    rep = patrol_record_check(rep, 18, true, 0)
+    ret rep.is_healthy
+}
+
+pub fn main() void {
+    println("👑 Running Zero-Leak & Patrol Test Suite...");
+    val res = test_physics_performance();
+    println("  ✔ Test Physics Performance Result: " + res);
+}

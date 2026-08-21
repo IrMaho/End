@@ -1,0 +1,60 @@
+// 🔍 End Standard Library: std/mem/leak_detector.end
+// Zero-GC Shadow Allocation Tracking Table & Live Escape Detector
+
+pub st ShadowAllocEntry {
+    alloc_id: i64,
+    size_bytes: i64,
+    line_number: i32,
+    region_id: str,
+    is_freed: bool,
+}
+
+pub st MemoryArenaGuard {
+    total_allocated_bytes: i64,
+    active_allocations_count: i32,
+    max_peak_bytes: i64,
+    escaped_pointers_count: i32,
+    leak_detected: bool,
+}
+
+pub fn arena_guard_create() MemoryArenaGuard {
+    ret MemoryArenaGuard {
+        total_allocated_bytes: 0,
+        active_allocations_count: 0,
+        max_peak_bytes: 0,
+        escaped_pointers_count: 0,
+        leak_detected: false,
+    }
+}
+
+pub fn arena_guard_record_alloc(guard: MemoryArenaGuard, size: i64) MemoryArenaGuard {
+    val total = guard.total_allocated_bytes + size
+    val count = guard.active_allocations_count + 1
+    val peak = if total > guard.max_peak_bytes { total } else { guard.max_peak_bytes }
+
+    ret MemoryArenaGuard {
+        total_allocated_bytes: total,
+        active_allocations_count: count,
+        max_peak_bytes: peak,
+        escaped_pointers_count: guard.escaped_pointers_count,
+        leak_detected: guard.leak_detected,
+    }
+}
+
+pub fn arena_guard_record_scope_reset(guard: MemoryArenaGuard) MemoryArenaGuard {
+    ret MemoryArenaGuard {
+        total_allocated_bytes: 0,
+        active_allocations_count: 0,
+        max_peak_bytes: guard.max_peak_bytes,
+        escaped_pointers_count: guard.escaped_pointers_count,
+        leak_detected: false,
+    }
+}
+
+pub fn arena_guard_verify_zero_leak(guard: MemoryArenaGuard) bool {
+    if guard.total_allocated_bytes != 0 || guard.active_allocations_count != 0 {
+        println("🚨 ZERO-LEAK ASSERTION FAILED: " + guard.total_allocated_bytes + " bytes remain uncollected in arena!")
+        ret false
+    }
+    ret true
+}

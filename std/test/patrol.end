@@ -1,0 +1,46 @@
+// 🛡️ End Standard Library: std/test/patrol.end
+// Continuous Background Health Patrol & Live Metric Inspector
+
+pub st PatrolReport {
+    service: str,
+    interval_sec: i32,
+    checks_total: i32,
+    checks_passed: i32,
+    max_latency_ns: i64,
+    leak_detected: bool,
+    is_healthy: bool,
+}
+
+pub fn patrol_create(service: str, interval_sec: i32) PatrolReport {
+    ret PatrolReport {
+        service: service,
+        interval_sec: interval_sec,
+        checks_total: 0,
+        checks_passed: 0,
+        max_latency_ns: 0,
+        leak_detected: false,
+        is_healthy: true,
+    }
+}
+
+pub fn patrol_record_check(report: PatrolReport, latency_ns: i64, passed: bool, unfreed_bytes: i64) PatrolReport {
+    val total = report.checks_total + 1
+    val passed_count = if passed { report.checks_passed + 1 } else { report.checks_passed }
+    val max_lat = if latency_ns > report.max_latency_ns { latency_ns } else { report.max_latency_ns }
+    val leak = unfreed_bytes > 0 || report.leak_detected
+    val healthy = passed && !leak
+
+    ret PatrolReport {
+        service: report.service,
+        interval_sec: report.interval_sec,
+        checks_total: total,
+        checks_passed: passed_count,
+        max_latency_ns: max_lat,
+        leak_detected: leak,
+        is_healthy: healthy,
+    }
+}
+
+pub fn patrol_format_json(report: PatrolReport) str {
+    ret "{\"service\": \"" + report.service + "\", \"checks_total\": " + report.checks_total + ", \"checks_passed\": " + report.checks_passed + ", \"is_healthy\": " + report.is_healthy + "}"
+}

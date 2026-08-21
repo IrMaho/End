@@ -1,0 +1,4 @@
+pub fn trigger_unmanaged_leak() void {
+    val leaky_ptr: *i64 = alloc [1024]i64
+    println("This leaky allocation escapes without safe region boundary")
+}

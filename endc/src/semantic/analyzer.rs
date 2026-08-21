@@ -7,7 +7,9 @@ pub struct SemanticAnalyzer {
     pub source_lines: Vec<String>,
     pub errors: Vec<DiagnosticError>,
     pub enums: HashMap<String, EnumDef>,
+    pub strict_leaks: bool,
     current_function: Option<String>,
+    region_depth: usize,
     var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
 }
 
@@ -28,7 +30,9 @@ impl SemanticAnalyzer {
             source_lines: source.lines().map(|s| s.to_string()).collect(),
             errors: Vec::new(),
             enums: HashMap::new(),
+            strict_leaks: false,
             current_function: None,
+            region_depth: 0,
             var_scopes: vec![HashMap::new()],
         }
     }
@@ -231,6 +235,18 @@ impl SemanticAnalyzer {
                 } else {
                     false
                 };
+
+                // Zero-Leak Enforcement: detect raw unmanaged allocations outside safe region scopes
+                if self.strict_leaks && (memory_allocated || matches!(ty, Type::Pointer(_))) && self.region_depth == 0 {
+                    self.errors.push(DiagnosticError {
+                        code: "E0901".to_string(),
+                        message: format!("Memory leak detected: pointer allocated at line {} escapes without safe region boundary or deallocation", span.line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "MemoryLeakError".to_string(),
+                        repair_suggestion: Some("wrap in 'region frame { ... }' or return by value to guarantee zero memory leak".to_string()),
+                    });
+                }
 
                 let line_sem = LineSemantics {
                     line: span.line,
@@ -450,6 +466,7 @@ impl SemanticAnalyzer {
                 self.graph.add_line(span.line, line_sem);
             }
             Statement::RegionBlock { name, body, span } => {
+                self.region_depth += 1;
                 self.push_scope();
                 self.declare_var(
                     &format!("region_{}", name),
@@ -459,6 +476,7 @@ impl SemanticAnalyzer {
                 );
                 self.analyze_block(body);
                 self.pop_scope();
+                self.region_depth = self.region_depth.saturating_sub(1);
             }
             Statement::AsmBlock { arch, span, .. } => {
                 let raw_code = if span.line <= self.source_lines.len() && span.line > 0 {
@@ -643,10 +661,17 @@ impl SemanticAnalyzer {
         match expr {
             Expression::Alloc { .. } => true,
             Expression::Call { callee, .. } => {
-                if let Expression::Ident(name, _) = callee.as_ref() {
-                    name.contains("alloc") || name.contains("init")
-                } else if let Expression::FieldAccess { field, .. } = callee.as_ref() {
-                    field.contains("alloc") || field.contains("init")
+                let name = match callee.as_ref() {
+                    Expression::Ident(n, _) => Some(n.as_str()),
+                    Expression::FieldAccess { field, .. } => Some(field.as_str()),
+                    _ => None,
+                };
+                if let Some(n) = name {
+                    if n.starts_with("assert_") {
+                        false
+                    } else {
+                        n == "alloc" || n.starts_with("alloc_") || n == "malloc" || n.contains("heap_alloc") || n.starts_with("create_arena")
+                    }
                 } else {
                     false
                 }
