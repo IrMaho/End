@@ -1,17 +1,36 @@
 {
   "name": "end-lang",
   "displayName": "End Programming Language",
-  "description": "Official Language Support, High-Performance Syntax Highlighting, and Snippets for End",
-  "version": "0.1.0",
+  "description": "Official High-Performance Language Toolchain, LSP, CodeLens, Interactive Simulation Studio & 120 FPS Canvas for End",
+  "version": "0.2.0",
   "publisher": "EndLanguage",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IrMaho/End.git"
+  },
   "icon": "icon.png",
+  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
     "Programming Languages",
     "Snippets",
-    "Linters"
+    "Linters",
+    "Testing",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:end",
+    "onCommand:end.openStudio",
+    "onCommand:end.runTest",
+    "onCommand:end.simulateMutation",
+    "onCommand:end.bench1MOps",
+    "onCommand:end.traceSymbol",
+    "onCommand:end.evalLine",
+    "onCommand:end.buildNative",
+    "onCommand:end.startDevServer"
   ],
   "contributes": {
     "languages": [
@@ -43,6 +62,146 @@
         "language": "end",
         "path": "./snippets/end.json"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "end.openStudio",
+        "title": "End: Open Visual Studio & Simulation Studio",
+        "icon": "$(graph-line)",
+        "category": "End"
+      },
+      {
+        "command": "end.runTest",
+        "title": "End: Run Test Under Cursor",
+        "icon": "$(play)",
+        "category": "End"
+      },
+      {
+        "command": "end.simulateMutation",
+        "title": "End: Simulate 'What-If' Parameter Mutation",
+        "icon": "$(beaker)",
+        "category": "End"
+      },
+      {
+        "command": "end.bench1MOps",
+        "title": "End: Run 1M Operations Scale Benchmark",
+        "icon": "$(pulse)",
+        "category": "End"
+      },
+      {
+        "command": "end.traceSymbol",
+        "title": "End: Trace Symbol Data-Flow Lifecycle",
+        "icon": "$(search-fuzzy)",
+        "category": "End"
+      },
+      {
+        "command": "end.evalLine",
+        "title": "End: Evaluate Line / Expression",
+        "icon": "$(zap)",
+        "category": "End"
+      },
+      {
+        "command": "end.buildNative",
+        "title": "End: Compile Native Optimized Binary",
+        "icon": "$(package)",
+        "category": "End"
+      },
+      {
+        "command": "end.startDevServer",
+        "title": "End: Start Zero-Downtime Dev Server",
+        "icon": "$(server)",
+        "category": "End"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "end-explorer",
+          "title": "End Platform",
+          "icon": "$(symbol-structure)"
+        }
+      ]
+    },
+    "views": {
+      "end-explorer": [
+        {
+          "id": "endTestsView",
+          "name": "Test & Benchmark Suite",
+          "icon": "$(checklist)"
+        },
+        {
+          "id": "endObservabilityView",
+          "name": "Telemetry & Hardware Guard",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "end.openStudio",
+          "when": "resourceExtname == .end",
+          "group": "navigation"
+        },
+        {
+          "command": "end.runTest",
+          "when": "resourceExtname == .end",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "end.simulateMutation",
+          "when": "resourceExtname == .end",
+          "group": "1_end"
+        },
+        {
+          "command": "end.bench1MOps",
+          "when": "resourceExtname == .end",
+          "group": "1_end"
+        },
+        {
+          "command": "end.traceSymbol",
+          "when": "resourceExtname == .end",
+          "group": "1_end"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "End Language Configuration",
+      "properties": {
+        "end.compilerPath": {
+          "type": "string",
+          "default": "endc",
+          "description": "Path to the End compiler / toolchain executable (endc.exe or end.exe)"
+        },
+        "end.enableLsp": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable End Language Server Protocol (LSP) for diagnostics, hover, and completion"
+        },
+        "end.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show interactive Run Test, Bench, and Simulate CodeLens buttons above functions"
+        },
+        "end.enableInlayHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show zero-GC memory arena allocation and effect inlay hints"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.3.3"
   }
 }

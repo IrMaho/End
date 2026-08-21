@@ -12,12 +12,23 @@
     { "open": "{", "close": "}" },
     { "open": "[", "close": "]" },
     { "open": "(", "close": ")" },
-    { "open": "\"", "close": "\"", "notIn": ["string"] }
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "/*", "close": "*/", "notIn": ["string"] }
   ],
   "surroundingPairs": [
     ["{", "}"],
     ["[", "]"],
     ["(", ")"],
     ["\"", "\""]
-  ]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*(region|fn|st|struct|enum|match)\\b.*\\{\\s*$",
+      "end": "^\\s*\\}\\s*$"
+    }
+  },
+  "indentationRules": {
+    "increaseIndentPattern": "^.*\\{[^}]*$",
+    "decreaseIndentPattern": "^\\s*\\}"
+  }
 }

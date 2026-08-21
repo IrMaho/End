@@ -6,10 +6,10 @@
       "include": "#comments"
     },
     {
-      "include": "#keywords"
+      "include": "#decorators"
     },
     {
-      "include": "#decorators"
+      "include": "#keywords"
     },
     {
       "include": "#types"
@@ -45,7 +45,7 @@
       "patterns": [
         {
           "name": "entity.name.tag.decorator.end",
-          "match": "@(target|optimize|align|intrinsic|pure|effect)\\b"
+          "match": "@(get|post|put|delete|ws|test|bench|export|c_export|import_c|inline|watchdog|trace_fn|log_state|target|optimize|align|intrinsic|pure|effect)\\b"
         }
       ]
     },
@@ -53,15 +53,15 @@
       "patterns": [
         {
           "name": "keyword.control.end",
-          "match": "\\b(if|else|while|for|in|ret|break|continue|match|parallel)\\b"
+          "match": "\\b(if|else|while|for|in|ret|return|break|continue|match|parallel|defer|unsafe|spawn)\\b"
         },
         {
           "name": "keyword.other.memory.end",
-          "match": "\\b(region|mut|val|pure|effect)\\b"
+          "match": "\\b(region|mut|val|pure|effect|alloc|free|promote|catch)\\b"
         },
         {
           "name": "keyword.declaration.end",
-          "match": "\\b(fn|st|enum|asm|import|from)\\b"
+          "match": "\\b(pub|fn|st|struct|enum|asm|import|as|from)\\b"
         },
         {
           "name": "constant.language.boolean.end",
@@ -73,7 +73,7 @@
       "patterns": [
         {
           "name": "storage.type.primitive.end",
-          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|SimdVec|Agent)\\b"
+          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|Box|Rc|Arc|Channel|Allocator|Result|EndArena|SocketGuard|CircuitBreaker|TelemetryRingBuffer|WhatIfParameter|StressMetricsReport)\\b"
         },
         {
           "name": "entity.name.type.struct.end",
@@ -85,7 +85,7 @@
       "patterns": [
         {
           "name": "support.function.builtin.end",
-          "match": "\\b(println|print|inspect|trace|effects|impact|assert|alloc|free)\\b"
+          "match": "\\b(println|print|end_println|inspect|trace|effects|impact|assert|alloc|free|cpu_yield|cpu_relax|cpu_sleep_ms|safe_socket_poll|high_res_time_ns|instant_now|instant_elapsed_micros|socket_guard_create|circuit_breaker_create|ring_buffer_create|hot_reload_store_create)\\b"
         },
         {
           "name": "entity.name.function.end",
@@ -128,7 +128,7 @@
       "patterns": [
         {
           "name": "keyword.operator.end",
-          "match": "(\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>)"
+          "match": "(\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>|\\!)"
         }
       ]
     }

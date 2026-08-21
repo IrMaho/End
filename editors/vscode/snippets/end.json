@@ -8,10 +8,19 @@
     ],
     "description": "Define a function in End Language"
   },
-  "Region Block": {
+  "Public Function Definition": {
+    "prefix": "pubfn",
+    "body": [
+      "pub fn ${1:name}(${2:params}) ${3:void} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define an exported public function"
+  },
+  "Zero-GC Region Block": {
     "prefix": "region",
     "body": [
-      "region ${1:scope_name} {",
+      "region ${1:frame_scope} {",
       "\t$0",
       "}"
     ],
@@ -20,7 +29,7 @@
   "Struct Definition": {
     "prefix": "st",
     "body": [
-      "st ${1:StructName} {",
+      "pub st ${1:StructName} {",
       "\t${2:field}: ${3:type},",
       "}"
     ],
@@ -29,7 +38,7 @@
   "Enum Definition": {
     "prefix": "enum",
     "body": [
-      "enum ${1:EnumName} {",
+      "pub enum ${1:EnumName} {",
       "\t${2:Variant1},",
       "\t${3:Variant2},",
       "}"
@@ -47,6 +56,69 @@
     ],
     "description": "Exhaustive Pattern Matching"
   },
+  "Enterprise Unit Test": {
+    "prefix": "test",
+    "body": [
+      "@test(\"${1:Test Description}\")",
+      "pub fn test_${2:feature}() bool {",
+      "\t$0",
+      "\tret true",
+      "}"
+    ],
+    "description": "Define an automated unit test with @test attribute"
+  },
+  "FastAPI-Style Route POST": {
+    "prefix": "post",
+    "body": [
+      "@post(\"/api/v1/${1:endpoint}\")",
+      "pub fn handle_${2:action}(req: RequestContext, body: ${3:Dto}) HyperResponse {",
+      "\t$0",
+      "\tret hyper_response_ok(\"{\\\"status\\\": \\\"ok\\\"}\")",
+      "}"
+    ],
+    "description": "Define a declarative EndHyper POST Route"
+  },
+  "120 FPS WebSocket Game Handler": {
+    "prefix": "ws",
+    "body": [
+      "@ws(\"/ws/game/{${1:room_id}}\")",
+      "pub fn game_socket_handler(client: WebSocketClient, room: str) void {",
+      "\tval state = ws_pack_game_state(${2:1001}, ${3:145.5}, ${4:320.0}, ${5:12.4}, ${6:60})",
+      "\tws_broadcast_state(client, state)",
+      "}"
+    ],
+    "description": "Define a 120 FPS Binary WebSocket Game Handler"
+  },
+  "Hardware Socket Guard": {
+    "prefix": "sockguard",
+    "body": [
+      "val socket_guard = socket_guard_create(50)",
+      "if !safe_socket_is_valid(${1:sock_fd}) {",
+      "\tcpu_sleep_ms(10)",
+      "\tret false",
+      "}"
+    ],
+    "description": "Dual-Check Hardware Socket Safeguard with Exponential Backoff"
+  },
+  "Thermal Circuit Breaker": {
+    "prefix": "circuitbreaker",
+    "body": [
+      "val cb = circuit_breaker_create(\"${1:Service}\", 5, 85)",
+      "if !circuit_breaker_allow_request(cb, ${2:cpu_percent}) {",
+      "\tret hyper_response_json(503, \"{\\\"error\\\": \\\"Service Throttled\\\"}\")",
+      "}"
+    ],
+    "description": "Thermal Software Fuse and CPU Resource Quota Circuit Breaker"
+  },
+  "What-If Differential Mutation": {
+    "prefix": "whatif",
+    "body": [
+      "val baseline = ${1:100.0}",
+      "val mutated = ${2:85.0}",
+      "val diff = simulation_compare_outputs(\"${3:Scenario}\", baseline, mutated)"
+    ],
+    "description": "What-If Differential Mutation comparison and variance matrix"
+  },
   "Parallel For Loop": {
     "prefix": "parallel",
     "body": [
@@ -55,24 +127,6 @@
       "}"
     ],
     "description": "Hardware-accelerated parallel loop"
-  },
-  "Inline Assembly Block": {
-    "prefix": "asm",
-    "body": [
-      "asm x86_64 {",
-      "\t\"${1:instruction}\"",
-      "}"
-    ],
-    "description": "Direct Inline Assembly"
-  },
-  "Multi-Target Annotation": {
-    "prefix": "target",
-    "body": [
-      "@target(\"${1:cpu}\") {",
-      "\t$0",
-      "}"
-    ],
-    "description": "Multi-Target Hardware Specialized Block"
   },
   "Print Line": {
     "prefix": "pl",
