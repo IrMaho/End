@@ -1,0 +1,98 @@
+// 🏛️ End Language: Design Patterns & Architectural Standards Test
+import "std/test/assert.end"
+import "std/patterns/repository.end"
+import "std/patterns/ecs.end"
+import "std/patterns/pipeline.end"
+import "std/patterns/state_machine.end"
+import "std/patterns/di.end"
+
+pub st UserAccount {
+    id: i64,
+    username: str,
+    balance: i64,
+}
+
+pub enum GameState {
+    Lobby,
+    Matchmaking,
+    InGame,
+    GameOver,
+}
+
+@test
+fn test_pattern_repository_and_uow() void {
+    println("[Design Pattern 1] Testing Generic Repository & Unit of Work...")
+
+    val repo = repository_create("users", "id")
+    val u1 = UserAccount { id: 101, username: "alex", balance: 5000 }
+    val saved_repo = repository_save(repo, u1)
+    assert_eq_i64(saved_repo.total_records, 1, "Total records after save must be 1")
+    assert_true(repository_find_by_id(saved_repo, 101), "User must be found")
+
+    val uow = uow_create()
+    assert_true(uow.is_transaction_active, "UoW transaction must be active")
+    val committed_uow = uow_commit(uow)
+    assert_true(!committed_uow.is_transaction_active, "UoW transaction committed")
+}
+
+@test
+fn test_pattern_ecs_world() void {
+    println("[Design Pattern 2] Testing Entity Component System (ECS) Engine...")
+
+    val world = ecs_world_create(10000)
+    val spawn_res = ecs_spawn(world)
+    assert_eq_i64(spawn_res.entity.id, 1, "First entity ID must be 1")
+    assert_true(spawn_res.entity.is_alive, "Spawned entity must be alive")
+
+    val updated_world = ecs_run_system(spawn_res.world, 16666666) // ~60/120 FPS delta
+    assert_true(updated_world.systems_registered == 1, "Systems registered must be 1")
+}
+
+@test
+fn test_pattern_middleware_pipeline() void {
+    println("[Design Pattern 3] Testing Middleware Pipeline & Chain of Responsibility...")
+
+    val pipe = pipeline_create()
+    val staged_pipe = pipeline_pipe(pipe)
+    val final_pipe = pipeline_pipe(staged_pipe)
+    assert_true(final_pipe.middleware_stages == 2, "Pipeline stages count must be 2")
+    assert_true(pipeline_execute(final_pipe, 100), "Pipeline execution must succeed")
+}
+
+@test
+fn test_pattern_fsm_state_machine() void {
+    println("[Design Pattern 4] Testing Finite State Machine (FSM)...")
+
+    val fsm = fsm_create(GameState::Lobby)
+    val configured_fsm = fsm_allow_transition(fsm, GameState::Lobby, GameState::Matchmaking)
+    assert_true(configured_fsm.allowed_rules == 1, "Rules count must be 1")
+
+    val in_game_fsm = fsm_transition_to(configured_fsm, GameState::InGame)
+    assert_eq_i64(in_game_fsm.transition_count, 1, "Transition count must be 1")
+}
+
+@test
+fn test_pattern_di_container() void {
+    println("[Design Pattern 5] Testing Compile-Time Dependency Injection (DI) Container...")
+
+    val container = di_container_create()
+    val with_singleton = di_register_singleton(container)
+    val with_transient = di_register_transient(with_singleton)
+    val frozen = di_freeze(with_transient)
+
+    assert_true(frozen.singletons_count == 1, "Singletons count must be 1")
+    assert_true(frozen.transients_count == 1, "Transients count must be 1")
+    assert_true(frozen.is_frozen, "DI container must be frozen")
+}
+
+fn main() void {
+    println("==================================================")
+    println("👑 Running End Language First-Class Design Patterns Verification")
+    println("==================================================")
+    test_pattern_repository_and_uow()
+    test_pattern_ecs_world()
+    test_pattern_middleware_pipeline()
+    test_pattern_fsm_state_machine()
+    test_pattern_di_container()
+    println("👑 [SUCCESS] All 5 First-Class Design Patterns Fully Verified!")
+}

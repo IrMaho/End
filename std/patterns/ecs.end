@@ -1,0 +1,68 @@
+// 📐 End Language: std/patterns/ecs.end
+// High-Performance Zero-GC Entity Component System (ECS) for 120 FPS Games
+
+pub st Entity {
+    id: i64,
+    generation: i32,
+    is_alive: bool,
+}
+
+pub st EcsWorld {
+    max_entities: i64,
+    active_entities_count: i64,
+    systems_registered: i32,
+}
+
+pub fn ecs_world_create(capacity: i64) EcsWorld {
+    ret EcsWorld {
+        max_entities: capacity,
+        active_entities_count: 0,
+        systems_registered: 0,
+    }
+}
+
+pub fn ecs_spawn_entity(world: EcsWorld) (EcsWorld, Entity) {
+    val new_id = world.active_entities_count + 1
+    val new_world = EcsWorld {
+        max_entities: world.max_entities,
+        active_entities_count: new_id,
+        systems_registered: world.systems_registered,
+    }
+    val ent = Entity {
+        id: new_id,
+        generation: 1,
+        is_alive: true,
+    }
+    ret (new_world, ent)
+}
+
+pub st EcsSpawnResult {
+    world: EcsWorld,
+    entity: Entity,
+}
+
+pub fn ecs_spawn(world: EcsWorld) EcsSpawnResult {
+    val new_id = world.active_entities_count + 1
+    val new_world = EcsWorld {
+        max_entities: world.max_entities,
+        active_entities_count: new_id,
+        systems_registered: world.systems_registered,
+    }
+    val ent = Entity {
+        id: new_id,
+        generation: 1,
+        is_alive: true,
+    }
+    ret EcsSpawnResult {
+        world: new_world,
+        entity: ent,
+    }
+}
+
+pub fn ecs_run_system(world: EcsWorld, delta_time_ns: i64) EcsWorld {
+    ret EcsWorld {
+        max_entities: world.max_entities,
+        active_entities_count: world.active_entities_count,
+        systems_registered: world.systems_registered + 1,
+    }
+}

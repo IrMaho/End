@@ -324,6 +324,16 @@ enum Commands {
         #[arg(short, long)]
         out: Option<PathBuf>,
     },
+    /// Intelligent Architectural Scaffolder & Auto-Template Generator (Clean Architecture)
+    Gen {
+        /// Entity/Feature type (e.g. feature, entity, service)
+        generator_type: String,
+        /// Name of the feature/module (e.g. auth, billing, payment)
+        name: String,
+        /// Architecture preset (clean_hexagonal, game_ecs, event_driven_microservice, layered_api)
+        #[arg(short, long, default_value = "clean_hexagonal")]
+        preset: String,
+    },
 }
 
 fn main() {
@@ -1382,6 +1392,25 @@ fn main() {
                     eprintln!("{} Unsupported mobile platform `{}`. Use 'android' or 'ios'.", "Error:".red().bold(), other);
                     std::process::exit(1);
                 }
+            }
+        }
+        Commands::Gen { generator_type, name, preset } => {
+            if generator_type.eq_ignore_ascii_case("feature") || generator_type.eq_ignore_ascii_case("module") {
+                match ArchitectureEngine::scaffold_feature(&name, &preset, std::path::Path::new(".")) {
+                    Ok(files) => {
+                        println!("🤖 {} Generated Clean Architecture feature `{}` with preset `{}`:", "Architectural Scaffolder:".green().bold(), name.cyan().bold(), preset.yellow().bold());
+                        for f in files {
+                            println!("  ✔ Created: {:?}", f);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} Failed to generate scaffold: {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                eprintln!("{} Unsupported generator type `{}`. Use 'feature'.", "Error:".red().bold(), generator_type);
+                std::process::exit(1);
             }
         }
     }

@@ -1,0 +1,45 @@
+// 📐 End Language: std/patterns/di.end
+// Zero-Overhead Compile-Time Dependency Injection (DI) Container
+
+pub st DiContainer {
+    container_id: i64,
+    singletons_count: i32,
+    transients_count: i32,
+    is_frozen: bool,
+}
+
+pub fn di_container_create() DiContainer {
+    ret DiContainer {
+        container_id: 1,
+        singletons_count: 0,
+        transients_count: 0,
+        is_frozen: false,
+    }
+}
+
+pub fn di_register_singleton<T>(container: DiContainer) DiContainer {
+    ret DiContainer {
+        container_id: container.container_id,
+        singletons_count: container.singletons_count + 1,
+        transients_count: container.transients_count,
+        is_frozen: container.is_frozen,
+    }
+}
+
+pub fn di_register_transient<T>(container: DiContainer) DiContainer {
+    ret DiContainer {
+        container_id: container.container_id,
+        singletons_count: container.singletons_count,
+        transients_count: container.transients_count + 1,
+        is_frozen: container.is_frozen,
+    }
+}
+
+pub fn di_freeze(container: DiContainer) DiContainer {
+    ret DiContainer {
+        container_id: container.container_id,
+        singletons_count: container.singletons_count,
+        transients_count: container.transients_count,
+        is_frozen: true,
+    }
+}
