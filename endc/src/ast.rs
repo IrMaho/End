@@ -429,6 +429,27 @@ impl Expression {
     }
 }
 
+impl Statement {
+    pub fn span(&self) -> &Span {
+        match self {
+            Statement::VarDecl { span, .. } => span,
+            Statement::Assignment { span, .. } => span,
+            Statement::Return { span, .. } => span,
+            Statement::Expression(expr) => expr.span(),
+            Statement::If { span, .. } => span,
+            Statement::While { span, .. } => span,
+            Statement::ForIn { span, .. } => span,
+            Statement::ParallelFor { span, .. } => span,
+            Statement::Match { span, .. } => span,
+            Statement::RegionBlock { span, .. } => span,
+            Statement::AsmBlock { span, .. } => span,
+            Statement::TargetBlock { span, .. } => span,
+            Statement::Defer { span, .. } => span,
+            Statement::Spawn { span, .. } => span,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Module {
     pub name: String,

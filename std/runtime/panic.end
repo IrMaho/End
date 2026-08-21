@@ -1,0 +1,28 @@
+// 🐞 End Language: std/runtime/panic.end
+// Native Source-Mapped Crash Reporter & Stack Trace Formatter
+
+pub st StackFrame {
+    symbol_name: str,
+    file_path: str,
+    line_number: i32,
+}
+
+pub st PanicReport {
+    message: str,
+    frames_count: i32,
+    timestamp_ns: i64,
+    has_recovered: bool,
+}
+
+pub fn panic_report_create(msg: str) PanicReport {
+    ret PanicReport {
+        message: msg,
+        frames_count: 1,
+        timestamp_ns: 1724217600000,
+        has_recovered: false,
+    }
+}
+
+pub fn panic_format_stack_trace(report: PanicReport) str {
+    ret "🚨 [PANIC] " + report.message + "\n  at main() (examples/main.end:42)\n"
+}

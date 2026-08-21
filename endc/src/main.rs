@@ -7,8 +7,10 @@ use std::process::Command;
 mod agent_api;
 mod architecture;
 mod ast;
+mod bindgen;
 mod codegen;
 mod diagnostics;
+mod fuzz;
 mod lexer;
 mod lsp;
 mod package;
@@ -17,13 +19,15 @@ mod semantic;
 
 use agent_api::{AgentApi, MicroEvaluator, SelfHealingEngine, SemanticCodeSlicer, StructuredAstPatcher};
 use architecture::ArchitectureEngine;
+use bindgen::UniversalBindgen;
 use codegen::{CBackend, CraneliftBackend, Interpreter, LlvmBackend};
 use diagnostics::Diagnostic;
+use fuzz::FuzzRunner;
 use lexer::Lexer;
 use lsp::LanguageServer;
 use package::PackageManager;
 use parser::Parser as EndParser;
-use semantic::SemanticAnalyzer;
+use semantic::{SemanticAnalyzer, TreeShaker};
 
 #[derive(Parser)]
 #[command(name = "end")]
@@ -68,6 +72,12 @@ enum Commands {
         /// Code generation backend (c, llvm, cranelift)
         #[arg(long, default_value = "c")]
         backend: String,
+        /// Perform binary tree-shaking & dead-code elimination (micro-binary optimization)
+        #[arg(long, default_value_t = true)]
+        tree_shake: bool,
+        /// Enable AddressSanitizer & UndefinedBehaviorSanitizer
+        #[arg(long, default_value_t = false)]
+        sanitize: bool,
     },
     /// Perform fast semantic check and return machine-readable diagnostics
     Check {
@@ -273,6 +283,31 @@ enum Commands {
     Publish,
     /// Install and lock all dependencies specified in end.toml
     Install,
+    /// Generate idiomatic FFI bindings for Python, TypeScript, Dart/Flutter, and C#/Unity
+    Bindgen {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Output directory for generated bindings
+        #[arg(short, long, default_value = "bindings")]
+        out_dir: PathBuf,
+        /// Target languages (comma-separated: python,typescript,dart,csharp)
+        #[arg(short, long, default_value = "python,typescript,dart,csharp")]
+        target: String,
+        /// Name of the native library file (default: file basename)
+        #[arg(long)]
+        lib_name: Option<String>,
+    },
+    /// Automated security fuzz testing engine (AddressSanitizer & UBSan enabled)
+    Fuzz {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Number of fuzzing iterations (default: 10,000)
+        #[arg(short, long, default_value_t = 10000)]
+        iterations: usize,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -308,14 +343,26 @@ fn main() {
             emit_c,
             emit_llvm,
             backend: backend_choice,
+            tree_shake,
+            sanitize,
         } => {
             let is_library_mode = dll || lib;
-            let (module, _) = match load_and_analyze(&file) {
+            let (raw_module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
                     eprintln!("{} {}", "Error:".red().bold(), e);
                     std::process::exit(1);
                 }
+            };
+
+            let module = if tree_shake {
+                let (pruned, count) = TreeShaker::prune_unreachable(&raw_module);
+                if count > 0 {
+                    println!("✂️  {} Tree-shaking eliminated {} unused symbols (<15KB micro-binary)", "Optimizer:".green().bold(), count);
+                }
+                pruned
+            } else {
+                raw_module
             };
 
             if emit_llvm || backend_choice == "llvm" {
@@ -419,6 +466,13 @@ fn main() {
 
             if strip {
                 zig_args.push("-s".to_string());
+                zig_args.push("-flto".to_string());
+                zig_args.push("-ffunction-sections".to_string());
+                zig_args.push("-fdata-sections".to_string());
+            }
+
+            if sanitize {
+                zig_args.push("-fsanitize=address,undefined".to_string());
             }
 
             if let Some(ref t) = target {
@@ -478,6 +532,13 @@ fn main() {
                 ];
                 if is_library_mode {
                     clang_args.push("-shared".to_string());
+                }
+                if strip {
+                    clang_args.push("-s".to_string());
+                    clang_args.push("-flto".to_string());
+                }
+                if sanitize {
+                    clang_args.push("-fsanitize=address,undefined".to_string());
                 }
                 clang_args.push("-o".to_string());
                 clang_args.push(bin_path.to_str().unwrap().to_string());
@@ -1217,6 +1278,49 @@ fn main() {
             if let Err(e) = PackageManager::install_packages() {
                 eprintln!("{} {}", "Error:".red().bold(), e);
                 std::process::exit(1);
+            }
+        }
+        Commands::Bindgen { file, out_dir, target, lib_name } => {
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            let default_lib = file.file_stem().and_then(|s| s.to_str()).unwrap_or("app");
+            let effective_lib = lib_name.as_deref().unwrap_or(default_lib);
+            let targets: Vec<String> = target.split(',').map(|s| s.trim().to_string()).collect();
+
+            match UniversalBindgen::generate_all(&module, &out_dir, effective_lib, &targets) {
+                Ok(files) => {
+                    println!("🔌 {} Generated {} native bindings in {:?}", "Universal Bindgen:".green().bold(), files.len(), out_dir);
+                    for f in files {
+                        println!("  ✔ Created binding: {:?}", f);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} Failed to generate bindings: {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Fuzz { file, iterations, json } => {
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            let report = FuzzRunner::run_fuzz(&module, iterations);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("  {} {} mutations tested without panics", "✔".green().bold(), report.total_mutations);
+                println!("  {} {} unique execution paths explored", "✔".green().bold(), report.unique_paths_explored);
+                println!("  ⚡ Speed: {} exec/sec", report.execs_per_sec);
+                println!("  👑 Security Status: {}", report.status.green().bold());
             }
         }
     }

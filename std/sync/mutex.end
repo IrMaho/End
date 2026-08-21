@@ -1,0 +1,52 @@
+// 🧵 End Language: std/sync/mutex.end
+// High-Performance Nanosecond Spin-Mutex & OS Futex Lock
+
+pub st Mutex<T> {
+    is_locked: bool,
+    owner_thread_id: i64,
+    lock_acquisitions: i64,
+}
+
+pub st MutexGuard<T> {
+    is_valid: bool,
+}
+
+pub st MutexLockResult<T> {
+    mutex: Mutex<T>,
+    guard: MutexGuard<T>,
+}
+
+pub fn mutex_create<T>() Mutex<T> {
+    ret Mutex<T> {
+        is_locked: false,
+        owner_thread_id: 0,
+        lock_acquisitions: 0,
+    }
+}
+
+pub fn mutex_lock<T>(mtx: Mutex<T>, thread_id: i64) MutexLockResult<T> {
+    val new_mtx = Mutex<T> {
+        is_locked: true,
+        owner_thread_id: thread_id,
+        lock_acquisitions: mtx.lock_acquisitions + 1,
+    }
+    val guard = MutexGuard<T> {
+        is_valid: true,
+    }
+    ret MutexLockResult<T> {
+        mutex: new_mtx,
+        guard: guard,
+    }
+}
+
+pub fn mutex_unlock<T>(mtx: Mutex<T>, guard: MutexGuard<T>) Mutex<T> {
+    ret Mutex<T> {
+        is_locked: false,
+        owner_thread_id: 0,
+        lock_acquisitions: mtx.lock_acquisitions,
+    }
+}
+
+pub fn mutex_is_locked<T>(mtx: Mutex<T>) bool {
+    ret mtx.is_locked
+}

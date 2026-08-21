@@ -1,0 +1,54 @@
+// 🧵 End Language: std/sync/rwlock.end
+// Reader-Writer Lock with Nanosecond Priority
+
+pub st RwLock<T> {
+    reader_count: i32,
+    is_writer_active: bool,
+    total_reads: i64,
+    total_writes: i64,
+}
+
+pub fn rwlock_create<T>() RwLock<T> {
+    ret RwLock<T> {
+        reader_count: 0,
+        is_writer_active: false,
+        total_reads: 0,
+        total_writes: 0,
+    }
+}
+
+pub fn rwlock_read_lock<T>(lock: RwLock<T>) RwLock<T> {
+    ret RwLock<T> {
+        reader_count: lock.reader_count + 1,
+        is_writer_active: lock.is_writer_active,
+        total_reads: lock.total_reads + 1,
+        total_writes: lock.total_writes,
+    }
+}
+
+pub fn rwlock_read_unlock<T>(lock: RwLock<T>) RwLock<T> {
+    ret RwLock<T> {
+        reader_count: lock.reader_count - 1,
+        is_writer_active: lock.is_writer_active,
+        total_reads: lock.total_reads,
+        total_writes: lock.total_writes,
+    }
+}
+
+pub fn rwlock_write_lock<T>(lock: RwLock<T>) RwLock<T> {
+    ret RwLock<T> {
+        reader_count: lock.reader_count,
+        is_writer_active: true,
+        total_reads: lock.total_reads,
+        total_writes: lock.total_writes + 1,
+    }
+}
+
+pub fn rwlock_write_unlock<T>(lock: RwLock<T>) RwLock<T> {
+    ret RwLock<T> {
+        reader_count: lock.reader_count,
+        is_writer_active: false,
+        total_reads: lock.total_reads,
+        total_writes: lock.total_writes,
+    }
+}

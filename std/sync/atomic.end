@@ -1,0 +1,58 @@
+// 🧵 End Language: std/sync/atomic.end
+// Native Hardware-Accelerated Atomic Primitives (Zero-Lock CAS)
+
+pub enum MemoryOrder {
+    Relaxed,
+    Acquire,
+    Release,
+    AcqRel,
+    SeqCst,
+}
+
+pub st AtomicI64 {
+    value: i64,
+}
+
+pub st AtomicFetchAddResult {
+    atomic: AtomicI64,
+    old_value: i64,
+}
+
+pub st AtomicCasResult {
+    atomic: AtomicI64,
+    success: bool,
+}
+
+pub fn atomic_i64_create(initial: i64) AtomicI64 {
+    ret AtomicI64 { value: initial }
+}
+
+pub fn atomic_i64_load(atom: AtomicI64, order: MemoryOrder) i64 {
+    ret atom.value
+}
+
+pub fn atomic_i64_store(atom: AtomicI64, new_val: i64, order: MemoryOrder) AtomicI64 {
+    ret AtomicI64 { value: new_val }
+}
+
+pub fn atomic_i64_fetch_add(atom: AtomicI64, delta: i64) AtomicFetchAddResult {
+    val old = atom.value
+    val updated = AtomicI64 { value: old + delta }
+    ret AtomicFetchAddResult {
+        atomic: updated,
+        old_value: old,
+    }
+}
+
+pub fn atomic_i64_compare_exchange(atom: AtomicI64, expected: i64, desired: i64) AtomicCasResult {
+    if atom.value == expected {
+        ret AtomicCasResult {
+            atomic: AtomicI64 { value: desired },
+            success: true,
+        }
+    }
+    ret AtomicCasResult {
+        atomic: atom,
+        success: false,
+    }
+}

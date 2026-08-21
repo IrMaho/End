@@ -501,6 +501,8 @@ impl CBackend {
             "static inline __attribute__((always_inline)) ".to_string()
         };
 
+        let clean_file = func.span.file.replace('\\', "/");
+        self.output.push_str(&format!("#line {} \"{}\"\n", func.span.line, clean_file));
         self.output.push_str(&format!(
             "{}{} {}({}) {{\n",
             prefix,
@@ -521,6 +523,10 @@ impl CBackend {
     }
 
     fn gen_statement(&mut self, stmt: &Statement) {
+        let span = stmt.span();
+        let clean_file = span.file.replace('\\', "/");
+        self.output.push_str(&format!("{}#line {} \"{}\"\n", self.indent(), span.line, clean_file));
+
         match stmt {
             Statement::VarDecl {
                 name,

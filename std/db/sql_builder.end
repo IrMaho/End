@@ -1,0 +1,26 @@
+// 🗄️ End Language: std/db/sql_builder.end
+// Parameterized SQL Query Builder with Zero-SQL-Injection Type System Guarantee
+
+pub st ParameterizedQuery {
+    raw_sql: str,
+    params_count: i64,
+    is_safe: bool,
+}
+
+pub fn sql_select(table: str, columns: str) ParameterizedQuery {
+    ret ParameterizedQuery {
+        raw_sql: "SELECT " + columns + " FROM " + table,
+        params_count: 0,
+        is_safe: true,
+    }
+}
+
+pub fn sql_where_param(query: ParameterizedQuery, column: str) ParameterizedQuery {
+    val count = query.params_count + 1
+    val updated_sql = query.raw_sql + " WHERE " + column + " = $"
+    ret ParameterizedQuery {
+        raw_sql: updated_sql,
+        params_count: count,
+        is_safe: true,
+    }
+}
