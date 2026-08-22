@@ -349,6 +349,33 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "dead_letter_queue" => TokenKind::DeadLetterQueue,
                     "where" => TokenKind::Where,
 
+                    // Inheritance & Subtyping Keywords
+                    "class" => TokenKind::Class,
+                    "inherits" => TokenKind::Inherits,
+                    "inherit" => TokenKind::Inherit,
+                    "abstract" => TokenKind::Abstract,
+                    "super" => TokenKind::Super,
+                    "superchain" => TokenKind::SuperChain,
+                    "conflict" => TokenKind::Conflict,
+                    "virtual" => TokenKind::Virtual,
+                    "share" => TokenKind::Share,
+                    "except" => TokenKind::Except,
+                    "delegates" => TokenKind::Delegates,
+                    "delegation" => TokenKind::Delegation,
+                    "contractually" => TokenKind::Contractually,
+                    "over" => TokenKind::Over,
+                    "without" => TokenKind::Without,
+                    "inspect" => TokenKind::Inspect,
+                    "lock" => TokenKind::Lock,
+                    "transform" => TokenKind::Transform,
+                    "map" => TokenKind::Map,
+                    "behavior" => TokenKind::Behavior,
+                    "capabilities" => TokenKind::Capabilities,
+                    "permissions" => TokenKind::Permissions,
+                    "permission" => TokenKind::Permission,
+                    "events" => TokenKind::Events,
+                    "policy" => TokenKind::Policy,
+
         _ => TokenKind::Ident(ident.to_string()),
     }
 }

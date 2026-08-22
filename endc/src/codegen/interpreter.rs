@@ -428,7 +428,7 @@ impl Interpreter {
         }
     }
 
-    fn eval_statement(&mut self, stmt: &Statement) -> Result<Option<Value>, String> {
+    pub fn eval_statement(&mut self, stmt: &Statement) -> Result<Option<Value>, String> {
         match stmt {
             Statement::VarDecl {
                 name, initializer, ..
@@ -1594,6 +1594,64 @@ impl Interpreter {
             }
             Statement::EventControlStmt(ctl) => {
                 self.set_var(&format!("__{}_{}", ctl.action, ctl.target), Value::String(ctl.args.join(", ")));
+                Ok(None)
+            }
+            Statement::ClassDecl(c) => {
+                self.set_var(&format!("__class_{}", c.name), Value::String(format!("extends={:?}, mixins={:?}, implements={:?}", c.extends, c.mixins, c.implements)));
+                for m in &c.methods {
+                    self.functions.insert(format!("{}::{}", c.name, m.name), m.clone());
+                }
+                Ok(None)
+            }
+            Statement::TraitDecl(t) => {
+                self.set_var(&format!("__trait_{}", t.name), Value::String(format!("extends={:?}", t.extends)));
+                Ok(None)
+            }
+            Statement::InheritStmt(i) => {
+                if let Some(b) = &i.body {
+                    self.push_scope();
+                    for s in &b.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                self.set_var(&format!("__inherit_{}_{}", i.target, i.parent), Value::String(format!("kind={:?}, is_contractual={}", i.kind, i.is_contractual)));
+                Ok(None)
+            }
+            Statement::SuperCallStmt(s) => {
+                let mut evaluated_args = Vec::new();
+                for arg in &s.args {
+                    evaluated_args.push(self.eval_expression(arg)?);
+                }
+                let target_fn = match &s.target_parent {
+                    Some(parent) => format!("{}::{}", parent, s.method),
+                    None => s.method.clone(),
+                };
+                if let Some(func) = self.functions.get(&target_fn).cloned() {
+                    let res = self.eval_function(&func, evaluated_args)?;
+                    Ok(Some(res))
+                } else {
+                    self.set_var(&format!("__super_{}", s.method), Value::String(format!("parent={:?}, args={:?}", s.target_parent, evaluated_args)));
+                    Ok(None)
+                }
+            }
+            Statement::ConflictStmt(c) => {
+                self.set_var(&format!("__conflict_{}_{}", c.left.replace('.', "_"), c.right.replace('.', "_")), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::ResolveConflictStmt(r) => {
+                self.set_var(&format!("__resolve_{}", r.preferred.replace('.', "_")), Value::String(r.over.clone().unwrap_or_default()));
+                Ok(None)
+            }
+            Statement::InspectInheritanceStmt(i) => {
+                self.set_var(&format!("__inspect_inheritance_{}", i.target), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::ImpactInheritanceStmt(i) => {
+                self.set_var(&format!("__impact_inheritance_{}", i.target), Value::Bool(true));
                 Ok(None)
             }
             _ => Ok(None),

@@ -8,7 +8,8 @@ use crate::ast::decl::architecture::{ArchitectureRuleDef, ArchitectureTemplateDe
 use crate::ast::decl::capabilities::*;
 use crate::ast::decl::events::*;
 use crate::ast::decl::features::FeatureDef;
-use crate::ast::decl::functions_traits::{FunctionDef, FunctionParam, TraitMethodDef};
+use crate::ast::decl::functions_traits::{FunctionDef, FunctionParam, TraitDef, TraitMethodDef};
+use crate::ast::decl::inheritance::*;
 use crate::ast::decl::modules::ModuleDef;
 use crate::ast::decl::structs_enums::StructDef;
 
@@ -481,4 +482,13 @@ pub enum Statement {
     EventFormalInvariantStmt(EventFormalInvariantDef),
     EventEvolveStmt(EventEvolveDef),
     EventControlStmt(EventControlDef),
+    // Inheritance & Subtyping Statements
+    ClassDecl(ClassDef),
+    TraitDecl(TraitDef),
+    InheritStmt(InheritDef),
+    SuperCallStmt(SuperCall),
+    ConflictStmt(ConflictDef),
+    ResolveConflictStmt(ResolutionDef),
+    InspectInheritanceStmt(InspectInheritanceDef),
+    ImpactInheritanceStmt(ImpactInheritanceDef),
 }

@@ -1,3 +1,4 @@
+pub mod classes;
 pub mod contracts;
 pub mod data;
 pub mod extensions;

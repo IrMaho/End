@@ -269,6 +269,20 @@ impl Parser {
                             self.match_token(&TokenKind::SemiColon);
                         }
                     }
+                    TokenKind::Policy => {
+                        self.advance();
+                        if self.check(&TokenKind::LBrace) {
+                            self.advance();
+                            while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                                let _ = self.parse_identifier_or_string();
+                                self.match_token(&TokenKind::Comma);
+                                self.match_token(&TokenKind::SemiColon);
+                            }
+                            self.expect(TokenKind::RBrace)?;
+                        } else {
+                            self.match_token(&TokenKind::SemiColon);
+                        }
+                    }
                     TokenKind::Forbid => {
                         self.advance();
                         forbids.push(self.parse_identifier_or_keyword()?);

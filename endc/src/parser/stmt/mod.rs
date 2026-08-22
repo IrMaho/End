@@ -14,6 +14,7 @@ pub mod governance_proposals;
 pub mod loops_branches;
 pub mod reactive_events;
 pub mod event_streams_and_topologies;
+pub mod inheritance_ops;
 pub mod refactoring_ops;
 pub mod syntax_composition;
 
@@ -56,6 +57,9 @@ impl Parser {
             return Ok(stmt);
         }
         if let Some(stmt) = self.parse_contracts_proofs_statement(&peek_k, &span)? {
+            return Ok(stmt);
+        }
+        if let Some(stmt) = self.parse_inheritance_ops_statement(&peek_k, &span)? {
             return Ok(stmt);
         }
         if let Some(stmt) = self.parse_reactive_events_statement(&peek_k, &span)? {

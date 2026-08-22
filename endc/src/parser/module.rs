@@ -98,9 +98,25 @@ impl Parser {
                 continue;
             }
             match peek_k {
+                TokenKind::Abstract => {
+                    self.advance();
+                    if self.check(&TokenKind::Class) {
+                        let mut c = self.parse_class(false, pending_directives)?;
+                        c.is_abstract = true;
+                        statements.push(Statement::ClassDecl(c));
+                    } else {
+                        let mut f = self.parse_function(false, pending_directives)?;
+                        f.directives.push(Directive { name: "@abstract".to_string(), args: vec![], span: f.span.clone() });
+                        functions.push(f);
+                    }
+                }
                 TokenKind::Sealed => {
                     self.advance();
-                    if self.check(&TokenKind::Mod) {
+                    if self.check(&TokenKind::Class) {
+                        let mut c = self.parse_class(false, pending_directives)?;
+                        c.is_sealed = true;
+                        statements.push(Statement::ClassDecl(c));
+                    } else if self.check(&TokenKind::Mod) {
                         let mut m = self.parse_module_def(false, pending_directives)?;
                         m.is_sealed = true;
                         modules.push(m);
@@ -121,7 +137,11 @@ impl Parser {
                 }
                 TokenKind::Open => {
                     self.advance();
-                    if self.check(&TokenKind::Mod) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "module" || s == "mod" } else { false }) {
+                    if self.check(&TokenKind::Class) {
+                        let mut c = self.parse_class(false, pending_directives)?;
+                        c.is_open = true;
+                        statements.push(Statement::ClassDecl(c));
+                    } else if self.check(&TokenKind::Mod) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "module" || s == "mod" } else { false }) {
                         self.advance();
                         let name = self.parse_identifier_or_keyword()?;
                         if self.match_token(&TokenKind::SemiColon) {
@@ -399,6 +419,10 @@ impl Parser {
                         }
                         TokenKind::Event => {
                             statements.push(Statement::EventDecl(self.parse_event(true)?));
+                        }
+                        TokenKind::Class | TokenKind::Abstract | TokenKind::Sealed | TokenKind::Open => {
+                            let class_def = self.parse_class(true, pending_directives)?;
+                            statements.push(Statement::ClassDecl(class_def));
                         }
                         TokenKind::Hub => {
                             statements.push(Statement::EventHubDecl(self.parse_event_hub(true)?));

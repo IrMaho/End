@@ -293,6 +293,14 @@ impl Statement {
             Statement::EventFormalInvariantStmt(e) => &e.span,
             Statement::EventEvolveStmt(e) => &e.span,
             Statement::EventControlStmt(e) => &e.span,
+            Statement::ClassDecl(c) => &c.span,
+            Statement::TraitDecl(t) => &t.span,
+            Statement::InheritStmt(i) => &i.span,
+            Statement::SuperCallStmt(s) => &s.span,
+            Statement::ConflictStmt(c) => &c.span,
+            Statement::ResolveConflictStmt(r) => &r.span,
+            Statement::InspectInheritanceStmt(i) => &i.span,
+            Statement::ImpactInheritanceStmt(i) => &i.span,
         }
     }
 }

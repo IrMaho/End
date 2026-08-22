@@ -309,21 +309,39 @@ impl Parser {
             }
             TokenKind::Resolve => {
                 self.advance();
-                let contract = self.parse_dotted_path()?;
-                self.expect(TokenKind::Arrow)?;
-                let implementation = self.parse_dotted_path()?;
-                let condition = if self.match_token(&TokenKind::When) {
-                    Some(self.parse_condition_str()?)
+                let preferred = self.parse_dotted_path()?;
+                if self.match_token(&TokenKind::Over) || self.match_token(&TokenKind::By) {
+                    let over = self.parse_dotted_path()?;
+                    self.match_token(&TokenKind::SemiColon);
+                    Ok(Some(Statement::ResolveConflictStmt(ResolutionDef {
+                        preferred,
+                        over: Some(over),
+                        is_merge: false,
+                        span: span.clone(),
+                    })))
+                } else if self.match_token(&TokenKind::Arrow) {
+                    let implementation = self.parse_dotted_path()?;
+                    let condition = if self.match_token(&TokenKind::When) {
+                        Some(self.parse_condition_str()?)
+                    } else {
+                        None
+                    };
+                    self.match_token(&TokenKind::SemiColon);
+                    Ok(Some(Statement::ResolveContract {
+                        contract: preferred,
+                        implementation,
+                        condition,
+                        span: span.clone(),
+                    }))
                 } else {
-                    None
-                };
-                self.match_token(&TokenKind::SemiColon);
-                Ok(Some(Statement::ResolveContract {
-                    contract,
-                    implementation,
-                    condition,
-                    span: span.clone(),
-                }))
+                    self.match_token(&TokenKind::SemiColon);
+                    Ok(Some(Statement::ResolveConflictStmt(ResolutionDef {
+                        preferred,
+                        over: None,
+                        is_merge: false,
+                        span: span.clone(),
+                    })))
+                }
             }
             TokenKind::Select => {
                 self.advance();

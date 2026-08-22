@@ -294,6 +294,16 @@ impl Parser {
             self.expect(TokenKind::Greater)?;
         }
 
+        let mut extends = Vec::new();
+        if self.match_token(&TokenKind::Extends) || self.match_token(&TokenKind::Colon) {
+            while !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::EOF) {
+                extends.push(self.parse_identifier_or_keyword()?);
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+        }
+
         self.expect(TokenKind::LBrace)?;
         let mut methods = Vec::new();
 
@@ -323,10 +333,7 @@ impl Parser {
             while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
                 let p_span = self.current_span();
                 let is_mut = self.match_token(&TokenKind::Mut);
-                let p_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected param name, found {:?}", other)),
-                };
+                let p_name = self.parse_identifier_or_keyword()?;
                 let mut p_ty = Type::Void;
                 if self.match_token(&TokenKind::Colon) {
                     p_ty = self.parse_type()?;
@@ -371,6 +378,7 @@ impl Parser {
             name,
             generic_params,
             is_pub,
+            extends,
             methods,
             span,
         })

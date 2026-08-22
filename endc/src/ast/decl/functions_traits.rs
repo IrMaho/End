@@ -39,6 +39,7 @@ pub struct TraitDef {
     pub name: String,
     pub generic_params: Vec<String>,
     pub is_pub: bool,
+    pub extends: Vec<String>,
     pub methods: Vec<TraitMethodDef>,
     pub span: Span,
 }

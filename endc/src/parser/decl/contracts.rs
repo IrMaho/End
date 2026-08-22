@@ -6,11 +6,17 @@ impl Parser {
     pub fn parse_contract_def(&mut self, _is_pub: bool) -> Result<ContractDef, String> {
         let span = self.current_span();
         if self.match_token(&TokenKind::Contract) {}
-        let mut name = String::new();
-        while !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::EOF) {
-            let part = self.parse_identifier_or_keyword()?;
-            if part != "Module" && part != "mod" {
-                name = part;
+        let mut name = self.parse_identifier_or_keyword()?;
+        if name == "Module" || name == "mod" {
+            name = self.parse_identifier_or_keyword()?;
+        }
+        let mut extends = Vec::new();
+        if self.match_token(&TokenKind::Extends) || self.match_token(&TokenKind::Colon) {
+            while !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::EOF) {
+                extends.push(self.parse_identifier_or_keyword()?);
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
             }
         }
         self.expect(TokenKind::LBrace)?;
@@ -87,6 +93,7 @@ impl Parser {
         self.expect(TokenKind::RBrace)?;
         Ok(ContractDef {
             name,
+            extends,
             methods,
             clauses,
             is_evolved: false,

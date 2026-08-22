@@ -421,6 +421,32 @@ pub enum TokenKind {
     DeadLetterQueue,      // 'dead_letter_queue'
     Where,                // 'where'
 
+    // Inheritance & Subtyping Primitives
+    Class,                // 'class'
+    Inherits,             // 'inherits'
+    Inherit,              // 'inherit'
+    Abstract,             // 'abstract'
+    Super,                // 'super'
+    SuperChain,           // 'superchain'
+    Conflict,             // 'conflict'
+    Virtual,              // 'virtual'
+    Share,                // 'share'
+    Except,               // 'except'
+    Delegates,            // 'delegates'
+    Delegation,           // 'delegation'
+    Contractually,        // 'contractually'
+    Over,                 // 'over'
+    Without,              // 'without'
+    Inspect,              // 'inspect'
+    Behavior,             // 'behavior'
+    Capabilities,         // 'capabilities'
+    Permissions,          // 'permissions'
+    Permission,           // 'permission'
+    Events,               // 'events'
+    Policy,               // 'policy'
+    Transform,            // 'transform'
+    Map,                  // 'map'
+
     EOF,
 }
 

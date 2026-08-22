@@ -17,6 +17,8 @@ pub mod expressive_tests;
 pub mod consumer_feature_tests;
 #[cfg(test)]
 pub mod event_graph_tests;
+#[cfg(test)]
+pub mod inheritance_contract_tests;
 
 pub use hir::*;
 pub use mir::*;

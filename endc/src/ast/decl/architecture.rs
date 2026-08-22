@@ -5,6 +5,7 @@ use crate::ast::decl::functions_traits::TraitMethodDef;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContractDef {
     pub name: String,
+    pub extends: Vec<String>,
     pub methods: Vec<TraitMethodDef>,
     pub clauses: Vec<String>,
     pub is_evolved: bool,
