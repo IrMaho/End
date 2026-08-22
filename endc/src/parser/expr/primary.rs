@@ -123,7 +123,8 @@ impl Parser {
             });
         }
 
-        match self.peek_kind() {
+        let kind = self.peek_kind().clone();
+        match kind {
             TokenKind::Operation => {
                 let op = self.parse_operation(false)?;
                 return Ok(Expression::OperationLiteral {
@@ -306,17 +307,17 @@ impl Parser {
                 return Ok(Expression::SqlExpr { expr: Box::new(expr), span });
             }
             TokenKind::IntLit(n) => {
-                let val = *n;
+                let val = n;
                 self.advance();
                 Ok(Expression::Lit(Literal::Int(val), span))
             }
             TokenKind::FloatLit(f) => {
-                let val = *f;
+                let val = f;
                 self.advance();
                 Ok(Expression::Lit(Literal::Float(val), span))
             }
             TokenKind::UnitLit(val, unit) => {
-                let v = *val;
+                let v = val;
                 let u = unit.clone();
                 self.advance();
                 Ok(Expression::UnitLit { value: v, unit: u, span })
@@ -391,19 +392,7 @@ impl Parser {
                     self.advance();
                     let mut fields = Vec::new();
                     while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                        let fname = match self.advance().kind {
-                            TokenKind::Ident(n) => n,
-                            TokenKind::Struct => "st".to_string(),
-                            TokenKind::Val => "val".to_string(),
-                            TokenKind::Mut => "mut".to_string(),
-                            TokenKind::Target => "target".to_string(),
-                            TokenKind::Match => "match".to_string(),
-                            TokenKind::Fn => "fn".to_string(),
-                            TokenKind::In => "in".to_string(),
-                            TokenKind::Asm => "asm".to_string(),
-                            TokenKind::Region => "region".to_string(),
-                            other => return Err(format!("Expected field name in struct init, found {:?}", other)),
-                        };
+                        let fname = self.parse_identifier_or_keyword()?;
                         let mut fvalue = Expression::Ident(fname.clone(), self.current_span());
                         if self.match_token(&TokenKind::Colon) {
                             fvalue = self.parse_expression()?;
@@ -528,10 +517,17 @@ impl Parser {
                     span,
                 })
             }
-            other => Err(format!(
-                "Unexpected token in expression: {:?} at line {}, col {}",
-                other, span.line, span.col
-            )),
+            other => {
+                let checkpoint = self.cursor.clone();
+                if let Ok(id) = self.parse_identifier_or_keyword() {
+                    return Ok(Expression::Ident(id, span));
+                }
+                self.cursor = checkpoint;
+                Err(format!(
+                    "Unexpected token in expression: {:?} at line {}, col {}",
+                    other, span.line, span.col
+                ))
+            }
         }
     }
 }

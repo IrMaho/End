@@ -13,6 +13,8 @@ pub mod feature_tests;
 pub mod capability_tests;
 #[cfg(test)]
 pub mod expressive_tests;
+#[cfg(test)]
+pub mod consumer_feature_tests;
 
 pub use hir::*;
 pub use mir::*;

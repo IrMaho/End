@@ -205,4 +205,76 @@ impl Parser {
         }
         Ok(target)
     }
+
+    pub(crate) fn parse_closure_or_block(&mut self) -> Result<Expression, String> {
+        let span = self.current_span();
+        self.expect(TokenKind::LBrace)?;
+        let checkpoint = self.cursor.clone();
+
+        let mut params = Vec::new();
+        if self.match_token(&TokenKind::Pipe) {
+            while !self.check(&TokenKind::Pipe) && !self.check(&TokenKind::EOF) {
+                let p = self.parse_identifier_or_keyword()?;
+                let mut pt = Type::Void;
+                if self.match_token(&TokenKind::Colon) {
+                    pt = self.parse_type()?;
+                }
+                params.push((p, pt));
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::Pipe)?;
+            let mut statements = Vec::new();
+            while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                statements.push(self.parse_statement()?);
+            }
+            self.expect(TokenKind::RBrace)?;
+            return Ok(Expression::Lambda {
+                params: params.into_iter().map(|(name, param_type)| FunctionParam {
+                    name,
+                    param_type,
+                    is_mut: false,
+                    span: span.clone(),
+                }).collect(),
+                body: Box::new(Expression::Block(Block { statements, span: span.clone() })),
+                is_implicit: false,
+                span,
+            });
+        }
+
+        if let Ok(param_name) = self.parse_identifier_or_keyword() {
+            if self.match_token(&TokenKind::FatArrow) {
+                let mut statements = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    statements.push(self.parse_statement()?);
+                }
+                self.expect(TokenKind::RBrace)?;
+                return Ok(Expression::Lambda {
+                    params: vec![FunctionParam {
+                        name: param_name,
+                        param_type: Type::Void,
+                        is_mut: false,
+                        span: span.clone(),
+                    }],
+                    body: Box::new(Expression::Block(Block { statements, span: span.clone() })),
+                    is_implicit: false,
+                    span,
+                });
+            }
+        }
+
+        self.cursor = checkpoint;
+        let mut statements = Vec::new();
+        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            if self.check(&TokenKind::Fn) {
+                let f = self.parse_function(false, vec![])?;
+                statements.push(Statement::LocalFunction(f));
+                continue;
+            }
+            statements.push(self.parse_statement()?);
+        }
+        self.expect(TokenKind::RBrace)?;
+        Ok(Expression::Block(Block { statements, span }))
+    }
 }

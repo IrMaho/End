@@ -43,6 +43,9 @@ impl Parser {
             let is_mut = self.match_token(&TokenKind::Mut);
             let is_star_star = self.match_token(&TokenKind::StarStar);
             let is_star = !is_star_star && self.match_token(&TokenKind::Star);
+            if let TokenKind::Directive(_) = self.peek_kind() {
+                self.advance();
+            }
             let mut param_name = self.parse_identifier_or_keyword()?;
             if param_name == "required" && !self.check(&TokenKind::Colon) && !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RParen) {
                 let actual = self.parse_identifier_or_keyword()?;

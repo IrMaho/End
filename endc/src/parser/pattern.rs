@@ -39,17 +39,22 @@ impl Parser {
         }
 
         if self.match_token(&TokenKind::Dot) {
-            let variant_name = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                other => return Err(format!("Expected variant name after '.', found {:?}", other)),
-            };
+            let variant_name = self.parse_identifier_or_keyword()?;
 
             let mut binding = None;
             if self.match_token(&TokenKind::LParen) {
-                if let TokenKind::Ident(b) = self.advance().kind {
-                    binding = Some(b);
+                let mut bindings = Vec::new();
+                while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                    let b = self.parse_identifier_or_keyword()?;
+                    bindings.push(b);
+                    if !self.match_token(&TokenKind::Comma) {
+                        break;
+                    }
                 }
                 self.expect(TokenKind::RParen)?;
+                if !bindings.is_empty() {
+                    binding = Some(bindings.join(", "));
+                }
             }
 
             return Ok(Pattern::Variant {
@@ -93,10 +98,18 @@ impl Parser {
                     let vname = self.parse_identifier_or_keyword()?;
                     let mut binding = None;
                     if self.match_token(&TokenKind::LParen) {
-                        if let TokenKind::Ident(b) = self.advance().kind {
-                            binding = Some(b);
+                        let mut bindings = Vec::new();
+                        while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                            let b = self.parse_identifier_or_keyword()?;
+                            bindings.push(b);
+                            if !self.match_token(&TokenKind::Comma) {
+                                break;
+                            }
                         }
                         self.expect(TokenKind::RParen)?;
+                        if !bindings.is_empty() {
+                            binding = Some(bindings.join(", "));
+                        }
                     }
                     Ok(Pattern::Variant {
                         enum_name: Some(id),

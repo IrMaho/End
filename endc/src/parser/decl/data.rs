@@ -35,8 +35,19 @@ impl Parser {
 
             let mut payload = None;
             if self.match_token(&TokenKind::LParen) {
-                payload = Some(self.parse_type()?);
+                let mut ptypes = Vec::new();
+                while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                    ptypes.push(self.parse_type()?);
+                    if !self.match_token(&TokenKind::Comma) {
+                        break;
+                    }
+                }
                 self.expect(TokenKind::RParen)?;
+                if ptypes.len() == 1 {
+                    payload = Some(ptypes.remove(0));
+                } else if !ptypes.is_empty() {
+                    payload = Some(Type::Custom(format!("tuple_{}", ptypes.len())));
+                }
             } else if self.match_token(&TokenKind::Equal) {
                 let _ = self.parse_expression()?;
             }
@@ -90,11 +101,33 @@ impl Parser {
         if self.match_token(&TokenKind::LBrace) {
             while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                 let field_span = self.current_span();
+                while let TokenKind::Directive(_) = self.peek_kind() {
+                    self.advance();
+                    if self.match_token(&TokenKind::LParen) {
+                        while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                            self.advance();
+                        }
+                        self.match_token(&TokenKind::RParen);
+                    }
+                }
                 let is_field_pub = self.match_token(&TokenKind::Pub);
-                let field_name = self.parse_identifier_or_keyword()?;
+                let raw_name = self.parse_identifier_or_keyword()?;
+                let field_name = if raw_name == "val" {
+                    self.parse_identifier_or_keyword()?
+                } else {
+                    raw_name
+                };
 
-                self.expect(TokenKind::Colon)?;
-                let field_type = self.parse_type()?;
+                let mut field_type = Type::Void;
+                if self.match_token(&TokenKind::Colon) {
+                    field_type = self.parse_type()?;
+                }
+                if self.match_token(&TokenKind::By) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
+                if self.match_token(&TokenKind::Equal) {
+                    let _ = self.parse_expression()?;
+                }
                 self.match_token(&TokenKind::Comma);
                 self.match_token(&TokenKind::SemiColon);
 

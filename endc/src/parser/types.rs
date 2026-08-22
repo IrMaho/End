@@ -65,6 +65,24 @@ impl Parser {
                     Ok(Type::Event("Any".into()))
                 }
             }
+            TokenKind::Fn => {
+                self.advance();
+                if self.match_token(&TokenKind::LParen) {
+                    while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                        self.parse_type()?;
+                        if !self.match_token(&TokenKind::Comma) {
+                            break;
+                        }
+                    }
+                    self.expect(TokenKind::RParen)?;
+                }
+                if self.match_token(&TokenKind::Arrow) {
+                    let ret_ty = self.parse_type()?;
+                    Ok(Type::Custom(format!("fn_to_{:?}", ret_ty)))
+                } else {
+                    Ok(Type::Custom("fn".into()))
+                }
+            }
             _ => {
                 let type_name = self.parse_identifier_or_keyword()?;
                 let ty = match type_name.as_str() {
