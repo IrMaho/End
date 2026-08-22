@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "endc"
-version = "0.4.0-alpha"
+version = "2.0.0"
 dependencies = [
  "clap",
  "colored",

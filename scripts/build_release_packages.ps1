@@ -1,7 +1,7 @@
-# 👑 Multi-Platform Release Package Builder for End Language v0.4.0-alpha (Windows / Universal)
+# 👑 Multi-Platform Release Package Builder for End Language v2.0.0 (Windows / Universal)
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "👑 Packaging End Language v0.4.0-alpha Official Release Matrix..." -ForegroundColor Green
+Write-Host "👑 Packaging End Language v2.0.0 Official Release Matrix..." -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -32,28 +32,32 @@ $ExeSrc = Join-Path $Root "endc\target\release\endc.exe"
 Copy-Item $ExeSrc (Join-Path $BinDir "endc.exe") -Force
 Copy-Item $ExeSrc (Join-Path $BinDir "end.exe") -Force
 
-# Copy std library
+# Copy std library & examples
 Copy-Item (Join-Path $Root "std") (Join-Path $StagingDir "std") -Recurse -Force
+Copy-Item (Join-Path $Root "examples") (Join-Path $StagingDir "examples") -Recurse -Force
+Copy-Item (Join-Path $Root "docs") (Join-Path $StagingDir "docs") -Recurse -Force
 
 # Copy Documentation and Configs
 Copy-Item (Join-Path $Root "README.md") (Join-Path $StagingDir "README.md") -Force
 Copy-Item (Join-Path $Root "LICENSE") (Join-Path $StagingDir "LICENSE") -Force
 Copy-Item (Join-Path $Root "Architecture.toml") (Join-Path $StagingDir "Architecture.toml") -Force
+Copy-Item (Join-Path $Root "RELEASE_NOTES_v2.0.0.md") (Join-Path $StagingDir "RELEASE_NOTES_v2.0.0.md") -Force
 
 # Copy Web Installers
 Copy-Item (Join-Path $Root "install.ps1") (Join-Path $StagingDir "install.ps1") -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $Root "install.sh") (Join-Path $StagingDir "install.sh") -ErrorAction SilentlyContinue
+Copy-Item (Join-Path $Root "install.bat") (Join-Path $StagingDir "install.bat") -ErrorAction SilentlyContinue
 
 # 3. Create Windows Zip Archive
-Write-Host "[3/4] Creating end-v0.4.0-alpha-windows-x64.zip archive..." -ForegroundColor Yellow
-$ZipPath = Join-Path $DistDir "end-v0.4.0-alpha-windows-x64.zip"
+Write-Host "[3/4] Creating end-v2.0.0-windows-x64.zip archive..." -ForegroundColor Yellow
+$ZipPath = Join-Path $DistDir "end-v2.0.0-windows-x64.zip"
 Compress-Archive -Path "$StagingDir\*" -DestinationPath $ZipPath -Force
 
 # 4. Generate SHA256 Checksums
 Write-Host "[4/4] Generating SHA256 Checksums..." -ForegroundColor Yellow
 $Hash = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash.ToLower()
 $ChecksumFile = Join-Path $DistDir "SHA256SUMS.txt"
-Set-Content -Path $ChecksumFile -Value "$Hash  end-v0.4.0-alpha-windows-x64.zip"
+Set-Content -Path $ChecksumFile -Value "$Hash  end-v2.0.0-windows-x64.zip"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "👑 SUCCESS: Release package ready at: $ZipPath" -ForegroundColor Green
