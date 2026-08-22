@@ -54,11 +54,11 @@ impl SatDependencySolver {
                 (req_ver.clone(), "registry".to_string())
             };
 
-            use std::hash::{Hash, Hasher};
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            format!("{}:{}:{}", name, ver, source).hash(&mut hasher);
-            let checksum = format!("{:016x}", hasher.finish());
-            let full_hash = format!("sha256:{}{}{}{}", checksum, checksum, checksum, checksum);
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(format!("{}:{}:{}", name, ver, source).as_bytes());
+            let result = hasher.finalize();
+            let full_hash = format!("sha256:{}", result.iter().map(|b| format!("{:02x}", b)).collect::<String>());
 
             resolved.push(ResolvedDependency {
                 name: name.clone(),

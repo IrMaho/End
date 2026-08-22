@@ -3327,6 +3327,22 @@ Statement::Spawn { call, .. } => {
         }
     }
 
+    fn is_operation_expr(&self, expr: &Expression) -> bool {
+        match expr {
+            Expression::OperationLiteral { .. }
+            | Expression::Compose { .. }
+            | Expression::Repeat { .. }
+            | Expression::Parallel { .. }
+            | Expression::Alternative { .. }
+            | Expression::ConditionalOp { .. }
+            | Expression::Memoize { .. } => true,
+            Expression::Ident(name, _) => {
+                name.contains("op") || name.contains("step") || name.contains("flow") || name.contains("pipeline")
+            }
+            _ => false,
+        }
+    }
+
     fn gen_expression(&self, expr: &Expression) -> String {
         match expr {
             Expression::Lit(lit, _) => match lit {
@@ -3340,15 +3356,15 @@ Statement::Spawn { call, .. } => {
             Expression::Binary { left, op, right, .. } => {
                 let l = self.gen_expression(left);
                 let r = self.gen_expression(right);
+                let is_op_l = self.is_operation_expr(left);
+                let is_op_r = self.is_operation_expr(right);
                 match op {
                     BinaryOp::Add => {
-                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
-                        let is_op_r = r.contains("validate") || r.contains("charge") || r.contains("step") || r.contains("op") || r.contains("cart") || r.contains("flow") || r.contains("pipeline") || r.contains("send") || r.contains("notify") || r.contains("process");
-                        if is_op && is_op_r {
+                        if is_op_l && is_op_r {
                             format!("end_compose_ops({}, {})", l, r)
                         } else {
-                            let is_str_l = self.infer_type(left) == Type::Str || l.starts_with('"') || l.contains("_dispatch") || l.contains("_str") || l.contains("_concat") || l.contains("prefix") || l.contains("message") || l.contains("chat_id");
-                            let is_str_r = self.infer_type(right) == Type::Str || r.starts_with('"') || r.contains("_dispatch") || r.contains("_str") || r.contains("_concat") || r.contains("prefix") || r.contains("message") || r.contains("chat_id");
+                            let is_str_l = matches!(left.as_ref(), Expression::Lit(Literal::String(_), _)) || l.starts_with('"') || l.contains("_str") || l.contains("_concat");
+                            let is_str_r = matches!(right.as_ref(), Expression::Lit(Literal::String(_), _)) || r.starts_with('"') || r.contains("_str") || r.contains("_concat");
                             if is_str_l || is_str_r {
                                 format!("_end_str_concat({}, {})", l, r)
                             } else {
@@ -3358,8 +3374,7 @@ Statement::Spawn { call, .. } => {
                     },
                     BinaryOp::Sub => format!("({} - {})", l, r),
                     BinaryOp::Mul => {
-                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
-                        if is_op && r.chars().all(|c| c.is_digit(10)) {
+                        if is_op_l && r.chars().all(|c| c.is_digit(10)) {
                             format!("end_repeat_op({}, {})", l, r)
                         } else {
                             format!("({} * {})", l, r)
@@ -3368,25 +3383,11 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
                     BinaryOp::Equal => {
-                        let mut is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                        let mut is_str = matches!(left.as_ref(), Expression::Lit(Literal::String(_), _)) || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
                             || l.starts_with('"') || r.starts_with('"')
                             || l.contains("str") || r.contains("str")
-                            || l.contains("sig") || r.contains("sig")
-                            || l.contains("token") || r.contains("token")
-                            || l.contains("hash") || r.contains("hash")
-                            || l.contains("sub") || r.contains("sub")
-                            || l.contains("text") || r.contains("text")
-                            || l.contains("msg") || r.contains("msg")
-                            || l.contains("name") || r.contains("name")
-                            || l.contains("key") || r.contains("key")
-                            || l.contains("val") || r.contains("val")
-                            || l.contains("data") || r.contains("data")
-                            || l.contains("raw") || r.contains("raw")
-                            || l.contains("input") || r.contains("input")
-                            || l.contains("output") || r.contains("output")
-                            || l.contains("err") || r.contains("err")
-                            || l.contains("header") || r.contains("header")
-                            || l.contains("payload") || r.contains("payload");
+                            || l.contains("token") || r.contains("hash")
+                            || l.contains("text") || r.contains("msg");
                         if l == "true" || l == "false" || r == "true" || r == "false" { is_str = false; }
                         if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) == 0)", l, r)
@@ -3395,25 +3396,11 @@ Statement::Spawn { call, .. } => {
                         }
                     },
                     BinaryOp::NotEqual => {
-                        let mut is_str = self.infer_type(left) == Type::Str || self.infer_type(right) == Type::Str
+                        let mut is_str = matches!(left.as_ref(), Expression::Lit(Literal::String(_), _)) || matches!(right.as_ref(), Expression::Lit(Literal::String(_), _))
                             || l.starts_with('"') || r.starts_with('"')
                             || l.contains("str") || r.contains("str")
-                            || l.contains("sig") || r.contains("sig")
-                            || l.contains("token") || r.contains("token")
-                            || l.contains("hash") || r.contains("hash")
-                            || l.contains("sub") || r.contains("sub")
-                            || l.contains("text") || r.contains("text")
-                            || l.contains("msg") || r.contains("msg")
-                            || l.contains("name") || r.contains("name")
-                            || l.contains("key") || r.contains("key")
-                            || l.contains("val") || r.contains("val")
-                            || l.contains("data") || r.contains("data")
-                            || l.contains("raw") || r.contains("raw")
-                            || l.contains("input") || r.contains("input")
-                            || l.contains("output") || r.contains("output")
-                            || l.contains("err") || r.contains("err")
-                            || l.contains("header") || r.contains("header")
-                            || l.contains("payload") || r.contains("payload");
+                            || l.contains("token") || r.contains("hash")
+                            || l.contains("text") || r.contains("msg");
                         if l == "true" || l == "false" || r == "true" || r == "false" { is_str = false; }
                         if is_str && !l.chars().all(|c| c.is_digit(10)) && !r.chars().all(|c| c.is_digit(10)) {
                             format!("(strcmp({}, {}) != 0)", l, r)
@@ -3429,24 +3416,21 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::Or => format!("({} || {})", l, r),
                     BinaryOp::Shl => format!("(((uint64_t)({})) << ({}) )", l, r),
                     BinaryOp::Shr => {
-                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
-                        if is_op {
+                        if is_op_l {
                             format!("end_compose_ops({}, {})", l, r)
                         } else {
                             format!("(((uint64_t)({})) >> ({}) )", l, r)
                         }
                     },
                     BinaryOp::BitAnd => {
-                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
-                        if is_op {
+                        if is_op_l {
                             format!("end_parallel_op({}, {})", l, r)
                         } else {
                             format!("(((uint64_t)({})) & ((uint64_t)({})))", l, r)
                         }
                     },
                     BinaryOp::BitOr => {
-                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
-                        if is_op {
+                        if is_op_l {
                             format!("end_alternative_op({}, {})", l, r)
                         } else {
                             format!("(((uint64_t)({})) | ((uint64_t)({})))", l, r)
