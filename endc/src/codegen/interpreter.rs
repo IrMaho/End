@@ -1212,6 +1212,14 @@ impl Interpreter {
                 self.set_var(&format!("__feature_{}", name), Value::String(format!("Feature {}: req={:?}, skills={:?}, tasks={:?}", name, requirement, skills, tasks)));
                 Ok(None)
             }
+            Statement::FeatureStatement(f) => {
+                let req = f.contracts.first().map(|c| c.rule.clone());
+                let skills = f.requires_capabilities.clone();
+                let tasks: Vec<String> = f.decisions.iter().map(|d| d.target.clone()).collect();
+                self.features.insert(f.name.clone(), (req.clone(), skills.clone(), tasks.clone()));
+                self.set_var(&format!("__feature_{}", f.name), Value::String(format!("Feature {}: req={:?}, skills={:?}, tasks={:?}", f.name, req, skills, tasks)));
+                Ok(None)
+            }
             Statement::SkillDecl { name, rules, constraints, structural, semantic, behavioral, architectural, performance, security, testing, agent, requires, hard, soft, for_scope, .. } => {
                 let state = SkillDefState {
                     name: name.clone(),
@@ -1292,7 +1300,7 @@ impl Interpreter {
             }
             Statement::CompleteTask { task_name, result, confidence, summary, evidence, notes, .. } => {
                 if let Some(task) = self.tasks_state.get_mut(task_name) {
-                    task.status = "implemented".to_string();
+                    task.status = "completed".to_string();
                     task.result = Some(result.clone());
                     task.confidence = *confidence;
                     task.summary = summary.clone();
@@ -1301,7 +1309,7 @@ impl Interpreter {
                     let state = TaskState {
                         name: task_name.clone(),
                         owner: "agent".to_string(),
-                        status: "implemented".to_string(),
+                        status: "completed".to_string(),
                         requirement: None,
                         implementation: None,
                         skills: Vec::new(),
@@ -1794,21 +1802,15 @@ impl Interpreter {
                 })
             }
             Expression::Compose { ops, .. } => {
-                let mut last_val = Value::Void;
-                for op_expr in ops {
-                    let op_val = self.eval_expression(op_expr)?;
-                    let args = if last_val != Value::Void { vec![last_val] } else { vec![] };
-                    let res = if matches!(op_val, Value::Operation { .. }) {
-                        self.eval_operation(&op_val, args)?
-                    } else {
-                        op_val
-                    };
-                    last_val = match res {
-                        Value::OperationResult { output, .. } => *output,
-                        other => other,
-                    };
+                if ops.is_empty() {
+                    return Ok(Value::Void);
                 }
-                Ok(last_val)
+                let mut current = self.eval_expression(&ops[0])?;
+                for next_expr in &ops[1..] {
+                    let next_val = self.eval_expression(next_expr)?;
+                    current = Value::ComposedOp(Box::new(current), Box::new(next_val));
+                }
+                Ok(current)
             }
             Expression::Repeat { op, count, is_retry, .. } => {
                 let op_val = self.eval_expression(op)?;

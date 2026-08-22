@@ -259,9 +259,27 @@ pub enum TokenKind {
     Rename,           // 'rename'
     Use,              // 'use'
     Snapshot,         // 'snapshot'
+    ReplaceWith,      // 'replace_with'
+    Api,              // 'api'
+    Needs,            // 'needs'
+    Expose,           // 'expose'
+    Replaceable,      // 'replaceable'
+    Lifecycle,        // 'lifecycle'
+    Decorate,         // 'decorate'
+    Impact,           // 'impact'
+    Must,             // 'must'
+    Reason,           // 'reason'
+    Internal,         // 'internal'
+    Private,          // 'private'
+    Extends,          // 'extends'
+    Extension,        // 'extension'
+    Implementation,   // 'implementation'
+    Test,             // 'test'
+    BangArrow,        // '!->'
     Begin,            // 'begin'
     Commit,           // 'commit'
-    ReplaceWith,      // 'replace_with'
+    Not,              // 'not'
+
 
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
@@ -777,9 +795,26 @@ impl<'a> Lexer<'a> {
                     "rename" => TokenKind::Rename,
                     "use" => TokenKind::Use,
                     "snapshot" => TokenKind::Snapshot,
+                    "replace_with" => TokenKind::ReplaceWith,
+                    "api" => TokenKind::Api,
+                    "needs" => TokenKind::Needs,
+                    "expose" => TokenKind::Expose,
+                    "replaceable" => TokenKind::Replaceable,
+                    "lifecycle" => TokenKind::Lifecycle,
+                    "decorate" => TokenKind::Decorate,
+                    "impact" => TokenKind::Impact,
+                    "must" => TokenKind::Must,
+                    "reason" => TokenKind::Reason,
+                    "internal" => TokenKind::Internal,
+                    "private" => TokenKind::Private,
+                    "public" => TokenKind::Pub,
+                    "extends" => TokenKind::Extends,
+                    "extension" | "extensions" => TokenKind::Extension,
+                    "implementation" => TokenKind::Implementation,
+                    "test" => TokenKind::Test,
                     "begin" => TokenKind::Begin,
                     "commit" => TokenKind::Commit,
-                    "replace_with" => TokenKind::ReplaceWith,
+                    "not" => TokenKind::Not,
 
                     _ => TokenKind::Ident(ident),
                 }
@@ -931,6 +966,10 @@ impl<'a> Lexer<'a> {
                 if self.peek() == Some('=') {
                     self.advance();
                     TokenKind::BangEqual
+                } else if self.peek() == Some('-') && self.peek_next() == Some('>') {
+                    self.advance(); // consume '-'
+                    self.advance(); // consume '>'
+                    TokenKind::BangArrow
                 } else {
                     TokenKind::Bang
                 }

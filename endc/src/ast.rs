@@ -253,6 +253,159 @@ pub struct ModuleDef {
     pub span: Span,
 }
 
+// ── 50 Super Revolutionary Feature-Oriented Paradigm AST Structures ──
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureApi {
+    pub functions: Vec<FunctionDef>,
+    pub structs: Vec<StructDef>,
+    pub enums: Vec<EnumDef>,
+    pub traits: Vec<TraitDef>,
+    pub exposed_symbols: Vec<String>,
+    pub raw_signatures: Vec<String>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureImpl {
+    pub name: Option<String>,
+    pub target_contract: Option<String>,
+    pub functions: Vec<FunctionDef>,
+    pub structs: Vec<StructDef>,
+    pub statements: Vec<Statement>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureContractClause {
+    pub rule: String,
+    pub is_negative: bool,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureDependency {
+    pub name: String,
+    pub sub_contract: Option<String>, // e.g. "api" in "Authentication.api"
+    pub type_params: Vec<String>,     // e.g. ["Transactional"]
+    pub why: Option<String>,          // e.g. "Payment signatures require cryptographic verification"
+    pub is_typed: bool,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureExtensionPoint {
+    pub name: String,
+    pub allowed_types: Vec<String>,
+    pub priority: Option<i64>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureBoundary {
+    pub layers: Vec<String>, // ["api", "domain", "infrastructure"]
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeaturePermission {
+    pub allow: Vec<String>,
+    pub deny: Vec<String>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureLifecycle {
+    pub state: String, // "experimental", "stable", "deprecated"
+    pub replace_with: Option<String>,
+    pub migration_path: Option<String>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureDecision {
+    pub target: String,
+    pub reason: String,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureDef {
+    pub name: String,
+    pub version: Option<String>,
+    pub owner: Option<String>,
+    pub parent: Option<String>,
+    pub architecture_template: Option<String>,
+    pub is_pub: bool,
+    pub is_replaceable: bool,
+    pub is_evolvable: bool,
+    pub api: Option<FeatureApi>,
+    pub implementations: Vec<FeatureImpl>,
+    pub needs: Vec<FeatureDependency>,
+    pub boundary: Option<FeatureBoundary>,
+    pub exposes: Vec<String>,
+    pub extensions: Vec<FeatureExtensionPoint>,
+    pub compose: Vec<String>,
+    pub contracts: Vec<FeatureContractClause>,
+    pub invariants: Vec<Expression>,
+    pub tests: Vec<FunctionDef>,
+    pub requires_capabilities: Vec<String>,
+    pub permissions: Option<FeaturePermission>,
+    pub lifecycle: Option<FeatureLifecycle>,
+    pub decisions: Vec<FeatureDecision>,
+    pub nested_features: Vec<FeatureDef>,
+    pub forbids: Vec<String>,
+    pub allows: Vec<String>,
+    pub decorations: Vec<String>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContractDef {
+    pub name: String,
+    pub methods: Vec<TraitMethodDef>,
+    pub clauses: Vec<String>,
+    pub is_evolved: bool,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArchitectureTemplateDef {
+    pub name: String,
+    pub required_layers: Vec<String>,
+    pub rules: Vec<String>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArchitectureRuleDef {
+    pub name: String,
+    pub allowed_flows: Vec<(String, String)>,
+    pub forbidden_flows: Vec<(String, String)>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FeatureMigrationDef {
+    pub feature_name: String,
+    pub from_version: String,
+    pub to_version: String,
+    pub renames: Vec<(String, String)>,
+    pub replacements: Vec<(String, String)>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct BlastRadiusReport {
+    pub target_symbol: String,
+    pub affected_features: Vec<String>,
+    pub affected_modules: Vec<String>,
+    pub affected_symbols: Vec<String>,
+    pub affected_public_apis: Vec<String>,
+    pub required_migrations: Vec<String>,
+}
+
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionBlock {
     pub target: String,
@@ -1480,6 +1633,50 @@ pub enum Statement {
         metrics_target: Option<String>,
         span: Span,
     },
+
+    // ── 50 Super Revolutionary Feature-Oriented Paradigm Statements ──
+    FeatureStatement(FeatureDef),
+    ContractDefinition(ContractDef),
+    ArchitectureTemplate(ArchitectureTemplateDef),
+    ArchitectureRuleStatement(ArchitectureRuleDef),
+    FeatureMigrationStatement(FeatureMigrationDef),
+    ReplaceFeature {
+        target: String,
+        with_provider: String,
+        span: Span,
+    },
+    DecorateFeature {
+        target: String,
+        decorators: Vec<String>,
+        span: Span,
+    },
+    ComposeFeature {
+        target: String,
+        components: Vec<String>,
+        span: Span,
+    },
+    EvolveFeature {
+        target: String,
+        adds: Vec<String>,
+        replaces: Vec<(String, String)>,
+        body: Option<Block>,
+        span: Span,
+    },
+    EvolveContract {
+        target: String,
+        adds: Vec<TraitMethodDef>,
+        clauses: Vec<String>,
+        span: Span,
+    },
+    ImpactQuery {
+        target: String,
+        span: Span,
+    },
+    UseFeature {
+        feature: String,
+        implementation: Option<String>,
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1971,6 +2168,20 @@ impl Statement {
             // Layer 10
             Statement::WhyMetadataDecl { span, .. } => span,
             Statement::EvolvableDecl { span, .. } => span,
+
+            // Feature-Oriented Paradigms
+            Statement::FeatureStatement(f) => &f.span,
+            Statement::ContractDefinition(c) => &c.span,
+            Statement::ArchitectureTemplate(a) => &a.span,
+            Statement::ArchitectureRuleStatement(r) => &r.span,
+            Statement::FeatureMigrationStatement(m) => &m.span,
+            Statement::ReplaceFeature { span, .. } => span,
+            Statement::DecorateFeature { span, .. } => span,
+            Statement::ComposeFeature { span, .. } => span,
+            Statement::EvolveFeature { span, .. } => span,
+            Statement::EvolveContract { span, .. } => span,
+            Statement::ImpactQuery { span, .. } => span,
+            Statement::UseFeature { span, .. } => span,
         }
     }
 }
@@ -1986,9 +2197,15 @@ pub struct Module {
     pub functions: Vec<FunctionDef>,
     pub modules: Vec<ModuleDef>,
     pub extensions: Vec<ExtensionBlock>,
+    pub features: Vec<FeatureDef>,
+    pub contracts: Vec<ContractDef>,
+    pub architecture_templates: Vec<ArchitectureTemplateDef>,
+    pub architecture_rules: Vec<ArchitectureRuleDef>,
+    pub feature_migrations: Vec<FeatureMigrationDef>,
     pub statements: Vec<Statement>,
     pub span: Span,
 }
+
 
 
 

@@ -7,6 +7,8 @@ pub mod optimizer;
 pub mod tests;
 #[cfg(test)]
 pub mod security_tests;
+#[cfg(test)]
+pub mod feature_tests;
 
 pub use hir::*;
 pub use mir::*;

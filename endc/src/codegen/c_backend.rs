@@ -3043,6 +3043,15 @@ Statement::Spawn { call, .. } => {
             Statement::ModuleContractDecl { module_name, accepts, returns, guarantees, .. } => {
                 self.output.push_str(&format!("{}/* 📜 [MODULE CONTRACT '{}']: accepts=[{}], returns=[{}], guarantees=[{}] */\n", self.indent(), module_name, accepts.join(", "), returns.join(", "), guarantees.join(", ")));
             }
+            Statement::ContractDefinition(ctr) => {
+                self.output.push_str(&format!("{}/* 📜 [MODULE CONTRACT '{}']: clauses=[{}] */\n", self.indent(), ctr.name, ctr.clauses.join(", ")));
+            }
+            Statement::FeatureStatement(f) => {
+                let req = f.contracts.first().map(|c| c.rule.clone());
+                let skills = f.requires_capabilities.join(", ");
+                let tasks: Vec<String> = f.decisions.iter().map(|d| d.target.clone()).collect();
+                self.output.push_str(&format!("{}/* 🎯 [FEATURE '{}']: req={:?}, skills=[{}], tasks=[{}] */\n", self.indent(), f.name, req, skills, tasks.join(", ")));
+            }
             Statement::PortDecl { name, methods, .. } => {
                 self.output.push_str(&format!("{}/* 🔌 [PORT '{}']: methods=[{}] */\n", self.indent(), name, methods.join(", ")));
             }

@@ -62,6 +62,9 @@ pub struct SemanticAnalyzer {
     pub sealed_structs: HashSet<String>,
     pub arch_locked: bool,
     pub security_level: crate::security::SecurityLevel,
+    pub features: HashMap<String, FeatureDef>,
+    pub contracts: HashMap<String, ContractDef>,
+    pub architecture_rules: Vec<ArchitectureRuleDef>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -112,6 +115,9 @@ impl SemanticAnalyzer {
             sealed_structs: HashSet::new(),
             arch_locked: false,
             security_level: crate::security::SecurityLevel::Standard,
+            features: HashMap::new(),
+            contracts: HashMap::new(),
+            architecture_rules: Vec::new(),
         }
     }
 
@@ -205,6 +211,64 @@ impl SemanticAnalyzer {
             }
         }
 
+        // Register Features, Contracts, and Architecture Rules
+        for feat in &module.features {
+            self.features.insert(feat.name.clone(), feat.clone());
+
+            // E0931: Uncontracted Feature Implementation
+            if !feat.implementations.is_empty() && feat.contracts.is_empty() && feat.api.is_none() {
+                self.errors.push(DiagnosticError {
+                    code: "E0931".to_string(),
+                    message: format!("UncontractedFeature: feature '{}' has implementations but no contract or API boundary", feat.name),
+                    line: feat.span.line,
+                    col: feat.span.col,
+                    kind: "ArchitecturalViolation".to_string(),
+                    repair_suggestion: Some(format!("declare a 'contract' or 'api' block for feature '{}'", feat.name)),
+                });
+            }
+
+            // E0937: 7-Pillar @evolvable Audit (must have extension points or contracts)
+            if feat.is_evolvable && feat.extensions.is_empty() && feat.contracts.is_empty() {
+                self.errors.push(DiagnosticError {
+                    code: "E0937".to_string(),
+                    message: format!("UnboundedEvolvableFeature: evolvable feature '{}' must define at least one extension point or contract clause", feat.name),
+                    line: feat.span.line,
+                    col: feat.span.col,
+                    kind: "ArchitecturalViolation".to_string(),
+                    repair_suggestion: Some(format!("add an 'extension_point' or 'contract' to feature '{}'", feat.name)),
+                });
+            }
+
+            // Register dependencies
+            for dep in &feat.needs {
+                self.module_depends.entry(feat.name.clone()).or_default().insert(dep.name.clone());
+            }
+
+            // Check circular dependencies
+            for dep in &feat.needs {
+                if let Some(other) = self.features.get(&dep.name) {
+                    if other.needs.iter().any(|d| d.name == feat.name) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0934".to_string(),
+                            message: format!("CircularFeatureDependency: circular dependency detected between feature '{}' and '{}'", feat.name, dep.name),
+                            line: feat.span.line,
+                            col: feat.span.col,
+                            kind: "ArchitecturalViolation".to_string(),
+                            repair_suggestion: Some(format!("decouple dependency between '{}' and '{}' using contracts or events", feat.name, dep.name)),
+                        });
+                    }
+                }
+            }
+        }
+
+        for ctr in &module.contracts {
+            self.contracts.insert(ctr.name.clone(), ctr.clone());
+        }
+
+        for rule in &module.architecture_rules {
+            self.architecture_rules.push(rule.clone());
+        }
+
         // Register Modules
         for m in &module.modules {
             if let Some(ref r) = m.responsibility {
@@ -227,6 +291,7 @@ impl SemanticAnalyzer {
             }
             if m.is_sealed {
                 self.module_sealed.insert(m.name.clone());
+                self.sealed_modules.insert(m.name.clone());
             }
             if let Some(ref p) = m.purity {
                 self.module_purity.insert(m.name.clone(), p.clone());
@@ -278,9 +343,11 @@ impl SemanticAnalyzer {
             self.analyze_statement(stmt);
         }
 
-        // 2. Register Structs
         for s in &module.structs {
             self.structs.insert(s.name.clone(), s.clone());
+            if s.is_sealed {
+                self.sealed_structs.insert(s.name.clone());
+            }
             let info = SymbolInfo {
                 name: s.name.clone(),
                 kind: "struct".to_string(),
@@ -1012,6 +1079,92 @@ impl SemanticAnalyzer {
         path.pop();
         rec_stack.remove(node);
         false
+    }
+
+    pub fn calculate_blast_radius(&self, target_symbol: &str) -> BlastRadiusReport {
+        let mut affected_modules = Vec::new();
+        let mut affected_features = Vec::new();
+        let mut affected_symbols = Vec::new();
+        let mut affected_public_apis = Vec::new();
+        let mut required_migrations = Vec::new();
+
+        // 1. Direct dependencies: any module or feature depending on target_symbol
+        for (caller, deps) in &self.module_depends {
+            if deps.contains(target_symbol) && caller != target_symbol {
+                if self.features.contains_key(caller) {
+                    if !affected_features.contains(caller) {
+                        affected_features.push(caller.clone());
+                    }
+                } else if !affected_modules.contains(caller) {
+                    affected_modules.push(caller.clone());
+                }
+            }
+        }
+        for (feat_name, feat) in &self.features {
+            for dep in &feat.needs {
+                if dep.name == target_symbol && feat_name != target_symbol && !affected_features.contains(feat_name) {
+                    affected_features.push(feat_name.clone());
+                }
+            }
+        }
+
+        // 2. Transitive dependencies
+        let mut queue: Vec<String> = affected_modules.iter().chain(affected_features.iter()).cloned().collect();
+        let mut visited: HashSet<String> = queue.iter().cloned().collect();
+        visited.insert(target_symbol.to_string());
+
+        while let Some(current) = queue.pop() {
+            for (caller, deps) in &self.module_depends {
+                if deps.contains(&current) && !visited.contains(caller) {
+                    visited.insert(caller.clone());
+                    if self.features.contains_key(caller) {
+                        if !affected_features.contains(caller) {
+                            affected_features.push(caller.clone());
+                        }
+                    } else if !affected_modules.contains(caller) {
+                        affected_modules.push(caller.clone());
+                    }
+                    queue.push(caller.clone());
+                }
+            }
+            for (feat_name, feat) in &self.features {
+                for dep in &feat.needs {
+                    if dep.name == current && !visited.contains(feat_name) {
+                        visited.insert(feat_name.clone());
+                        if !affected_features.contains(feat_name) {
+                            affected_features.push(feat_name.clone());
+                        }
+                        queue.push(feat_name.clone());
+                    }
+                }
+            }
+        }
+
+        // 3. Affected symbols & public APIs
+        if let Some(feat) = self.features.get(target_symbol) {
+            if let Some(ref api) = feat.api {
+                for f in &api.functions {
+                    affected_public_apis.push(f.name.clone());
+                }
+            }
+            if let Some(ref lc) = feat.lifecycle {
+                if let Some(ref mig) = lc.migration_path {
+                    required_migrations.push(mig.clone());
+                }
+            }
+        }
+
+        affected_symbols.extend(affected_modules.clone());
+        affected_symbols.extend(affected_features.clone());
+
+        BlastRadiusReport {
+            target_symbol: target_symbol.to_string(),
+            affected_features,
+            affected_modules,
+            affected_symbols,
+            affected_public_apis,
+            required_migrations,
+        }
     }
 
     pub fn eval_static_const_int(&self, expr: &Expression) -> Option<i64> {
