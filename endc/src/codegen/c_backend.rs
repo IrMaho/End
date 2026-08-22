@@ -3623,7 +3623,7 @@ Statement::Spawn { call, .. } => {
                             result.push_str(&format!("(({} == {}) ? ({}) : ", target, lit_str, arm_val));
                             open_parens += 1;
                         }
-                        Pattern::Wildcard | Pattern::Ident(_) => {
+                        Pattern::Wildcard | Pattern::Ident(_) | Pattern::Binding(_) | Pattern::Tuple(_) | Pattern::Struct { .. } => {
                             result.push_str(&format!("({})", arm_val));
                             for _ in 0..open_parens {
                                 result.push(')');
@@ -3724,6 +3724,7 @@ Statement::Spawn { call, .. } => {
                 let o = self.gen_expression(op);
                 format!("end_memoize_op({})", o)
             }
+            _ => format!("/* expressive_expr */ 0"),
         }
     }
 }

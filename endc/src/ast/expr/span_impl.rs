@@ -41,6 +41,22 @@ impl Expression {
             Expression::Alternative { span, .. } => span,
             Expression::ConditionalOp { span, .. } => span,
             Expression::Memoize { span, .. } => span,
+            Expression::Tuple(_, s) => s,
+            Expression::ListLiteral(_, s) => s,
+            Expression::ListComprehension { span, .. } => span,
+            Expression::DictComprehension { span, .. } => span,
+            Expression::SetComprehension { span, .. } => span,
+            Expression::Cascade { span, .. } => span,
+            Expression::Spread { span, .. } => span,
+            Expression::Range { span, .. } => span,
+            Expression::Walrus { span, .. } => span,
+            Expression::Conditional { span, .. } => span,
+            Expression::Lambda { span, .. } => span,
+            Expression::NamedArg { span, .. } => span,
+            Expression::CopyExpr { span, .. } => span,
+            Expression::ResultBuilder { span, .. } => span,
+            Expression::IsPattern { span, .. } => span,
+            Expression::InterpolatedString { span, .. } => span,
         }
     }
 }

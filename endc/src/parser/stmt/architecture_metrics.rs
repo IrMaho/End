@@ -109,7 +109,7 @@ impl Parser {
                             target_files_min = *i as usize;
                             target_files_max = *i as usize;
                             self.advance();
-                            if self.match_token(&TokenKind::Dot) && self.match_token(&TokenKind::Dot) {
+                            if self.match_token(&TokenKind::DotDot) || (self.match_token(&TokenKind::Dot) && self.match_token(&TokenKind::Dot)) {
                                 if let TokenKind::IntLit(i2) = self.peek_kind() {
                                     target_files_max = *i2 as usize;
                                     self.advance();

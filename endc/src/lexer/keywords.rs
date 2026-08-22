@@ -319,6 +319,7 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "only" => TokenKind::Only,
                     "section" => TokenKind::Section,
                     "before" => TokenKind::Before,
+                    "is" => TokenKind::Is,
 
         _ => TokenKind::Ident(ident.to_string()),
     }

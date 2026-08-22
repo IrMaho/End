@@ -78,9 +78,8 @@ impl Parser {
                 self.advance();
                 Ok(Pattern::Literal(Literal::Bool(false)))
             }
-            TokenKind::Ident(name) => {
-                let id = name.clone();
-                self.advance();
+            _ => {
+                let id = self.parse_identifier_or_keyword()?;
                 let is_enum_variant = if self.match_token(&TokenKind::Dot) {
                     true
                 } else if self.check(&TokenKind::Colon) {
@@ -91,10 +90,7 @@ impl Parser {
                 };
 
                 if is_enum_variant {
-                    let vname = match self.advance().kind {
-                        TokenKind::Ident(n) => n,
-                        other => return Err(format!("Expected variant name, found {:?}", other)),
-                    };
+                    let vname = self.parse_identifier_or_keyword()?;
                     let mut binding = None;
                     if self.match_token(&TokenKind::LParen) {
                         if let TokenKind::Ident(b) = self.advance().kind {
@@ -107,11 +103,21 @@ impl Parser {
                         variant_name: vname,
                         binding,
                     })
+                } else if self.match_token(&TokenKind::LParen) {
+                    let mut binding = None;
+                    if let TokenKind::Ident(b) = self.advance().kind {
+                        binding = Some(b);
+                    }
+                    self.expect(TokenKind::RParen)?;
+                    Ok(Pattern::Variant {
+                        enum_name: None,
+                        variant_name: id,
+                        binding,
+                    })
                 } else {
                     Ok(Pattern::Ident(id))
                 }
             }
-            other => Err(format!("Invalid pattern syntax: {:?} at line {}", other, self.current_span().line)),
         }
     }
 

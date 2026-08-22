@@ -199,23 +199,7 @@ impl Parser {
                     span: span.clone(),
                 }))
             }
-            TokenKind::Extend => {
-                let checkpoint = self.cursor;
-                self.advance();
-                if let Ok(target) = self.parse_dotted_path() {
-                    if self.check(&TokenKind::LBrace) {
-                        let methods = self.parse_function_block_methods()?;
-                        return Ok(Some(Statement::ImplementContract {
-                            contract: target,
-                            target: None,
-                            methods,
-                            span: span.clone(),
-                        }));
-                    }
-                }
-                self.cursor = checkpoint;
-                Ok(None)
-            }
+            TokenKind::Extend => Ok(None),
             TokenKind::Attach => {
                 self.advance();
                 let capabilities = if self.check(&TokenKind::LBrace) {

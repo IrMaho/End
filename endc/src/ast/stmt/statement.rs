@@ -462,4 +462,8 @@ pub enum Statement {
     EquipEntity { entity: String, capabilities: Vec<String>, condition: Option<String>, span: Span, },
     FuseFeatures { features: Vec<String>, alias: String, span: Span, },
     ShapeDefinition(ShapeDef),
+    DestructureAssign { pattern: crate::ast::pattern::Pattern, value: Expression, span: Span, },
+    ExtendDecl { target: String, methods: Vec<FunctionDef>, properties: Vec<(String, Expression)>, span: Span, },
+    LocalFunction(FunctionDef),
+    FeaturePolicyDecl { name: String, rules: Vec<String>, span: Span, },
 }

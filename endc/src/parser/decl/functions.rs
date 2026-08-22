@@ -7,18 +7,18 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Fn)?;
 
-        let (name, morphic_param) = match self.advance().kind {
-            TokenKind::Ident(n) => (n, None),
-            TokenKind::MorphicIdent(m) => {
-                let p = if m.starts_with('{') && m.contains('}') {
-                    let end_brace = m.find('}').unwrap();
-                    Some(m[1..end_brace].to_string())
-                } else {
-                    None
-                };
-                (m, p)
-            }
-            other => return Err(format!("Expected function name, found {:?} at line {}", other, span.line)),
+        let (name, morphic_param) = if let TokenKind::MorphicIdent(m) = self.peek_kind() {
+            let m_clone = m.clone();
+            self.advance();
+            let p = if m_clone.starts_with('{') && m_clone.contains('}') {
+                let end_brace = m_clone.find('}').unwrap();
+                Some(m_clone[1..end_brace].to_string())
+            } else {
+                None
+            };
+            (m_clone, p)
+        } else {
+            (self.parse_identifier_or_keyword()?, None)
         };
 
         let mut generic_params = Vec::new();
@@ -41,8 +41,18 @@ impl Parser {
             let p_span = self.current_span();
             let is_ref = self.match_token(&TokenKind::Ampersand);
             let is_mut = self.match_token(&TokenKind::Mut);
+            let is_star_star = self.match_token(&TokenKind::StarStar);
+            let is_star = !is_star_star && self.match_token(&TokenKind::Star);
             let mut param_name = self.parse_identifier_or_keyword()?;
-            if is_ref {
+            if param_name == "required" && !self.check(&TokenKind::Colon) && !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RParen) {
+                let actual = self.parse_identifier_or_keyword()?;
+                param_name = format!("required_{}", actual);
+            }
+            if is_star_star {
+                param_name = format!("**{}", param_name);
+            } else if is_star {
+                param_name = format!("*{}", param_name);
+            } else if is_ref {
                 param_name = format!("&{}", param_name);
             }
 
@@ -51,6 +61,10 @@ impl Parser {
                 param_type = self.parse_type()?;
             } else if param_name == "&self" || param_name == "self" {
                 param_type = Type::Custom("Self".to_string());
+            }
+
+            if self.match_token(&TokenKind::Equal) {
+                let _default_expr = self.parse_expression()?;
             }
 
             params.push(FunctionParam {
@@ -334,7 +348,11 @@ impl Parser {
                 Type::Void
             };
 
-            self.match_token(&TokenKind::SemiColon);
+            if self.check(&TokenKind::LBrace) {
+                let _body = self.parse_block()?;
+            } else {
+                self.match_token(&TokenKind::SemiColon);
+            }
 
             methods.push(TraitMethodDef {
                 name: m_name,

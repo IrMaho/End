@@ -226,7 +226,14 @@ impl Parser {
                     modules.push(self.parse_module_def(false, pending_directives)?);
                 }
                 TokenKind::Extend => {
-                    extensions.push(self.parse_extension_block()?);
+                    let ext = self.parse_extension_block()?;
+                    statements.push(Statement::ImplementContract {
+                        contract: ext.target.clone(),
+                        target: None,
+                        methods: ext.functions.clone(),
+                        span: ext.span.clone(),
+                    });
+                    extensions.push(ext);
                 }
                 TokenKind::Feature => {
                     let feat = self.parse_feature_def(false, pending_directives)?;

@@ -14,7 +14,14 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
                     TokenKind::Minus
                 }
             }
-            '*' => TokenKind::Star,
+            '*' => {
+                if lexer.peek() == Some('*') {
+                    lexer.advance();
+                    TokenKind::StarStar
+                } else {
+                    TokenKind::Star
+                }
+            }
             '/' => TokenKind::Slash,
             '%' => TokenKind::Percent,
             '=' => {
@@ -66,10 +73,39 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
                     TokenKind::Greater
                 }
             }
-            ':' => TokenKind::Colon,
+            ':' => {
+                if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::ColonEqual
+                } else {
+                    TokenKind::Colon
+                }
+            }
             ';' => TokenKind::SemiColon,
             ',' => TokenKind::Comma,
-            '.' => TokenKind::Dot,
+            '.' => {
+                if lexer.peek() == Some('.') {
+                    if lexer.peek_next() == Some('.') {
+                        lexer.advance(); // consume second '.'
+                        lexer.advance(); // consume third '.'
+                        if lexer.peek() == Some('?') {
+                            lexer.advance();
+                            TokenKind::DotDotDotQuestion
+                        } else {
+                            TokenKind::DotDotDot
+                        }
+                    } else if lexer.peek_next() == Some('<') {
+                        lexer.advance(); // consume second '.'
+                        lexer.advance(); // consume '<'
+                        TokenKind::DotDotLess
+                    } else {
+                        lexer.advance(); // consume second '.'
+                        TokenKind::DotDot
+                    }
+                } else {
+                    TokenKind::Dot
+                }
+            }
             '&' => {
                 if lexer.peek() == Some('&') {
                     lexer.advance();
@@ -100,8 +136,23 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
             }
             '?' => {
                 if lexer.peek() == Some('?') {
-                    lexer.advance();
-                    TokenKind::QuestionQuestion
+                    if lexer.peek_next() == Some('=') {
+                        lexer.advance(); // consume second '?'
+                        lexer.advance(); // consume '='
+                        TokenKind::QuestionQuestionEqual
+                    } else {
+                        lexer.advance();
+                        TokenKind::QuestionQuestion
+                    }
+                } else if lexer.peek() == Some('.') {
+                    if lexer.peek_next() == Some('.') {
+                        lexer.advance(); // consume '.'
+                        lexer.advance(); // consume second '.'
+                        TokenKind::QuestionDotDot
+                    } else {
+                        lexer.advance(); // consume '.'
+                        TokenKind::QuestionDot
+                    }
                 } else {
                     TokenKind::Question
                 }

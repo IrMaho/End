@@ -51,29 +51,49 @@ impl<'a> Lexer<'a> {
         }
 
         // Morphic Template Identifiers: e.g. {platform}_send or {target}_Client
-        if ch == '{' && self.peek_next().map_or(false, |c| c.is_alphabetic() || c == '_') {
-            self.advance(); // consume '{'
-            let mut morphic_str = String::from("{");
-            while let Some(c) = self.peek() {
-                morphic_str.push(c);
-                self.advance();
+        if ch == '{' {
+            let mut i = 1;
+            let mut is_morphic = false;
+            let mut has_close = false;
+            let mut only_ident = true;
+            while let Some(c) = self.peek_offset(i) {
                 if c == '}' {
+                    has_close = true;
+                    if let Some(after) = self.peek_offset(i + 1) {
+                        if after == '_' || after.is_alphanumeric() {
+                            is_morphic = true;
+                        }
+                    }
+                    break;
+                } else if !c.is_alphanumeric() && c != '_' {
+                    only_ident = false;
                     break;
                 }
+                i += 1;
             }
-            // Capture suffix like '_send' or '_Client'
-            while let Some(c) = self.peek() {
-                if c.is_alphanumeric() || c == '_' {
+            if has_close && only_ident && is_morphic {
+                self.advance(); // consume '{'
+                let mut morphic_str = String::from("{");
+                while let Some(c) = self.peek() {
                     morphic_str.push(c);
                     self.advance();
-                } else {
-                    break;
+                    if c == '}' {
+                        break;
+                    }
                 }
+                while let Some(c) = self.peek() {
+                    if c.is_alphanumeric() || c == '_' {
+                        morphic_str.push(c);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+                return Ok(Token {
+                    kind: TokenKind::MorphicIdent(morphic_str),
+                    span,
+                });
             }
-            return Ok(Token {
-                kind: TokenKind::MorphicIdent(morphic_str),
-                span,
-            });
         }
 
         // Identifiers or keywords

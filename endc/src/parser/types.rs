@@ -28,15 +28,44 @@ impl Parser {
             }
         }
 
+        if self.match_token(&TokenKind::LParen) {
+            let mut tuple_types = Vec::new();
+            while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                tuple_types.push(self.parse_type()?);
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::RParen)?;
+            return Ok(Type::Custom(format!("tuple_{}", tuple_types.len())));
+        }
+
         match self.peek_kind() {
-            TokenKind::Ident(_)
-            | TokenKind::Sealed
-            | TokenKind::Contract
-            | TokenKind::Security
-            | TokenKind::Boundary
-            | TokenKind::Stable
-            | TokenKind::Compat
-            | TokenKind::Purity => {
+            TokenKind::Operation => {
+                self.advance();
+                if self.match_token(&TokenKind::Less) {
+                    let tin = self.parse_type()?;
+                    let mut tout = None;
+                    if self.match_token(&TokenKind::Comma) {
+                        tout = Some(Box::new(self.parse_type()?));
+                    }
+                    self.expect(TokenKind::Greater)?;
+                    Ok(Type::Operation(Some(Box::new(tin)), tout))
+                } else {
+                    Ok(Type::Operation(None, None))
+                }
+            }
+            TokenKind::Event => {
+                self.advance();
+                if self.match_token(&TokenKind::Less) {
+                    let ev_name = self.parse_identifier_or_keyword()?;
+                    self.expect(TokenKind::Greater)?;
+                    Ok(Type::Event(ev_name))
+                } else {
+                    Ok(Type::Event("Any".into()))
+                }
+            }
+            _ => {
                 let type_name = self.parse_identifier_or_keyword()?;
                 let ty = match type_name.as_str() {
                     "void" => Type::Void,
@@ -134,31 +163,6 @@ impl Parser {
                 };
                 Ok(ty)
             }
-            TokenKind::Operation => {
-                self.advance();
-                if self.match_token(&TokenKind::Less) {
-                    let tin = self.parse_type()?;
-                    let mut tout = None;
-                    if self.match_token(&TokenKind::Comma) {
-                        tout = Some(Box::new(self.parse_type()?));
-                    }
-                    self.expect(TokenKind::Greater)?;
-                    Ok(Type::Operation(Some(Box::new(tin)), tout))
-                } else {
-                    Ok(Type::Operation(None, None))
-                }
-            }
-            TokenKind::Event => {
-                self.advance();
-                if self.match_token(&TokenKind::Less) {
-                    let ev_name = self.parse_identifier_or_keyword()?;
-                    self.expect(TokenKind::Greater)?;
-                    Ok(Type::Event(ev_name))
-                } else {
-                    Ok(Type::Event("Any".into()))
-                }
-            }
-            other => Err(format!("Expected type, found {:?} at line {}", other, self.current_span().line)),
         }
     }
 

@@ -66,18 +66,39 @@ impl Parser {
         loop {
             let span = self.current_span();
             if self.match_token(&TokenKind::Dot) {
-                let member_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected member identifier after '.', found {:?}", other)),
-                };
+                let member_name = self.parse_identifier_or_keyword()?;
                 expr = Expression::FieldAccess {
                     object: Box::new(expr),
                     field: member_name,
                     span,
                 };
+            } else if self.match_token(&TokenKind::QuestionDot) {
+                let member_name = self.parse_identifier_or_keyword()?;
+                expr = Expression::FieldAccess {
+                    object: Box::new(expr),
+                    field: member_name,
+                    span,
+                };
+            } else if self.check(&TokenKind::QuestionDotDot) || (self.check(&TokenKind::DotDot) && self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::Ident(_)))) {
+                expr = self.parse_cascade_chain(expr)?;
             } else if self.match_token(&TokenKind::LParen) {
                 let mut args = Vec::new();
                 while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                    let arg_span = self.current_span();
+                    let checkpoint = self.cursor.clone();
+                    if let Ok(arg_name) = self.parse_identifier_or_keyword() {
+                        if self.match_token(&TokenKind::Colon) {
+                            let arg_val = self.parse_expression()?;
+                            args.push(Expression::NamedArg {
+                                name: arg_name,
+                                value: Box::new(arg_val),
+                                span: arg_span,
+                            });
+                            self.match_token(&TokenKind::Comma);
+                            continue;
+                        }
+                    }
+                    self.cursor = checkpoint;
                     args.push(self.parse_expression()?);
                     if !self.match_token(&TokenKind::Comma) {
                         break;
@@ -89,14 +110,22 @@ impl Parser {
                     args,
                     span,
                 };
-            } else if self.match_token(&TokenKind::LBracket) {
-                let index = self.parse_expression()?;
-                self.expect(TokenKind::RBracket)?;
-                expr = Expression::Index {
-                    array: Box::new(expr),
-                    index: Box::new(index),
-                    span,
-                };
+            } else if self.check(&TokenKind::LBracket) && !self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::For | TokenKind::If)) {
+                let checkpoint = self.cursor;
+                self.advance();
+                let index_res = self.parse_expression();
+                if let Ok(index) = index_res {
+                    if self.match_token(&TokenKind::RBracket) {
+                        expr = Expression::Index {
+                            array: Box::new(expr),
+                            index: Box::new(index),
+                            span,
+                        };
+                        continue;
+                    }
+                }
+                self.cursor = checkpoint;
+                break;
             } else if self.match_token(&TokenKind::Retry) {
                 let count = self.parse_primary()?;
                 expr = Expression::Repeat {

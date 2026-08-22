@@ -24,7 +24,8 @@ impl Parser {
 
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" } else { false }) {
-                let _f = self.parse_function(false, vec![])?;
+                let f = self.parse_function(false, vec![])?;
+                statements.push(Statement::LocalFunction(f));
                 continue;
             }
             statements.push(self.parse_statement()?);
@@ -82,15 +83,69 @@ impl Parser {
     }
 
     pub(crate) fn parse_fallback_statement(&mut self, span: Span) -> Result<Statement, String> {
-                let expr = self.parse_expression()?;
-                if self.match_token(&TokenKind::Equal) {
-                    let value = self.parse_expression()?;
-                    self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::Assignment {
-                        target: expr,
-                        value,
-                        span,
-                    })
+        let expr = self.parse_expression()?;
+        if self.match_token(&TokenKind::ColonEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            let pat = match expr {
+                Expression::Tuple(elems, _) => {
+                    let patterns = elems.into_iter().map(|e| match e {
+                        Expression::Ident(n, _) => {
+                            if n == "_" {
+                                Pattern::Wildcard
+                            } else {
+                                Pattern::Binding(n)
+                            }
+                        }
+                        Expression::Spread { expr, .. } => {
+                            if let Expression::Ident(n, _) = *expr {
+                                Pattern::Binding(format!("*{}", n))
+                            } else {
+                                Pattern::Wildcard
+                            }
+                        }
+                        _ => Pattern::Wildcard,
+                    }).collect();
+                    Pattern::Tuple(patterns)
+                }
+                Expression::Ident(n, _) => {
+                    if n == "_" {
+                        Pattern::Wildcard
+                    } else {
+                        Pattern::Binding(n)
+                    }
+                }
+                Expression::StructInit { name, fields, .. } => {
+                    let pfields = fields.into_iter().map(|(f, _)| (f.clone(), Pattern::Binding(f))).collect();
+                    Pattern::Struct { name, fields: pfields }
+                }
+                _ => Pattern::Wildcard,
+            };
+            return Ok(Statement::DestructureAssign {
+                pattern: pat,
+                value,
+                span,
+            });
+        } else if self.match_token(&TokenKind::Equal) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr,
+                value,
+                span,
+            })
+        } else if self.match_token(&TokenKind::QuestionQuestionEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::NullCollapse {
+                    left: Box::new(expr),
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
                 } else if self.match_token(&TokenKind::LessPlusEqual) {
                     let value = self.parse_expression()?;
                     self.match_token(&TokenKind::SemiColon);

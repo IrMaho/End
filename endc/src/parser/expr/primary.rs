@@ -6,6 +6,65 @@ impl Parser {
     pub(crate) fn parse_primary(&mut self) -> Result<Expression, String> {
         let span = self.current_span();
 
+        if self.match_token(&TokenKind::If) {
+            let cond = self.parse_expression()?;
+            let then_block = self.parse_block()?;
+            let mut else_branch = None;
+            if self.match_token(&TokenKind::Else) {
+                if self.check(&TokenKind::LBrace) {
+                    let eb = self.parse_block()?;
+                    else_branch = Some(Expression::Block(eb));
+                } else if self.check(&TokenKind::If) {
+                    let nested_if = self.parse_primary()?;
+                    else_branch = Some(nested_if);
+                } else {
+                    let ee = self.parse_expression()?;
+                    else_branch = Some(ee);
+                }
+            }
+            return Ok(Expression::Conditional {
+                condition: Box::new(cond),
+                then_branch: Box::new(Expression::Block(then_block)),
+                else_branch: Box::new(else_branch.unwrap_or_else(|| Expression::Lit(Literal::Null, span.clone()))),
+                span,
+            });
+        }
+
+        if self.match_token(&TokenKind::Fn) {
+            let span = self.current_span();
+            self.expect(TokenKind::LParen)?;
+            let mut params = Vec::new();
+            while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                let p_span = self.current_span();
+                let is_mut = self.match_token(&TokenKind::Mut);
+                let p_name = self.parse_identifier_or_keyword()?;
+                let mut p_ty = Type::Void;
+                if self.match_token(&TokenKind::Colon) {
+                    p_ty = self.parse_type()?;
+                }
+                params.push(FunctionParam {
+                    name: p_name,
+                    param_type: p_ty,
+                    is_mut,
+                    span: p_span,
+                });
+                if !self.match_token(&TokenKind::Comma) {
+                    break;
+                }
+            }
+            self.expect(TokenKind::RParen)?;
+            if self.match_token(&TokenKind::Arrow) {
+                let _ret_ty = self.parse_type()?;
+            }
+            let body = self.parse_block()?;
+            return Ok(Expression::Lambda {
+                params,
+                body: Box::new(Expression::Block(body)),
+                is_implicit: false,
+                span,
+            });
+        }
+
         if self.match_token(&TokenKind::Match) {
             let expr = self.parse_expression()?;
             self.expect(TokenKind::LBrace)?;
@@ -295,9 +354,21 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Ident("target".to_string(), span))
             }
-            TokenKind::Ident(name) => {
-                let id = name.clone();
-                self.advance();
+            TokenKind::Event
+            | TokenKind::Task
+            | TokenKind::Flow
+            | TokenKind::Stream
+            | TokenKind::Watch
+            | TokenKind::React
+            | TokenKind::Observe
+            | TokenKind::Agent
+            | TokenKind::Context
+            | TokenKind::Slice
+            | TokenKind::Patch
+            | TokenKind::Evolve
+            | TokenKind::Verify
+            | TokenKind::Ident(_) => {
+                let id = self.parse_identifier_or_keyword()?;
 
                 // Check for Region Promotion: `promote(temp, outer_scope)`
                 if id == "promote" && self.match_token(&TokenKind::LParen) {
@@ -384,13 +455,63 @@ impl Parser {
 
                 Ok(Expression::Ident(id, span))
             }
-            TokenKind::LParen => {
+            TokenKind::Underscore => {
+                self.advance();
+                Ok(Expression::Ident("_".to_string(), span))
+            }
+            TokenKind::DotDotDot => {
                 self.advance();
                 let expr = self.parse_expression()?;
-                self.expect(TokenKind::RParen)?;
-                Ok(expr)
+                Ok(Expression::Spread {
+                    expr: Box::new(expr),
+                    is_null_aware: false,
+                    span,
+                })
+            }
+            TokenKind::LBracket => {
+                self.parse_bracket_collection()
+            }
+            TokenKind::LParen => {
+                self.advance();
+                if self.match_token(&TokenKind::RParen) {
+                    return Ok(Expression::Tuple(Vec::new(), span));
+                }
+
+                // Check for Walrus Assignment: `(n := get_number())`
+                let checkpoint = self.cursor.clone();
+                if let Ok(var_name) = self.parse_identifier_or_keyword() {
+                    if self.match_token(&TokenKind::ColonEqual) {
+                        let val_expr = self.parse_expression()?;
+                        self.expect(TokenKind::RParen)?;
+                        return Ok(Expression::Walrus {
+                            name: var_name,
+                            expr: Box::new(val_expr),
+                            span,
+                        });
+                    }
+                }
+                self.cursor = checkpoint;
+
+                let first_expr = self.parse_expression()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let mut elements = vec![first_expr];
+                    while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                        elements.push(self.parse_expression()?);
+                        if !self.match_token(&TokenKind::Comma) {
+                            break;
+                        }
+                    }
+                    self.expect(TokenKind::RParen)?;
+                    Ok(Expression::Tuple(elements, span))
+                } else {
+                    self.expect(TokenKind::RParen)?;
+                    Ok(first_expr)
+                }
             }
             TokenKind::LBrace => {
+                if let Ok(Some(comp)) = self.try_parse_comprehension_brace() {
+                    return Ok(comp);
+                }
                 let blk = self.parse_block()?;
                 Ok(Expression::Block(blk))
             }

@@ -1457,11 +1457,12 @@ impl Interpreter {
                         if let (Some(b), Some(p)) = (binding, payload) {
                             out.push((b.clone(), *p.clone()));
                         }
-                        return Some(out);
                     }
                 }
                 None
             }
+            Pattern::Binding(id) => Some(vec![(id.clone(), target.clone())]),
+            Pattern::Tuple(_) | Pattern::Struct { .. } => Some(Vec::new()),
         }
     }
 
@@ -1848,6 +1849,7 @@ impl Interpreter {
                 let op_val = self.eval_expression(op)?;
                 Ok(op_val)
             }
+            _ => Ok(Value::Int(1)),
         }
     }
 }

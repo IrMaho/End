@@ -218,6 +218,7 @@ impl Parser {
             TokenKind::Augment => Ok("augment".to_string()),
             TokenKind::ExtensionOnly => Ok("extension_only".to_string()),
             TokenKind::ExtensionPoint => Ok("extension_point".to_string()),
+            TokenKind::Is => Ok("is".to_string()),
             TokenKind::Replace => Ok("replace".to_string()),
             TokenKind::Migration => Ok("migration".to_string()),
             TokenKind::Overlay => Ok("overlay".to_string()),
@@ -290,7 +291,16 @@ impl Parser {
             TokenKind::Only => Ok("only".to_string()),
             TokenKind::Section => Ok("section".to_string()),
             TokenKind::Before => Ok("before".to_string()),
-            other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
+            TokenKind::Is => Ok("is".to_string()),
+            TokenKind::Ident(s) | TokenKind::StringLit(s) => Ok(s),
+            other => {
+                let s = format!("{:?}", other);
+                if !s.is_empty() && s.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                    Ok(s.to_lowercase())
+                } else {
+                    Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line))
+                }
+            }
         }
     }
 

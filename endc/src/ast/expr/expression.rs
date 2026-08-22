@@ -182,5 +182,89 @@ pub enum Expression {
         op: Box<Expression>,
         span: Span,
     },
+    // Modern Expressive Syntax Expressions
+    Tuple(Vec<Expression>, Span),
+    ListLiteral(Vec<crate::ast::expr::collections::CollectionElement>, Span),
+    ListComprehension {
+        expr: Box<Expression>,
+        var: String,
+        iterable: Box<Expression>,
+        condition: Option<Box<Expression>>,
+        span: Span,
+    },
+    DictComprehension {
+        key: Box<Expression>,
+        value: Box<Expression>,
+        key_var: String,
+        val_var: Option<String>,
+        iterable: Box<Expression>,
+        condition: Option<Box<Expression>>,
+        span: Span,
+    },
+    SetComprehension {
+        expr: Box<Expression>,
+        var: String,
+        iterable: Box<Expression>,
+        condition: Option<Box<Expression>>,
+        span: Span,
+    },
+    Cascade {
+        target: Box<Expression>,
+        operations: Vec<Expression>,
+        is_null_aware: bool,
+        span: Span,
+    },
+    Spread {
+        expr: Box<Expression>,
+        is_null_aware: bool,
+        span: Span,
+    },
+    Range {
+        start: Box<Expression>,
+        end: Box<Expression>,
+        inclusive: bool,
+        span: Span,
+    },
+    Walrus {
+        name: String,
+        expr: Box<Expression>,
+        span: Span,
+    },
+    Conditional {
+        condition: Box<Expression>,
+        then_branch: Box<Expression>,
+        else_branch: Box<Expression>,
+        span: Span,
+    },
+    Lambda {
+        params: Vec<FunctionParam>,
+        body: Box<Expression>,
+        is_implicit: bool,
+        span: Span,
+    },
+    NamedArg {
+        name: String,
+        value: Box<Expression>,
+        span: Span,
+    },
+    CopyExpr {
+        target: Box<Expression>,
+        overrides: Vec<(String, Expression)>,
+        span: Span,
+    },
+    ResultBuilder {
+        name: String,
+        body: Block,
+        span: Span,
+    },
+    IsPattern {
+        expr: Box<Expression>,
+        pattern: Pattern,
+        span: Span,
+    },
+    InterpolatedString {
+        parts: Vec<crate::ast::expr::collections::StringPart>,
+        span: Span,
+    },
 }
 

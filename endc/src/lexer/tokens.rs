@@ -349,6 +349,18 @@ pub enum TokenKind {
     LBracket,  // '['
     RBracket,  // ']'
 
+    // Modern Expressive Operators
+    ColonEqual,           // ':='
+    DotDot,               // '..'
+    DotDotDot,            // '...'
+    DotDotLess,           // '..<'
+    QuestionDot,          // '?.'
+    QuestionDotDot,       // '?..'
+    QuestionQuestionEqual,// '??='
+    DotDotDotQuestion,    // '...?'
+    StarStar,             // '**'
+    Is,                   // 'is'
+
     // Capability & Surface Composition Tokens
     Access,
     Grant,

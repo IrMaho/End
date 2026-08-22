@@ -4,16 +4,31 @@ use crate::parser::Parser;
 
 pub mod primary;
 pub mod unary_postfix;
+pub mod expressive;
 
 impl Parser {
     pub(crate) fn parse_expression(&mut self) -> Result<Expression, String> {
-        self.parse_pipe_expr()
+        let expr = self.parse_pipe_expr()?;
+        if self.match_token(&TokenKind::If) {
+            let span = self.current_span();
+            let cond = self.parse_pipe_expr()?;
+            self.expect(TokenKind::Else)?;
+            let else_branch = self.parse_expression()?;
+            return Ok(Expression::Conditional {
+                condition: Box::new(cond),
+                then_branch: Box::new(expr),
+                else_branch: Box::new(else_branch),
+                span,
+            });
+        }
+        Ok(expr)
     }
 
 
     pub(crate) fn parse_pipe_expr(&mut self) -> Result<Expression, String> {
         let mut expr = self.parse_catch_expr()?;
         while self.check(&TokenKind::PipeGreater)
+            || self.check(&TokenKind::QuestionQuestion)
             || self.check(&TokenKind::TildeArrow)
             || self.check(&TokenKind::Shr)
             || self.check(&TokenKind::Fallback)
@@ -28,7 +43,7 @@ impl Parser {
                     rhs: Box::new(rhs),
                     span,
                 };
-            } else if self.match_token(&TokenKind::TildeArrow) {
+            } else if self.match_token(&TokenKind::QuestionQuestion) || self.match_token(&TokenKind::TildeArrow) {
                 let span = self.current_span();
                 let rhs = self.parse_catch_expr()?;
                 expr = Expression::NullCollapse {
@@ -222,25 +237,62 @@ impl Parser {
             || self.check(&TokenKind::LessEqual)
             || self.check(&TokenKind::Greater)
             || self.check(&TokenKind::GreaterEqual)
+            || self.check(&TokenKind::DotDot)
+            || self.check(&TokenKind::DotDotLess)
+            || self.check(&TokenKind::Is)
+            || self.check(&TokenKind::In)
         {
-            let op = if self.match_token(&TokenKind::Less) {
-                BinaryOp::LessThan
-            } else if self.match_token(&TokenKind::LessEqual) {
-                BinaryOp::LessEqual
-            } else if self.match_token(&TokenKind::Greater) {
-                BinaryOp::GreaterThan
-            } else {
-                self.advance();
-                BinaryOp::GreaterEqual
-            };
             let span = self.current_span();
-            let right = self.parse_shift()?;
-            left = Expression::Binary {
-                left: Box::new(left),
-                op,
-                right: Box::new(right),
-                span,
-            };
+            if self.match_token(&TokenKind::DotDot) {
+                let right = self.parse_shift()?;
+                left = Expression::Range {
+                    start: Box::new(left),
+                    end: Box::new(right),
+                    inclusive: true,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::DotDotLess) {
+                let right = self.parse_shift()?;
+                left = Expression::Range {
+                    start: Box::new(left),
+                    end: Box::new(right),
+                    inclusive: false,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::Is) {
+                let pattern = self.parse_pattern()?;
+                left = Expression::IsPattern {
+                    expr: Box::new(left),
+                    pattern,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::In) {
+                let right = self.parse_shift()?;
+                left = Expression::Binary {
+                    left: Box::new(left),
+                    op: BinaryOp::Equal,
+                    right: Box::new(right),
+                    span,
+                };
+            } else {
+                let op = if self.match_token(&TokenKind::Less) {
+                    BinaryOp::LessThan
+                } else if self.match_token(&TokenKind::LessEqual) {
+                    BinaryOp::LessEqual
+                } else if self.match_token(&TokenKind::Greater) {
+                    BinaryOp::GreaterThan
+                } else {
+                    self.advance();
+                    BinaryOp::GreaterEqual
+                };
+                let right = self.parse_shift()?;
+                left = Expression::Binary {
+                    left: Box::new(left),
+                    op,
+                    right: Box::new(right),
+                    span,
+                };
+            }
         }
         Ok(left)
     }

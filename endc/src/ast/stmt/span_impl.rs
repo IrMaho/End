@@ -275,6 +275,10 @@ impl Statement {
             Statement::EquipEntity { span, .. } => span,
             Statement::FuseFeatures { span, .. } => span,
             Statement::ShapeDefinition(s) => &s.span,
+            Statement::DestructureAssign { span, .. } => span,
+            Statement::ExtendDecl { span, .. } => span,
+            Statement::LocalFunction(f) => &f.span,
+            Statement::FeaturePolicyDecl { span, .. } => span,
         }
     }
 }

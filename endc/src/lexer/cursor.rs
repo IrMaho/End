@@ -38,6 +38,14 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn peek_offset(&self, offset: usize) -> Option<char> {
+        if self.cursor + offset < self.chars.len() {
+            Some(self.chars[self.cursor + offset])
+        } else {
+            None
+        }
+    }
+
     pub fn advance(&mut self) -> Option<char> {
         if self.cursor < self.chars.len() {
             let ch = self.chars[self.cursor];

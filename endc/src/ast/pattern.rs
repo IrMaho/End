@@ -19,6 +19,12 @@ pub enum Pattern {
     },
     Literal(Literal),
     Ident(String),
+    Tuple(Vec<Pattern>),
+    Struct {
+        name: String,
+        fields: Vec<(String, Pattern)>,
+    },
+    Binding(String),
     Wildcard,
 }
 
