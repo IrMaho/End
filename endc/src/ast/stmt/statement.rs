@@ -6,7 +6,7 @@ use crate::ast::pattern::{Block, MatchArm};
 use crate::ast::expr::Expression;
 use crate::ast::decl::architecture::{ArchitectureRuleDef, ArchitectureTemplateDef, ContractDef, FeatureMigrationDef};
 use crate::ast::decl::capabilities::*;
-use crate::ast::decl::events::{EventDef, EventHubDef, ExtensionBlock, OperationDef};
+use crate::ast::decl::events::*;
 use crate::ast::decl::features::FeatureDef;
 use crate::ast::decl::functions_traits::{FunctionDef, FunctionParam, TraitMethodDef};
 use crate::ast::decl::modules::ModuleDef;
@@ -26,6 +26,7 @@ pub enum Statement {
     Return { value: Option<Expression>, span: Span, },
     Expression(Expression),
     If { condition: Expression, then_block: Block, else_block: Option<Block>, span: Span, },
+    Guard { condition: Expression, else_block: Block, span: Span, },
     While { condition: Expression, body: Block, span: Span, },
     ForIn { item_name: String, iterable: Expression, body: Block, span: Span, },
     ParallelFor { item_name: String, iterable: Expression, body: Block, span: Span, },
@@ -466,4 +467,18 @@ pub enum Statement {
     ExtendDecl { target: String, methods: Vec<FunctionDef>, properties: Vec<(String, Expression)>, span: Span, },
     LocalFunction(FunctionDef),
     FeaturePolicyDecl { name: String, rules: Vec<String>, span: Span, },
+    // Event Primitive & Execution Graph Statements
+    OnEventStmt(OnEventDef),
+    OnceEventStmt(OnceEventDef),
+    EveryEventStmt(EveryEventDef),
+    AfterEventStmt(AfterEventDef),
+    BeforeEventStmt(BeforeEventDef),
+    ReactiveStateStmt(ReactiveStateDef),
+    DeriveStmt(DeriveDef),
+    TopologyStmt(TopologyDef),
+    EventStreamOpStmt(EventStreamOpDef),
+    EventTransactionStmt(EventTransactionDef),
+    EventFormalInvariantStmt(EventFormalInvariantDef),
+    EventEvolveStmt(EventEvolveDef),
+    EventControlStmt(EventControlDef),
 }

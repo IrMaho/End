@@ -1655,6 +1655,10 @@ impl CBackend {
                             collect_call_names(&eb.statements, names);
                         }
                     }
+                    Statement::Guard { condition, else_block, .. } => {
+                        collect_expr_calls(condition, names);
+                        collect_call_names(&else_block.statements, names);
+                    }
                     Statement::While { condition, body, .. } => {
                         collect_expr_calls(condition, names);
                         collect_call_names(&body.statements, names);
@@ -2138,6 +2142,18 @@ impl CBackend {
                     self.gen_block_statements(&eb.statements);
                     self.indent_level -= 1;
                 }
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::Guard {
+                condition,
+                else_block,
+                ..
+            } => {
+                let cond_str = self.gen_expression(condition);
+                self.output.push_str(&format!("{}if (!({})) {{\n", self.indent(), cond_str));
+                self.indent_level += 1;
+                self.gen_block_statements(&else_block.statements);
+                self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::While { condition, body, .. } => {
@@ -3314,6 +3330,79 @@ Statement::Spawn { call, .. } => {
             }
             Statement::RegressionGuardDecl { items, .. } => {
                 self.output.push_str(&format!("{}/* 🛡️ [REGRESSION GUARD]: [{}] */\n", self.indent(), items.join(", ")));
+            }
+            Statement::OnEventStmt(on_ev) => {
+                self.output.push_str(&format!("{}/* 🔔 [ON EVENT '{}'] */\n", self.indent(), on_ev.event_pattern));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&on_ev.body.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::OnceEventStmt(once_ev) => {
+                self.output.push_str(&format!("{}/* 🔔 [ONCE EVENT '{}'] */\n", self.indent(), once_ev.event_pattern));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&once_ev.body.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::EveryEventStmt(ev) => {
+                self.output.push_str(&format!("{}/* ⏱️ [EVERY TICK: {}] */\n", self.indent(), ev.interval_str));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&ev.body.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::AfterEventStmt(ev) => {
+                self.output.push_str(&format!("{}/* ⏱️ [AFTER DELAY: {}] */\n", self.indent(), ev.delay_str));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&ev.body.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::BeforeEventStmt(ev) => {
+                self.output.push_str(&format!("{}/* 🛡️ [BEFORE HOOK '{}'] */\n", self.indent(), ev.event_pattern));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&ev.body.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::ReactiveStateStmt(st) => {
+                let init_str = self.gen_expression(&st.initial_val);
+                self.output.push_str(&format!("{}int64_t {} = {}; /* ⚡ Reactive State */\n", self.indent(), st.name, init_str));
+            }
+            Statement::DeriveStmt(d) => {
+                let expr_str = self.gen_expression(&d.expr);
+                self.output.push_str(&format!("{}int64_t {} = {}; /* 🔄 Derived State */\n", self.indent(), d.target_var, expr_str));
+            }
+            Statement::TopologyStmt(top) => {
+                self.output.push_str(&format!("{}/* 🌐 [TOPOLOGY GRAPH '{}']: nodes=[{}], edges=[{}] */\n",
+                    self.indent(), top.name, top.nodes.join(", "), top.edges.iter().map(|(a,b)| format!("{}->{}", a, b)).collect::<Vec<_>>().join(", ")));
+            }
+            Statement::EventStreamOpStmt(op) => {
+                self.output.push_str(&format!("{}/* 🌊 [STREAM OP '{}' ON '{}']: params=[{}] */\n", self.indent(), op.op_kind, op.target, op.params.join(", ")));
+                if let Some(b) = &op.body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    self.gen_block_statements(&b.statements);
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::EventTransactionStmt(tx) => {
+                self.output.push_str(&format!("{}/* 🔒 [EVENT TRANSACTION] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&tx.statements);
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::EventControlStmt(ctl) => {
+                self.output.push_str(&format!("{}/* 🎮 [EVENT CONTROL '{}' ON '{}']: args=[{}] */\n", self.indent(), ctl.action, ctl.target, ctl.args.join(", ")));
             }
             _ => {
                 // Extensibility & Architectural Declarations (compile-time semantics & verification)

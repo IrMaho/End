@@ -13,6 +13,7 @@ pub mod control_flow;
 pub mod governance_proposals;
 pub mod loops_branches;
 pub mod reactive_events;
+pub mod event_streams_and_topologies;
 pub mod refactoring_ops;
 pub mod syntax_composition;
 
@@ -23,6 +24,9 @@ impl Parser {
         let mut statements = Vec::new();
 
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+            if self.match_token(&TokenKind::SemiColon) {
+                continue;
+            }
             if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" } else { false }) {
                 let f = self.parse_function(false, vec![])?;
                 statements.push(Statement::LocalFunction(f));
@@ -55,6 +59,9 @@ impl Parser {
             return Ok(stmt);
         }
         if let Some(stmt) = self.parse_reactive_events_statement(&peek_k, &span)? {
+            return Ok(stmt);
+        }
+        if let Some(stmt) = self.parse_event_streams_and_topologies_statement(&peek_k, &span)? {
             return Ok(stmt);
         }
         if let Some(stmt) = self.parse_agent_workflow_statement(&peek_k, &span)? {

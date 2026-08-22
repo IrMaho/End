@@ -133,6 +133,21 @@ impl CraneliftBackend {
 
                 writeln!(self.output_clif, "{}:", merge_blk).unwrap();
             }
+            Statement::Guard { condition, else_block, .. } => {
+                let cond_v = self.generate_expression_clif(condition)?;
+                let else_blk = self.next_block();
+                let merge_blk = self.next_block();
+
+                writeln!(self.output_clif, "    brif {}, {}(), {}()", cond_v, merge_blk, else_blk).unwrap();
+
+                writeln!(self.output_clif, "{}:", else_blk).unwrap();
+                for s in &else_block.statements {
+                    self.generate_statement_clif(s)?;
+                }
+                writeln!(self.output_clif, "    jump {}()", merge_blk).unwrap();
+
+                writeln!(self.output_clif, "{}:", merge_blk).unwrap();
+            }
             Statement::While { condition, body, .. } => {
                 let cond_blk = self.next_block();
                 let body_blk = self.next_block();

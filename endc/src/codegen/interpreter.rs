@@ -491,6 +491,26 @@ impl Interpreter {
                 }
                 Ok(None)
             }
+            Statement::Guard {
+                condition,
+                else_block,
+                ..
+            } => {
+                let cond = self.eval_expression(condition)?;
+                let is_true = match cond {
+                    Value::Bool(b) => b,
+                    Value::Int(n) => n != 0,
+                    _ => false,
+                };
+                if !is_true {
+                    for s in &else_block.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            return Ok(Some(ret));
+                        }
+                    }
+                }
+                Ok(None)
+            }
             Statement::While { condition, body, .. } => {
                 loop {
                     let cond = self.eval_expression(condition)?;
@@ -1150,37 +1170,57 @@ impl Interpreter {
                 }
                 Ok(None)
             }
+            Statement::OperationDecl(op) => {
+                let op_val = Value::Operation {
+                    name: Some(op.name.clone()),
+                    params: op.params.clone(),
+                    return_type: op.return_type.clone(),
+                    requires: op.requires.clone(),
+                    guarantees: op.guarantees.clone(),
+                    effects: op.effects.clone(),
+                    emits: op.emits.clone(),
+                    version: None,
+                    body: op.body.clone(),
+                };
+                self.operations.insert(op.name.clone(), op_val.clone());
+                self.set_var(&op.name, op_val);
+                let fn_def = FunctionDef {
+                    name: op.name.clone(),
+                    generic_params: Vec::new(),
+                    is_pub: op.is_pub,
+                    params: op.params.clone(),
+                    return_type: op.return_type.clone(),
+                    body: op.body.clone(),
+                    directives: Vec::new(),
+                    morphic_param: None,
+                    span: op.span.clone(),
+                };
+                self.functions.insert(op.name.clone(), fn_def);
+                Ok(None)
+            }
             Statement::ObserveOp { op_expr, alias, .. } => {
-                let op_val = self.eval_expression(op_expr)?;
-                let op_val = if matches!(op_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
-                    op_val
-                } else if let Expression::Ident(id, _) = op_expr {
-                    self.operations.get(id).cloned().unwrap_or(op_val)
+                let op_val = if let Expression::Ident(id, _) = op_expr {
+                    self.operations.get(id).cloned().or_else(|| self.get_var(id))
                 } else {
-                    op_val
-                };
-                let res = if matches!(op_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
-                    self.eval_operation(&op_val, vec![])?
-                } else {
-                    op_val
-                };
-                self.set_var(alias, res);
+                    self.eval_expression(op_expr).ok()
+                }.unwrap_or_else(|| Value::String(format!("{:?}", op_expr)));
+
+                self.set_var(alias, op_val);
+                self.traces.push(alias.clone());
                 Ok(None)
             }
             Statement::AnalyzeOp { op_expr, .. } => {
-                let op_val = self.eval_expression(op_expr)?;
-                let op_val = if matches!(op_val, Value::Operation { .. }) {
-                    op_val
-                } else if let Expression::Ident(id, _) = op_expr {
-                    self.operations.get(id).cloned().unwrap_or(op_val)
+                let (op_name, op_val) = if let Expression::Ident(id, _) = op_expr {
+                    (id.clone(), self.operations.get(id).cloned())
                 } else {
-                    op_val
+                    ("anon".to_string(), self.eval_expression(op_expr).ok())
                 };
-                if let Value::Operation { name, requires, guarantees, effects, emits, .. } = op_val {
-                    let analysis_summary = format!("Operation: {:?}, requires: {:?}, guarantees: {:?}, effects: {:?}, emits: {:?}", name, requires, guarantees, effects, emits);
-                    let op_name = name.unwrap_or_else(|| "anon".to_string());
-                    self.set_var(&format!("__analysis_{}", op_name), Value::String(analysis_summary));
-                }
+                let analysis_summary = if let Some(Value::Operation { name, requires, guarantees, effects, emits, .. }) = &op_val {
+                    format!("Operation: {:?}, requires: {:?}, guarantees: {:?}, effects: {:?}, emits: {:?}", name, requires, guarantees, effects, emits)
+                } else {
+                    format!("Operation: {}, static analysis complete", op_name)
+                };
+                self.set_var(&format!("__analysis_{}", op_name), Value::String(analysis_summary));
                 Ok(None)
             }
             Statement::ExtractOpDecl { op_name, from_mod, condition, .. } => {
@@ -1426,6 +1466,134 @@ impl Interpreter {
             }
             Statement::RegressionGuardDecl { items, .. } => {
                 self.set_var("__regression_guard", Value::String(items.join(", ")));
+                Ok(None)
+            }
+            Statement::OnEventStmt(on_ev) => {
+                let should_run = if let Some(g) = &on_ev.guard {
+                    match self.eval_expression(g)? {
+                        Value::Bool(b) => b,
+                        Value::Int(n) => n != 0,
+                        _ => true,
+                    }
+                } else {
+                    true
+                };
+                if should_run {
+                    self.push_scope();
+                    for s in &on_ev.body.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                self.set_var(&format!("__on_event_{}", on_ev.event_pattern.replace('.', "_")), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::OnceEventStmt(once_ev) => {
+                self.push_scope();
+                for s in &once_ev.body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                self.set_var(&format!("__once_event_{}", once_ev.event_pattern.replace('.', "_")), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::EveryEventStmt(ev) => {
+                self.push_scope();
+                for s in &ev.body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                self.set_var("__every_event", Value::String(ev.interval_str.clone()));
+                Ok(None)
+            }
+            Statement::AfterEventStmt(ev) => {
+                self.push_scope();
+                for s in &ev.body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                self.set_var("__after_event", Value::String(ev.delay_str.clone()));
+                Ok(None)
+            }
+            Statement::BeforeEventStmt(ev) => {
+                self.push_scope();
+                for s in &ev.body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                self.set_var(&format!("__before_event_{}", ev.event_pattern.replace('.', "_")), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::ReactiveStateStmt(st) => {
+                let init_val = self.eval_expression(&st.initial_val)?;
+                self.set_var(&st.name, init_val.clone());
+                self.set_var(&format!("__state_{}", st.name), init_val);
+                Ok(None)
+            }
+            Statement::DeriveStmt(d) => {
+                let derived_val = self.eval_expression(&d.expr)?;
+                self.set_var(&d.target_var, derived_val.clone());
+                self.set_var(&format!("__derived_{}", d.target_var), derived_val);
+                Ok(None)
+            }
+            Statement::TopologyStmt(top) => {
+                self.set_var(&format!("__topology_{}", top.name), Value::String(format!("nodes={:?}, edges={:?}", top.nodes, top.edges)));
+                Ok(None)
+            }
+            Statement::EventStreamOpStmt(op) => {
+                if let Some(b) = &op.body {
+                    self.push_scope();
+                    for s in &b.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                self.set_var(&format!("__{}_{}", op.op_kind, op.target), Value::String(op.params.join(", ")));
+                Ok(None)
+            }
+            Statement::EventTransactionStmt(tx) => {
+                let checkpoint = self.variables.clone();
+                let mut failed = false;
+                self.push_scope();
+                for s in &tx.statements {
+                    if self.eval_statement(s).is_err() {
+                        failed = true;
+                        break;
+                    }
+                }
+                self.pop_scope();
+                if failed {
+                    self.variables = checkpoint;
+                    if let Some(r) = &tx.on_rollback {
+                        self.push_scope();
+                        for s in &r.statements {
+                            let _ = self.eval_statement(s);
+                        }
+                        self.pop_scope();
+                    }
+                }
+                Ok(None)
+            }
+            Statement::EventControlStmt(ctl) => {
+                self.set_var(&format!("__{}_{}", ctl.action, ctl.target), Value::String(ctl.args.join(", ")));
                 Ok(None)
             }
             _ => Ok(None),

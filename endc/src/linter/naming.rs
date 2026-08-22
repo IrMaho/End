@@ -122,6 +122,9 @@ pub(crate) fn check_function_naming(&mut self, name: &str, line: usize) {
                         self.check_variables_in_block(else_b);
                     }
                 }
+                Statement::Guard { else_block, .. } => {
+                    self.check_variables_in_block(else_block);
+                }
                 Statement::While { body, .. }
                 | Statement::ForIn { body, .. }
                 | Statement::ParallelFor { body, .. }

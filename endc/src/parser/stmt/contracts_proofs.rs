@@ -163,6 +163,7 @@ impl Parser {
                     self.advance();
                     let e = self.parse_expression()?;
                     self.expect(TokenKind::RBrace)?;
+                    self.match_token(&TokenKind::SemiColon);
                     e
                 } else {
                     let e = self.parse_expression()?;
@@ -177,6 +178,7 @@ impl Parser {
                     self.advance();
                     let e = self.parse_expression()?;
                     self.expect(TokenKind::RBrace)?;
+                    self.match_token(&TokenKind::SemiColon);
                     e
                 } else {
                     let e = self.parse_expression()?;
@@ -191,6 +193,7 @@ impl Parser {
                     self.advance();
                     let e = self.parse_expression()?;
                     self.expect(TokenKind::RBrace)?;
+                    self.match_token(&TokenKind::SemiColon);
                     e
                 } else {
                     let e = self.parse_expression()?;
@@ -211,6 +214,7 @@ impl Parser {
                     self.advance();
                     let e = self.parse_expression()?;
                     self.expect(TokenKind::RBrace)?;
+                    self.match_token(&TokenKind::SemiColon);
                     e
                 } else {
                     let e = self.parse_expression()?;

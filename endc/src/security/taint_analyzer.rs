@@ -479,6 +479,10 @@ impl TaintAndInformationFlowAnalyzer {
                         self.analyze_block_ast(eb);
                     }
                 }
+                Statement::Guard { condition, else_block, .. } => {
+                    self.check_expr_sinks(condition, 0, 0);
+                    self.analyze_block_ast(else_block);
+                }
                 Statement::While { condition, body, .. } => {
                     self.check_expr_sinks(condition, 0, 0);
                     self.analyze_block_ast(body);

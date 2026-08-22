@@ -112,6 +112,17 @@ impl WasmBackend {
                 }
                 writeln!(self.output_wat, "{})", indent).unwrap();
             }
+            Statement::Guard { condition, else_block, .. } => {
+                self.generate_expression_wat(condition, indent)?;
+                writeln!(self.output_wat, "{}i32.eqz", indent).unwrap();
+                writeln!(self.output_wat, "{}(if", indent).unwrap();
+                writeln!(self.output_wat, "{}  (then", indent).unwrap();
+                for s in &else_block.statements {
+                    self.generate_statement_wat(s, &format!("{}    ", indent))?;
+                }
+                writeln!(self.output_wat, "{}  )", indent).unwrap();
+                writeln!(self.output_wat, "{})", indent).unwrap();
+            }
             Statement::While { condition, body, .. } => {
                 writeln!(self.output_wat, "{}(block $while_break", indent).unwrap();
                 writeln!(self.output_wat, "{}  (loop $while_loop", indent).unwrap();

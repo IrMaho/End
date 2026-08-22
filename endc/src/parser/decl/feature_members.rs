@@ -435,6 +435,24 @@ impl Parser {
                                 }
                                 self.expect(TokenKind::RBrace)?;
                             }
+                        } else if k == "policy" || k == "rules" || k == "constraints" {
+                            if self.check(&TokenKind::LBrace) {
+                                self.advance();
+                                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                                    let _ = self.parse_identifier_or_string();
+                                    self.match_token(&TokenKind::Comma);
+                                    self.match_token(&TokenKind::SemiColon);
+                                }
+                                self.expect(TokenKind::RBrace)?;
+                            } else {
+                                self.match_token(&TokenKind::SemiColon);
+                            }
+                        } else if self.check(&TokenKind::LBrace) {
+                            self.advance();
+                            while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                                self.advance();
+                            }
+                            self.expect(TokenKind::RBrace)?;
                         } else {
                             self.match_token(&TokenKind::SemiColon);
                         }

@@ -9,6 +9,7 @@ impl Statement {
             Statement::Return { span, .. } => span,
             Statement::Expression(expr) => expr.span(),
             Statement::If { span, .. } => span,
+            Statement::Guard { span, .. } => span,
             Statement::While { span, .. } => span,
             Statement::ForIn { span, .. } => span,
             Statement::ParallelFor { span, .. } => span,
@@ -279,6 +280,19 @@ impl Statement {
             Statement::ExtendDecl { span, .. } => span,
             Statement::LocalFunction(f) => &f.span,
             Statement::FeaturePolicyDecl { span, .. } => span,
+            Statement::OnEventStmt(e) => &e.span,
+            Statement::OnceEventStmt(e) => &e.span,
+            Statement::EveryEventStmt(e) => &e.span,
+            Statement::AfterEventStmt(e) => &e.span,
+            Statement::BeforeEventStmt(e) => &e.span,
+            Statement::ReactiveStateStmt(e) => &e.span,
+            Statement::DeriveStmt(e) => &e.span,
+            Statement::TopologyStmt(e) => &e.span,
+            Statement::EventStreamOpStmt(e) => &e.span,
+            Statement::EventTransactionStmt(e) => &e.span,
+            Statement::EventFormalInvariantStmt(e) => &e.span,
+            Statement::EventEvolveStmt(e) => &e.span,
+            Statement::EventControlStmt(e) => &e.span,
         }
     }
 }

@@ -81,6 +81,9 @@ fn count_nested_statements(stmt: &Statement) -> usize {
             }
             c
         }
+        Statement::Guard { else_block, .. } => {
+            else_block.statements.len()
+        }
         Statement::While { body, .. } | Statement::ForIn { body, .. } | Statement::ParallelFor { body, .. } => {
             body.statements.len()
         }
@@ -112,6 +115,13 @@ fn complexity_of_statement(stmt: &Statement) -> usize {
                 for s in &else_b.statements {
                     c += complexity_of_statement(s);
                 }
+            }
+            c
+        }
+        Statement::Guard { else_block, .. } => {
+            let mut c: usize = 1;
+            for s in &else_block.statements {
+                c += complexity_of_statement(s);
             }
             c
         }

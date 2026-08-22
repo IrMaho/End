@@ -46,6 +46,7 @@ pub enum TokenKind {
     Lease,    // 'lease'
     Borrow,   // 'borrow'
     During,   // 'during'
+    Guard,    // 'guard'
 
     // 50 Next-Gen & AI-Native Semantics Tokens
     Intent,       // 'intent'
@@ -390,6 +391,35 @@ pub enum TokenKind {
     Only,
     Section,
     Before,
+
+    // Event & Reactive Graph Primitives
+    BiArrow,              // '<->'
+    TildeBiArrow,         // '<~>'
+    Once,                 // 'once'
+    Every,                // 'every'
+    State,                // 'state'
+    Derive,               // 'derive'
+    Topology,             // 'topology'
+    Debounce,             // 'debounce'
+    Throttle,             // 'throttle'
+    Sample,               // 'sample'
+    Coalesce,             // 'coalesce'
+    Window,               // 'window'
+    Ack,                  // 'ack'
+    RequireAck,           // 'require_ack'
+    Replayable,           // 'replayable'
+    Durable,              // 'durable'
+    EventSourced,         // 'event_sourced'
+    EventTransaction,     // 'event_transaction'
+    Quarantine,           // 'quarantine'
+    Publish,              // 'publish'
+    Drain,                // 'drain'
+    Pause,                // 'pause'
+    Resume,               // 'resume'
+    CircuitBreaker,       // 'circuit_breaker'
+    RetryPolicy,          // 'retry_policy'
+    DeadLetterQueue,      // 'dead_letter_queue'
+    Where,                // 'where'
 
     EOF,
 }

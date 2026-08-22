@@ -99,6 +99,9 @@ mod tests {
         for input in malformed_inputs {
             let res = parse_str(input);
             // Parser must return Err without any unhandled panic!
+            if !res.is_err() {
+                eprintln!("FAILED FOR INPUT: {} -> {:?}", input, res);
+            }
             assert!(res.is_err());
         }
     }

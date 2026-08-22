@@ -165,7 +165,80 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Event)?;
         let name = self.parse_identifier_or_keyword()?;
+        let mut generic_params = Vec::new();
+        let mut parent_event = None;
+        let mut channel_kind = None;
+        let mut channel_target = None;
+        let mut with_attributes = Vec::new();
         let mut fields = Vec::new();
+        let directives = Vec::new();
+
+        // Generic event streams: event Stream<T>
+        if self.match_token(&TokenKind::Less) {
+            while !self.check(&TokenKind::Greater) && !self.check(&TokenKind::EOF) {
+                generic_params.push(self.parse_identifier_or_keyword()?);
+                if !self.match_token(&TokenKind::Comma) { break; }
+            }
+            self.expect(TokenKind::Greater)?;
+        }
+
+        // Parenthesized payload fields: event UserLogin(user_id: str, ip: str)
+        if self.match_token(&TokenKind::LParen) {
+            while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                let f_span = self.current_span();
+                let f_name = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::Colon);
+                let f_type = self.parse_type().unwrap_or(Type::Void);
+                fields.push(StructField {
+                    name: f_name,
+                    field_type: f_type,
+                    is_pub: true,
+                    span: f_span,
+                });
+                if !self.match_token(&TokenKind::Comma) { break; }
+            }
+            self.expect(TokenKind::RParen)?;
+        }
+
+        // Channel definitions:
+        // event Client <-> Server
+        // event Inbound -> Outbound
+        // event Sensor <~> Hub
+        if self.match_token(&TokenKind::BiArrow) {
+            channel_kind = Some(EventChannelKind::Duplex);
+            channel_target = Some(self.parse_identifier_or_keyword()?);
+        } else if self.match_token(&TokenKind::Arrow) {
+            channel_kind = Some(EventChannelKind::SingleDirection);
+            channel_target = Some(self.parse_identifier_or_keyword()?);
+        } else if self.match_token(&TokenKind::TildeBiArrow) {
+            channel_kind = Some(EventChannelKind::HalfDuplex);
+            channel_target = Some(self.parse_identifier_or_keyword()?);
+        }
+
+        // Inherited/subtyped event: event SystemAlert : ErrorEvent
+        if self.match_token(&TokenKind::Colon) {
+            parent_event = Some(self.parse_identifier_or_keyword()?);
+        }
+
+        // Event options & attributes: with ring_buffer(4096), wal_persisted, retention(30d)
+        if self.match_token(&TokenKind::With) {
+            while !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) {
+                let attr_name = self.parse_identifier_or_keyword()?;
+                let mut attr_full = attr_name;
+                if self.match_token(&TokenKind::LParen) {
+                    attr_full.push('(');
+                    while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
+                        let arg = self.parse_identifier_or_keyword_or_int().unwrap_or_else(|_| "1".to_string());
+                        attr_full.push_str(&arg);
+                        if self.match_token(&TokenKind::Comma) { attr_full.push(','); }
+                    }
+                    self.expect(TokenKind::RParen)?;
+                    attr_full.push(')');
+                }
+                with_attributes.push(attr_full);
+                if !self.match_token(&TokenKind::Comma) { break; }
+            }
+        }
 
         if self.match_token(&TokenKind::LBrace) {
             while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
@@ -190,7 +263,13 @@ impl Parser {
         Ok(EventDef {
             name,
             is_pub,
+            generic_params,
+            parent_event,
+            channel_kind,
+            channel_target,
+            with_attributes,
             fields,
+            directives,
             span,
         })
     }
@@ -203,6 +282,7 @@ impl Parser {
         self.expect(TokenKind::LBrace)?;
         let mut owns_events = Vec::new();
         let mut handlers = Vec::new();
+        let mut routes = Vec::new();
 
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             if self.check(&TokenKind::Owns) {
@@ -239,6 +319,13 @@ impl Parser {
                     body,
                     span: h_span,
                 });
+            } else if self.check(&TokenKind::Ident("route".to_string())) {
+                self.advance();
+                let pattern = self.parse_identifier_or_string()?;
+                self.expect(TokenKind::Arrow)?;
+                let dest = self.parse_identifier_or_string()?;
+                self.match_token(&TokenKind::SemiColon);
+                routes.push((pattern, dest));
             } else {
                 self.advance();
             }
@@ -250,6 +337,7 @@ impl Parser {
             is_pub,
             owns_events,
             handlers,
+            routes,
             span,
         })
     }

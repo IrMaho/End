@@ -1,0 +1,91 @@
+// ============================================================================
+// End Language - Feature 17: Event Primitives & First-Class Execution Graphs
+// ============================================================================
+
+// 1. Event Type Declarations & Channel Modalities
+event SystemTick;
+event UserLoggedIn(user_id: str, timestamp: i64);
+event InboundNetworkPacket(bytes: i64, source_ip: str);
+
+event ClientChannel <-> ServerChannel;
+event IngestChannel <~> ComputeChannel;
+event InboundStream -> OutboundStream;
+
+event CriticalSecurityAlert : SecurityEvent with ring_buffer(4096), wal_persisted;
+
+// 2. Event Execution Topologies
+topology IngestionPipeline {
+    RawIngest -> SchemaValidator -> DataEnricher -> StorageSink;
+}
+
+// 3. Main Workflow Executing Reactive Pipeline
+fn main() -> i64 {
+    // Reactive State & Auto-Tracking
+    state user_count = 0;
+    state unit_price = 100;
+    state order_qty = 5;
+    derive total_revenue from unit_price, order_qty => unit_price * order_qty;
+
+    // Emitting Events
+    emit UserLoggedIn("usr_9981", 1724340000);
+    emit InboundNetworkPacket(2048, "10.0.0.1");
+
+    // Event Triggers with Guards, Filters, and Projections
+    on UserLoggedIn when user_count < 1000 where timestamp > 0 => user_id {
+        user_count = user_count + 1;
+    }
+
+    on user_count.changed {
+        val current_users = user_count;
+    }
+
+    once SystemTick {
+        val initialized = true;
+    }
+
+    every 100ms {
+        val heartbeat = 1;
+    }
+
+    after 500ms {
+        val delayed_sync = 1;
+    }
+
+    before StorageSink {
+        val pre_flush_audit = true;
+    }
+
+    // Stream Rate Control & Window Operators
+    debounce 200ms InboundNetworkPacket {
+        val debounced = true;
+    }
+
+    throttle 16ms InboundNetworkPacket {
+        val throttled = true;
+    }
+
+    sample 10 InboundNetworkPacket {
+        val sampled = true;
+    }
+
+    window sliding(100, 10) InboundNetworkPacket {
+        val windowed = true;
+    }
+
+    // Backpressure, Reliability & Event Transactions
+    event_transaction {
+        user_count = user_count + 1;
+        ack InboundNetworkPacket;
+    } rollback {
+        user_count = user_count - 1;
+    }
+
+    // Graph Controls & Circuit Breakers
+    circuit_breaker IngestionPipeline failure_threshold: 5, reset_timeout: 3000ms;
+    retry_policy IngestionPipeline max_attempts: 3, backoff: exponential(100ms);
+    dead_letter_queue IngestionPipeline target: "dlq_storage", max_size: 10000;
+
+    fuse IngestChannel, ComputeChannel as UnifiedChannel;
+
+    ret 0;
+}

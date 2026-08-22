@@ -48,7 +48,15 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
                 }
             }
             '<' => {
-                if lexer.peek() == Some('+') && lexer.peek_next() == Some('=') {
+                if lexer.peek() == Some('-') && lexer.peek_next() == Some('>') {
+                    lexer.advance(); // consume '-'
+                    lexer.advance(); // consume '>'
+                    TokenKind::BiArrow
+                } else if lexer.peek() == Some('~') && lexer.peek_next() == Some('>') {
+                    lexer.advance(); // consume '~'
+                    lexer.advance(); // consume '>'
+                    TokenKind::TildeBiArrow
+                } else if lexer.peek() == Some('+') && lexer.peek_next() == Some('=') {
                     lexer.advance(); // consume '+'
                     lexer.advance(); // consume '='
                     TokenKind::LessPlusEqual

@@ -278,6 +278,10 @@ impl Parser {
             TokenKind::Impact => {
                 self.advance();
                 let target = self.parse_identifier_or_string()?;
+                if self.check(&TokenKind::On) {
+                    self.advance();
+                    let _graph = self.parse_identifier_or_string()?;
+                }
                 self.match_token(&TokenKind::SemiColon);
                 Ok(Statement::ImpactQuery { target, span })
             }

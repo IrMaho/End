@@ -30,6 +30,7 @@ impl Parser {
             TokenKind::Mod => Ok("mod".to_string()),
             TokenKind::With => Ok("with".to_string()),
             TokenKind::Extern => Ok("extern".to_string()),
+            TokenKind::Guard => Ok("guard".to_string()),
             TokenKind::Intent => Ok("intent".to_string()),
             TokenKind::Prove => Ok("prove".to_string()),
             TokenKind::Assume => Ok("assume".to_string()),
@@ -292,15 +293,33 @@ impl Parser {
             TokenKind::Section => Ok("section".to_string()),
             TokenKind::Before => Ok("before".to_string()),
             TokenKind::Is => Ok("is".to_string()),
+            TokenKind::Once => Ok("once".to_string()),
+            TokenKind::Every => Ok("every".to_string()),
+            TokenKind::State => Ok("state".to_string()),
+            TokenKind::Derive => Ok("derive".to_string()),
+            TokenKind::Topology => Ok("topology".to_string()),
+            TokenKind::Debounce => Ok("debounce".to_string()),
+            TokenKind::Throttle => Ok("throttle".to_string()),
+            TokenKind::Sample => Ok("sample".to_string()),
+            TokenKind::Coalesce => Ok("coalesce".to_string()),
+            TokenKind::Window => Ok("window".to_string()),
+            TokenKind::Ack => Ok("ack".to_string()),
+            TokenKind::RequireAck => Ok("require_ack".to_string()),
+            TokenKind::Replayable => Ok("replayable".to_string()),
+            TokenKind::Durable => Ok("durable".to_string()),
+            TokenKind::EventSourced => Ok("event_sourced".to_string()),
+            TokenKind::EventTransaction => Ok("event_transaction".to_string()),
+            TokenKind::Quarantine => Ok("quarantine".to_string()),
+            TokenKind::Publish => Ok("publish".to_string()),
+            TokenKind::Drain => Ok("drain".to_string()),
+            TokenKind::Pause => Ok("pause".to_string()),
+            TokenKind::Resume => Ok("resume".to_string()),
+            TokenKind::CircuitBreaker => Ok("circuit_breaker".to_string()),
+            TokenKind::RetryPolicy => Ok("retry_policy".to_string()),
+            TokenKind::DeadLetterQueue => Ok("dead_letter_queue".to_string()),
+            TokenKind::Where => Ok("where".to_string()),
             TokenKind::Ident(s) | TokenKind::StringLit(s) => Ok(s),
-            other => {
-                let s = format!("{:?}", other);
-                if !s.is_empty() && s.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                    Ok(s.to_lowercase())
-                } else {
-                    Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line))
-                }
-            }
+            other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
         }
     }
 

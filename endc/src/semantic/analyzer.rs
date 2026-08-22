@@ -653,6 +653,10 @@ impl SemanticAnalyzer {
                     self.analyze_block(eb);
                 }
             }
+            Statement::Guard { condition, else_block, .. } => {
+                self.analyze_expression(condition);
+                self.analyze_block(else_block);
+            }
             Statement::While { condition, body, .. } => {
                 self.analyze_expression(condition);
                 self.analyze_block(body);

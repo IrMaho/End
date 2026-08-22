@@ -196,7 +196,7 @@ impl Parser {
                     if self.match_token(&TokenKind::Into) || self.match_token(&TokenKind::To) {
                         let _into_mod = self.parse_identifier_or_keyword()?;
                     }
-                    if self.peek_kind() == &TokenKind::Ident("where".to_string()) || self.match_token(&TokenKind::When) {
+                    if self.match_token(&TokenKind::Where) || self.match_token(&TokenKind::When) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "where" } else { false }) {
                         if self.peek_kind() == &TokenKind::Ident("where".to_string()) {
                             self.advance();
                         }

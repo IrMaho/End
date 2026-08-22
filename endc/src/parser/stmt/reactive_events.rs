@@ -3,52 +3,74 @@ use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser {
-    pub(crate) fn parse_reactive_events_statement(&mut self, peek_k: &TokenKind, span: &Span) -> Result<Option<Statement>, String> {
-        match peek_k {
-            TokenKind::Observe
-            | TokenKind::Emit
-            | TokenKind::Operation
-            | TokenKind::Event
-            | TokenKind::Hub
-            | TokenKind::Watch
-            | TokenKind::React
-            | TokenKind::Stream
-            | TokenKind::Flow
-            | TokenKind::Race
-            | TokenKind::Hedge
-            | TokenKind::CancelSafe => {}
-            _ => return Ok(None),
-        }
-
+    pub(crate) fn parse_reactive_events_statement(
+        &mut self,
+        peek_k: &TokenKind,
+        span: &Span,
+    ) -> Result<Option<Statement>, String> {
         let span = span.clone();
-        let stmt = self.parse_reactive_events_statement_inner(peek_k, span)?;
-        Ok(Some(stmt))
-    }
-
-    fn parse_reactive_events_statement_inner(&mut self, peek_k: &TokenKind, span: Span) -> Result<Statement, String> {
         match peek_k {
+            TokenKind::Operation => {
+                Ok(Some(Statement::OperationDecl(self.parse_operation(false)?)))
+            }
+            TokenKind::Event => {
+                Ok(Some(Statement::EventDecl(self.parse_event(false)?)))
+            }
+            TokenKind::Hub => {
+                Ok(Some(Statement::EventHubDecl(self.parse_event_hub(false)?)))
+            }
             TokenKind::Observe => {
                 self.advance();
                 if self.check(&TokenKind::LBracket) {
                     let metrics = self.parse_string_list()?;
                     self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::Observe { metrics, span })
-                } else {
-                    let ident_name = self.parse_identifier_or_keyword()?;
-                    let op_expr = Expression::Ident(ident_name, span.clone());
-                    if self.match_token(&TokenKind::As) {
-                        let alias = self.parse_identifier_or_keyword()?;
-                        self.match_token(&TokenKind::SemiColon);
-                        Ok(Statement::ObserveOp { op_expr, alias, span })
-                    } else {
-                        let mut metrics = vec![if let Expression::Ident(id, _) = &op_expr { id.clone() } else { format!("{:?}", op_expr) }];
-                        while self.match_token(&TokenKind::Comma) {
-                            metrics.push(self.parse_identifier_or_keyword()?);
-                        }
-                        self.match_token(&TokenKind::SemiColon);
-                        Ok(Statement::Observe { metrics, span })
-                    }
+                    return Ok(Some(Statement::Observe { metrics, span }));
                 }
+                let mut op_expr = self.parse_expression()?;
+                let mut alias = "trace".to_string();
+                if let Expression::Cast { expr, target_type, .. } = op_expr {
+                    op_expr = *expr;
+                    alias = target_type.to_string();
+                } else if self.match_token(&TokenKind::As) {
+                    alias = self.parse_identifier_or_keyword()?;
+                }
+                while self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_expression()?;
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Some(Statement::ObserveOp { op_expr, alias, span }))
+            }
+            TokenKind::On => {
+                self.advance();
+                let mut event_pattern = self.parse_identifier_or_keyword()?;
+                while self.match_token(&TokenKind::Dot) {
+                    event_pattern.push('.');
+                    event_pattern.push_str(&self.parse_identifier_or_keyword()?);
+                }
+                let mut guard = None;
+                let mut filter = None;
+                let mut projection = None;
+
+                if self.match_token(&TokenKind::When) {
+                    guard = Some(self.parse_expression()?);
+                }
+                if self.match_token(&TokenKind::Where) {
+                    filter = Some(self.parse_expression()?);
+                }
+                if self.match_token(&TokenKind::FatArrow) {
+                    projection = Some(self.parse_identifier_or_keyword_or_int()?);
+                }
+
+                let body = self.parse_block()?;
+                Ok(Some(Statement::OnEventStmt(OnEventDef {
+                    event_pattern,
+                    guard,
+                    filter,
+                    projection,
+                    body,
+                    directives: vec![],
+                    span,
+                })))
             }
             TokenKind::Emit => {
                 self.advance();
@@ -62,22 +84,83 @@ impl Parser {
                         }
                     }
                     self.expect(TokenKind::RParen)?;
+                } else if !self.check(&TokenKind::SemiColon) {
+                    args.push(self.parse_expression()?);
                 }
                 self.match_token(&TokenKind::SemiColon);
-                Ok(Statement::EmitEvent {
+                Ok(Some(Statement::EmitEvent {
                     event_name,
                     args,
                     span,
-                })
+                }))
             }
-            TokenKind::Operation => {
-                Ok(Statement::OperationDecl(self.parse_operation(false)?))
+            TokenKind::Once => {
+                self.advance();
+                let mut event_pattern = self.parse_identifier_or_keyword()?;
+                while self.match_token(&TokenKind::Dot) {
+                    event_pattern.push('.');
+                    event_pattern.push_str(&self.parse_identifier_or_keyword()?);
+                }
+                let body = self.parse_block()?;
+                Ok(Some(Statement::OnceEventStmt(OnceEventDef {
+                    event_pattern,
+                    body,
+                    span,
+                })))
             }
-            TokenKind::Event => {
-                Ok(Statement::EventDecl(self.parse_event(false)?))
+            TokenKind::Every => {
+                self.advance();
+                let mut interval_str = String::new();
+                if let TokenKind::IntLit(n) = self.peek_kind() {
+                    interval_str.push_str(&n.to_string());
+                    self.advance();
+                    if let TokenKind::Ident(unit) = self.peek_kind() {
+                        interval_str.push_str(unit);
+                        self.advance();
+                    }
+                } else {
+                    interval_str = self.parse_identifier_or_keyword_or_int()?;
+                }
+                let body = self.parse_block()?;
+                Ok(Some(Statement::EveryEventStmt(EveryEventDef {
+                    interval_str,
+                    body,
+                    span,
+                })))
             }
-            TokenKind::Hub => {
-                Ok(Statement::EventHubDecl(self.parse_event_hub(false)?))
+            TokenKind::After => {
+                self.advance();
+                let mut delay_str = String::new();
+                if let TokenKind::IntLit(n) = self.peek_kind() {
+                    delay_str.push_str(&n.to_string());
+                    self.advance();
+                    if let TokenKind::Ident(unit) = self.peek_kind() {
+                        delay_str.push_str(unit);
+                        self.advance();
+                    }
+                } else {
+                    delay_str = self.parse_identifier_or_keyword_or_int()?;
+                }
+                let body = self.parse_block()?;
+                Ok(Some(Statement::AfterEventStmt(AfterEventDef {
+                    delay_str,
+                    body,
+                    span,
+                })))
+            }
+            TokenKind::Before => {
+                self.advance();
+                let mut event_pattern = self.parse_identifier_or_keyword()?;
+                while self.match_token(&TokenKind::Dot) {
+                    event_pattern.push('.');
+                    event_pattern.push_str(&self.parse_identifier_or_keyword()?);
+                }
+                let body = self.parse_block()?;
+                Ok(Some(Statement::BeforeEventStmt(BeforeEventDef {
+                    event_pattern,
+                    body,
+                    span,
+                })))
             }
             TokenKind::Watch => {
                 self.advance();
@@ -93,7 +176,7 @@ impl Parser {
                         self.match_token(&TokenKind::FatArrow);
                         let handler = self.parse_block()?;
                         self.expect(TokenKind::RBrace)?;
-                        Ok(Statement::WatchBlock { target, event, handler, span })
+                        Ok(Some(Statement::WatchBlock { target, event, handler, span }))
                     } else {
                         let mut stmts = Vec::new();
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
@@ -101,11 +184,11 @@ impl Parser {
                         }
                         self.expect(TokenKind::RBrace)?;
                         let handler = Block { statements: stmts, span: span.clone() };
-                        Ok(Statement::WatchBlock { target, event, handler, span })
+                        Ok(Some(Statement::WatchBlock { target, event, handler, span }))
                     }
                 } else {
                     let handler = self.parse_block()?;
-                    Ok(Statement::WatchBlock { target, event, handler, span })
+                    Ok(Some(Statement::WatchBlock { target, event, handler, span }))
                 }
             }
             TokenKind::React => {
@@ -174,7 +257,7 @@ impl Parser {
                     self.parse_expression()?
                 };
                 let handler = self.parse_block()?;
-                Ok(Statement::ReactBlock { event, handler, span })
+                Ok(Some(Statement::ReactBlock { event, handler, span }))
             }
             TokenKind::Stream => {
                 self.advance();
@@ -210,7 +293,7 @@ impl Parser {
                     }
                     self.match_token(&TokenKind::SemiColon);
                 }
-                Ok(Statement::StreamBlock { source, operations, span })
+                Ok(Some(Statement::StreamBlock { source, operations, span }))
             }
             TokenKind::Flow => {
                 self.advance();
@@ -235,7 +318,7 @@ impl Parser {
                     }
                     self.match_token(&TokenKind::SemiColon);
                 }
-                Ok(Statement::FlowBlock { steps, span })
+                Ok(Some(Statement::FlowBlock { steps, span }))
             }
             TokenKind::Race => {
                 self.advance();
@@ -251,7 +334,7 @@ impl Parser {
                     self.match_token(&TokenKind::Comma);
                 }
                 self.expect(TokenKind::RBrace)?;
-                Ok(Statement::RaceBlock { branches, span })
+                Ok(Some(Statement::RaceBlock { branches, span }))
             }
             TokenKind::Hedge => {
                 self.advance();
@@ -268,14 +351,14 @@ impl Parser {
                 if self.match_token(&TokenKind::Fallback) {
                     fallback = self.parse_block()?;
                 }
-                Ok(Statement::HedgeBlock { delay_ms, primary, fallback, span })
+                Ok(Some(Statement::HedgeBlock { delay_ms, primary, fallback, span }))
             }
             TokenKind::CancelSafe => {
                 self.advance();
                 let body = self.parse_block()?;
-                Ok(Statement::CancelSafeBlock { body, span })
+                Ok(Some(Statement::CancelSafeBlock { body, span }))
             }
-            _ => unreachable!(),
+            _ => Ok(None),
         }
     }
 }

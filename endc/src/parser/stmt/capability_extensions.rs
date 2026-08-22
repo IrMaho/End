@@ -284,7 +284,15 @@ impl Parser {
             }
             TokenKind::Fuse => {
                 self.advance();
-                let features = self.parse_brace_ident_list()?;
+                let mut features = Vec::new();
+                if self.check(&TokenKind::LBrace) {
+                    features = self.parse_brace_ident_list()?;
+                } else {
+                    while !self.check(&TokenKind::As) && !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) {
+                        features.push(self.parse_identifier_or_keyword()?);
+                        self.match_token(&TokenKind::Comma);
+                    }
+                }
                 self.expect(TokenKind::As)?;
                 let alias = self.parse_identifier_or_keyword()?;
                 self.match_token(&TokenKind::SemiColon);

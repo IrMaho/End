@@ -6,6 +6,7 @@ impl Parser {
     pub(crate) fn parse_control_flow_statement(&mut self, peek_k: &TokenKind, span: &Span) -> Result<Option<Statement>, String> {
         match peek_k {
             TokenKind::ValBang
+            | TokenKind::Guard
             | TokenKind::Replace
             | TokenKind::Decorate
             | TokenKind::Compose
@@ -21,6 +22,17 @@ impl Parser {
 
     fn parse_control_flow_statement_inner(&mut self, peek_k: &TokenKind, span: Span) -> Result<Statement, String> {
         match peek_k {
+            TokenKind::Guard => {
+                self.advance();
+                let condition = self.parse_expression()?;
+                self.expect(TokenKind::Else)?;
+                let else_block = self.parse_block()?;
+                Ok(Statement::Guard {
+                    condition,
+                    else_block,
+                    span,
+                })
+            }
             TokenKind::ValBang => {
                 self.advance();
                 let name = match self.advance().kind {

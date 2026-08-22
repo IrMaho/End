@@ -325,6 +325,21 @@ impl LlvmBackend {
 
                 writeln!(out, "{}:", merge_lbl).unwrap();
             }
+            Statement::Guard { condition, else_block, .. } => {
+                let (cond_reg, _) = self.generate_expression(condition, out)?;
+                let else_lbl = self.next_label("guard_else");
+                let merge_lbl = self.next_label("guard_merge");
+
+                writeln!(out, "  br i1 {}, label %{}, label %{}", cond_reg, merge_lbl, else_lbl).unwrap();
+
+                writeln!(out, "{}:", else_lbl).unwrap();
+                for s in &else_block.statements {
+                    self.generate_statement(s, out)?;
+                }
+                writeln!(out, "  br label %{}", merge_lbl).unwrap();
+
+                writeln!(out, "{}:", merge_lbl).unwrap();
+            }
             Statement::While { condition, body, .. } => {
                 let cond_lbl = self.next_label("while_cond");
                 let body_lbl = self.next_label("while_body");

@@ -125,6 +125,33 @@ impl Parser {
                             continue;
                         }
 
+                        if self.check(&TokenKind::Target) {
+                            self.advance();
+                            let target_val = self.parse_identifier_or_string()?;
+                            self.match_token(&TokenKind::SemiColon);
+                            implementation = Some(target_val);
+                            continue;
+                        }
+
+                        if self.check(&TokenKind::Requires) || self.check(&TokenKind::Require) {
+                            self.advance();
+                            if self.check(&TokenKind::LBrace) {
+                                self.advance();
+                                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                                    let req_name = self.parse_identifier_or_string()?;
+                                    skills.push(req_name);
+                                    self.match_token(&TokenKind::Comma);
+                                    self.match_token(&TokenKind::SemiColon);
+                                }
+                                self.expect(TokenKind::RBrace)?;
+                            } else {
+                                let req_name = self.parse_identifier_or_string()?;
+                                self.match_token(&TokenKind::SemiColon);
+                                skills.push(req_name);
+                            }
+                            continue;
+                        }
+
                         let is_spec = self.check(&TokenKind::Ident("owner".to_string()))
                             || self.check(&TokenKind::Ident("status".to_string()))
                             || self.check(&TokenKind::Requirement)
@@ -294,7 +321,39 @@ impl Parser {
             }
             TokenKind::Evolve => {
                 self.advance();
-                let target = self.parse_identifier_or_keyword()?;
+                let target = if self.check(&TokenKind::LBrace) {
+                    "self".to_string()
+                } else {
+                    self.parse_identifier_or_keyword()?
+                };
+                if target == "event_topology" {
+                    let top_name = self.parse_identifier_or_keyword()?;
+                    self.expect(TokenKind::LBrace)?;
+                    let mut preserve = Vec::new();
+                    let mut optimize = Vec::new();
+                    let mut allow = Vec::new();
+                    let mut reject = Vec::new();
+
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        let key = self.parse_identifier_or_keyword()?;
+                        let val = self.parse_identifier_or_keyword_or_int().unwrap_or_default();
+                        self.match_token(&TokenKind::SemiColon);
+                        if key == "add" {
+                            allow.push(val);
+                        } else if key == "remove" {
+                            reject.push(val);
+                        }
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                    return Ok(Statement::EvolveOpDecl {
+                        op_name: top_name,
+                        preserve,
+                        optimize,
+                        allow,
+                        reject,
+                        span,
+                    });
+                }
                 if target == "operation" {
                     let op_name = self.parse_identifier_or_keyword()?;
                     self.expect(TokenKind::LBrace)?;
@@ -381,23 +440,26 @@ impl Parser {
 
                 while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                     let key = self.parse_identifier_or_keyword()?;
-                    self.match_token(&TokenKind::Colon);
-                    if key == "intent" {
-                        intent = self.parse_identifier_or_string()?;
-                    } else if key == "preserve" {
-                        preserve = self.parse_string_list()?;
-                    } else if key == "budget" {
-                        budget = Some(self.parse_identifier_or_string()?);
-                    } else if key == "allow" {
-                        allow = self.parse_string_list()?;
-                    } else if key == "reject" {
-                        reject = self.parse_string_list()?;
-                    } else if key == "verify" {
-                        verify = self.parse_string_list()?;
-                    } else if key == "accept" {
-                        accept = self.parse_string_list()?;
+                    if self.match_token(&TokenKind::Colon) {
+                        if key == "intent" {
+                            intent = self.parse_identifier_or_string()?;
+                        } else if key == "preserve" {
+                            preserve = self.parse_string_list()?;
+                        } else if key == "budget" {
+                            budget = Some(self.parse_identifier_or_string()?);
+                        } else if key == "allow" {
+                            allow = self.parse_string_list()?;
+                        } else if key == "reject" {
+                            reject = self.parse_string_list()?;
+                        } else if key == "verify" {
+                            verify = self.parse_string_list()?;
+                        } else if key == "accept" {
+                            accept = self.parse_string_list()?;
+                        } else {
+                            let _ = self.parse_string_list();
+                        }
                     } else {
-                        let _ = self.parse_string_list();
+                        let _ = self.parse_identifier_or_string();
                     }
                     self.match_token(&TokenKind::Comma);
                     self.match_token(&TokenKind::SemiColon);
