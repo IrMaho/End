@@ -141,10 +141,13 @@ enum Commands {
         #[arg(default_value = "init")]
         action: String,
     },
-    /// Run an End source file directly (Instant Interpreter VM)
+    /// Run an End source file directly (Instant Interpreter VM or JIT Backend)
     Run {
         /// Path to .end source file
         file: PathBuf,
+        /// Execution backend: vm, cranelift, llvm
+        #[arg(long, default_value = "vm")]
+        backend: String,
     },
     /// Compile an End source file to an ultra-optimized native binary, DLL, or cross-platform target
     Build {
@@ -171,6 +174,12 @@ enum Commands {
         /// Emit LLVM IR (.ll) code directly (Zero C Dependency)
         #[arg(long)]
         emit_llvm: bool,
+        /// Dump LLVM IR to .ll file
+        #[arg(long, default_value_t = false)]
+        dump_llvm_ir: bool,
+        /// Dump Cranelift CLIF IR to .clif file
+        #[arg(long, default_value_t = false)]
+        dump_cranelift_clif: bool,
         /// Code generation backend (c, llvm, cranelift)
         #[arg(long, default_value = "c")]
         backend: String,
@@ -799,7 +808,7 @@ fn run_app() {
             let mut lsp_server = LanguageServer::new();
             lsp_server.run_stdio();
         }
-        Commands::Run { file } => {
+        Commands::Run { file, backend: exec_backend } => {
             let (module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
@@ -807,6 +816,23 @@ fn run_app() {
                     std::process::exit(1);
                 }
             };
+
+            if exec_backend == "cranelift" {
+                let mut cl_be = CraneliftBackend::new();
+                match cl_be.compile_and_run_jit(&module) {
+                    Ok(rep) => {
+                        println!("⚡ {} JIT compiled {} functions in {} µs (Zero C Dependency)", "Cranelift JIT:".green().bold(), rep.functions_compiled, rep.compilation_duration_us);
+                        println!("  ├─ Status: {}", rep.status.green());
+                        println!("  ├─ Entry: {}", rep.entry_address.cyan());
+                        println!("  └─ Note: {}", rep.note);
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} Cranelift JIT Error: {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
 
             let mut vm = Interpreter::new();
             if let Err(e) = vm.run(&module) {
@@ -823,6 +849,8 @@ fn run_app() {
             strip,
             emit_c,
             emit_llvm,
+            dump_llvm_ir,
+            dump_cranelift_clif,
             backend: backend_choice,
             tree_shake,
             sanitize,
@@ -846,22 +874,47 @@ fn run_app() {
                 raw_module
             };
 
-            if emit_llvm || backend_choice == "llvm" {
-                let mut llvm_be = LlvmBackend::new(target.as_deref());
-                let llvm_ir = llvm_be.generate_llvm_ir(&module);
-                let ll_file_path = file.with_extension("ll");
-                if let Err(e) = fs::write(&ll_file_path, &llvm_ir) {
-                    eprintln!("{} Failed to write LLVM IR: {}", "Error:".red().bold(), e);
-                    std::process::exit(1);
+            if dump_cranelift_clif {
+                let mut cl_be = CraneliftBackend::new();
+                match cl_be.generate_clif_ir(&module) {
+                    Ok(clif_ir) => {
+                        let clif_file_path = file.with_extension("clif");
+                        if let Err(e) = fs::write(&clif_file_path, &clif_ir) {
+                            eprintln!("{} Failed to write Cranelift CLIF IR: {}", "Error:".red().bold(), e);
+                        } else {
+                            println!("{} Dumped Cranelift CLIF IR at {:?}", "✔".green().bold(), clif_file_path);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} Cranelift IR Generation Error: {}", "Error:".red().bold(), e);
+                    }
                 }
-                println!("{} Generated direct LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
-                if emit_llvm {
-                    return;
+            }
+
+            if emit_llvm || dump_llvm_ir || backend_choice == "llvm" {
+                let mut llvm_be = LlvmBackend::new(target.as_deref());
+                match llvm_be.generate_llvm_ir(&module) {
+                    Ok(llvm_ir) => {
+                        let ll_file_path = file.with_extension("ll");
+                        if let Err(e) = fs::write(&ll_file_path, &llvm_ir) {
+                            eprintln!("{} Failed to write LLVM IR: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                        println!("{} Generated direct LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
+                        if emit_llvm || dump_llvm_ir {
+                            return;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} LLVM Codegen Error: {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
                 }
             }
 
             if backend_choice == "cranelift" {
-                match CraneliftBackend::compile_module_jit(&module) {
+                let mut cl_be = CraneliftBackend::new();
+                match cl_be.compile_and_run_jit(&module) {
                     Ok(rep) => {
                         println!("⚡ {} JIT compiled {} functions in {} µs (Zero C Dependency)", "Cranelift:".green().bold(), rep.functions_compiled, rep.compilation_duration_us);
                         return;

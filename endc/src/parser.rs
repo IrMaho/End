@@ -1974,7 +1974,7 @@ impl Parser {
             TokenKind::Asm => {
                 self.advance();
                 let arch = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
+                    TokenKind::Ident(n) | TokenKind::StringLit(n) => n,
                     other => return Err(format!("Expected target architecture for asm, found {:?}", other)),
                 };
                 self.expect(TokenKind::LBrace)?;

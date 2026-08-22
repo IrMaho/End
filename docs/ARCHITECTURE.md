@@ -35,39 +35,29 @@ The End compiler is built in Rust for memory safety and uncompromising compilati
                                    ▼
                ┌────────────────────────────────────────┐
                │       Semantic Analysis Engine         │
-               │      • Region Escape Analysis (E0302)  │
-               │      • Static Borrow Checker (E0382)   │
-               │      • Capability & Invariant Auditor  │
-               │      • Agent Contract Verifier         │
-               │      • End Intelligence Platform (EIP) │
-               │        (DNA, ImpactGuard, DEC_v2, DRM, │
-               │         SemanticGit, SkillVerifier)    │
                └───────────────────┬────────────────────┘
-                                   │
-                                   ▼
-               ┌────────────────────────────────────────┐
-               │ High-Level & Mid-Level IR (HIR / MIR)  │
-               │         (endc/src/ir/mod.rs)           │
-               └───────────────────┬────────────────────┘
-                                   │
-                   ┌───────────────┴───────────────┐
-                   ▼                               ▼
-       ┌────────────────────────┐      ┌────────────────────────┐
-       │   C11 Native Backend   │      │  LLVM Direct Backend   │
-       │(endc/src/codegen/c_...)│      │      (Alpha 🟠)        │
-       └───────────┬────────────┘      └───────────┬────────────┘
-                   │                               │
-                   └───────────────┬───────────────┘
-                                   │
-                                   ▼
-               ┌────────────────────────────────────────┐
-               │ Native Linker (zig cc / clang / gcc)   │
-               └───────────────────┬────────────────────┘
-                                   │
-                                   ▼
-               ┌────────────────────────────────────────┐
-               │ Stripped Native Binary (40 KB exe/dll) │
-               └────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+        ┌──────────────────┐ ┌──────────────┐ ┌───────────────┐
+        │C11 Native Backend│ │ LLVM Backend │ │ Cranelift JIT │
+        │(c_backend.rs)    │ │(llvm_back...)│ │ (cranelift...)│
+        └─────────┬────────┘ └──────┬───────┘ └───────┬───────┘
+                  │                 │                 │
+                  │                 │                 ▼
+                  │                 │       ┌───────────────────┐
+                  │                 │       │ Native Memory JIT │
+                  │                 │       │ (< 1,000 µs exec) │
+                  │                 │       └───────────────────┘
+                  ▼                 ▼
+        ┌────────────────────────────────────────┐
+        │ Native Linker (zig cc / clang / opt)   │
+        └───────────────────┬────────────────────┘
+                            │
+                            ▼
+        ┌────────────────────────────────────────┐
+        │ Stripped Native Binary (15 KB exe/dll) │
+        └────────────────────────────────────────┘
 ```
 
 ---
@@ -80,10 +70,10 @@ The End compiler is built in Rust for memory safety and uncompromising compilati
 | **Parser** | [`endc/src/parser.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/parser.rs) | Parses statements, operations, event hubs, expressions, and agent contracts without ambiguity. |
 | **AST Definitions** | [`endc/src/ast.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/ast.rs) | Typed representation of modules, functions, structs, enums, statements, and contracts. |
 | **Semantic Analyzer** | [`endc/src/semantic/analyzer.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/semantic/analyzer.rs) | Type resolution, ownership tracking, region lifetime checks, and invariant validation. |
-| **IR & Lowering** | [`endc/src/ir/mod.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/ir/mod.rs) | SSA form generation, constant propagation, dead-code elimination, and control-flow graphs. |
+| **LLVM Codegen** | [`endc/src/codegen/llvm_backend.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/codegen/llvm_backend.rs) | Production-grade LLVM IR generator with SSA forms, 4-tier memory lowering, and SIMD intrinsics. |
+| **Cranelift JIT** | [`endc/src/codegen/cranelift_backend.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/codegen/cranelift_backend.rs) | Real-time CLIF translator and in-memory JIT execution runner (< 1ms). |
+| **C11 Code Generator** | [`endc/src/codegen/c_backend.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/codegen/c_backend.rs) | Transpiles AST directly to ultra-portable, optimized C11 code. |
 | **Interpreter VM** | [`endc/src/codegen/interpreter.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/codegen/interpreter.rs) | Fast development execution, REPL sandbox, and contract verification engine. |
-| **C11 Code Generator** | [`endc/src/codegen/c_backend.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/codegen/c_backend.rs) | Transpiles AST/MIR directly to ultra-portable, optimized C11 code. |
-| **Unit Test Suite** | [`endc/src/ir/tests.rs`](file:///c:/Users/ASUS/Desktop/flutter_project/end/endc/src/ir/tests.rs) | 41 automated test suites validating language semantics, algebraic operations, and contracts. |
 
 ---
 
