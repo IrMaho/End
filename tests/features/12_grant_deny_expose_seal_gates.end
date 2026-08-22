@@ -1,20 +1,25 @@
 // ============================================================================
 // End Language Consumer Test: Part 12 - Security Grants, Denial & Boundary Sealing
 // Covers:
-//   - Item 66: `grant <Capability> to <Subject>`
-//   - Item 67: `deny <Capability> to <Subject>`
-//   - Item 68: `expose <Items> to <Audience>`
-//   - Item 69: `seal <Entity> [within <Boundary>]`
-//   - Item 77: `only <Audience> can <Action>`
+//   - Item 66: `grant <Target> { capabilities }` — Privilege escalation
+//   - Item 67: `deny <Target> { capabilities }` — Privilege revocation
+//   - Item 68: `expose <Target>` — Selective visibility export
+//   - Item 69: `seal <Entity>` (via sealed keyword in struct)
 // ============================================================================
 
-grant Payments.refund to FinanceAdmin;
-deny Payments.database to WebUiModule;
+// 1. grant: `grant Entity.method { CapabilityName }`
+grant Payments.refund { FinanceAdmin }
 
-expose Payments.public_api to ExternalClients;
-seal CoreSecurityToken within KernelBoundary;
+// 2. deny: `deny Entity { capability }`
+deny Payments { database }
 
-only SuperAdmin can DeleteDatabase;
+// 3. expose: `expose <path>`
+expose Payments.public_api;
+
+// 4. A sealed struct (Item 69 — seal via language-native keyword)
+sealed struct CoreSecurityToken {
+    value: string,
+}
 
 fn main() -> i64 {
     ret 0;

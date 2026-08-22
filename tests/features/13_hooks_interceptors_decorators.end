@@ -1,20 +1,30 @@
 // ============================================================================
 // End Language Consumer Test: Part 13 - Hooks, Interception & Decorators
 // Covers:
-//   - Item 70: `hook <Target> before/after { ... }`
-//   - Item 71: `intercept <Target> with <Handler>`
-//   - Item 72: `decorate <Target> using <Decorator>`
+//   - Item 70: `hook <Entity>.<event> { ... }` — Static aspect hook
+//   - Item 71: `intercept <Entity>.<method> { before {} after {} }` — Middleware
+//   - Item 72: `decorate <Entity> with { Cap1, Cap2 }` — Behavioral wrapping
 // ============================================================================
 
+// 1. hook: `hook Entity.event_point { body }`
 hook Payment.after_refund {
     AuditLogger.record_transaction();
 }
 
-intercept Payment.refund with SecurityInspectionHandler;
+// 2. intercept: `intercept Entity.method { before {} after {} }`
+intercept Payment.refund {
+    before {
+        SecurityInspectionHandler.check();
+    }
+    after {
+        AuditLogger.log();
+    }
+}
 
+// 3. decorate: `decorate Entity with { Cap1, Cap2 }`
 decorate PaymentService with {
-    PerformanceMetrics;
-    StructuredLogging;
+    PerformanceMetrics,
+    StructuredLogging,
 }
 
 fn main() -> i64 {
