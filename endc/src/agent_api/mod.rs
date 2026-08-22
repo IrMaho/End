@@ -19,6 +19,10 @@ pub mod security_scan;
 pub mod research_memory;
 pub mod semantic_git;
 pub mod autonomous_agent;
+pub mod universal_resource;
+pub mod adaptive_intent;
+pub mod type_security;
+pub mod reality_types;
 
 pub use self_healing::SelfHealingEngine;
 pub use code_slicing::SemanticCodeSlicer;
@@ -37,6 +41,10 @@ pub use security_scan::{AstSecurityScanner, SecurityAuditReport, SecurityVulnera
 pub use research_memory::{DrmEngine, DynamicResearchMemory};
 pub use semantic_git::{SemanticGitEngine, SemanticGitDiff, VerifiedCommitManifest};
 pub use autonomous_agent::{AutonomousAgentRuntime, AutonomousAgentExecutionReport};
+pub use universal_resource::{UniversalResourceManager, UniversalResourceReport, ResourceLease, ResourceKind};
+pub use adaptive_intent::{IntentOptimizationEngine, OptimizationIntent, PerformanceBudget, ParetoOptimizationResult};
+pub use type_security::{TypeLevelSecurityEngine, TypeSecurityAuditReport, TaintFlowViolation};
+pub use reality_types::{RealityAwareEngine, PhysicalDataLayout, StateMachineTransition, IntentProofBinaryReport};
 
 pub struct AgentApi<'a> {
     graph: &'a SemanticGraph,
