@@ -714,4 +714,128 @@ mod tests {
         let res = interp.run(&module).unwrap();
         assert!(matches!(res, Value::Int(_)));
     }
+
+    #[test]
+    fn test_differential_semantic_equivalence_vm_vs_native_c() {
+        let code = r#"
+        fn calculate_sum(x: i64) i64 {
+            mut total: i64 = 0;
+            mut i: i64 = 1;
+            while i <= x {
+                total = total + i;
+                i = i + 1;
+            }
+            return total;
+        }
+
+        pub fn main() i64 {
+            val sum10 = calculate_sum(10);
+            assume sum10 == 55;
+            prove sum10 > 0;
+            guarantee sum10 == 55;
+            ret sum10
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        
+        // 1. VM Interpretation
+        let mut interp = Interpreter::new();
+        let vm_res = interp.run(&module).unwrap();
+        assert_eq!(vm_res, Value::Int(55));
+
+        // 2. Native C Backend Code Generation
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("int64_t calculate_sum(int64_t x)"));
+        assert!(c_code.contains("/* 🛡️ [FORMAL PROVE] */"));
+        assert!(c_code.contains("/* 🛡️ [FORMAL GUARANTEE] */"));
+    }
+
+    #[test]
+    fn test_c_backend_checkpoint_rollback_and_transaction_codegen() {
+        let code = r#"
+        pub fn main() i64 {
+            mut balance: i64 = 500;
+            checkpoint savepoint;
+            balance = 1000;
+            rollback to savepoint;
+            transaction {
+                balance = balance - 100;
+            }
+            ret balance
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("/* 💾 [CHECKPOINT STATE SNAPSHOT]: savepoint */"));
+        assert!(c_code.contains("__snap_savepoint_balance = balance"));
+        assert!(c_code.contains("/* ⏪ [ROLLBACK STATE RESTORE]: to savepoint */"));
+        assert!(c_code.contains("balance = __snap_savepoint_balance"));
+        assert!(c_code.contains("/* 💼 [ATOMIC TRANSACTION BLOCK: Write-Set Snapshot & Rollback] */"));
+        assert!(c_code.contains("__snap_txn_balance = balance"));
+        assert!(c_code.contains("balance = __snap_txn_balance"));
+    }
+
+    #[test]
+    fn test_c_backend_true_latency_hedging_codegen() {
+        let code = r#"
+        pub fn main() i64 {
+            mut res: i64 = 0;
+            hedge after 25ms {
+                res = 100;
+            } fallback {
+                res = 200;
+            }
+            ret res
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("/* 🛡️ [TRUE LATENCY HEDGING: Primary at t=0, Fallback after 25ms delay] */"));
+        assert!(c_code.contains("__hedge_winner"));
+        assert!(c_code.contains("END_CPU_SLEEP(25)"));
+        assert!(c_code.contains("__atomic_compare_exchange_n"));
+    }
+
+    #[test]
+    fn test_differential_multi_feature_matrix_execution() {
+        let code = r#"
+        fn factorial(n: i64) i64 {
+            if n <= 1 {
+                return 1;
+            }
+            return n * factorial(n - 1);
+        }
+
+        pub fn main() i64 {
+            mut f5 = factorial(5);
+            deterministic {
+                f5 = f5 + 10;
+            }
+            checkpoint cp1;
+            f5 = f5 + 100;
+            rollback to cp1;
+            prove f5 == 130;
+            ret f5
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+
+        // 1. VM Interpretation
+        let mut interp = Interpreter::new();
+        let vm_res = interp.run(&module).unwrap();
+        assert_eq!(vm_res, Value::Int(130));
+
+        // 2. Native C Backend Verification
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("int64_t factorial(int64_t n)"));
+        assert!(c_code.contains("/* 🎯 [DETERMINISTIC BLOCK]"));
+        assert!(c_code.contains("/* 💾 [CHECKPOINT STATE SNAPSHOT]: cp1 */"));
+        assert!(c_code.contains("__snap_cp1_f5 = f5"));
+        assert!(c_code.contains("/* ⏪ [ROLLBACK STATE RESTORE]: to cp1 */"));
+        assert!(c_code.contains("f5 = __snap_cp1_f5"));
+    }
 }

@@ -11,6 +11,7 @@ pub struct CBackend {
     pub active_regions: Vec<String>,
     pub struct_methods: HashMap<String, HashSet<String>>,
     pub module_methods: HashMap<String, HashSet<String>>,
+    pub scope_vars: Vec<HashSet<String>>,
 }
 
 fn escape_c_string(s: &str) -> String {
@@ -41,7 +42,38 @@ impl CBackend {
             active_regions: Vec::new(),
             struct_methods: HashMap::new(),
             module_methods: HashMap::new(),
+            scope_vars: vec![HashSet::new()],
         }
+    }
+
+    fn push_c_scope(&mut self) {
+        self.scope_vars.push(HashSet::new());
+    }
+
+    fn pop_c_scope(&mut self) {
+        self.scope_vars.pop();
+    }
+
+    fn declare_c_var(&mut self, name: &str, ty: Type) {
+        self.var_types.insert(name.to_string(), ty);
+        if let Some(top) = self.scope_vars.last_mut() {
+            top.insert(name.to_string());
+        }
+    }
+
+    fn get_active_visible_vars(&self) -> Vec<(String, Type)> {
+        let mut vars = Vec::new();
+        let mut seen: HashSet<String> = HashSet::new();
+        for scope in &self.scope_vars {
+            for v in scope {
+                if !seen.contains(v) {
+                    seen.insert(v.clone());
+                    let ty = self.var_types.get(v).cloned().unwrap_or(Type::I64);
+                    vars.push((v.clone(), ty));
+                }
+            }
+        }
+        vars
     }
 
     fn indent(&self) -> String {
@@ -1922,9 +1954,10 @@ impl CBackend {
         ));
 
         self.indent_level += 1;
+        self.scope_vars = vec![HashSet::new()];
         self.var_types.clear();
         for p in &func.params {
-            self.var_types.insert(p.name.clone(), p.param_type.clone());
+            self.declare_c_var(&p.name, p.param_type.clone());
         }
         
         if func.directives.iter().any(|d| d.name == "@telemetry") {
@@ -1948,6 +1981,14 @@ impl CBackend {
         self.output.push_str("}\n\n");
     }
 
+    fn gen_block_statements(&mut self, statements: &[Statement]) {
+        self.push_c_scope();
+        for s in statements {
+            self.gen_statement(s);
+        }
+        self.pop_c_scope();
+    }
+
     fn gen_statement(&mut self, stmt: &Statement) {
         let span = stmt.span();
         let clean_file = span.file.replace('\\', "/");
@@ -1960,29 +2001,34 @@ impl CBackend {
                 initializer,
                 ..
             } => {
-                if let Some(t) = var_type {
-                    self.var_types.insert(name.clone(), t.clone());
+                let ty = if let Some(t) = var_type {
+                    t.clone()
                 } else if let Some(Expression::StructInit { name: st_name, .. }) = initializer {
-                    self.var_types.insert(name.clone(), Type::Custom(st_name.clone()));
+                    Type::Custom(st_name.clone())
                 } else if let Some(Expression::Alloc { target_type, .. }) = initializer {
-                    self.var_types.insert(name.clone(), Type::Pointer(Box::new(target_type.clone())));
+                    Type::Pointer(Box::new(target_type.clone()))
                 } else if let Some(Expression::Promote { expr, .. }) = initializer {
                     if let Expression::Ident(id, _) = expr.as_ref() {
-                        if let Some(t) = self.var_types.get(id).cloned() {
-                            self.var_types.insert(name.clone(), t);
-                        }
+                        self.var_types.get(id).cloned().unwrap_or(Type::I64)
+                    } else {
+                        Type::I64
                     }
                 } else if let Some(init_expr) = initializer {
                     let inferred = self.infer_type(init_expr);
                     if inferred != Type::Void {
-                        self.var_types.insert(name.clone(), inferred);
+                        inferred
+                    } else {
+                        Type::I64
                     }
-                }
+                } else {
+                    Type::I64
+                };
+                self.declare_c_var(name, ty.clone());
 
                 let ty_str = if let Some(t) = var_type {
                     self.map_type(t)
                 } else {
-                    "__auto_type".to_string()
+                    self.map_type(&ty)
                 };
 
                 if let Some(init) = initializer {
@@ -2034,16 +2080,12 @@ impl CBackend {
                 let cond_str = self.gen_expression(condition);
                 self.output.push_str(&format!("{}if ({}) {{\n", self.indent(), cond_str));
                 self.indent_level += 1;
-                for s in &then_block.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&then_block.statements);
                 self.indent_level -= 1;
                 if let Some(eb) = else_block {
                     self.output.push_str(&format!("{}}} else {{\n", self.indent()));
                     self.indent_level += 1;
-                    for s in &eb.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&eb.statements);
                     self.indent_level -= 1;
                 }
                 self.output.push_str(&format!("{}}}\n", self.indent()));
@@ -2052,9 +2094,7 @@ impl CBackend {
                 let cond_str = self.gen_expression(condition);
                 self.output.push_str(&format!("{}while ({}) {{\n", self.indent(), cond_str));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2078,9 +2118,7 @@ impl CBackend {
                     item_name
                 ));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2105,9 +2143,7 @@ impl CBackend {
                     item_name
                 ));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2501,9 +2537,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🔒 [PROTECT BLOCK ENTER] Memory integrity protected */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
                 self.output.push_str(&format!("{}/* 🔒 [PROTECT BLOCK EXIT] */\n", self.indent()));
@@ -2524,18 +2558,14 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* ⚡ [COMPUTE ON TARGET: {}] */\n", self.indent(), target));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
                 if let Some(fb) = fallback {
                     self.output.push_str(&format!("{}/* ⚡ [COMPUTE FALLBACK PATH] */\n", self.indent()));
                     self.output.push_str(&format!("{}if (0) {{\n", self.indent()));
                     self.indent_level += 1;
-                    for s in &fb.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&fb.statements);
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
@@ -2544,9 +2574,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🛡️ [RACE-FREE REGION] Guaranteed zero data races */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2558,9 +2586,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
                 self.output.push_str(&format!("{}#if defined(__GNUC__) || defined(__clang__)\n{}__atomic_signal_fence(__ATOMIC_SEQ_CST);\n{}#endif\n", self.indent(), self.indent(), self.indent()));
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2568,34 +2594,51 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🎬 [REPLAYABLE EXECUTION FRAME] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::Checkpoint { state_name, .. } => {
-                self.output.push_str(&format!("{}/* 💾 [CHECKPOINT CREATED]: {} */\n", self.indent(), state_name));
-                self.output.push_str(&format!("{}jmp_buf __checkpoint_{};\n{}volatile int __rolled_back_{} = 0;\n{}(void)setjmp(__checkpoint_{});\n", self.indent(), state_name, self.indent(), state_name, self.indent(), state_name));
+                self.output.push_str(&format!("{}/* 💾 [CHECKPOINT STATE SNAPSHOT]: {} */\n", self.indent(), state_name));
+                self.output.push_str(&format!("{}jmp_buf __checkpoint_{};\n{}volatile int __rolled_back_{} = 0;\n", self.indent(), state_name, self.indent(), state_name));
+                for (var_name, var_ty) in self.get_active_visible_vars() {
+                    let ty_str = self.map_type(&var_ty);
+                    self.output.push_str(&format!("{}{} __snap_{}_{} = {};\n", self.indent(), ty_str, state_name, var_name, var_name));
+                }
+                self.output.push_str(&format!("{}(void)setjmp(__checkpoint_{});\n", self.indent(), state_name));
             }
             Statement::Rollback { checkpoint_name, .. } => {
-                self.output.push_str(&format!("{}/* ⏪ [ROLLBACK EXECUTED]: to {} */\n", self.indent(), checkpoint_name));
-                self.output.push_str(&format!("{}if (!__rolled_back_{}) {{\n{}    __rolled_back_{} = 1;\n{}    longjmp(__checkpoint_{}, 1);\n{}}}\n", self.indent(), checkpoint_name, self.indent(), checkpoint_name, self.indent(), checkpoint_name, self.indent()));
+                self.output.push_str(&format!("{}/* ⏪ [ROLLBACK STATE RESTORE]: to {} */\n", self.indent(), checkpoint_name));
+                self.output.push_str(&format!("{}if (!__rolled_back_{}) {{\n", self.indent(), checkpoint_name));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}__rolled_back_{} = 1;\n", self.indent(), checkpoint_name));
+                for (var_name, _) in self.get_active_visible_vars() {
+                    self.output.push_str(&format!("{}{} = __snap_{}_{};\n", self.indent(), var_name, checkpoint_name, var_name));
+                }
+                self.output.push_str(&format!("{}longjmp(__checkpoint_{}, 1);\n", self.indent(), checkpoint_name));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::TransactionBlock { body, .. } => {
-                self.output.push_str(&format!("{}/* 💼 [ATOMIC TRANSACTION BLOCK] */\n", self.indent()));
+                self.output.push_str(&format!("{}/* 💼 [ATOMIC TRANSACTION BLOCK: Write-Set Snapshot & Rollback] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                let active_vars = self.get_active_visible_vars();
+                for (var_name, var_ty) in &active_vars {
+                    let ty_str = self.map_type(var_ty);
+                    self.output.push_str(&format!("{}{} __snap_txn_{} = {};\n", self.indent(), ty_str, var_name, var_name));
+                }
                 self.output.push_str(&format!("{}jmp_buf __txn_env;\n", self.indent()));
                 self.output.push_str(&format!("{}if (setjmp(__txn_env) == 0) {{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}} else {{\n", self.indent()));
                 self.indent_level += 1;
-                self.output.push_str(&format!("{}fprintf(stderr, \"[END TRANSACTION] Aborted and rolled back\\n\");\n", self.indent()));
+                for (var_name, _) in &active_vars {
+                    self.output.push_str(&format!("{}{} = __snap_txn_{};\n", self.indent(), var_name, var_name));
+                }
+                self.output.push_str(&format!("{}fprintf(stderr, \"[END TRANSACTION] Aborted and variable state rolled back\\n\");\n", self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
                 self.indent_level -= 1;
@@ -2605,9 +2648,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🔮 [SPECULATIVE BLOCK] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2615,9 +2656,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* ⚡ [FALLBACK TO: {}] */\n", self.indent(), target));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2628,10 +2667,10 @@ Statement::Spawn { call, .. } => {
                     self.output.push_str(&format!("{}{{\n", self.indent()));
                     self.indent_level += 1;
                     self.output.push_str(&format!("{}struct timespec __budget_start, __budget_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__budget_start);\n", self.indent(), self.indent()));
-                    for s in &b.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&b.statements);
                     self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__budget_now);\n", self.indent()));
+                    self.output.push_str(&format!("{}int64_t __elapsed = (__budget_now.tv_sec - __budget_start.tv_sec) * 1000 + (__budget_now.tv_nsec - __budget_start.tv_nsec) / 1000000;\n", self.indent()));
+                    self.output.push_str(&format!("{}if (__elapsed > 100) {{\n{}    fprintf(stderr, \"[END SLA BUDGET VIOLATION] Elapsed %lld ms exceeded budget in %s:%d\\n\", (long long)__elapsed, __FILE__, __LINE__);\n{}}}\n", self.indent(), self.indent(), self.indent()));
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
@@ -2641,10 +2680,10 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
                 self.output.push_str(&format!("{}struct timespec __dl_start, __dl_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__dl_start);\n", self.indent(), self.indent()));
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__dl_now);\n", self.indent()));
+                self.output.push_str(&format!("{}int64_t __elapsed = (__dl_now.tv_sec - __dl_start.tv_sec) * 1000 + (__dl_now.tv_nsec - __dl_start.tv_nsec) / 1000000;\n", self.indent()));
+                self.output.push_str(&format!("{}if (__elapsed > 100) {{\n{}    fprintf(stderr, \"[END SLA DEADLINE VIOLATION] Elapsed %lld ms exceeded deadline in %s:%d\\n\", (long long)__elapsed, __FILE__, __LINE__);\n{}}}\n", self.indent(), self.indent(), self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2652,9 +2691,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* ⚡ [PRIORITY LEVEL: {}] */\n", self.indent(), level));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2662,9 +2699,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 📊 [QUALITY CONSTRAINT]: min={}, max_latency={} */\n", self.indent(), min_metric, max_latency));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2672,9 +2707,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* ⚖️ [TRADEOFF]: prefer={}, sacrifice={} */\n", self.indent(), prefer, sacrifice));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2690,9 +2723,7 @@ Statement::Spawn { call, .. } => {
                         self.output.push_str(&format!("{}}} else if ({}) {{\n", self.indent(), cond_str));
                     }
                     self.indent_level += 1;
-                    for s in &blk.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&blk.statements);
                     self.indent_level -= 1;
                 }
                 if !first {
@@ -2706,9 +2737,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 👁️ [WATCH '{}' ON {}] */\n", self.indent(), target, event));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &handler.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&handler.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2717,9 +2746,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* ⚡ [REACT TO: {}] */\n", self.indent(), event_str));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &handler.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&handler.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2757,19 +2784,15 @@ Statement::Spawn { call, .. } => {
                 for (idx, (_b_name, blk)) in branches.iter().enumerate() {
                     self.output.push_str(&format!("{}if (__tid == {} && __chosen_winner < 0) {{\n", self.indent(), idx));
                     self.indent_level += 1;
-                    for s in &blk.statements {
-                        self.gen_statement(s);
-                    }
-                    self.output.push_str(&format!("{}__atomic_compare_exchange_n(&__chosen_winner, &(__tid), {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), idx));
+                    self.gen_block_statements(&blk.statements);
+                    self.output.push_str(&format!("{}int __exp = -1;\n{}__atomic_compare_exchange_n(&__chosen_winner, &__exp, {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), self.indent(), idx));
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n{}#else\n", self.indent(), self.indent()));
                 if let Some((_, first_blk)) = branches.first() {
-                    for s in &first_blk.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&first_blk.statements);
                 }
                 self.output.push_str(&format!("{}#endif\n", self.indent()));
                 self.indent_level -= 1;
@@ -2786,19 +2809,15 @@ Statement::Spawn { call, .. } => {
                 for (idx, blk) in branches.iter().enumerate() {
                     self.output.push_str(&format!("{}if (__tid == {} && __race_winner < 0) {{\n", self.indent(), idx));
                     self.indent_level += 1;
-                    for s in &blk.statements {
-                        self.gen_statement(s);
-                    }
-                    self.output.push_str(&format!("{}__atomic_compare_exchange_n(&__race_winner, &(__tid), {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), idx));
+                    self.gen_block_statements(&blk.statements);
+                    self.output.push_str(&format!("{}int __exp = -1;\n{}__atomic_compare_exchange_n(&__race_winner, &__exp, {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), self.indent(), idx));
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n{}#else\n", self.indent(), self.indent()));
                 if let Some(first_blk) = branches.first() {
-                    for s in &first_blk.statements {
-                        self.gen_statement(s);
-                    }
+                    self.gen_block_statements(&first_blk.statements);
                 }
                 self.output.push_str(&format!("{}#endif\n", self.indent()));
                 self.indent_level -= 1;
@@ -2806,23 +2825,43 @@ Statement::Spawn { call, .. } => {
             }
             Statement::HedgeBlock { delay_ms, primary, fallback, .. } => {
                 let delay_str = self.gen_expression(delay_ms);
-                self.output.push_str(&format!("{}/* 🛡️ [HEDGE REQUEST after {}ms] */\n", self.indent(), delay_str));
+                self.output.push_str(&format!("{}/* 🛡️ [TRUE LATENCY HEDGING: Primary at t=0, Fallback after {}ms delay] */\n", self.indent(), delay_str));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.output.push_str(&format!("{}volatile int __hedge_winner = -1;\n", self.indent()));
+                self.output.push_str(&format!("{}#ifdef _OPENMP\n{}#pragma omp parallel num_threads(2)\n{}{{\n", self.indent(), self.indent(), self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}int __tid = omp_get_thread_num();\n", self.indent()));
+                self.output.push_str(&format!("{}if (__tid == 0) {{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}/* Primary path starts immediately at t=0 */\n", self.indent()));
+                self.gen_block_statements(&primary.statements);
+                self.output.push_str(&format!("{}int __exp = -1;\n{}__atomic_compare_exchange_n(&__hedge_winner, &__exp, 0, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}} else if (__tid == 1) {{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}/* Hedged secondary path delays by {}ms, then races if primary is not complete */\n", self.indent(), delay_str));
+                self.output.push_str(&format!("{}END_CPU_SLEEP({});\n", self.indent(), delay_str));
+                self.output.push_str(&format!("{}if (__hedge_winner < 0) {{\n", self.indent()));
+                self.indent_level += 1;
+                self.gen_block_statements(&fallback.statements);
+                self.output.push_str(&format!("{}int __exp = -1;\n{}__atomic_compare_exchange_n(&__hedge_winner, &__exp, 1, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n{}#else\n", self.indent(), self.indent()));
                 self.output.push_str(&format!("{}struct timespec __h_start, __h_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__h_start);\n", self.indent(), self.indent()));
-                for s in &primary.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&primary.statements);
                 self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__h_now);\n", self.indent()));
                 self.output.push_str(&format!("{}int64_t __elapsed = (__h_now.tv_sec - __h_start.tv_sec) * 1000 + (__h_now.tv_nsec - __h_start.tv_nsec) / 1000000;\n", self.indent()));
                 self.output.push_str(&format!("{}if (__elapsed >= {}) {{\n", self.indent(), delay_str));
                 self.indent_level += 1;
-                self.output.push_str(&format!("{}/* ⚡ Primary delayed — executing hedged secondary request */\n", self.indent()));
-                for s in &fallback.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&fallback.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
+                self.output.push_str(&format!("{}#endif\n", self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2830,9 +2869,7 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🛑 [CANCEL-SAFE REGION] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
-                }
+                self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
