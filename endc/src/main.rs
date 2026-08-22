@@ -30,6 +30,7 @@ use docgen::server::DocServer;
 mod package;
 mod parser;
 mod repl;
+pub mod security;
 mod semantic;
 
 use agent_api::{
@@ -564,12 +565,23 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         json: bool,
     },
-    /// AST Security Scanner: hardcoded secrets, memory sandbox leaks, and capability boundaries
+    /// Security-by-Construction Scanner & Verified Build Gate
     Security {
         /// Path to .end source file
         file: PathBuf,
+        /// Security Level: standard, strict, paranoid, critical, absolute
+        #[arg(long, default_value = "paranoid")]
+        level: String,
         /// Format as JSON
         #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Cryptographic Verified Build Attestation Generator
+    Attest {
+        /// Path to .end source file
+        file: PathBuf,
+        /// Format as JSON
+        #[arg(long, default_value_t = true)]
         json: bool,
     },
     /// Dynamic Research Memory (DRM) multi-step engineering lifecycle checkpointing
@@ -2475,8 +2487,8 @@ no_unused_imports = true             # Warn/error on unused imports
                 }
             }
         }
-        Commands::Security { file, json } => {
-            let (module, analyzer) = match load_and_analyze(&file) {
+        Commands::Security { file, level, json } => {
+            let (module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
                 Err(e) => {
                     eprintln!("{} {}", "Error:".red().bold(), e);
@@ -2485,24 +2497,68 @@ no_unused_imports = true             # Warn/error on unused imports
             };
             let source = fs::read_to_string(&file).unwrap_or_default();
             let file_str = file.to_string_lossy().to_string();
-            let rep = AstSecurityScanner::scan_source_and_ast(&file_str, &source, &module, &analyzer.graph);
+            let sec_level = security::SecurityLevel::from_str(&level);
+            let (rep, build_status) = security::SecurityByConstructionEngine::audit_module_and_source(
+                &file_str,
+                &source,
+                &module,
+                sec_level,
+            );
+
             if json {
-                println!("{}", serde_json::to_string_pretty(&rep).unwrap_or_default());
+                println!("{}", serde_json::json!({
+                    "report": rep,
+                    "build_status": build_status
+                }));
             } else {
-                println!("🔐 {}", "End AST Security & Capability Boundary Scanner".yellow().bold());
+                println!("🛡️  {}", "End Language: Security-by-Construction & Verified Build Engine".cyan().bold());
                 println!("================================================================================");
-                println!("  Total Findings:     {}", rep.total_findings);
-                println!("  Critical / High:    {} / {}", rep.critical_count.to_string().red().bold(), rep.high_count.to_string().yellow().bold());
-                println!("  Medium / Low:       {} / {}", rep.medium_count, rep.low_count);
+                println!("  Target File:            {}", file_str.yellow());
+                println!("  Security Level:         {:?}", rep.security_level);
+                println!("  Secrets Isolated:       {}", rep.secrets_isolated.to_string().green());
+                println!("  Nonces Consumed (1-Use):{}", rep.nonces_consumed.to_string().green());
+                println!("  Capabilities Verified:  {}", rep.capability_checks_passed.to_string().green());
+                println!("  Contracts Verified:     {}", rep.contracts_verified.to_string().green());
+                println!("  Formal Proofs Passed:   {}", rep.proofs_verified.to_string().green());
+                println!("  Constant-Time Checked:  {}", rep.constant_time_functions_checked.to_string().green());
+                println!("  Total Violations:       {}", rep.violations.len().to_string().yellow().bold());
+                println!("================================================================================");
+
                 if rep.is_secure {
-                    println!("\n{} {}", "✔".green().bold(), rep.summary.green().bold());
+                    println!("\n{} {}\n", "✔ [VERIFIED BUILD PERMITTED]".green().bold(), rep.summary.green());
                 } else {
-                    println!("\n{} {}", "🚨".red(), rep.summary.red().bold());
-                    for v in &rep.vulnerabilities {
-                        println!("  ✖ [{}] {} ({}:{})", v.cwe_id.red().bold(), v.title, v.file, v.line);
-                        println!("    Description: {}", v.description);
+                    println!("\n{} {}\n", "✖ [BUILD PROHIBITED - SECURITY PROOF INCOMPLETE]".red().bold(), rep.summary.red());
+                    for v in &rep.violations {
+                        println!("  ✖ [{}] {} ({}:{})", v.code.red().bold(), v.title, v.file, v.line);
+                        println!("    Message:     {}", v.message);
                         println!("    Remediation: {}\n", v.remediation.green());
                     }
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Attest { file, json: _ } => {
+            let (module, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            let source = fs::read_to_string(&file).unwrap_or_default();
+            let file_str = file.to_string_lossy().to_string();
+            let (_, build_status) = security::SecurityByConstructionEngine::audit_module_and_source(
+                &file_str,
+                &source,
+                &module,
+                security::SecurityLevel::Absolute,
+            );
+            match build_status {
+                security::VerifiedBuildStatus::Permitted { manifest, .. } => {
+                    println!("{}", serde_json::to_string_pretty(&manifest).unwrap());
+                }
+                security::VerifiedBuildStatus::Rejected { blocking_reason, .. } => {
+                    eprintln!("{} {}", "Attestation Failed:".red().bold(), blocking_reason);
                     std::process::exit(1);
                 }
             }

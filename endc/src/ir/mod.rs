@@ -5,6 +5,8 @@ pub mod mir_lowering;
 pub mod optimizer;
 #[cfg(test)]
 pub mod tests;
+#[cfg(test)]
+pub mod security_tests;
 
 pub use hir::*;
 pub use mir::*;

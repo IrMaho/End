@@ -58,6 +58,7 @@ pub struct SemanticAnalyzer {
     pub arch_directions: Vec<(String, String)>,
     pub arch_cycle_free: bool,
     pub arch_max_depth: Option<usize>,
+    pub security_level: crate::security::SecurityLevel,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -104,6 +105,7 @@ impl SemanticAnalyzer {
             arch_directions: Vec::new(),
             arch_cycle_free: false,
             arch_max_depth: None,
+            security_level: crate::security::SecurityLevel::Standard,
         }
     }
 
@@ -349,6 +351,26 @@ impl SemanticAnalyzer {
 
         // 5. Transitive Effect & Purity Verification
         self.verify_transitive_effects_and_purity();
+
+        // 6. Security-by-Construction & Verified Build Audit
+        let full_source = self.source_lines.join("\n");
+        let (sec_report, _) = crate::security::SecurityByConstructionEngine::audit_module_and_source(
+            &self.graph.filename,
+            &full_source,
+            module,
+            self.security_level,
+        );
+
+        for v in sec_report.violations {
+            self.errors.push(DiagnosticError {
+                code: v.code,
+                message: v.message,
+                line: v.line,
+                col: v.col,
+                kind: v.title,
+                repair_suggestion: Some(v.remediation),
+            });
+        }
 
         if self.errors.is_empty() {
             Ok(())

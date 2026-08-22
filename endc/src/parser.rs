@@ -653,9 +653,15 @@ impl Parser {
         }
 
         match self.peek_kind() {
-            TokenKind::Ident(name) => {
-                let type_name = name.clone();
-                self.advance();
+            TokenKind::Ident(_)
+            | TokenKind::Sealed
+            | TokenKind::Contract
+            | TokenKind::Security
+            | TokenKind::Boundary
+            | TokenKind::Stable
+            | TokenKind::Compat
+            | TokenKind::Purity => {
+                let type_name = self.parse_identifier_or_keyword()?;
                 let ty = match type_name.as_str() {
                     "void" => Type::Void,
                     "bool" => Type::Bool,
@@ -961,7 +967,17 @@ impl Parser {
         let return_type = if self.match_token(&TokenKind::Arrow) {
             self.parse_type()?
         } else if self.check(&TokenKind::Bang)
-            || matches!(self.peek_kind(), TokenKind::Ident(_))
+            || matches!(
+                self.peek_kind(),
+                TokenKind::Ident(_)
+                    | TokenKind::Sealed
+                    | TokenKind::Contract
+                    | TokenKind::Security
+                    | TokenKind::Boundary
+                    | TokenKind::Purity
+                    | TokenKind::Stable
+                    | TokenKind::Compat
+            )
             || self.check(&TokenKind::Star)
             || self.check(&TokenKind::LBracket)
         {
