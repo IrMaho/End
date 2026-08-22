@@ -10,6 +10,8 @@ pub struct LlvmBackend {
     temp_var_id: usize,
     block_id: usize,
     str_literal_id: usize,
+    debug_id: usize,
+    emit_debug_info: bool,
     string_constants: Vec<(String, String, usize)>, // (name, content, byte_len)
     variables: HashMap<String, (String, String)>, // name -> (llvm_type, llvm_reg_or_ptr)
     type_mapper: LlvmTypeMapper,
@@ -23,10 +25,16 @@ impl LlvmBackend {
             temp_var_id: 0,
             block_id: 0,
             str_literal_id: 0,
+            debug_id: 1,
+            emit_debug_info: true,
             string_constants: Vec::new(),
             variables: HashMap::new(),
             type_mapper: LlvmTypeMapper,
         }
+    }
+
+    pub fn set_debug_info(&mut self, enabled: bool) {
+        self.emit_debug_info = enabled;
     }
 
     fn detect_host_triple() -> &'static str {
@@ -161,6 +169,15 @@ impl LlvmBackend {
 
         final_module.push_str(&self.output);
         final_module.push_str(&body_output);
+
+        if self.emit_debug_info {
+            writeln!(final_module, "\n!llvm.module.flags = !{{!0, !1}}").unwrap();
+            writeln!(final_module, "!llvm.dbg.cu = !{{!2}}").unwrap();
+            writeln!(final_module, "!0 = !{{i32 2, !\"Dwarf Version\", i32 4}}").unwrap();
+            writeln!(final_module, "!1 = !{{i32 2, !\"Debug Info Version\", i32 3}}").unwrap();
+            writeln!(final_module, "!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: \"End Compiler v2.0 (LLVM Direct)\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)").unwrap();
+            writeln!(final_module, "!3 = !DIFile(filename: \"{}.end\", directory: \".\")", module.name).unwrap();
+        }
 
         Ok(final_module)
     }

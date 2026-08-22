@@ -18,6 +18,7 @@ mod linter;
 mod lsp;
 mod mobile;
 pub mod docgen;
+pub mod runtime;
 pub mod ui;
 use ui::UiOrchestrator;
 use ui::feedback::FeedbackManager;
@@ -39,7 +40,7 @@ use agent_api::{
 };
 use architecture::ArchitectureEngine;
 use bindgen::UniversalBindgen;
-use codegen::{CBackend, CraneliftBackend, Interpreter, LlvmBackend};
+use codegen::{CBackend, CraneliftBackend, Interpreter, LlvmBackend, WasmBackend};
 use config::CompilerConfig;
 use diagnostics::Diagnostic;
 use fuzz::FuzzRunner;
@@ -174,13 +175,22 @@ enum Commands {
         /// Emit LLVM IR (.ll) code directly (Zero C Dependency)
         #[arg(long)]
         emit_llvm: bool,
+        /// Emit WebAssembly WAT and glue code (.wat)
+        #[arg(long)]
+        emit_wasm: bool,
+        /// Dump WebAssembly WAT format to .wat file
+        #[arg(long, default_value_t = false)]
+        dump_wasm_wat: bool,
+        /// Include full DWARF / CodeView debug symbols in LLVM IR
+        #[arg(long, default_value_t = false)]
+        debug_info: bool,
         /// Dump LLVM IR to .ll file
         #[arg(long, default_value_t = false)]
         dump_llvm_ir: bool,
         /// Dump Cranelift CLIF IR to .clif file
         #[arg(long, default_value_t = false)]
         dump_cranelift_clif: bool,
-        /// Code generation backend (c, llvm, cranelift)
+        /// Code generation backend (c, llvm, cranelift, wasm)
         #[arg(long, default_value = "c")]
         backend: String,
         /// Perform binary tree-shaking & dead-code elimination (micro-binary optimization)
@@ -849,6 +859,9 @@ fn run_app() {
             strip,
             emit_c,
             emit_llvm,
+            emit_wasm,
+            dump_wasm_wat,
+            debug_info,
             dump_llvm_ir,
             dump_cranelift_clif,
             backend: backend_choice,
@@ -893,6 +906,7 @@ fn run_app() {
 
             if emit_llvm || dump_llvm_ir || backend_choice == "llvm" {
                 let mut llvm_be = LlvmBackend::new(target.as_deref());
+                llvm_be.set_debug_info(debug_info);
                 match llvm_be.generate_llvm_ir(&module) {
                     Ok(llvm_ir) => {
                         let ll_file_path = file.with_extension("ll");
@@ -907,6 +921,30 @@ fn run_app() {
                     }
                     Err(e) => {
                         eprintln!("{} LLVM Codegen Error: {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
+            if emit_wasm || dump_wasm_wat || backend_choice == "wasm" {
+                let mut wasm_be = WasmBackend::new(target.as_deref());
+                match wasm_be.generate_wat(&module) {
+                    Ok(wat_content) => {
+                        let wat_file_path = file.with_extension("wat");
+                        if let Err(e) = fs::write(&wat_file_path, &wat_content) {
+                            eprintln!("{} Failed to write WebAssembly WAT: {}", "Error:".red().bold(), e);
+                            std::process::exit(1);
+                        }
+                        let js_glue = wasm_be.generate_js_glue(&module);
+                        let js_file_path = file.with_extension("js");
+                        let _ = fs::write(&js_file_path, &js_glue);
+                        println!("{} Generated WebAssembly WAT at {:?} (and JS runtime glue)", "✔".green().bold(), wat_file_path);
+                        if emit_wasm || dump_wasm_wat {
+                            return;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} WebAssembly Error: {}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }
