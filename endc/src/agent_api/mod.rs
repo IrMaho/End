@@ -6,10 +6,37 @@ pub mod code_slicing;
 pub mod ast_patch;
 pub mod evaluator;
 
+// End Intelligence Platform (EIP) Modules
+pub mod semantic_interface;
+pub mod impact_guard;
+pub mod context_slicer;
+pub mod skill_verifier;
+pub mod dna;
+pub mod live_graph;
+pub mod auto_heal;
+pub mod agent_scope;
+pub mod security_scan;
+pub mod research_memory;
+pub mod semantic_git;
+pub mod autonomous_agent;
+
 pub use self_healing::SelfHealingEngine;
 pub use code_slicing::SemanticCodeSlicer;
 pub use ast_patch::StructuredAstPatcher;
 pub use evaluator::MicroEvaluator;
+
+pub use semantic_interface::{EndSemanticInterface, EndSemanticIR};
+pub use impact_guard::{ImpactGuard, PreTouchImpactReport};
+pub use context_slicer::{SmartContextSlicer, SmartContextReport};
+pub use skill_verifier::{SemanticSkillVerifier, SkillVerificationReport, SkillViolation};
+pub use dna::{ProjectDnaEngine, ProjectDNA, DnaAuditReport};
+pub use live_graph::{LiveSemanticGraphEngine, GraphDeltaReport, LiveGraphEvent};
+pub use auto_heal::{AutonomousSelfHealingEngine, AutoHealLoopReport};
+pub use agent_scope::{AgentScopeEngine, AgentScopeDef, AgentScopeAuditReport};
+pub use security_scan::{AstSecurityScanner, SecurityAuditReport, SecurityVulnerability};
+pub use research_memory::{DrmEngine, DynamicResearchMemory};
+pub use semantic_git::{SemanticGitEngine, SemanticGitDiff, VerifiedCommitManifest};
+pub use autonomous_agent::{AutonomousAgentRuntime, AutonomousAgentExecutionReport};
 
 pub struct AgentApi<'a> {
     graph: &'a SemanticGraph,

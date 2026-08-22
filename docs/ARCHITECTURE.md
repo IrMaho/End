@@ -39,6 +39,9 @@ The End compiler is built in Rust for memory safety and uncompromising compilati
                │      • Static Borrow Checker (E0382)   │
                │      • Capability & Invariant Auditor  │
                │      • Agent Contract Verifier         │
+               │      • End Intelligence Platform (EIP) │
+               │        (DNA, ImpactGuard, DEC_v2, DRM, │
+               │         SemanticGit, SkillVerifier)    │
                └───────────────────┬────────────────────┘
                                    │
                                    ▼

@@ -6,6 +6,7 @@ dist/
 release/
 node_modules/
 .end_diagnostics/
+.end/
 
 # Binaries and intermediate files
 *.exe

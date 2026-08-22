@@ -260,3 +260,20 @@ Expected output:
 Processed secure transaction total with fee: 505
 All 50 Agent Contract Features Verified Successfully!
 ```
+
+---
+
+## 4. End Intelligence Platform (EIP) Toolchain
+
+For comprehensive autonomous software engineering workflows, the compiler exposes the following CLI toolchain:
+- `end precheck <file> <symbol>`: Pre-touch impact & blast radius safety analysis.
+- `end context <file> "<intent>"`: DEC_v2 smart context slicing (<500 tokens).
+- `end verify <file>`: Formal skill invariant verification (`PaymentSafe`, `Idempotent`, etc.).
+- `end dna <file>`: Project DNA & architectural signal mining.
+- `end security <file>`: AST static security audit (CWE-798, CWE-285, CWE-119).
+- `end memory new|show|list`: Dynamic Research Memory (DRM) state checkpoints.
+- `end scope <agent> <file> <action>`: Agent permission boundaries & sandbox enforcement.
+- `end semantic-git diff|commit`: Semantic AST diffs & proof-of-work verified commits.
+- `end agent-run <file> "<intent>"`: End-to-end 10-phase autonomous agent runtime.
+
+See [`docs/END_INTELLIGENCE_PLATFORM.md`](file:///c:/Users/ASUS/Desktop/flutter_project/end/docs/END_INTELLIGENCE_PLATFORM.md) for full architectural documentation.

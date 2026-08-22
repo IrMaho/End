@@ -132,12 +132,18 @@ End is explicitly designed to cover the complete software development spectrum w
   - `EndCrypto`: Constant-time side-channel-resistant cryptographic engine (AES, SHA-256, Ed25519).
   - `EndKV`: Embedded in-memory key-value store with sub-microsecond latency (P99 < 15 ns).
 
-### 4. 🤖 AI-Native Development & 50-Feature Agent Contracts
-- **Semantic Cognitive Toolchain:**
-  - `end graph`: Sub-millisecond machine knowledge graph of project hierarchy.
-  - `end impact`: Blast-radius analyzer computing upstream/downstream dependencies before edits.
-  - `end slice`: Compresses 50,000-line codebases into 50-line interfaces (**95% LLM token savings**).
-  - `end patch`: Deterministic AST auto-patcher applying node-level modifications safely.
+### 4. 🤖 AI-Native Development & End Intelligence Platform (EIP)
+- **Zero-Dependency Native Compiler + DeepSift Cortex Architecture:**
+  - `end precheck`: Pre-touch impact & blast radius safety gating.
+  - `end context`: DEC_v2 smart context extraction compressing 50k LOC to <500 tokens.
+  - `end verify`: Formal skill and contract verification (`PaymentSafe`, `Idempotent`, `AuditRequired`, `ZeroLeak`).
+  - `end dna`: Project DNA & architectural signal mining (naming, conventions, prompt generation).
+  - `end security`: Deterministic AST security scanner (CWE-798, CWE-285, CWE-119).
+  - `end memory`: Dynamic Research Memory (DRM) task checkpoints & multi-hypothesis tracking.
+  - `end scope`: Fine-grained agent sandboxing and capability guard.
+  - `end semantic-git`: AST symbol diffs & cryptographically signed proof-of-work verified commits.
+  - `end agent-run`: 10-phase autonomous software engineering execution pipeline (<1ms verification).
+  - `end semantic-ir`: Native semantic intermediate representation export for DeepSift.
   - `end eval`: Micro-isolated sandbox evaluating expressions in < 50 µs.
   - `end arch`: Enforces architectural invariants defined in `Architecture.toml`.
 - **The Agent Contract System (`Intent → Task → Skill → Evidence → Verify`):**
