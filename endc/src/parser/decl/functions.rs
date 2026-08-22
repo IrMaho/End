@@ -310,10 +310,7 @@ impl Parser {
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             let m_span = self.current_span();
             self.expect(TokenKind::Fn)?;
-            let m_name = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                other => return Err(format!("Expected trait method name, found {:?}", other)),
-            };
+            let m_name = self.parse_identifier_or_keyword()?;
 
             let mut m_generic_params = Vec::new();
             if self.match_token(&TokenKind::Less) {

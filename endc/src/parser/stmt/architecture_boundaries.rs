@@ -34,7 +34,7 @@ impl Parser {
         match peek_k {
             TokenKind::Preserve => {
                 self.advance();
-                if self.peek_kind() == &TokenKind::Ident("refactor".to_string()) {
+                if self.check(&TokenKind::Refactor) || self.peek_kind() == &TokenKind::Ident("refactor".to_string()) {
                     self.advance();
                 }
                 let preserves = self.parse_string_list()?;

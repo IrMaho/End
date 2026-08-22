@@ -376,6 +376,16 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "events" => TokenKind::Events,
                     "policy" => TokenKind::Policy,
 
+                    // Autonomous Refactoring Keywords
+                    "conservation" => TokenKind::Conservation,
+                    "inventory" => TokenKind::Inventory,
+                    "audit_log" => TokenKind::AuditLog,
+                    "traceable" => TokenKind::Traceable,
+                    "coupling" => TokenKind::Coupling,
+                    "solid" => TokenKind::Solid,
+                    "unaccounted" => TokenKind::Unaccounted,
+                    "refactor" => TokenKind::Refactor,
+
         _ => TokenKind::Ident(ident.to_string()),
     }
 }

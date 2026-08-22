@@ -19,6 +19,8 @@ pub mod consumer_feature_tests;
 pub mod event_graph_tests;
 #[cfg(test)]
 pub mod inheritance_contract_tests;
+#[cfg(test)]
+pub mod refactoring_engine_tests;
 
 pub use hir::*;
 pub use mir::*;

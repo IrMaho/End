@@ -25,8 +25,24 @@ impl Parser {
             | TokenKind::Port
             | TokenKind::Adapter
             | TokenKind::Facade
-            | TokenKind::Gateway => {}
+            | TokenKind::Gateway
+            | TokenKind::Decompose
+            | TokenKind::Conservation
+            | TokenKind::Solid
+            | TokenKind::Inventory
+            | TokenKind::Traceable
+            | TokenKind::Refactor => {}
             _ => return Ok(None),
+        }
+
+        if peek_k == &TokenKind::Decompose {
+            if let Some(next_k) = self.peek_next_kind() {
+                if !matches!(next_k, TokenKind::For | TokenKind::From) {
+                    return Ok(None);
+                }
+            } else {
+                return Ok(None);
+            }
         }
 
         let span = span.clone();
@@ -46,10 +62,21 @@ impl Parser {
                     self.advance();
                     while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                         let key = self.parse_identifier_or_keyword()?;
-                        if key == "allow" {
-                            allows.push(self.parse_identifier_or_string()?);
-                        } else if key == "deny" {
-                            denies.push(self.parse_identifier_or_string()?);
+                        self.match_token(&TokenKind::Colon);
+                        if key == "allow" || key == "allows" {
+                            if self.check(&TokenKind::LBracket) || self.check(&TokenKind::LBrace) {
+                                let mut list = self.parse_string_list()?;
+                                allows.append(&mut list);
+                            } else {
+                                allows.push(self.parse_identifier_or_string()?);
+                            }
+                        } else if key == "deny" || key == "denies" {
+                            if self.check(&TokenKind::LBracket) || self.check(&TokenKind::LBrace) {
+                                let mut list = self.parse_string_list()?;
+                                denies.append(&mut list);
+                            } else {
+                                denies.push(self.parse_identifier_or_string()?);
+                            }
                         } else if key == "sealed" {
                             is_sealed = true;
                         }
@@ -400,6 +427,46 @@ impl Parser {
                     self.expect(TokenKind::RBrace)?;
                 }
                 Ok(Statement::GatewayDecl { from_mod, to_mod, allowed_calls, span })
+            }
+            TokenKind::Decompose => {
+                self.advance();
+                let def = self.parse_decomposition_plan_decl()?;
+                Ok(Statement::DecompositionPlanStmt(def))
+            }
+            TokenKind::Conservation => {
+                self.advance();
+                let def = self.parse_conservation_audit_decl()?;
+                Ok(Statement::ConservationAuditStmt(def))
+            }
+            TokenKind::Solid => {
+                self.advance();
+                let def = self.parse_solid_audit_decl()?;
+                Ok(Statement::SolidAuditStmt(def))
+            }
+            TokenKind::Inventory => {
+                self.advance();
+                let def = self.parse_symbol_inventory_decl()?;
+                Ok(Statement::SymbolInventoryStmt(def))
+            }
+            TokenKind::Traceable => {
+                self.advance();
+                let def = self.parse_traceable_map_decl()?;
+                Ok(Statement::TraceableMapStmt(def))
+            }
+            TokenKind::Refactor => {
+                self.advance();
+                if self.peek_kind() == &TokenKind::Ident("session".to_string()) || self.peek_kind() == &TokenKind::Ident("agent".to_string()) {
+                    let def = self.parse_refactor_session_decl()?;
+                    Ok(Statement::RefactorSessionStmt(def))
+                } else if self.check(&TokenKind::Transaction) || self.peek_kind() == &TokenKind::Ident("transaction".to_string()) || self.peek_kind() == &TokenKind::Ident("tx".to_string()) {
+                    let _ = self.advance();
+                    let def = self.parse_refactoring_tx_decl()?;
+                    Ok(Statement::RefactoringTxStmt(def))
+                } else {
+                    let name = self.parse_identifier_or_string()?;
+                    self.match_token(&TokenKind::SemiColon);
+                    Ok(Statement::PreserveRefactorDecl { preserves: vec![name], body: Block { statements: vec![], span: span.clone() }, span })
+                }
             }
             _ => unreachable!(),
         }

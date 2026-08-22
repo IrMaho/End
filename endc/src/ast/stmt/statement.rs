@@ -11,6 +11,7 @@ use crate::ast::decl::features::FeatureDef;
 use crate::ast::decl::functions_traits::{FunctionDef, FunctionParam, TraitDef, TraitMethodDef};
 use crate::ast::decl::inheritance::*;
 use crate::ast::decl::modules::ModuleDef;
+use crate::ast::decl::refactoring_engine::*;
 use crate::ast::decl::structs_enums::StructDef;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -422,13 +423,7 @@ pub enum Statement {
     ReplaceFeature { target: String, with_provider: String, span: Span, },
     DecorateFeature { target: String, decorators: Vec<String>, span: Span, },
     ComposeFeature { target: String, components: Vec<String>, span: Span, },
-    EvolveFeature {
-        target: String,
-        adds: Vec<String>,
-        replaces: Vec<(String, String)>,
-        body: Option<Block>,
-        span: Span,
-    },
+    EvolveFeature { target: String, adds: Vec<String>, replaces: Vec<(String, String)>, body: Option<Block>, span: Span, },
     EvolveContract { target: String, adds: Vec<TraitMethodDef>, clauses: Vec<String>, span: Span, },
     ImpactQuery { target: String, span: Span, },
     UseFeature { feature: String, implementation: Option<String>, span: Span, },
@@ -491,4 +486,12 @@ pub enum Statement {
     ResolveConflictStmt(ResolutionDef),
     InspectInheritanceStmt(InspectInheritanceDef),
     ImpactInheritanceStmt(ImpactInheritanceDef),
+    // Autonomous Refactoring Engine Statements
+    RefactorSessionStmt(RefactorSessionDef),
+    DecompositionPlanStmt(DecompositionPlanDef),
+    ConservationAuditStmt(ConservationAuditDef),
+    SolidAuditStmt(SolidAuditDef),
+    RefactoringTxStmt(RefactoringTxDef),
+    SymbolInventoryStmt(SymbolInventoryDef),
+    TraceableMapStmt(TraceableMapDef),
 }

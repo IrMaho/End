@@ -5,6 +5,7 @@ pub mod features;
 pub mod functions_traits;
 pub mod inheritance;
 pub mod modules;
+pub mod refactoring_engine;
 pub mod structs_enums;
 
 pub use architecture::*;
@@ -14,4 +15,5 @@ pub use features::*;
 pub use functions_traits::*;
 pub use inheritance::*;
 pub use modules::*;
+pub use refactoring_engine::*;
 pub use structs_enums::*;

@@ -301,6 +301,13 @@ impl Statement {
             Statement::ResolveConflictStmt(r) => &r.span,
             Statement::InspectInheritanceStmt(i) => &i.span,
             Statement::ImpactInheritanceStmt(i) => &i.span,
+            Statement::RefactorSessionStmt(s) => &s.span,
+            Statement::DecompositionPlanStmt(d) => &d.span,
+            Statement::ConservationAuditStmt(c) => &c.span,
+            Statement::SolidAuditStmt(s) => &s.span,
+            Statement::RefactoringTxStmt(r) => &r.span,
+            Statement::SymbolInventoryStmt(s) => &s.span,
+            Statement::TraceableMapStmt(t) => &t.span,
         }
     }
 }

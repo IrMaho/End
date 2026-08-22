@@ -447,6 +447,16 @@ pub enum TokenKind {
     Transform,            // 'transform'
     Map,                  // 'map'
 
+    // Autonomous Refactoring & Code-Surgery Primitives
+    Conservation,         // 'conservation'
+    Inventory,            // 'inventory'
+    AuditLog,             // 'audit_log'
+    Traceable,            // 'traceable'
+    Coupling,             // 'coupling'
+    Solid,                // 'solid'
+    Unaccounted,          // 'unaccounted'
+    Refactor,             // 'refactor'
+
     EOF,
 }
 

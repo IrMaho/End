@@ -1654,6 +1654,34 @@ impl Interpreter {
                 self.set_var(&format!("__impact_inheritance_{}", i.target), Value::Bool(true));
                 Ok(None)
             }
+            Statement::RefactorSessionStmt(s) => {
+                self.set_var(&format!("__refactor_session_{}", s.agent_name), Value::String(format!("target={}, scope={:?}, forbid={:?}", s.target, s.scope, s.forbid)));
+                Ok(None)
+            }
+            Statement::DecompositionPlanStmt(d) => {
+                self.set_var(&format!("__decomposition_plan_{}", d.source.replace(['/', '.', '\\'], "_")), Value::String(format!("submodules_count={}, target_arch={}", d.submodules.len(), d.target_architecture)));
+                Ok(None)
+            }
+            Statement::ConservationAuditStmt(c) => {
+                self.set_var(&format!("__conservation_audit_{}", c.original_source.replace(['/', '.', '\\'], "_")), Value::String(format!("orig_loc={}, new_loc={}, unaccounted={}", c.original_loc, c.new_loc, c.unaccounted_count)));
+                Ok(None)
+            }
+            Statement::SolidAuditStmt(s) => {
+                self.set_var(&format!("__solid_audit_{}", s.module_name), Value::String(format!("srp={}, ocp={}, lsp={}, isp={}, dip={}", s.verify_srp, s.verify_ocp, s.verify_lsp, s.verify_isp, s.verify_dip)));
+                Ok(None)
+            }
+            Statement::RefactoringTxStmt(r) => {
+                self.set_var(&format!("__refactoring_tx_{}", r.tx_name), Value::String(format!("checkpoint={}, steps_count={}, rollback={}", r.checkpoint, r.steps.len(), r.auto_rollback)));
+                Ok(None)
+            }
+            Statement::SymbolInventoryStmt(s) => {
+                self.set_var(&format!("__symbol_inventory_{}", s.module_name), Value::String(format!("classes={}, functions={}, types={}", s.classes.len(), s.functions.len(), s.types.len())));
+                Ok(None)
+            }
+            Statement::TraceableMapStmt(t) => {
+                self.set_var(&format!("__traceable_map_{}", t.source_module.replace(['/', '.', '\\'], "_")), Value::String(format!("mappings_count={}", t.mappings.len())));
+                Ok(None)
+            }
             _ => Ok(None),
         }
     }
