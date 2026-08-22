@@ -142,3 +142,45 @@ The End language features 50 revolutionary, first-class language syntaxes proces
 49. **`slice <Name> { from: ..., include: [...], exclude: [...] }`** - Semantic AST code slicing for focused module editing.
 50. **`patch <Target> { ... }` & `evolve <Target> { ... }`** - Automated, formal-contract-backed codebase evolution and AST patching engine.
 
+---
+
+## 11. 📘 Master Technical Documentation & Vision Positioning Standards
+
+Whenever writing, reviewing, or updating documentation for End, always adhere to the following 5 non-negotiable principles:
+
+### 1. Canonical Vision & Positioning (Interpretation C)
+- Always position End as: **«A high-performance, memory-safe, modular, general-purpose programming language designed from the ground up for AI-assisted and agentic software development.»**
+- Never describe End as *only* a game language, systems language, Rust/Zig clone, or AI wrapper.
+- Emphasize **«One Language. Every Domain.»** across backend, web, mobile, desktop, games, graphics, embedded, systems, networking, distributed, AI/ML, and devtools.
+- Emphasize the core thesis: **«All the good parts, without the unnecessary complexity.»** (combining the best ideas from C, Rust, Zig, Go, Swift, Kotlin, Python, and functional languages into a unified native platform).
+
+### 2. The 12-Document Hierarchy Synchronization
+Whenever language features, AST nodes, syntax rules, or frameworks are added or modified in `endc`, keep the master documentation hierarchy synchronized:
+- `README.md`: Central gateway answering all 23 core architectural questions and presenting transparent benchmarks.
+- `docs/VISION.md`: Canonical vision, domain matrix, philosophy, and competitive thesis.
+- `docs/FEATURES.md`: Full feature taxonomy with standard 6-tier maturity badges.
+- `docs/AGENT_NATIVE.md`: Semantic tools (`graph`, `slice`, `impact`, `patch`, `eval`, `arch`) and vibecoding methodology.
+- `docs/AGENT_CONTRACT_SYSTEM.md`: Full 50-feature `Intent → Task → Skill → Evidence → Verify` specification.
+- `docs/OPERATION_VALUES_AND_ALGEBRA.md`: First-class operations, algebraic composition (`>>`, `&`, `|`, `*`, `retry`, `memoize`), and telemetry.
+- `docs/MEMORY_MODEL.md`: 4-tier memory architecture (Tier 0: Leases, Tier 1: Regions, Tier 2: Borrows, Tier 3: Raw pointers) and resource safety.
+- `docs/ARCHITECTURE.md`: Multi-tier compiler lowering pipeline (Lexer ➔ Parser ➔ AST ➔ Semantic Analyzer ➔ HIR/MIR ➔ C11/LLVM) and native runtime.
+- `docs/PACKAGES.md`: Manifest specification (`end.config.toml`), module firewalls, and decentralized registry vision.
+- `docs/FRAMEWORKS.md`: Integrated standard frameworks (`EndHyper`, `EndForge`, `EndNexus`, `EndCrypto`, `EndKV`, `EndUI`).
+- `docs/ROADMAP.md`: Release milestones and prioritized gap analysis.
+- `docs/STATUS.md`: 100% transparent truth classification table and test suite inventory.
+
+### 3. 6-Tier Feature Maturity Badges
+Always badge features accurately based on concrete codebase evidence:
+- 🟢 **Stable:** Implemented, tested with passing test suites in `endc/src/ir/tests.rs`, verified in benchmarks.
+- 🔵 **Beta:** Core implementation complete; undergoing optimization and API stabilization.
+- 🟡 **Experimental:** Functionally working in compiler/interpreter; semantics or syntax subject to refinement.
+- 🟠 **Alpha:** Initial prototype or partial compiler lowering; foundational tests passing.
+- 🟣 **Research:** Formal specification, architectural design, and conceptual exploration.
+- ⚪ **Planned:** On the official engineering roadmap with design RFC in progress.
+
+### 4. Truth Classification & Anti-Marketing Integrity
+- Never convert a roadmap item into an implemented feature without code evidence.
+- Avoid unsupported hyperbole ("fastest in the world", "zero bugs", "superior to all languages").
+- Provide transparent benchmark parameters (hardware, OS, compiler flags, warmup, iterations, checksums, raw results).
+
+
