@@ -165,6 +165,69 @@ pub enum TokenKind {
     By,               // 'by'
     Through,          // 'through'
 
+    // Operation Values & Operation Algebra Tokens
+    Operation,        // 'operation' or 'op'
+    Event,            // 'event'
+    Hub,              // 'hub'
+    Emit,             // 'emit'
+    Compose,          // 'compose'
+    Retry,            // 'retry'
+    Repeat,           // 'repeat'
+    When,             // 'when'
+    Subscribes,       // 'subscribes'
+    Analyze,          // 'analyze'
+    Memoize,          // 'memoize'
+    Equivalent,       // 'equivalent'
+    Merge,            // 'merge'
+    Inline,           // 'inline'
+    Then,             // 'then'
+    Requires,         // 'requires'
+    Effects,          // 'effects'
+    Version,          // 'version'
+
+    // Agent Contract System Tokens
+    Feature,          // 'feature'
+    Skill,            // 'skill'
+    Skills,           // 'skills'
+    Satisfies,        // 'satisfies'
+    Rules,            // 'rules'
+    Constraints,      // 'constraints'
+    Requirement,      // 'requirement' or 'requirements'
+    Implements,       // 'implements'
+    Verifies,         // 'verifies'
+    Claim,            // 'claim'
+    Complete,         // 'complete'
+    Evidence,         // 'evidence'
+    Todo,             // 'todo'
+    Knowledge,        // 'knowledge'
+    Decision,         // 'decision'
+    Approval,         // 'approval'
+    Review,           // 'review'
+    ReviewBy,         // 'review_by'
+    Confidence,       // 'confidence'
+    Change,           // 'change'
+    AgentBoundary,    // 'agent_boundary'
+    AgentContext,     // 'agent_context'
+    ContextFirewall,  // 'context_firewall'
+    AgentApi,         // 'agent_api'
+    Agentability,     // 'agentability'
+    RegressionGuard,  // 'regression_guard'
+    Adversarial,      // 'adversarial'
+    Tasks,            // 'tasks'
+    Profile,          // 'profile'
+    Hard,             // 'hard'
+    Soft,             // 'soft'
+    Structural,       // 'structural'
+    Semantic,         // 'semantic'
+    Behavioral,       // 'behavioral'
+    Performance,      // 'performance'
+    Security,         // 'security'
+    Testing,          // 'testing'
+    Summary,          // 'summary'
+    Risks,            // 'risks'
+    Recommendation,   // 'recommendation'
+    Notes,            // 'notes'
+
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
     QuestionQuestion, // '??'
@@ -586,6 +649,68 @@ impl<'a> Lexer<'a> {
                     "focus" => TokenKind::Focus,
                     "by" => TokenKind::By,
                     "through" => TokenKind::Through,
+                    "operation" => TokenKind::Operation,
+                    "event" => TokenKind::Event,
+                    "hub" => TokenKind::Hub,
+                    "emit" => TokenKind::Emit,
+                    "compose" => TokenKind::Compose,
+                    "retry" => TokenKind::Retry,
+                    "repeat" => TokenKind::Repeat,
+                    "when" => TokenKind::When,
+                    "subscribes" => TokenKind::Subscribes,
+                    "analyze" => TokenKind::Analyze,
+                    "memoize" => TokenKind::Memoize,
+                    "equivalent" => TokenKind::Equivalent,
+                    "merge" => TokenKind::Merge,
+                    "inline" => TokenKind::Inline,
+                    "then" => TokenKind::Then,
+                    "requires" | "require" => TokenKind::Requires,
+                    "guarantees" => TokenKind::Guarantee,
+                    "emits" => TokenKind::Emit,
+                    "effects" | "effect" => TokenKind::Effects,
+                    "version" => TokenKind::Version,
+                    "feature" => TokenKind::Feature,
+                    "skill" => TokenKind::Skill,
+                    "skills" => TokenKind::Skills,
+                    "satisfies" => TokenKind::Satisfies,
+                    "rules" | "rule" => TokenKind::Rules,
+                    "constraints" | "constraint" => TokenKind::Constraints,
+                    "requirement" | "requirements" => TokenKind::Requirement,
+                    "implements" => TokenKind::Implements,
+                    "verifies" => TokenKind::Verifies,
+                    "claim" => TokenKind::Claim,
+                    "complete" => TokenKind::Complete,
+                    "evidence" => TokenKind::Evidence,
+                    "todo" => TokenKind::Todo,
+                    "knowledge" => TokenKind::Knowledge,
+                    "decision" => TokenKind::Decision,
+                    "approval" => TokenKind::Approval,
+                    "review" => TokenKind::Review,
+                    "review_by" => TokenKind::ReviewBy,
+                    "confidence" => TokenKind::Confidence,
+                    "change" => TokenKind::Change,
+                    "agent_boundary" => TokenKind::AgentBoundary,
+                    "agent_context" => TokenKind::AgentContext,
+                    "context_firewall" => TokenKind::ContextFirewall,
+                    "agent_api" => TokenKind::AgentApi,
+                    "agentability" => TokenKind::Agentability,
+                    "regression_guard" => TokenKind::RegressionGuard,
+                    "adversarial" => TokenKind::Adversarial,
+                    "tasks" => TokenKind::Tasks,
+                    "profile" => TokenKind::Profile,
+                    "proof" => TokenKind::Prove,
+                    "hard" => TokenKind::Hard,
+                    "soft" => TokenKind::Soft,
+                    "structural" => TokenKind::Structural,
+                    "semantic" => TokenKind::Semantic,
+                    "behavioral" => TokenKind::Behavioral,
+                    "performance" => TokenKind::Performance,
+                    "security" => TokenKind::Security,
+                    "testing" => TokenKind::Testing,
+                    "summary" => TokenKind::Summary,
+                    "risks" => TokenKind::Risks,
+                    "recommendation" => TokenKind::Recommendation,
+                    "notes" => TokenKind::Notes,
                     _ => TokenKind::Ident(ident),
                 }
             };

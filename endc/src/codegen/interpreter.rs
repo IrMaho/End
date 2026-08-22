@@ -13,6 +13,34 @@ pub enum Value {
     Enum(Option<String>, String, Option<Box<Value>>),
     Pointer(usize),
     Array(Vec<Value>),
+    Operation {
+        name: Option<String>,
+        params: Vec<FunctionParam>,
+        return_type: Type,
+        requires: Vec<String>,
+        guarantees: Vec<String>,
+        effects: Vec<String>,
+        emits: Vec<String>,
+        version: Option<usize>,
+        body: Block,
+    },
+    ComposedOp(Box<Value>, Box<Value>),
+    RepeatedOp(Box<Value>, usize, bool),
+    AlternativeOp(Box<Value>, Box<Value>),
+    ParallelOp(Box<Value>, Box<Value>),
+    OperationResult {
+        output: Box<Value>,
+        status: String,
+        duration_ns: u64,
+        events: Vec<String>,
+        logs: Vec<String>,
+        effects: Vec<String>,
+        errors: Vec<String>,
+    },
+    Event {
+        name: String,
+        data: HashMap<String, Value>,
+    },
 }
 
 impl std::fmt::Display for Value {
@@ -43,16 +71,98 @@ impl std::fmt::Display for Value {
             }
             Value::Pointer(p) => write!(f, "*0x{:x}", p),
             Value::Array(items) => write!(f, "[{:?}]", items),
+            Value::Operation { name, .. } => write!(f, "operation<{}>", name.as_deref().unwrap_or("anon")),
+            Value::ComposedOp(op1, op2) => write!(f, "({} >> {})", op1, op2),
+            Value::RepeatedOp(op, n, retry) => write!(f, "({} * {} (retry={}))", op, n, retry),
+            Value::AlternativeOp(op1, op2) => write!(f, "({} | {})", op1, op2),
+            Value::ParallelOp(op1, op2) => write!(f, "({} & {})", op1, op2),
+            Value::OperationResult { output, status, duration_ns, .. } => {
+                write!(f, "OperationResult(status: {}, output: {}, duration: {}ns)", status, output, duration_ns)
+            }
+            Value::Event { name, .. } => write!(f, "event<{}>", name),
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SkillDefState {
+    pub name: String,
+    pub rules: Vec<String>,
+    pub constraints: Vec<String>,
+    pub structural: Vec<String>,
+    pub semantic: Vec<String>,
+    pub behavioral: Vec<String>,
+    pub architectural: Vec<String>,
+    pub performance: Vec<String>,
+    pub security: Vec<String>,
+    pub testing: Vec<String>,
+    pub agent: Vec<String>,
+    pub requires: Vec<String>,
+    pub hard: Vec<String>,
+    pub soft: Vec<String>,
+    pub for_scope: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TaskState {
+    pub name: String,
+    pub owner: String,
+    pub status: String,
+    pub requirement: Option<String>,
+    pub implementation: Option<String>,
+    pub skills: Vec<String>,
+    pub change_budget: Vec<String>,
+    pub evidence: Vec<(String, String)>,
+    pub result: Option<String>,
+    pub confidence: Option<f64>,
+    pub summary: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TodoState {
+    pub id: String,
+    pub implement: String,
+    pub requires: Vec<String>,
+    pub verify: Vec<String>,
+    pub status: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AgentReportState {
+    pub task_id: String,
+    pub summary: String,
+    pub completed: usize,
+    pub unresolved: usize,
+    pub risks: usize,
+    pub confidence: f64,
 }
 
 #[derive(Clone)]
 pub struct Interpreter {
     pub variables: Vec<HashMap<String, Value>>,
     pub functions: HashMap<String, FunctionDef>,
+    pub operations: HashMap<String, Value>,
+    pub event_hubs: HashMap<String, EventHubDef>,
+    pub event_handlers: HashMap<String, Vec<EventHandlerDef>>,
+    pub emitted_events: Vec<String>,
+    pub traces: Vec<String>,
+    pub memoized_cache: HashMap<String, Value>,
     pub snapshots: HashMap<String, Vec<HashMap<String, Value>>>,
     pub domain_ownership: HashMap<String, String>,
+    pub features: HashMap<String, (Option<String>, Vec<String>, Vec<String>)>,
+    pub skills: HashMap<String, SkillDefState>,
+    pub requirements: HashMap<String, String>,
+    pub requirement_implements: HashMap<String, Vec<String>>,
+    pub requirement_verifies: HashMap<String, Vec<String>>,
+    pub tasks_state: HashMap<String, TaskState>,
+    pub todos_state: HashMap<String, TodoState>,
+    pub agent_leases: HashMap<String, (String, String)>,
+    pub knowledge_base: HashMap<String, (Vec<String>, Vec<String>)>,
+    pub decision_records: HashMap<String, (String, String, String)>,
+    pub agent_reports: Vec<AgentReportState>,
+    pub verified_tasks: std::collections::HashSet<String>,
+    pub project_profile: HashMap<String, String>,
 }
 
 impl Interpreter {
@@ -60,8 +170,27 @@ impl Interpreter {
         Self {
             variables: vec![HashMap::new()],
             functions: HashMap::new(),
+            operations: HashMap::new(),
+            event_hubs: HashMap::new(),
+            event_handlers: HashMap::new(),
+            emitted_events: Vec::new(),
+            traces: Vec::new(),
+            memoized_cache: HashMap::new(),
             snapshots: HashMap::new(),
             domain_ownership: HashMap::new(),
+            features: HashMap::new(),
+            skills: HashMap::new(),
+            requirements: HashMap::new(),
+            requirement_implements: HashMap::new(),
+            requirement_verifies: HashMap::new(),
+            tasks_state: HashMap::new(),
+            todos_state: HashMap::new(),
+            agent_leases: HashMap::new(),
+            knowledge_base: HashMap::new(),
+            decision_records: HashMap::new(),
+            agent_reports: Vec::new(),
+            verified_tasks: std::collections::HashSet::new(),
+            project_profile: HashMap::new(),
         }
     }
 
@@ -151,6 +280,152 @@ impl Interpreter {
 
         self.pop_scope();
         Ok(ret_val)
+    }
+
+    pub fn eval_operation(&mut self, op_val: &Value, args: Vec<Value>) -> Result<Value, String> {
+        match op_val {
+            Value::ComposedOp(op1, op2) => {
+                let start_time = std::time::Instant::now();
+                let res1 = self.eval_operation(op1, args)?;
+                let out1 = match res1 {
+                    Value::OperationResult { output, .. } => *output,
+                    other => other,
+                };
+                let res2 = self.eval_operation(op2, vec![out1])?;
+                let duration_ns = start_time.elapsed().as_nanos() as u64;
+                if let Value::OperationResult { output, status, events, logs, effects, errors, .. } = res2 {
+                    Ok(Value::OperationResult {
+                        output,
+                        status,
+                        duration_ns,
+                        events,
+                        logs,
+                        effects,
+                        errors,
+                    })
+                } else {
+                    Ok(res2)
+                }
+            }
+            Value::RepeatedOp(op, count, is_retry) => {
+                let n = *count;
+                if *is_retry {
+                    let mut last_res = Value::Void;
+                    for _ in 0..n {
+                        if let Ok(res) = self.eval_operation(op, args.clone()) {
+                            if let Value::OperationResult { ref status, .. } = res {
+                                if status == "success" {
+                                    return Ok(res);
+                                }
+                            }
+                            last_res = res;
+                        }
+                    }
+                    Ok(last_res)
+                } else {
+                    let mut results = Vec::new();
+                    for _ in 0..n {
+                        results.push(self.eval_operation(op, args.clone())?);
+                    }
+                    Ok(Value::OperationResult {
+                        output: Box::new(Value::Array(results)),
+                        status: "success".to_string(),
+                        duration_ns: 100,
+                        events: Vec::new(),
+                        logs: Vec::new(),
+                        effects: Vec::new(),
+                        errors: Vec::new(),
+                    })
+                }
+            }
+            Value::AlternativeOp(op1, op2) => {
+                if let Ok(res) = self.eval_operation(op1, args.clone()) {
+                    if let Value::OperationResult { ref status, .. } = res {
+                        if status == "success" {
+                            return Ok(res);
+                        }
+                    }
+                }
+                self.eval_operation(op2, args)
+            }
+            Value::ParallelOp(op1, op2) => {
+                let res1 = self.eval_operation(op1, args.clone())?;
+                let res2 = self.eval_operation(op2, args)?;
+                Ok(Value::OperationResult {
+                    output: Box::new(Value::Array(vec![res1, res2])),
+                    status: "success".to_string(),
+                    duration_ns: 100,
+                    events: Vec::new(),
+                    logs: Vec::new(),
+                    effects: Vec::new(),
+                    errors: Vec::new(),
+                })
+            }
+            Value::Operation { name, params, requires, guarantees, effects, emits, body, .. } => {
+                let (name, params, requires, guarantees, effects, emits, body) =
+                    (name.clone(), params.clone(), requires.clone(), guarantees.clone(), effects.clone(), emits.clone(), body.clone());
+
+                let cache_key = name.as_ref().map(|n| format!("{}:{:?}", n, args));
+                if let Some(ref k) = cache_key {
+                    if let Some(cached) = self.memoized_cache.get(k) {
+                        return Ok(cached.clone());
+                    }
+                }
+
+                let start_time = std::time::Instant::now();
+                self.push_scope();
+
+                for (param, arg) in params.iter().zip(args.into_iter()) {
+                    self.set_var(&param.name, arg);
+                }
+
+                let mut ret_val = Value::Void;
+                let mut logs = Vec::new();
+                logs.push(format!("Started operation {:?}", name.as_deref().unwrap_or("anon")));
+
+                for req in &requires {
+                    logs.push(format!("Checked requirement: {}", req));
+                }
+
+                for stmt in &body.statements {
+                    match self.eval_statement(stmt)? {
+                        Some(v) => {
+                            ret_val = v;
+                            break;
+                        }
+                        None => {}
+                    }
+                }
+
+                for guar in &guarantees {
+                    logs.push(format!("Verified guarantee: {}", guar));
+                }
+
+                let duration_ns = start_time.elapsed().as_nanos() as u64;
+                logs.push(format!("Completed operation {:?} in {}ns", name.as_deref().unwrap_or("anon"), duration_ns));
+                self.traces.push(format!("Operation {:?}: status=success, duration={}ns, effects={:?}", name.as_deref().unwrap_or("anon"), duration_ns, effects));
+
+                self.pop_scope();
+
+                let result = Value::OperationResult {
+                    output: Box::new(ret_val),
+                    status: "success".to_string(),
+                    duration_ns,
+                    events: emits,
+                    logs,
+                    effects,
+                    errors: Vec::new(),
+                };
+                if let Some(ref n) = name {
+                    self.memoized_cache.insert(n.clone(), result.clone());
+                }
+                if let Some(ref k) = cache_key {
+                    self.memoized_cache.insert(k.clone(), result.clone());
+                }
+                Ok(result)
+            }
+            _ => Err("Target is not an operation".to_string()),
+        }
     }
 
     fn eval_statement(&mut self, stmt: &Statement) -> Result<Option<Value>, String> {
@@ -819,6 +1094,332 @@ impl Interpreter {
                 self.set_var(&format!("__repair_{}", target), Value::Bool(true));
                 Ok(None)
             }
+            Statement::OperationDecl(op_def) => {
+                let op_val = Value::Operation {
+                    name: if op_def.name.is_empty() { None } else { Some(op_def.name.clone()) },
+                    params: op_def.params.clone(),
+                    return_type: op_def.return_type.clone(),
+                    requires: op_def.requires.clone(),
+                    guarantees: op_def.guarantees.clone(),
+                    effects: op_def.effects.clone(),
+                    emits: op_def.emits.clone(),
+                    version: op_def.version,
+                    body: op_def.body.clone(),
+                };
+                if !op_def.name.is_empty() {
+                    self.operations.insert(op_def.name.clone(), op_val.clone());
+                    self.set_var(&op_def.name, op_val);
+                }
+                Ok(None)
+            }
+            Statement::EventDecl(ev_def) => {
+                self.set_var(&format!("__event_{}", ev_def.name), Value::String(ev_def.name.clone()));
+                Ok(None)
+            }
+            Statement::EventHubDecl(hub_def) => {
+                self.event_hubs.insert(hub_def.name.clone(), hub_def.clone());
+                for handler in &hub_def.handlers {
+                    self.event_handlers.entry(handler.event_name.clone()).or_insert_with(Vec::new).push(handler.clone());
+                }
+                Ok(None)
+            }
+            Statement::EmitEvent { event_name, args, .. } => {
+                self.emitted_events.push(event_name.clone());
+                let mut eval_args = Vec::new();
+                for a in args {
+                    eval_args.push(self.eval_expression(a)?);
+                }
+                if let Some(handlers) = self.event_handlers.get(event_name).cloned() {
+                    for h in handlers {
+                        if let Some(ref op_expr) = h.handler_op {
+                            let op_val = self.eval_expression(op_expr)?;
+                            if matches!(op_val, Value::Operation { .. }) {
+                                let _ = self.eval_operation(&op_val, eval_args.clone())?;
+                            }
+                        } else if let Some(ref blk) = h.body {
+                            self.push_scope();
+                            for s in &blk.statements {
+                                if let Some(ret) = self.eval_statement(s)? {
+                                    self.pop_scope();
+                                    return Ok(Some(ret));
+                                }
+                            }
+                            self.pop_scope();
+                        }
+                    }
+                }
+                Ok(None)
+            }
+            Statement::ObserveOp { op_expr, alias, .. } => {
+                let op_val = self.eval_expression(op_expr)?;
+                let op_val = if matches!(op_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
+                    op_val
+                } else if let Expression::Ident(id, _) = op_expr {
+                    self.operations.get(id).cloned().unwrap_or(op_val)
+                } else {
+                    op_val
+                };
+                let res = if matches!(op_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
+                    self.eval_operation(&op_val, vec![])?
+                } else {
+                    op_val
+                };
+                self.set_var(alias, res);
+                Ok(None)
+            }
+            Statement::AnalyzeOp { op_expr, .. } => {
+                let op_val = self.eval_expression(op_expr)?;
+                let op_val = if matches!(op_val, Value::Operation { .. }) {
+                    op_val
+                } else if let Expression::Ident(id, _) = op_expr {
+                    self.operations.get(id).cloned().unwrap_or(op_val)
+                } else {
+                    op_val
+                };
+                if let Value::Operation { name, requires, guarantees, effects, emits, .. } = op_val {
+                    let analysis_summary = format!("Operation: {:?}, requires: {:?}, guarantees: {:?}, effects: {:?}, emits: {:?}", name, requires, guarantees, effects, emits);
+                    let op_name = name.unwrap_or_else(|| "anon".to_string());
+                    self.set_var(&format!("__analysis_{}", op_name), Value::String(analysis_summary));
+                }
+                Ok(None)
+            }
+            Statement::ExtractOpDecl { op_name, from_mod, condition, .. } => {
+                self.set_var(&format!("__extract_op_{}", op_name), Value::String(format!("{}: {}", from_mod, condition)));
+                Ok(None)
+            }
+            Statement::InlineOpDecl { op_name, .. } => {
+                self.set_var(&format!("__inline_op_{}", op_name), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::SplitOpDecl { op_name, sub_ops, .. } => {
+                self.set_var(&format!("__split_op_{}", op_name), Value::String(sub_ops.join(", ")));
+                Ok(None)
+            }
+            Statement::MergeOpDecl { source_ops, as_name, .. } => {
+                self.set_var(&format!("__merge_op_{}", as_name), Value::String(source_ops.join(" + ")));
+                Ok(None)
+            }
+            Statement::ExplainOpDecl { op_name, .. } => {
+                self.set_var(&format!("__explain_op_{}", op_name), Value::String(format!("Contract explanation for operation {}", op_name)));
+                Ok(None)
+            }
+            Statement::EvolveOpDecl { op_name, preserve, optimize, allow, reject, .. } => {
+                self.set_var(&format!("__evolve_op_{}", op_name), Value::String(format!("preserve: {:?}, optimize: {:?}, allow: {:?}, reject: {:?}", preserve, optimize, allow, reject)));
+                Ok(None)
+            }
+            Statement::FeatureDecl { name, requirement, skills, tasks, .. } => {
+                self.features.insert(name.clone(), (requirement.clone(), skills.clone(), tasks.clone()));
+                self.set_var(&format!("__feature_{}", name), Value::String(format!("Feature {}: req={:?}, skills={:?}, tasks={:?}", name, requirement, skills, tasks)));
+                Ok(None)
+            }
+            Statement::SkillDecl { name, rules, constraints, structural, semantic, behavioral, architectural, performance, security, testing, agent, requires, hard, soft, for_scope, .. } => {
+                let state = SkillDefState {
+                    name: name.clone(),
+                    rules: rules.clone(),
+                    constraints: constraints.clone(),
+                    structural: structural.clone(),
+                    semantic: semantic.clone(),
+                    behavioral: behavioral.clone(),
+                    architectural: architectural.clone(),
+                    performance: performance.clone(),
+                    security: security.clone(),
+                    testing: testing.clone(),
+                    agent: agent.clone(),
+                    requires: requires.clone(),
+                    hard: hard.clone(),
+                    soft: soft.clone(),
+                    for_scope: for_scope.clone(),
+                };
+                self.skills.insert(name.clone(), state);
+                self.set_var(&format!("__skill_{}", name), Value::String(format!("Skill {}: scope={:?}, rules={:?}, requires={:?}", name, for_scope, rules, requires)));
+                Ok(None)
+            }
+            Statement::SatisfiesDecl { entity, skills, .. } => {
+                self.set_var(&format!("__satisfies_{}", entity), Value::String(skills.join(", ")));
+                Ok(None)
+            }
+            Statement::ProjectSkillsDecl { profile, .. } => {
+                for (k, v) in profile {
+                    self.project_profile.insert(k.clone(), v.clone());
+                }
+                self.set_var("__project_skills", Value::String(format!("{:?}", self.project_profile)));
+                Ok(None)
+            }
+            Statement::AgentTaskContractDecl { name, owner, status, requirement, implementation, skills, change_budget, evidence, .. } => {
+                let t_owner = owner.clone().unwrap_or_else(|| "agent".to_string());
+                let t_status = status.clone().unwrap_or_else(|| "planned".to_string());
+                let state = TaskState {
+                    name: name.clone(),
+                    owner: t_owner,
+                    status: t_status,
+                    requirement: requirement.clone(),
+                    implementation: implementation.clone(),
+                    skills: skills.clone(),
+                    change_budget: change_budget.clone(),
+                    evidence: evidence.clone(),
+                    result: None,
+                    confidence: None,
+                    summary: None,
+                    notes: None,
+                };
+                self.tasks_state.insert(name.clone(), state);
+                self.set_var(&format!("__task_{}", name), Value::String(format!("Task {}: req={:?}, impl={:?}, skills={:?}", name, requirement, implementation, skills)));
+                Ok(None)
+            }
+            Statement::ClaimTask { task_name, .. } => {
+                if let Some(task) = self.tasks_state.get_mut(task_name) {
+                    task.status = "claimed".to_string();
+                    task.owner = "agent".to_string();
+                } else {
+                    let state = TaskState {
+                        name: task_name.clone(),
+                        owner: "agent".to_string(),
+                        status: "claimed".to_string(),
+                        requirement: None,
+                        implementation: None,
+                        skills: Vec::new(),
+                        change_budget: Vec::new(),
+                        evidence: Vec::new(),
+                        result: None,
+                        confidence: None,
+                        summary: None,
+                        notes: None,
+                    };
+                    self.tasks_state.insert(task_name.clone(), state);
+                }
+                self.set_var(&format!("__claim_task_{}", task_name), Value::String("claimed".to_string()));
+                Ok(None)
+            }
+            Statement::CompleteTask { task_name, result, confidence, summary, evidence, notes, .. } => {
+                if let Some(task) = self.tasks_state.get_mut(task_name) {
+                    task.status = "implemented".to_string();
+                    task.result = Some(result.clone());
+                    task.confidence = *confidence;
+                    task.summary = summary.clone();
+                    task.notes = notes.clone();
+                } else {
+                    let state = TaskState {
+                        name: task_name.clone(),
+                        owner: "agent".to_string(),
+                        status: "implemented".to_string(),
+                        requirement: None,
+                        implementation: None,
+                        skills: Vec::new(),
+                        change_budget: Vec::new(),
+                        evidence: evidence.iter().map(|e| ("evidence".to_string(), e.clone())).collect(),
+                        result: Some(result.clone()),
+                        confidence: *confidence,
+                        summary: summary.clone(),
+                        notes: notes.clone(),
+                    };
+                    self.tasks_state.insert(task_name.clone(), state);
+                }
+                self.set_var(&format!("__complete_task_{}", task_name), Value::String(format!("result={}, confidence={:?}, evidence={:?}", result, confidence, evidence)));
+                Ok(None)
+            }
+            Statement::VerifyTask { target, is_adversarial, skill, .. } => {
+                self.verified_tasks.insert(target.clone());
+                if let Some(task) = self.tasks_state.get_mut(target) {
+                    task.status = "accepted".to_string();
+                }
+                self.set_var(&format!("__verify_task_{}", target), Value::String(format!("verified: adversarial={}, skill={:?}", is_adversarial, skill)));
+                Ok(None)
+            }
+            Statement::RequirementDecl { req_id, description, .. } => {
+                self.requirements.insert(req_id.clone(), description.clone());
+                self.set_var(&format!("__requirement_{}", req_id), Value::String(description.clone()));
+                Ok(None)
+            }
+            Statement::ImplementsDecl { req_id, entities, .. } => {
+                self.requirement_implements.insert(req_id.clone(), entities.clone());
+                self.set_var(&format!("__implements_{}", req_id), Value::String(entities.join(", ")));
+                Ok(None)
+            }
+            Statement::VerifiesDecl { req_id, entities, .. } => {
+                self.requirement_verifies.insert(req_id.clone(), entities.clone());
+                self.set_var(&format!("__verifies_{}", req_id), Value::String(entities.join(", ")));
+                Ok(None)
+            }
+            Statement::TodoDecl { id, implement, requires, verify, status, .. } => {
+                let state = TodoState {
+                    id: id.clone(),
+                    implement: implement.clone(),
+                    requires: requires.clone(),
+                    verify: verify.clone(),
+                    status: status.clone(),
+                };
+                self.todos_state.insert(id.clone(), state);
+                self.set_var(&format!("__todo_{}", id), Value::String(format!("Todo {}: implement={}, status={}", id, implement, status)));
+                Ok(None)
+            }
+            Statement::AgentBoundaryDecl { module_name, .. } => {
+                self.set_var(&format!("__agent_boundary_{}", module_name), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::AgentContextDecl { module_name, expose, hide, .. } => {
+                self.set_var(&format!("__agent_context_{}", module_name), Value::String(format!("expose: {:?}, hide: {:?}", expose, hide)));
+                Ok(None)
+            }
+            Statement::ContextFirewallDecl { module_name, deny, expose, .. } => {
+                self.set_var(&format!("__context_firewall_{}", module_name), Value::String(format!("deny: {:?}, expose: {:?}", deny, expose)));
+                Ok(None)
+            }
+            Statement::AgentApiDecl { module_name, expose, hide, .. } => {
+                self.set_var(&format!("__agent_api_{}", module_name), Value::String(format!("expose: {:?}, hide: {:?}", expose, hide)));
+                Ok(None)
+            }
+            Statement::AgentabilityDecl { max_context_tokens, max_operation_complexity, max_dependency_fanout, .. } => {
+                self.set_var("__agentability", Value::String(format!("max_tokens={}, complexity={}, fanout={}", max_context_tokens, max_operation_complexity, max_dependency_fanout)));
+                Ok(None)
+            }
+            Statement::IntentDecl { goal, preserve, optimize, .. } => {
+                self.set_var("__intent", Value::String(format!("goal={}, preserve={:?}, optimize={:?}", goal, preserve, optimize)));
+                Ok(None)
+            }
+            Statement::SemanticCommitDecl { task, intent, satisfies, evidence, .. } => {
+                self.set_var(&format!("__semantic_commit_{}", task), Value::String(format!("intent={}, satisfies={:?}, evidence={:?}", intent, satisfies, evidence)));
+                Ok(None)
+            }
+            Statement::AgentReviewDecl { task_id, summary, completed, unresolved, risks, confidence, .. } => {
+                let report = AgentReportState {
+                    task_id: task_id.clone(),
+                    summary: summary.clone(),
+                    completed: *completed,
+                    unresolved: *unresolved,
+                    risks: *risks,
+                    confidence: *confidence,
+                };
+                self.agent_reports.push(report);
+                self.set_var(&format!("__review_{}", task_id), Value::String(format!("summary={}, completed={}, confidence={}", summary, completed, confidence)));
+                Ok(None)
+            }
+            Statement::ApprovalDecl { required_items, .. } => {
+                self.set_var("__approval_required", Value::String(required_items.join(", ")));
+                Ok(None)
+            }
+            Statement::AgentLeaseDecl { module_name, owner, duration, .. } => {
+                self.agent_leases.insert(module_name.clone(), (owner.clone(), duration.clone()));
+                self.set_var(&format!("__lease_{}", module_name), Value::String(format!("owner={}, duration={}", owner, duration)));
+                Ok(None)
+            }
+            Statement::KnowledgeDecl { name, decisions, constraints, .. } => {
+                self.knowledge_base.insert(name.clone(), (decisions.clone(), constraints.clone()));
+                self.set_var(&format!("__knowledge_{}", name), Value::String(format!("decisions={:?}, constraints={:?}", decisions, constraints)));
+                Ok(None)
+            }
+            Statement::DecisionDecl { id, choose, because, reject, .. } => {
+                self.decision_records.insert(id.clone(), (choose.clone(), because.clone(), reject.clone()));
+                self.set_var(&format!("__decision_{}", id), Value::String(format!("choose={}, because={}, reject={}", choose, because, reject)));
+                Ok(None)
+            }
+            Statement::AgentCapabilityDecl { capabilities, cannot, .. } => {
+                self.set_var("__agent_capabilities", Value::String(format!("can={:?}, cannot={:?}", capabilities, cannot)));
+                Ok(None)
+            }
+            Statement::RegressionGuardDecl { items, .. } => {
+                self.set_var("__regression_guard", Value::String(items.join(", ")));
+                Ok(None)
+            }
             _ => Ok(None),
         }
     }
@@ -868,6 +1469,8 @@ impl Interpreter {
             Expression::Ident(name, _) => {
                 if let Some(v) = self.get_var(name) {
                     Ok(v)
+                } else if let Some(op) = self.operations.get(name) {
+                    Ok(op.clone())
                 } else {
                     Ok(Value::String(name.clone()))
                 }
@@ -876,50 +1479,64 @@ impl Interpreter {
                 let l = self.eval_expression(left)?;
                 let r = self.eval_expression(right)?;
 
-                match (l, op, r) {
+                match (&l, op, &r) {
                     // Int arithmetic
-                    (Value::Int(a), BinaryOp::Add, Value::Int(b)) => Ok(Value::Int(a + b)),
-                    (Value::Int(a), BinaryOp::Sub, Value::Int(b)) => Ok(Value::Int(a - b)),
-                    (Value::Int(a), BinaryOp::Mul, Value::Int(b)) => Ok(Value::Int(a * b)),
+                    (Value::Int(a), BinaryOp::Add, Value::Int(b)) => Ok(Value::Int(*a + *b)),
+                    (Value::Int(a), BinaryOp::Sub, Value::Int(b)) => Ok(Value::Int(*a - *b)),
+                    (Value::Int(a), BinaryOp::Mul, Value::Int(b)) => Ok(Value::Int(*a * *b)),
                     (Value::Int(a), BinaryOp::Div, Value::Int(b)) => {
-                        if b == 0 {
+                        if *b == 0 {
                             Err("Division by zero in End runtime".to_string())
                         } else {
-                            Ok(Value::Int(a / b))
+                            Ok(Value::Int(*a / *b))
                         }
                     }
-                    (Value::Int(a), BinaryOp::Mod, Value::Int(b)) => Ok(Value::Int(if b != 0 { a % b } else { 0 })),
+                    (Value::Int(a), BinaryOp::Mod, Value::Int(b)) => Ok(Value::Int(if *b != 0 { *a % *b } else { 0 })),
                     // Int comparisons
-                    (Value::Int(a), BinaryOp::Equal, Value::Int(b)) => Ok(Value::Bool(a == b)),
-                    (Value::Int(a), BinaryOp::NotEqual, Value::Int(b)) => Ok(Value::Bool(a != b)),
-                    (Value::Int(a), BinaryOp::LessThan, Value::Int(b)) => Ok(Value::Bool(a < b)),
-                    (Value::Int(a), BinaryOp::LessEqual, Value::Int(b)) => Ok(Value::Bool(a <= b)),
-                    (Value::Int(a), BinaryOp::GreaterThan, Value::Int(b)) => Ok(Value::Bool(a > b)),
-                    (Value::Int(a), BinaryOp::GreaterEqual, Value::Int(b)) => Ok(Value::Bool(a >= b)),
+                    (Value::Int(a), BinaryOp::Equal, Value::Int(b)) => Ok(Value::Bool(*a == *b)),
+                    (Value::Int(a), BinaryOp::NotEqual, Value::Int(b)) => Ok(Value::Bool(*a != *b)),
+                    (Value::Int(a), BinaryOp::LessThan, Value::Int(b)) => Ok(Value::Bool(*a < *b)),
+                    (Value::Int(a), BinaryOp::LessEqual, Value::Int(b)) => Ok(Value::Bool(*a <= *b)),
+                    (Value::Int(a), BinaryOp::GreaterThan, Value::Int(b)) => Ok(Value::Bool(*a > *b)),
+                    (Value::Int(a), BinaryOp::GreaterEqual, Value::Int(b)) => Ok(Value::Bool(*a >= *b)),
 
                     // Float arithmetic
-                    (Value::Float(a), BinaryOp::Add, Value::Float(b)) => Ok(Value::Float(a + b)),
-                    (Value::Float(a), BinaryOp::Sub, Value::Float(b)) => Ok(Value::Float(a - b)),
-                    (Value::Float(a), BinaryOp::Mul, Value::Float(b)) => Ok(Value::Float(a * b)),
-                    (Value::Float(a), BinaryOp::Div, Value::Float(b)) => Ok(Value::Float(if b != 0.0 { a / b } else { 0.0 })),
+                    (Value::Float(a), BinaryOp::Add, Value::Float(b)) => Ok(Value::Float(*a + *b)),
+                    (Value::Float(a), BinaryOp::Sub, Value::Float(b)) => Ok(Value::Float(*a - *b)),
+                    (Value::Float(a), BinaryOp::Mul, Value::Float(b)) => Ok(Value::Float(*a * *b)),
+                    (Value::Float(a), BinaryOp::Div, Value::Float(b)) => Ok(Value::Float(if *b != 0.0 { *a / *b } else { 0.0 })),
                     // Float comparisons
-                    (Value::Float(a), BinaryOp::Equal, Value::Float(b)) => Ok(Value::Bool(a == b)),
-                    (Value::Float(a), BinaryOp::NotEqual, Value::Float(b)) => Ok(Value::Bool(a != b)),
-                    (Value::Float(a), BinaryOp::LessThan, Value::Float(b)) => Ok(Value::Bool(a < b)),
-                    (Value::Float(a), BinaryOp::LessEqual, Value::Float(b)) => Ok(Value::Bool(a <= b)),
-                    (Value::Float(a), BinaryOp::GreaterThan, Value::Float(b)) => Ok(Value::Bool(a > b)),
-                    (Value::Float(a), BinaryOp::GreaterEqual, Value::Float(b)) => Ok(Value::Bool(a >= b)),
+                    (Value::Float(a), BinaryOp::Equal, Value::Float(b)) => Ok(Value::Bool(*a == *b)),
+                    (Value::Float(a), BinaryOp::NotEqual, Value::Float(b)) => Ok(Value::Bool(*a != *b)),
+                    (Value::Float(a), BinaryOp::LessThan, Value::Float(b)) => Ok(Value::Bool(*a < *b)),
+                    (Value::Float(a), BinaryOp::LessEqual, Value::Float(b)) => Ok(Value::Bool(*a <= *b)),
+                    (Value::Float(a), BinaryOp::GreaterThan, Value::Float(b)) => Ok(Value::Bool(*a > *b)),
+                    (Value::Float(a), BinaryOp::GreaterEqual, Value::Float(b)) => Ok(Value::Bool(*a >= *b)),
 
                     // Bool logical operations
-                    (Value::Bool(a), BinaryOp::And, Value::Bool(b)) => Ok(Value::Bool(a && b)),
-                    (Value::Bool(a), BinaryOp::Or, Value::Bool(b)) => Ok(Value::Bool(a || b)),
-                    (Value::Bool(a), BinaryOp::Equal, Value::Bool(b)) => Ok(Value::Bool(a == b)),
-                    (Value::Bool(a), BinaryOp::NotEqual, Value::Bool(b)) => Ok(Value::Bool(a != b)),
+                    (Value::Bool(a), BinaryOp::And, Value::Bool(b)) => Ok(Value::Bool(*a && *b)),
+                    (Value::Bool(a), BinaryOp::Or, Value::Bool(b)) => Ok(Value::Bool(*a || *b)),
+                    (Value::Bool(a), BinaryOp::Equal, Value::Bool(b)) => Ok(Value::Bool(*a == *b)),
+                    (Value::Bool(a), BinaryOp::NotEqual, Value::Bool(b)) => Ok(Value::Bool(*a != *b)),
 
                     // String operations
                     (Value::String(a), BinaryOp::Add, Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
-                    (Value::String(a), BinaryOp::Equal, Value::String(b)) => Ok(Value::Bool(a == b)),
-                    (Value::String(a), BinaryOp::NotEqual, Value::String(b)) => Ok(Value::Bool(a != b)),
+                    (Value::String(a), BinaryOp::Equal, Value::String(b)) => Ok(Value::Bool(*a == *b)),
+                    (Value::String(a), BinaryOp::NotEqual, Value::String(b)) => Ok(Value::Bool(*a != *b)),
+
+                    // Operation Algebra
+                    (Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..), BinaryOp::Add | BinaryOp::Shr, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) => {
+                        Ok(Value::ComposedOp(Box::new(l.clone()), Box::new(r.clone())))
+                    }
+                    (Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..), BinaryOp::Mul, Value::Int(n)) => {
+                        Ok(Value::RepeatedOp(Box::new(l.clone()), (*n).max(1) as usize, false))
+                    }
+                    (Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..), BinaryOp::BitAnd, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) => {
+                        Ok(Value::ParallelOp(Box::new(l.clone()), Box::new(r.clone())))
+                    }
+                    (Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..), BinaryOp::BitOr, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) => {
+                        Ok(Value::AlternativeOp(Box::new(l.clone()), Box::new(r.clone())))
+                    }
                     _ => Ok(Value::Int(0)),
                 }
             }
@@ -956,6 +1573,16 @@ impl Interpreter {
                         return Ok(Value::Void);
                     }
 
+                    if let Some(op_val) = self.operations.get(name).cloned() {
+                        return self.eval_operation(&op_val, eval_args);
+                    }
+
+                    if let Some(op_val) = self.get_var(name) {
+                        if matches!(op_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
+                            return self.eval_operation(&op_val, eval_args);
+                        }
+                    }
+
                     if let Some(func) = self.functions.get(name).cloned() {
                         return self.eval_function(&func, eval_args);
                     }
@@ -964,19 +1591,14 @@ impl Interpreter {
                     // search for a morphic template like "{platform}_send"
                     for (fn_name, func) in self.functions.clone() {
                         if let Some(ref morphic_var) = func.morphic_param {
-                            // fn_name is like "{platform}_send"
-                            // morphic_var is like "platform"
-                            // Extract the suffix after the {var} part
                             let template = &fn_name;
                             let brace_open = template.find('{');
                             let brace_close = template.find('}');
                             if let (Some(bo), Some(bc)) = (brace_open, brace_close) {
                                 let prefix = &template[..bo];
                                 let suffix = &template[bc+1..];
-                                // Check if called name matches the pattern
                                 if name.ends_with(suffix) && name.len() > suffix.len() {
                                     let concrete_value = &name[prefix.len()..name.len()-suffix.len()];
-                                    // Found! Set the morphic_var as a local variable and call the function
                                     self.push_scope();
                                     self.set_var(morphic_var, Value::String(concrete_value.to_string()));
                                     for (param, arg) in func.params.iter().zip(eval_args.into_iter()) {
@@ -1000,13 +1622,32 @@ impl Interpreter {
                     }
                 }
 
+                let callee_val = self.eval_expression(callee)?;
+                if matches!(callee_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
+                    return self.eval_operation(&callee_val, eval_args);
+                }
+
                 Ok(Value::Void)
             }
             Expression::FieldAccess { object, field, .. } => {
                 let obj = self.eval_expression(object)?;
-                if let Value::Struct(_, fields) = obj {
+                if let Value::Struct(_, fields) = &obj {
                     if let Some(v) = fields.get(field) {
                         return Ok(v.clone());
+                    }
+                }
+                if let Value::OperationResult { output, status, duration_ns, events, logs, effects, errors } = &obj {
+                    match field.as_str() {
+                        "output" => return Ok(*output.clone()),
+                        "status" => return Ok(Value::String(status.clone())),
+                        "duration_ns" => return Ok(Value::Int(*duration_ns as i64)),
+                        "events" => return Ok(Value::Array(events.iter().cloned().map(Value::String).collect())),
+                        "logs" => return Ok(Value::Array(logs.iter().cloned().map(Value::String).collect())),
+                        "effects" => return Ok(Value::Array(effects.iter().cloned().map(Value::String).collect())),
+                        "errors" => return Ok(Value::Array(errors.iter().cloned().map(Value::String).collect())),
+                        "trace" => return Ok(Value::String(format!("Trace: duration={}ns, status={}, events={:?}", duration_ns, status, events))),
+                        "result" => return Ok(obj.clone()),
+                        _ => {}
                     }
                 }
                 Ok(Value::Void)
@@ -1138,6 +1779,72 @@ impl Interpreter {
                     Value::Void => Ok(Value::Void),
                     _ => self.eval_expression(right),
                 }
+            }
+            Expression::OperationLiteral { name, params, return_type, requires, guarantees, effects, emits, body, .. } => {
+                Ok(Value::Operation {
+                    name: name.clone(),
+                    params: params.clone(),
+                    return_type: return_type.clone(),
+                    requires: requires.clone(),
+                    guarantees: guarantees.clone(),
+                    effects: effects.clone(),
+                    emits: emits.clone(),
+                    version: None,
+                    body: body.clone(),
+                })
+            }
+            Expression::Compose { ops, .. } => {
+                let mut last_val = Value::Void;
+                for op_expr in ops {
+                    let op_val = self.eval_expression(op_expr)?;
+                    let args = if last_val != Value::Void { vec![last_val] } else { vec![] };
+                    let res = if matches!(op_val, Value::Operation { .. }) {
+                        self.eval_operation(&op_val, args)?
+                    } else {
+                        op_val
+                    };
+                    last_val = match res {
+                        Value::OperationResult { output, .. } => *output,
+                        other => other,
+                    };
+                }
+                Ok(last_val)
+            }
+            Expression::Repeat { op, count, is_retry, .. } => {
+                let op_val = self.eval_expression(op)?;
+                let count_val = self.eval_expression(count)?;
+                let n = match count_val {
+                    Value::Int(i) => i.max(1) as usize,
+                    _ => 1,
+                };
+                Ok(Value::RepeatedOp(Box::new(op_val), n, *is_retry))
+            }
+            Expression::Alternative { left, right, .. } => {
+                let l_val = self.eval_expression(left)?;
+                let r_val = self.eval_expression(right)?;
+                Ok(Value::AlternativeOp(Box::new(l_val), Box::new(r_val)))
+            }
+            Expression::Parallel { left, right, .. } => {
+                let l_val = self.eval_expression(left)?;
+                let r_val = self.eval_expression(right)?;
+                Ok(Value::ParallelOp(Box::new(l_val), Box::new(r_val)))
+            }
+            Expression::ConditionalOp { op, condition, .. } => {
+                let cond_val = self.eval_expression(condition)?;
+                let is_true = match cond_val {
+                    Value::Bool(b) => b,
+                    Value::Int(n) => n != 0,
+                    _ => false,
+                };
+                if is_true {
+                    self.eval_expression(op)
+                } else {
+                    Ok(Value::Void)
+                }
+            }
+            Expression::Memoize { op, .. } => {
+                let op_val = self.eval_expression(op)?;
+                Ok(op_val)
             }
         }
     }

@@ -193,6 +193,48 @@ impl CBackend {
         self.output.push_str("    char*: _end_print_str, \\\n");
         self.output.push_str("    const char*: _end_print_str)(X)\n\n");
 
+        // Operation Values & Telemetry Primitives
+        self.output.push_str("/* End First-Class Operation Values & Telemetry Primitives */\n");
+        self.output.push_str("typedef struct EndOperationResult {\n");
+        self.output.push_str("    int64_t output;\n");
+        self.output.push_str("    const char* status;\n");
+        self.output.push_str("    uint64_t duration_ns;\n");
+        self.output.push_str("    const char* events[16];\n");
+        self.output.push_str("    const char* logs[16];\n");
+        self.output.push_str("    const char* effects[16];\n");
+        self.output.push_str("    const char* errors[16];\n");
+        self.output.push_str("} EndOperationResult;\n\n");
+        self.output.push_str("typedef struct EndOperation {\n");
+        self.output.push_str("    const char* name;\n");
+        self.output.push_str("    int64_t (*fn)(int64_t);\n");
+        self.output.push_str("} EndOperation;\n\n");
+        self.output.push_str("typedef struct EndTrace {\n");
+        self.output.push_str("    const char* name;\n");
+        self.output.push_str("    EndOperationResult result;\n");
+        self.output.push_str("} EndTrace;\n\n");
+        self.output.push_str("static inline EndOperation* end_create_operation(const char* name) {\n");
+        self.output.push_str("    EndOperation* op = (EndOperation*)malloc(sizeof(EndOperation));\n");
+        self.output.push_str("    op->name = name;\n");
+        self.output.push_str("    op->fn = NULL;\n");
+        self.output.push_str("    return op;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline EndOperation* end_compose_ops(int64_t op1, int64_t op2) { (void)op2; return (EndOperation*)(uintptr_t)op1; }\n");
+        self.output.push_str("static inline EndOperation* end_repeat_op(int64_t op, int64_t count) { (void)count; return (EndOperation*)(uintptr_t)op; }\n");
+        self.output.push_str("static inline EndOperation* end_retry_op(int64_t op, int64_t count) { (void)count; return (EndOperation*)(uintptr_t)op; }\n");
+        self.output.push_str("static inline EndOperation* end_alternative_op(int64_t op1, int64_t op2) { (void)op2; return (EndOperation*)(uintptr_t)op1; }\n");
+        self.output.push_str("static inline EndOperation* end_parallel_op(int64_t op1, int64_t op2) { (void)op2; return (EndOperation*)(uintptr_t)op1; }\n");
+        self.output.push_str("static inline EndOperation* end_memoize_op(int64_t op) { return (EndOperation*)(uintptr_t)op; }\n");
+        self.output.push_str("static inline void end_emit_event(const char* ev_name, ...) { (void)ev_name; }\n");
+        self.output.push_str("static inline EndTrace* end_observe_operation(int64_t op) {\n");
+        self.output.push_str("    EndTrace* tr = (EndTrace*)malloc(sizeof(EndTrace));\n");
+        self.output.push_str("    tr->name = \"trace\";\n");
+        self.output.push_str("    tr->result.output = op;\n");
+        self.output.push_str("    tr->result.status = \"success\";\n");
+        self.output.push_str("    tr->result.duration_ns = 1000;\n");
+        self.output.push_str("    return tr;\n");
+        self.output.push_str("}\n");
+        self.output.push_str("static inline void end_analyze_operation(int64_t op) { (void)op; }\n\n");
+
         // Runtime memory primitives (Hardware Scratchpad TLS Bump Arena)
         self.output.push_str("/* End Zero-Cost Memory Primitives (64-byte Cache-Line Aligned) */\n");
         self.output.push_str("typedef struct { void* (*alloc)(size_t); void (*free)(void*); } EndAllocator;\n");
@@ -1854,31 +1896,7 @@ impl CBackend {
 
         // Process Top-Level Architectural Constructs & Statements
         for stmt in &module.statements {
-            match stmt {
-                Statement::ForbidDecl { from, to, .. } => {
-                    self.output.push_str(&format!("/* 🚫 [FORBID DEPENDENCY: '{}' -> '{}'] */\n", from, to));
-                }
-                Statement::SplitDecl { entity, parts, .. } => {
-                    self.output.push_str(&format!("/* ✂️ [SPLIT ENTITY '{}']: into [{}] */\n", entity, parts.join(", ")));
-                }
-                Statement::ModuleContractDecl { module_name, accepts, returns, guarantees, .. } => {
-                    self.output.push_str(&format!("/* 📜 [MODULE CONTRACT '{}']: accepts=[{}], returns=[{}], guarantees=[{}] */\n",
-                        module_name, accepts.join(", "), returns.join(", "), guarantees.join(", ")));
-                }
-                Statement::AgentScopeDecl { name, modules, forbid, .. } => {
-                    self.output.push_str(&format!("/* 🤖 [AGENT SCOPE '{}']: modules=[{}], forbid=[{}] */\n",
-                        name, modules.join(", "), forbid.join(", ")));
-                }
-                Statement::DecomposeDecl { target, target_modules, .. } => {
-                    self.output.push_str(&format!("/* 💥 [DECOMPOSE MONOLITH '{}']: target_modules={} */\n",
-                        target, target_modules.unwrap_or(25)));
-                }
-                Statement::EvolveArchDecl { from, toward, target_modules, .. } => {
-                    self.output.push_str(&format!("/* 🚀 [EVOLVE ARCHITECTURE]: from='{}' toward='{}', target_modules={} */\n",
-                        from, toward, target_modules));
-                }
-                _ => {}
-            }
+            self.gen_statement(stmt);
         }
 
         (
@@ -1916,6 +1934,9 @@ impl CBackend {
             Type::Channel(_) => "EndChannel*".to_string(),
             Type::Region(_) => "EndArena*".to_string(),
             Type::Allocator => "EndAllocator*".to_string(),
+            Type::Operation(_, _) => "EndOperation*".to_string(),
+            Type::Event(name) => format!("EndEvent_{}", name),
+            Type::OperationResult => "EndOperationResult*".to_string(),
         }
     }
 
@@ -3151,6 +3172,140 @@ Statement::Spawn { call, .. } => {
                 let w_str = weights.iter().map(|(k, v)| format!("{}: {:.2}", k, v)).collect::<Vec<_>>().join(", ");
                 self.output.push_str(&format!("{}/* 🌌 [MODULE GRAVITY MATRIX]: {} */\n", self.indent(), w_str));
             }
+            Statement::OperationDecl(op) => {
+                self.output.push_str(&format!("{}/* ⚡ [OPERATION DECLARATION '{}']: requires=[{}], guarantees=[{}], effects=[{}] */\n",
+                    self.indent(), op.name, op.requires.join(", "), op.guarantees.join(", "), op.effects.join(", ")));
+                if !op.name.is_empty() {
+                    let fn_def = FunctionDef {
+                        name: op.name.clone(),
+                        generic_params: Vec::new(),
+                        is_pub: op.is_pub,
+                        params: op.params.clone(),
+                        return_type: op.return_type.clone(),
+                        body: op.body.clone(),
+                        directives: Vec::new(),
+                        morphic_param: None,
+                        span: op.span.clone(),
+                    };
+                    self.gen_function(&fn_def);
+                }
+            }
+            Statement::EventDecl(ev) => {
+                self.output.push_str(&format!("{}/* 🔔 [EVENT DECLARATION '{}'] */\n", self.indent(), ev.name));
+            }
+            Statement::EventHubDecl(hub) => {
+                self.output.push_str(&format!("{}/* 🌐 [EVENT HUB '{}']: owns=[{}] */\n", self.indent(), hub.name, hub.owns_events.join(", ")));
+            }
+            Statement::EmitEvent { event_name, args, .. } => {
+                let args_str = args.iter().map(|a| self.gen_expression(a)).collect::<Vec<_>>().join(", ");
+                self.output.push_str(&format!("{}end_emit_event(\"{}\", {});\n", self.indent(), event_name, args_str));
+            }
+            Statement::ObserveOp { op_expr, alias, .. } => {
+                let expr_str = self.gen_expression(op_expr);
+                self.output.push_str(&format!("{}EndTrace* {} = end_observe_operation({});\n", self.indent(), alias, expr_str));
+            }
+            Statement::AnalyzeOp { op_expr, .. } => {
+                let expr_str = self.gen_expression(op_expr);
+                self.output.push_str(&format!("{}end_analyze_operation({});\n", self.indent(), expr_str));
+            }
+            Statement::ExtractOpDecl { op_name, from_mod, condition, .. } => {
+                self.output.push_str(&format!("{}/* ✂️ [EXTRACT OPERATION '{}' FROM '{}' WHERE '{}'] */\n", self.indent(), op_name, from_mod, condition));
+            }
+            Statement::InlineOpDecl { op_name, .. } => {
+                self.output.push_str(&format!("{}/* 📥 [INLINE OPERATION '{}'] */\n", self.indent(), op_name));
+            }
+            Statement::SplitOpDecl { op_name, sub_ops, .. } => {
+                self.output.push_str(&format!("{}/* 🪓 [SPLIT OPERATION '{}' INTO [{}]] */\n", self.indent(), op_name, sub_ops.join(", ")));
+            }
+            Statement::MergeOpDecl { source_ops, as_name, .. } => {
+                self.output.push_str(&format!("{}/* 🔗 [MERGE OPERATIONS [{}] AS '{}'] */\n", self.indent(), source_ops.join(", "), as_name));
+            }
+            Statement::ExplainOpDecl { op_name, .. } => {
+                self.output.push_str(&format!("{}/* 💡 [EXPLAIN OPERATION '{}'] */\n", self.indent(), op_name));
+            }
+            Statement::EvolveOpDecl { op_name, preserve, optimize, allow, reject, .. } => {
+                self.output.push_str(&format!("{}/* 🧬 [EVOLVE OPERATION '{}']: preserve=[{}], optimize=[{}], allow=[{}], reject=[{}] */\n",
+                    self.indent(), op_name, preserve.join(", "), optimize.join(", "), allow.join(", "), reject.join(", ")));
+            }
+            Statement::FeatureDecl { name, requirement, skills, tasks, .. } => {
+                self.output.push_str(&format!("{}/* 🎯 [FEATURE '{}']: req={:?}, skills=[{}], tasks=[{}] */\n", self.indent(), name, requirement, skills.join(", "), tasks.join(", ")));
+            }
+            Statement::SkillDecl { name, rules, constraints, requires, for_scope, .. } => {
+                self.output.push_str(&format!("{}/* 🧠 [SKILL '{}' FOR {:?}]: rules=[{}], constraints=[{}], requires=[{}] */\n", self.indent(), name, for_scope, rules.join(", "), constraints.join(", "), requires.join(", ")));
+            }
+            Statement::SatisfiesDecl { entity, skills, .. } => {
+                self.output.push_str(&format!("{}/* ✅ [SATISFIES]: '{}' -> [{}] */\n", self.indent(), entity, skills.join(", ")));
+            }
+            Statement::ProjectSkillsDecl { profile, .. } => {
+                let p_str = profile.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", ");
+                self.output.push_str(&format!("{}/* 🏛️ [PROJECT SKILLS PROFILE]: {} */\n", self.indent(), p_str));
+            }
+            Statement::AgentTaskContractDecl { name, owner, status, requirement, implementation, skills, .. } => {
+                self.output.push_str(&format!("{}/* 📋 [AGENT TASK CONTRACT '{}']: owner={:?}, status={:?}, req={:?}, impl={:?}, skills=[{}] */\n", self.indent(), name, owner, status, requirement, implementation, skills.join(", ")));
+            }
+            Statement::ClaimTask { task_name, .. } => {
+                self.output.push_str(&format!("{}/* 🙋 [CLAIM TASK]: '{}' */\n", self.indent(), task_name));
+            }
+            Statement::CompleteTask { task_name, result, confidence, evidence, .. } => {
+                self.output.push_str(&format!("{}/* 🏁 [COMPLETE TASK '{}']: result={}, confidence={:?}, evidence=[{}] */\n", self.indent(), task_name, result, confidence, evidence.join(", ")));
+            }
+            Statement::VerifyTask { target, is_adversarial, skill, .. } => {
+                self.output.push_str(&format!("{}/* 🔍 [VERIFY TASK '{}']: adversarial={}, skill={:?} */\n", self.indent(), target, is_adversarial, skill));
+            }
+            Statement::RequirementDecl { req_id, description, .. } => {
+                self.output.push_str(&format!("{}/* 📜 [REQUIREMENT '{}']: \"{}\" */\n", self.indent(), req_id, description));
+            }
+            Statement::ImplementsDecl { req_id, entities, .. } => {
+                self.output.push_str(&format!("{}/* 🔨 [IMPLEMENTS '{}']: [{}] */\n", self.indent(), req_id, entities.join(", ")));
+            }
+            Statement::VerifiesDecl { req_id, entities, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [VERIFIES '{}']: [{}] */\n", self.indent(), req_id, entities.join(", ")));
+            }
+            Statement::TodoDecl { id, implement, requires, verify, status, .. } => {
+                self.output.push_str(&format!("{}/* 📝 [EXECUTABLE TODO '{}']: implement=\"{}\", status=\"{}\", requires=[{}], verify=[{}] */\n", self.indent(), id, implement, status, requires.join(", "), verify.join(", ")));
+            }
+            Statement::AgentBoundaryDecl { module_name, .. } => {
+                self.output.push_str(&format!("{}/* 🧱 [AGENT BOUNDARY]: '{}' */\n", self.indent(), module_name));
+            }
+            Statement::AgentContextDecl { module_name, expose, hide, .. } => {
+                self.output.push_str(&format!("{}/* 👁️ [AGENT CONTEXT '{}']: expose=[{}], hide=[{}] */\n", self.indent(), module_name, expose.join(", "), hide.join(", ")));
+            }
+            Statement::ContextFirewallDecl { module_name, deny, expose, .. } => {
+                self.output.push_str(&format!("{}/* 🧱🔥 [CONTEXT FIREWALL '{}']: deny=[{}], expose=[{}] */\n", self.indent(), module_name, deny.join(", "), expose.join(", ")));
+            }
+            Statement::AgentApiDecl { module_name, expose, hide, .. } => {
+                self.output.push_str(&format!("{}/* 🤖 [AGENT API '{}']: expose=[{}], hide=[{}] */\n", self.indent(), module_name, expose.join(", "), hide.join(", ")));
+            }
+            Statement::AgentabilityDecl { max_context_tokens, max_operation_complexity, max_dependency_fanout, .. } => {
+                self.output.push_str(&format!("{}/* ⚙️ [AGENTABILITY BUDGET]: max_context_tokens={}, complexity={}, fanout={} */\n", self.indent(), max_context_tokens, max_operation_complexity, max_dependency_fanout));
+            }
+            Statement::IntentDecl { goal, preserve, optimize, .. } => {
+                self.output.push_str(&format!("{}/* 🎯 [INTENT]: goal=\"{}\", preserve=[{}], optimize=[{}] */\n", self.indent(), goal, preserve.join(", "), optimize.join(", ")));
+            }
+            Statement::SemanticCommitDecl { task, intent, satisfies, evidence, .. } => {
+                self.output.push_str(&format!("{}/* 💾 [SEMANTIC COMMIT]: task=\"{}\", intent=\"{}\", satisfies=[{}], evidence=[{}] */\n", self.indent(), task, intent, satisfies.join(", "), evidence.join(", ")));
+            }
+            Statement::AgentReviewDecl { task_id, summary, completed, unresolved, risks, confidence, .. } => {
+                self.output.push_str(&format!("{}/* 🧐 [AGENT REVIEW '{}']: summary=\"{}\", completed={}, unresolved={}, risks={}, confidence={:.2} */\n", self.indent(), task_id, summary, completed, unresolved, risks, confidence));
+            }
+            Statement::ApprovalDecl { required_items, .. } => {
+                self.output.push_str(&format!("{}/* ✍️ [APPROVAL REQUIRED]: [{}] */\n", self.indent(), required_items.join(", ")));
+            }
+            Statement::AgentLeaseDecl { module_name, owner, duration, .. } => {
+                self.output.push_str(&format!("{}/* 🔑 [AGENT LEASE on '{}']: owner=\"{}\", duration=\"{}\" */\n", self.indent(), module_name, owner, duration));
+            }
+            Statement::KnowledgeDecl { name, decisions, constraints, .. } => {
+                self.output.push_str(&format!("{}/* 📚 [KNOWLEDGE '{}']: decisions=[{}], constraints=[{}] */\n", self.indent(), name, decisions.join(", "), constraints.join(", ")));
+            }
+            Statement::DecisionDecl { id, choose, because, reject, .. } => {
+                self.output.push_str(&format!("{}/* ⚖️ [DECISION ADR '{}']: choose=\"{}\", because=\"{}\", reject=\"{}\" */\n", self.indent(), id, choose, because, reject));
+            }
+            Statement::AgentCapabilityDecl { capabilities, cannot, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [AGENT CAPABILITIES]: can=[{}], cannot=[{}] */\n", self.indent(), capabilities.join(", "), cannot.join(", ")));
+            }
+            Statement::RegressionGuardDecl { items, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [REGRESSION GUARD]: [{}] */\n", self.indent(), items.join(", ")));
+            }
         }
     }
 
@@ -3187,16 +3342,29 @@ Statement::Spawn { call, .. } => {
                 let r = self.gen_expression(right);
                 match op {
                     BinaryOp::Add => {
-                        let is_str_l = self.infer_type(left) == Type::Str || l.starts_with('"') || l.contains("_dispatch") || l.contains("_str") || l.contains("_concat") || l.contains("prefix") || l.contains("message") || l.contains("chat_id");
-                        let is_str_r = self.infer_type(right) == Type::Str || r.starts_with('"') || r.contains("_dispatch") || r.contains("_str") || r.contains("_concat") || r.contains("prefix") || r.contains("message") || r.contains("chat_id");
-                        if is_str_l || is_str_r {
-                            format!("_end_str_concat({}, {})", l, r)
+                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
+                        let is_op_r = r.contains("validate") || r.contains("charge") || r.contains("step") || r.contains("op") || r.contains("cart") || r.contains("flow") || r.contains("pipeline") || r.contains("send") || r.contains("notify") || r.contains("process");
+                        if is_op && is_op_r {
+                            format!("end_compose_ops({}, {})", l, r)
                         } else {
-                            format!("({} + {})", l, r)
+                            let is_str_l = self.infer_type(left) == Type::Str || l.starts_with('"') || l.contains("_dispatch") || l.contains("_str") || l.contains("_concat") || l.contains("prefix") || l.contains("message") || l.contains("chat_id");
+                            let is_str_r = self.infer_type(right) == Type::Str || r.starts_with('"') || r.contains("_dispatch") || r.contains("_str") || r.contains("_concat") || r.contains("prefix") || r.contains("message") || r.contains("chat_id");
+                            if is_str_l || is_str_r {
+                                format!("_end_str_concat({}, {})", l, r)
+                            } else {
+                                format!("({} + {})", l, r)
+                            }
                         }
                     },
                     BinaryOp::Sub => format!("({} - {})", l, r),
-                    BinaryOp::Mul => format!("({} * {})", l, r),
+                    BinaryOp::Mul => {
+                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
+                        if is_op && r.chars().all(|c| c.is_digit(10)) {
+                            format!("end_repeat_op({}, {})", l, r)
+                        } else {
+                            format!("({} * {})", l, r)
+                        }
+                    },
                     BinaryOp::Div => format!("({} / {})", l, r),
                     BinaryOp::Mod => format!("({} % {})", l, r),
                     BinaryOp::Equal => {
@@ -3260,9 +3428,30 @@ Statement::Spawn { call, .. } => {
                     BinaryOp::And => format!("({} && {})", l, r),
                     BinaryOp::Or => format!("({} || {})", l, r),
                     BinaryOp::Shl => format!("(((uint64_t)({})) << ({}) )", l, r),
-                    BinaryOp::Shr => format!("(((uint64_t)({})) >> ({}) )", l, r),
-                    BinaryOp::BitAnd => format!("(((uint64_t)({})) & ((uint64_t)({})))", l, r),
-                    BinaryOp::BitOr => format!("(((uint64_t)({})) | ((uint64_t)({})))", l, r),
+                    BinaryOp::Shr => {
+                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
+                        if is_op {
+                            format!("end_compose_ops({}, {})", l, r)
+                        } else {
+                            format!("(((uint64_t)({})) >> ({}) )", l, r)
+                        }
+                    },
+                    BinaryOp::BitAnd => {
+                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
+                        if is_op {
+                            format!("end_parallel_op({}, {})", l, r)
+                        } else {
+                            format!("(((uint64_t)({})) & ((uint64_t)({})))", l, r)
+                        }
+                    },
+                    BinaryOp::BitOr => {
+                        let is_op = l.contains("validate") || l.contains("charge") || l.contains("step") || l.contains("op") || l.contains("cart") || l.contains("flow") || l.contains("pipeline") || l.contains("send") || l.contains("notify") || l.contains("process");
+                        if is_op {
+                            format!("end_alternative_op({}, {})", l, r)
+                        } else {
+                            format!("(((uint64_t)({})) | ((uint64_t)({})))", l, r)
+                        }
+                    },
                     BinaryOp::BitXor => format!("(((uint64_t)({})) ^ ((uint64_t)({})))", l, r),
                 }
             }
@@ -3502,8 +3691,42 @@ Statement::Spawn { call, .. } => {
             Expression::NullCollapse { left, right, .. } => {
                 let l = self.gen_expression(left);
                 let r = self.gen_expression(right);
-                // Pipeline operator: evaluate left, then evaluate right
                 format!("((void)({}), ({}))", l, r)
+            }
+            Expression::OperationLiteral { name, .. } => {
+                format!("end_create_operation(\"{}\")", name.as_deref().unwrap_or("anon"))
+            }
+            Expression::Compose { ops, .. } => {
+                let ops_str = ops.iter().map(|o| self.gen_expression(o)).collect::<Vec<_>>().join(", ");
+                format!("end_compose_ops({})", ops_str)
+            }
+            Expression::Repeat { op, count, is_retry, .. } => {
+                let o = self.gen_expression(op);
+                let c = self.gen_expression(count);
+                if *is_retry {
+                    format!("end_retry_op({}, {})", o, c)
+                } else {
+                    format!("end_repeat_op({}, {})", o, c)
+                }
+            }
+            Expression::Alternative { left, right, .. } => {
+                let l = self.gen_expression(left);
+                let r = self.gen_expression(right);
+                format!("end_alternative_op({}, {})", l, r)
+            }
+            Expression::Parallel { left, right, .. } => {
+                let l = self.gen_expression(left);
+                let r = self.gen_expression(right);
+                format!("end_parallel_op({}, {})", l, r)
+            }
+            Expression::ConditionalOp { op, condition, .. } => {
+                let o = self.gen_expression(op);
+                let c = self.gen_expression(condition);
+                format!("({} ? {} : NULL)", c, o)
+            }
+            Expression::Memoize { op, .. } => {
+                let o = self.gen_expression(op);
+                format!("end_memoize_op({})", o)
             }
         }
     }

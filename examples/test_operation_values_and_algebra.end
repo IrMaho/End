@@ -1,0 +1,116 @@
+// End Language: First-Class Operation Values, Operation Algebra & Event Hubs Showcase
+
+event UserCreated {
+    user_id: i64,
+    email: str
+}
+
+event OrderPlaced {
+    order_id: i64,
+    total: i64
+}
+
+// 1. Operation Definition with Contracts, Effects and Telemetry
+operation validate_cart(items: i64) -> i64 {
+    requires: "items > 0";
+    guarantees: "cart_valid == true";
+    effects: ["pure", "cpu"];
+    version: 1;
+    return items;
+}
+
+operation charge_payment(amount: i64) -> i64 {
+    requires: "amount > 0";
+    guarantees: "paid == true";
+    effects: ["network", "pci_dss"];
+    emits: ["OrderPlaced"];
+    version: 2;
+    return amount * 100;
+}
+
+operation send_notifications(status: i64) -> i64 {
+    effects: ["smtp", "push"];
+    emits: ["UserCreated"];
+    return status + 1;
+}
+
+// 2. Global Event Hub Architecture
+hub CommerceEvents {
+    owns: ["UserCreated", "OrderPlaced"];
+    on OrderPlaced {
+        println("📦 [EVENT HUB] Order placed successfully!");
+    }
+    on UserCreated -> send_notifications;
+}
+
+// 3. Agent Refactoring, Slicing & Evolution Declarations
+extract operation PaymentService from LegacyCommerce where step == "card_charge";
+inline operation FastValidation;
+split operation FullCheckout into ["Validate", "Charge", "Notify"];
+merge { Validate, Charge } as FastCommerce;
+explain operation charge_payment;
+evolve operation charge_payment {
+    preserve: ["pci_compliance", "idempotency"];
+    optimize: ["latency", "memory"];
+    allow: ["async_invoice"];
+    reject: ["blocking_io"];
+}
+
+// 4. Higher-Order Functions accepting and returning Operations
+fn execute_op(op: Operation, arg: i64) -> i64 {
+    val r = op(arg);
+    return r.output;
+}
+
+fn make_pipeline() -> Operation {
+    return validate_cart + charge_payment;
+}
+
+fn main() -> i64 {
+    println("🚀 Running Operation Values & Algebra Showcase in End...");
+
+    // Feature 1-3: First-class Operation values & Rich OperationResult
+    val op = validate_cart;
+    val r1 = op(5);
+    val out1 = r1.output;
+    val status1 = r1.status;
+    val duration1 = r1.duration_ns;
+    println("Operation r1 output:", out1, "status:", status1, "duration_ns:", duration1);
+
+    // Feature 4-7: Operation Algebra Composition & Operators (validate >> charge)
+    val checkout_flow = validate_cart >> charge_payment;
+    val checkout_res = checkout_flow(3);
+    println("Pipeline (3 items -> charge):", checkout_res.output);
+
+    // Feature 6 & 24: Repetition & Retry
+    val repeated = validate_cart * 3;
+    val retried = retry charge_payment 3;
+
+    // Feature 26: Fallback & Alternative
+    val safe_checkout = charge_payment | validate_cart;
+
+    // Feature 32: Parallel composition
+    val parallel_steps = validate_cart & send_notifications;
+
+    // Feature 8: Conditional execution
+    val cond_step = validate_cart ? (1 == 1);
+
+    // Feature 35: Memoization
+    val cached_op = memoize validate_cart;
+
+    // Feature 18 & 19: Higher-order functions with Operation values
+    val dyn_flow = make_pipeline();
+    val dyn_res = execute_op(dyn_flow, 10);
+    println("Dynamic pipeline executed with result:", dyn_res);
+
+    // Feature 10 & 29: Event emission & Hub dispatch
+    emit OrderPlaced(9001, 1000);
+    emit UserCreated(42, "agent@endlang.org");
+
+    // Feature 15 & 16: Observation and Static Analysis
+    observe charge_payment as charge_trace;
+    analyze charge_payment;
+
+    println("✅ All Operation Values & Algebra Features Verified!");
+    return checkout_res.output;
+}

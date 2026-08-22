@@ -46,6 +46,9 @@ pub enum Type {
     Arc(Box<Type>),                       // Atomic Ref Counted Arc<T> (Tier 3)
     Channel(Box<Type>),                   // MPSC Channel<T>
     Allocator,
+    Operation(Option<Box<Type>>, Option<Box<Type>>), // Operation<TIn, TOut>
+    Event(String),                                   // Event type
+    OperationResult,                                 // Rich OperationResult
 }
 
 impl std::fmt::Display for Type {
@@ -97,6 +100,16 @@ impl std::fmt::Display for Type {
             Type::Arc(inner) => write!(f, "Arc<{}>", inner),
             Type::Channel(inner) => write!(f, "Channel<{}>", inner),
             Type::Allocator => write!(f, "Allocator"),
+            Type::Operation(tin, tout) => {
+                write!(f, "Operation")?;
+                if tin.is_some() || tout.is_some() {
+                    write!(f, "<{}, {}>", tin.as_ref().map(|t| t.to_string()).unwrap_or_else(|| "void".to_string()),
+                                          tout.as_ref().map(|t| t.to_string()).unwrap_or_else(|| "void".to_string()))?;
+                }
+                Ok(())
+            }
+            Type::Event(name) => write!(f, "Event<{}>", name),
+            Type::OperationResult => write!(f, "OperationResult"),
         }
     }
 }
@@ -216,6 +229,46 @@ pub struct ExtensionBlock {
     pub target: String,
     pub is_struct: bool,
     pub functions: Vec<FunctionDef>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OperationDef {
+    pub name: String,
+    pub params: Vec<FunctionParam>,
+    pub return_type: Type,
+    pub is_pub: bool,
+    pub requires: Vec<String>,
+    pub guarantees: Vec<String>,
+    pub effects: Vec<String>,
+    pub emits: Vec<String>,
+    pub version: Option<usize>,
+    pub body: Block,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventDef {
+    pub name: String,
+    pub is_pub: bool,
+    pub fields: Vec<StructField>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventHandlerDef {
+    pub event_name: String,
+    pub handler_op: Option<Expression>,
+    pub body: Option<Block>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventHubDef {
+    pub name: String,
+    pub is_pub: bool,
+    pub owns_events: Vec<String>,
+    pub handlers: Vec<EventHandlerDef>,
     pub span: Span,
 }
 
@@ -907,6 +960,228 @@ pub enum Statement {
         weights: Vec<(String, f64)>,
         span: Span,
     },
+    // Operation Values, Event-Native Architecture & Algebra Statements
+    OperationDecl(OperationDef),
+    EventDecl(EventDef),
+    EventHubDecl(EventHubDef),
+    EmitEvent {
+        event_name: String,
+        args: Vec<Expression>,
+        span: Span,
+    },
+    ObserveOp {
+        op_expr: Expression,
+        alias: String,
+        span: Span,
+    },
+    AnalyzeOp {
+        op_expr: Expression,
+        span: Span,
+    },
+    ExtractOpDecl {
+        op_name: String,
+        from_mod: String,
+        condition: String,
+        span: Span,
+    },
+    InlineOpDecl {
+        op_name: String,
+        span: Span,
+    },
+    SplitOpDecl {
+        op_name: String,
+        sub_ops: Vec<String>,
+        span: Span,
+    },
+    MergeOpDecl {
+        source_ops: Vec<String>,
+        as_name: String,
+        span: Span,
+    },
+    ExplainOpDecl {
+        op_name: String,
+        span: Span,
+    },
+    EvolveOpDecl {
+        op_name: String,
+        preserve: Vec<String>,
+        optimize: Vec<String>,
+        allow: Vec<String>,
+        reject: Vec<String>,
+        span: Span,
+    },
+    // Agent Contract System (Intent → Task → Skill → Evidence → Verify) Statements
+    FeatureDecl {
+        name: String,
+        requirement: Option<String>,
+        skills: Vec<String>,
+        tasks: Vec<String>,
+        span: Span,
+    },
+    SkillDecl {
+        name: String,
+        rules: Vec<String>,
+        constraints: Vec<String>,
+        structural: Vec<String>,
+        semantic: Vec<String>,
+        behavioral: Vec<String>,
+        architectural: Vec<String>,
+        performance: Vec<String>,
+        security: Vec<String>,
+        testing: Vec<String>,
+        agent: Vec<String>,
+        requires: Vec<String>,
+        hard: Vec<String>,
+        soft: Vec<String>,
+        for_scope: Option<String>,
+        span: Span,
+    },
+    SatisfiesDecl {
+        entity: String,
+        skills: Vec<String>,
+        span: Span,
+    },
+    ProjectSkillsDecl {
+        profile: std::collections::HashMap<String, String>,
+        span: Span,
+    },
+    AgentTaskContractDecl {
+        name: String,
+        owner: Option<String>,
+        status: Option<String>,
+        requirement: Option<String>,
+        implementation: Option<String>,
+        skills: Vec<String>,
+        change_budget: Vec<String>,
+        evidence: Vec<(String, String)>,
+        span: Span,
+    },
+    ClaimTask {
+        task_name: String,
+        span: Span,
+    },
+    CompleteTask {
+        task_name: String,
+        result: String,
+        confidence: Option<f64>,
+        summary: Option<String>,
+        evidence: Vec<String>,
+        risks: Option<String>,
+        recommendation: Option<String>,
+        notes: Option<String>,
+        span: Span,
+    },
+    VerifyTask {
+        target: String,
+        is_adversarial: bool,
+        skill: Option<String>,
+        span: Span,
+    },
+    RequirementDecl {
+        req_id: String,
+        description: String,
+        span: Span,
+    },
+    ImplementsDecl {
+        req_id: String,
+        entities: Vec<String>,
+        span: Span,
+    },
+    VerifiesDecl {
+        req_id: String,
+        entities: Vec<String>,
+        span: Span,
+    },
+    TodoDecl {
+        id: String,
+        implement: String,
+        requires: Vec<String>,
+        verify: Vec<String>,
+        status: String,
+        span: Span,
+    },
+    AgentBoundaryDecl {
+        module_name: String,
+        span: Span,
+    },
+    AgentContextDecl {
+        module_name: String,
+        expose: Vec<String>,
+        hide: Vec<String>,
+        span: Span,
+    },
+    ContextFirewallDecl {
+        module_name: String,
+        deny: Vec<String>,
+        expose: Vec<String>,
+        span: Span,
+    },
+    AgentApiDecl {
+        module_name: String,
+        expose: Vec<String>,
+        hide: Vec<String>,
+        span: Span,
+    },
+    AgentabilityDecl {
+        max_context_tokens: usize,
+        max_operation_complexity: String,
+        max_dependency_fanout: usize,
+        span: Span,
+    },
+    IntentDecl {
+        goal: String,
+        preserve: Vec<String>,
+        optimize: Vec<String>,
+        span: Span,
+    },
+    SemanticCommitDecl {
+        task: String,
+        intent: String,
+        satisfies: Vec<String>,
+        evidence: Vec<String>,
+        span: Span,
+    },
+    AgentReviewDecl {
+        task_id: String,
+        summary: String,
+        completed: usize,
+        unresolved: usize,
+        risks: usize,
+        confidence: f64,
+        span: Span,
+    },
+    ApprovalDecl {
+        required_items: Vec<String>,
+        span: Span,
+    },
+    AgentLeaseDecl {
+        module_name: String,
+        owner: String,
+        duration: String,
+        span: Span,
+    },
+    KnowledgeDecl {
+        name: String,
+        decisions: Vec<String>,
+        constraints: Vec<String>,
+        span: Span,
+    },
+    DecisionDecl {
+        id: String,
+        choose: String,
+        because: String,
+        reject: String,
+        span: Span,
+    },
+    AgentCapabilityDecl {
+        capabilities: Vec<String>,
+        cannot: Vec<String>,
+        span: Span,
+    },
+    RegressionGuardDecl {
+        items: Vec<String>,
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1084,6 +1359,47 @@ pub enum Expression {
         right: Box<Expression>,
         span: Span,
     },
+    // Operation Values & Operation Algebra Expressions
+    OperationLiteral {
+        name: Option<String>,
+        params: Vec<FunctionParam>,
+        return_type: Type,
+        requires: Vec<String>,
+        guarantees: Vec<String>,
+        effects: Vec<String>,
+        emits: Vec<String>,
+        body: Block,
+        span: Span,
+    },
+    Compose {
+        ops: Vec<Expression>,
+        span: Span,
+    },
+    Repeat {
+        op: Box<Expression>,
+        count: Box<Expression>,
+        is_retry: bool,
+        span: Span,
+    },
+    Parallel {
+        left: Box<Expression>,
+        right: Box<Expression>,
+        span: Span,
+    },
+    Alternative {
+        left: Box<Expression>,
+        right: Box<Expression>,
+        span: Span,
+    },
+    ConditionalOp {
+        op: Box<Expression>,
+        condition: Box<Expression>,
+        span: Span,
+    },
+    Memoize {
+        op: Box<Expression>,
+        span: Span,
+    },
 }
 
 impl Expression {
@@ -1119,6 +1435,13 @@ impl Expression {
             Expression::Await { span, .. } => span,
             Expression::UnitLit { span, .. } => span,
             Expression::NullCollapse { span, .. } => span,
+            Expression::OperationLiteral { span, .. } => span,
+            Expression::Compose { span, .. } => span,
+            Expression::Repeat { span, .. } => span,
+            Expression::Parallel { span, .. } => span,
+            Expression::Alternative { span, .. } => span,
+            Expression::ConditionalOp { span, .. } => span,
+            Expression::Memoize { span, .. } => span,
         }
     }
 }
@@ -1247,6 +1570,44 @@ impl Statement {
             Statement::RepairDecl { span, .. } => span,
             Statement::EvolveArchDecl { span, .. } => span,
             Statement::GravityDecl { span, .. } => span,
+            Statement::OperationDecl(op) => &op.span,
+            Statement::EventDecl(ev) => &ev.span,
+            Statement::EventHubDecl(hub) => &hub.span,
+            Statement::EmitEvent { span, .. } => span,
+            Statement::ObserveOp { span, .. } => span,
+            Statement::AnalyzeOp { span, .. } => span,
+            Statement::ExtractOpDecl { span, .. } => span,
+            Statement::InlineOpDecl { span, .. } => span,
+            Statement::SplitOpDecl { span, .. } => span,
+            Statement::MergeOpDecl { span, .. } => span,
+            Statement::ExplainOpDecl { span, .. } => span,
+            Statement::EvolveOpDecl { span, .. } => span,
+            Statement::FeatureDecl { span, .. } => span,
+            Statement::SkillDecl { span, .. } => span,
+            Statement::SatisfiesDecl { span, .. } => span,
+            Statement::ProjectSkillsDecl { span, .. } => span,
+            Statement::AgentTaskContractDecl { span, .. } => span,
+            Statement::ClaimTask { span, .. } => span,
+            Statement::CompleteTask { span, .. } => span,
+            Statement::VerifyTask { span, .. } => span,
+            Statement::RequirementDecl { span, .. } => span,
+            Statement::ImplementsDecl { span, .. } => span,
+            Statement::VerifiesDecl { span, .. } => span,
+            Statement::TodoDecl { span, .. } => span,
+            Statement::AgentBoundaryDecl { span, .. } => span,
+            Statement::AgentContextDecl { span, .. } => span,
+            Statement::ContextFirewallDecl { span, .. } => span,
+            Statement::AgentApiDecl { span, .. } => span,
+            Statement::AgentabilityDecl { span, .. } => span,
+            Statement::IntentDecl { span, .. } => span,
+            Statement::SemanticCommitDecl { span, .. } => span,
+            Statement::AgentReviewDecl { span, .. } => span,
+            Statement::ApprovalDecl { span, .. } => span,
+            Statement::AgentLeaseDecl { span, .. } => span,
+            Statement::KnowledgeDecl { span, .. } => span,
+            Statement::DecisionDecl { span, .. } => span,
+            Statement::AgentCapabilityDecl { span, .. } => span,
+            Statement::RegressionGuardDecl { span, .. } => span,
         }
     }
 }
