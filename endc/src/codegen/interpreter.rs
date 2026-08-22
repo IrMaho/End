@@ -49,8 +49,8 @@ impl std::fmt::Display for Value {
 
 #[derive(Clone)]
 pub struct Interpreter {
-    variables: Vec<HashMap<String, Value>>,
-    functions: HashMap<String, FunctionDef>,
+    pub variables: Vec<HashMap<String, Value>>,
+    pub functions: HashMap<String, FunctionDef>,
     pub snapshots: HashMap<String, Vec<HashMap<String, Value>>>,
     pub domain_ownership: HashMap<String, String>,
 }
@@ -66,6 +66,10 @@ impl Interpreter {
     }
 
     pub fn run(&mut self, module: &Module) -> Result<Value, String> {
+        for s in &module.statements {
+            self.eval_statement(s)?;
+        }
+
         for f in &module.functions {
             self.functions.insert(f.name.clone(), f.clone());
         }
@@ -114,7 +118,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn get_var(&self, name: &str) -> Option<Value> {
+    pub fn get_var(&self, name: &str) -> Option<Value> {
         for scope in self.variables.iter().rev() {
             if let Some(val) = scope.get(name) {
                 return Some(val.clone());
@@ -739,6 +743,81 @@ impl Interpreter {
                         }
                     }
                 }
+            }
+            Statement::AdapterDecl { body, .. }
+            | Statement::PreserveRefactorDecl { body, .. }
+            | Statement::CompatDecl { body, .. } => {
+                self.push_scope();
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            Statement::SplitDecl { entity, parts, .. } => {
+                let parts_str = parts.join(", ");
+                self.set_var(&format!("__split_{}", entity), Value::String(parts_str));
+                Ok(None)
+            }
+            Statement::PartitionDecl { entity, by, parts, .. } => {
+                let parts_str = parts.join(", ");
+                self.set_var(&format!("__partition_{}_{}", entity, by), Value::String(parts_str));
+                Ok(None)
+            }
+            Statement::ExtractDecl { symbols, into_module, .. } => {
+                self.set_var(&format!("__extract_{}", into_module), Value::String(symbols.join(", ")));
+                Ok(None)
+            }
+            Statement::ClusterDecl { by, predicate, .. } => {
+                self.set_var(&format!("__cluster_{}", by), Value::String(predicate.clone()));
+                Ok(None)
+            }
+            Statement::SeparateDecl { left, right, .. } => {
+                self.set_var(&format!("__separate_{}_{}", left, right), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::MoveDecl { symbol, from_mod, to_mod, .. } => {
+                self.set_var(&format!("__move_{}_{}_{}", symbol, from_mod, to_mod), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::MigrateDecl { entity, from_mod, to_mod, .. } => {
+                self.set_var(&format!("__migrate_{}_{}_{}", entity, from_mod, to_mod), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::RedirectDecl { from_api, to_api, .. } => {
+                self.set_var(&format!("__redirect_{}_{}", from_api, to_api), Value::Bool(true));
+                Ok(None)
+            }
+            Statement::DecomposeDecl { target, target_modules, .. } => {
+                let count = target_modules.unwrap_or(25);
+                self.set_var(&format!("__decompose_{}_target", target), Value::Int(count as i64));
+                Ok(None)
+            }
+            Statement::ModularizeDecl { target, target_files_min, target_files_max, .. } => {
+                self.set_var(&format!("__modularize_{}", target), Value::Int(*target_files_max as i64));
+                self.set_var(&format!("__modularize_{}_min", target), Value::Int(*target_files_min as i64));
+                Ok(None)
+            }
+            Statement::EvolveArchDecl { from, toward, target_modules, .. } => {
+                self.set_var(&format!("__evolve_{}_{}", from, toward), Value::Int(*target_modules as i64));
+                Ok(None)
+            }
+            Statement::GravityDecl { weights, .. } => {
+                for (k, w) in weights {
+                    self.set_var(&format!("__gravity_{}", k), Value::Float(*w));
+                }
+                Ok(None)
+            }
+            Statement::BudgetContextDecl { name, token_budget, .. } => {
+                self.set_var(&format!("__budget_context_{}", name), Value::Int(*token_budget as i64));
+                Ok(None)
+            }
+            Statement::RepairDecl { target, .. } => {
+                self.set_var(&format!("__repair_{}", target), Value::Bool(true));
+                Ok(None)
             }
             _ => Ok(None),
         }

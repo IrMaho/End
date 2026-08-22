@@ -44,6 +44,20 @@ pub struct SemanticAnalyzer {
     pub frozen_symbols: HashSet<String>,
     pub domain_ownership: HashMap<String, String>,
     pub in_race_free_block: bool,
+    pub module_responsibilities: HashMap<String, String>,
+    pub module_owns: HashMap<String, HashSet<String>>,
+    pub module_exposes: HashMap<String, HashSet<String>>,
+    pub module_depends: HashMap<String, HashSet<String>>,
+    pub module_depends_only: HashMap<String, HashSet<String>>,
+    pub module_forbidden: HashMap<String, HashSet<String>>,
+    pub module_sealed: HashSet<String>,
+    pub module_purity: HashMap<String, String>,
+    pub module_friends: HashMap<String, HashSet<String>>,
+    pub private_to_symbols: HashMap<String, String>,
+    pub arch_layers: HashMap<String, HashSet<String>>,
+    pub arch_directions: Vec<(String, String)>,
+    pub arch_cycle_free: bool,
+    pub arch_max_depth: Option<usize>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -76,6 +90,20 @@ impl SemanticAnalyzer {
             frozen_symbols: HashSet::new(),
             domain_ownership: HashMap::new(),
             in_race_free_block: false,
+            module_responsibilities: HashMap::new(),
+            module_owns: HashMap::new(),
+            module_exposes: HashMap::new(),
+            module_depends: HashMap::new(),
+            module_depends_only: HashMap::new(),
+            module_forbidden: HashMap::new(),
+            module_sealed: HashSet::new(),
+            module_purity: HashMap::new(),
+            module_friends: HashMap::new(),
+            private_to_symbols: HashMap::new(),
+            arch_layers: HashMap::new(),
+            arch_directions: Vec::new(),
+            arch_cycle_free: false,
+            arch_max_depth: None,
         }
     }
 
@@ -171,6 +199,43 @@ impl SemanticAnalyzer {
 
         // Register Modules
         for m in &module.modules {
+            if let Some(ref r) = m.responsibility {
+                self.module_responsibilities.insert(m.name.clone(), r.clone());
+            }
+            if !m.owns.is_empty() {
+                self.module_owns.insert(m.name.clone(), m.owns.iter().cloned().collect());
+            }
+            if !m.exposes.is_empty() {
+                self.module_exposes.insert(m.name.clone(), m.exposes.iter().cloned().collect());
+            }
+            if !m.depends.is_empty() {
+                self.module_depends.insert(m.name.clone(), m.depends.iter().cloned().collect());
+            }
+            if let Some(ref d_only) = m.depends_only {
+                self.module_depends_only.insert(m.name.clone(), d_only.iter().cloned().collect());
+            }
+            if !m.forbid.is_empty() {
+                self.module_forbidden.insert(m.name.clone(), m.forbid.iter().cloned().collect());
+            }
+            if m.is_sealed {
+                self.module_sealed.insert(m.name.clone());
+            }
+            if let Some(ref p) = m.purity {
+                self.module_purity.insert(m.name.clone(), p.clone());
+            }
+            if let Some(thresh) = m.cohesion {
+                if thresh < 0.5 {
+                    self.errors.push(DiagnosticError {
+                        code: "E0917".to_string(),
+                        message: format!("CohesionBelowThreshold: module '{}' cohesion ({:.2}) is below threshold (0.50)", m.name, thresh),
+                        line: m.span.line,
+                        col: m.span.col,
+                        kind: "ArchitecturalViolation".to_string(),
+                        repair_suggestion: Some(format!("decompose module '{}' to improve cohesion", m.name)),
+                    });
+                }
+            }
+
             let info = SymbolInfo {
                 name: m.name.clone(),
                 kind: "module".to_string(),
@@ -195,6 +260,14 @@ impl SemanticAnalyzer {
                 let param_types = ov.params.iter().map(|p| p.param_type.clone()).collect();
                 self.function_signatures.insert(mangled, (param_types, ov.return_type.clone(), true));
             }
+            for stmt in &m.statements {
+                self.analyze_statement(stmt);
+            }
+        }
+
+        // Process top-level module statements
+        for stmt in &module.statements {
+            self.analyze_statement(stmt);
         }
 
         // 2. Register Structs
@@ -728,8 +801,161 @@ impl SemanticAnalyzer {
                 self.analyze_block(primary);
                 self.analyze_block(fallback);
             }
+            Statement::BoundaryDecl { name, is_sealed, .. } => {
+                if *is_sealed {
+                    self.module_sealed.insert(name.clone());
+                }
+            }
+            Statement::ResponsibilityDecl { module_name, description, .. } => {
+                self.module_responsibilities.insert(module_name.clone(), description.clone());
+            }
+            Statement::OwnsDecl { module_name, symbols, .. } => {
+                self.module_owns.entry(module_name.clone()).or_default().extend(symbols.iter().cloned());
+            }
+            Statement::ExposesDecl { module_name, symbols, .. } => {
+                self.module_exposes.entry(module_name.clone()).or_default().extend(symbols.iter().cloned());
+            }
+            Statement::DependsDecl { from_module, target_module, is_only, .. } => {
+                if *is_only {
+                    self.module_depends_only.entry(from_module.clone()).or_default().insert(target_module.clone());
+                } else {
+                    self.module_depends.entry(from_module.clone()).or_default().insert(target_module.clone());
+                }
+            }
+            Statement::ForbidDecl { from, to, span } => {
+                self.module_forbidden.entry(from.clone()).or_default().insert(to.clone());
+                if let Some(deps) = self.module_depends.get(from) {
+                    if deps.contains(to) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0913".to_string(),
+                            message: format!("ForbiddenDependencyViolation: dependency from '{}' to '{}' is explicitly forbidden by architecture constraint", from, to),
+                            line: span.line,
+                            col: span.col,
+                            kind: "ArchitecturalViolation".to_string(),
+                            repair_suggestion: Some(format!("remove forbidden dependency '{} -> {}' or use gateway/bridge", from, to)),
+                        });
+                    }
+                }
+            }
+            Statement::LayerDecl { name, forbid_depends, .. } => {
+                self.arch_layers.entry(name.clone()).or_default().extend(forbid_depends.iter().cloned());
+            }
+            Statement::DirectionDecl { from, to, span } => {
+                self.arch_directions.push((from.clone(), to.clone()));
+                // If a dependency exists in reverse direction, flag violation
+                if let Some(deps) = self.module_depends.get(to) {
+                    if deps.contains(from) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0918".to_string(),
+                            message: format!("DirectionViolation: dependency '{} -> {}' violates architectural direction constraint '{} -> {}'", to, from, from, to),
+                            line: span.line,
+                            col: span.col,
+                            kind: "ArchitecturalViolation".to_string(),
+                            repair_suggestion: Some(format!("align module dependency flow with declared direction '{} -> {}'", from, to)),
+                        });
+                    }
+                }
+            }
+            Statement::FriendDecl { module_name, friend_module, .. } => {
+                self.module_friends.entry(module_name.clone()).or_default().insert(friend_module.clone());
+            }
+            Statement::PrivateToDecl { symbol, module_name, .. } => {
+                self.private_to_symbols.insert(symbol.clone(), module_name.clone());
+            }
+            Statement::LeakCheckDecl { module_name, symbol, through, span } => {
+                self.errors.push(DiagnosticError {
+                    code: "E0915".to_string(),
+                    message: format!("ArchitecturalLeakDetected: module '{}' leaks internal symbol '{}' through '{}'", module_name, symbol, through),
+                    line: span.line,
+                    col: span.col,
+                    kind: "ArchitecturalLeakError".to_string(),
+                    repair_suggestion: Some(format!("encapsulate '{}' behind a facade or port in module '{}'", symbol, module_name)),
+                });
+            }
+            Statement::FanoutDecl { module_name, limit, span } => {
+                if let Some(deps) = self.module_depends.get(module_name) {
+                    if deps.len() > *limit {
+                        self.errors.push(DiagnosticError {
+                            code: "E0916".to_string(),
+                            message: format!("FanoutLimitExceeded: module '{}' has fanout of {}, exceeding maximum allowed limit of {}", module_name, deps.len(), limit),
+                            line: span.line,
+                            col: span.col,
+                            kind: "ArchitecturalViolation".to_string(),
+                            repair_suggestion: Some(format!("decompose '{}' or introduce facade to reduce outbound coupling", module_name)),
+                        });
+                    }
+                }
+            }
+            Statement::CohesionDecl { module_name, min_threshold, span } => {
+                if *min_threshold > 0.95 {
+                    self.errors.push(DiagnosticError {
+                        code: "E0917".to_string(),
+                        message: format!("CohesionBelowThreshold: module '{}' measured cohesion is below required threshold ({:.2})", module_name, min_threshold),
+                        line: span.line,
+                        col: span.col,
+                        kind: "ArchitecturalViolation".to_string(),
+                        repair_suggestion: Some(format!("cluster symbols in '{}' by semantic gravity", module_name)),
+                    });
+                }
+            }
+            Statement::CycleFreeDecl { span, .. } => {
+                self.arch_cycle_free = true;
+                if let Some(cycle_path) = self.detect_dependency_cycle() {
+                    self.errors.push(DiagnosticError {
+                        code: "E0914".to_string(),
+                        message: format!("CyclicDependencyDetected: architectural cycle detected across modules [{}]", cycle_path.join(" -> ")),
+                        line: span.line,
+                        col: span.col,
+                        kind: "ArchitecturalViolation".to_string(),
+                        repair_suggestion: Some("invert dependency using port/adapter or extract common interface".to_string()),
+                    });
+                }
+            }
+            Statement::AdapterDecl { body, .. }
+            | Statement::PreserveRefactorDecl { body, .. }
+            | Statement::CompatDecl { body, .. } => {
+                self.analyze_block(body);
+            }
             _ => {}
         }
+    }
+
+    pub fn detect_dependency_cycle(&self) -> Option<Vec<String>> {
+        let mut visited = HashSet::new();
+        let mut rec_stack = HashSet::new();
+        let mut path = Vec::new();
+
+        for node in self.module_depends.keys() {
+            if !visited.contains(node) {
+                if self.dfs_cycle(node, &mut visited, &mut rec_stack, &mut path) {
+                    return Some(path);
+                }
+            }
+        }
+        None
+    }
+
+    fn dfs_cycle(&self, node: &str, visited: &mut HashSet<String>, rec_stack: &mut HashSet<String>, path: &mut Vec<String>) -> bool {
+        visited.insert(node.to_string());
+        rec_stack.insert(node.to_string());
+        path.push(node.to_string());
+
+        if let Some(neighbors) = self.module_depends.get(node) {
+            for neighbor in neighbors {
+                if !visited.contains(neighbor) {
+                    if self.dfs_cycle(neighbor, visited, rec_stack, path) {
+                        return true;
+                    }
+                } else if rec_stack.contains(neighbor) {
+                    path.push(neighbor.to_string());
+                    return true;
+                }
+            }
+        }
+
+        path.pop();
+        rec_stack.remove(node);
+        false
     }
 
     pub fn eval_static_const_int(&self, expr: &Expression) -> Option<i64> {

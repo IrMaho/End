@@ -155,19 +155,96 @@ impl Parser {
             TokenKind::To => Ok("to".to_string()),
             TokenKind::On => Ok("on".to_string()),
             TokenKind::MutateToken => Ok("mutate".to_string()),
+            TokenKind::Boundary => Ok("boundary".to_string()),
+            TokenKind::Responsibility => Ok("responsibility".to_string()),
+            TokenKind::Owns => Ok("owns".to_string()),
+            TokenKind::Exposes => Ok("exposes".to_string()),
+            TokenKind::DependsOnly => Ok("depends_only".to_string()),
+            TokenKind::Depends => Ok("depends".to_string()),
+            TokenKind::Forbid => Ok("forbid".to_string()),
+            TokenKind::Layer => Ok("layer".to_string()),
+            TokenKind::Direction => Ok("direction".to_string()),
+            TokenKind::Split => Ok("split".to_string()),
+            TokenKind::Partition => Ok("partition".to_string()),
+            TokenKind::Extract => Ok("extract".to_string()),
+            TokenKind::Cluster => Ok("cluster".to_string()),
+            TokenKind::Separate => Ok("separate".to_string()),
+            TokenKind::Contract => Ok("contract".to_string()),
+            TokenKind::Port => Ok("port".to_string()),
+            TokenKind::Adapter => Ok("adapter".to_string()),
+            TokenKind::Facade => Ok("facade".to_string()),
+            TokenKind::Gateway => Ok("gateway".to_string()),
+            TokenKind::Compat => Ok("compat".to_string()),
+            TokenKind::Stable => Ok("stable".to_string()),
+            TokenKind::Sealed => Ok("sealed".to_string()),
+            TokenKind::Friend => Ok("friend".to_string()),
+            TokenKind::PrivateTo => Ok("private_to".to_string()),
+            TokenKind::Surface => Ok("surface".to_string()),
+            TokenKind::Leak => Ok("leak".to_string()),
+            TokenKind::Purity => Ok("purity".to_string()),
+            TokenKind::View => Ok("view".to_string()),
+            TokenKind::Lens => Ok("lens".to_string()),
+            TokenKind::AgentScope => Ok("agent_scope".to_string()),
+            TokenKind::BudgetContext => Ok("budget_context".to_string()),
+            TokenKind::TokenBudget => Ok("token_budget".to_string()),
+            TokenKind::Move => Ok("move".to_string()),
+            TokenKind::Migrate => Ok("migrate".to_string()),
+            TokenKind::Redirect => Ok("redirect".to_string()),
+            TokenKind::Deprecate => Ok("deprecate".to_string()),
+            TokenKind::CycleFree => Ok("cycle_free".to_string()),
+            TokenKind::MaxFanout => Ok("max_fanout".to_string()),
+            TokenKind::MaxFanin => Ok("max_fanin".to_string()),
+            TokenKind::MaxDepth => Ok("max_dependency_depth".to_string()),
+            TokenKind::Cohesion => Ok("cohesion".to_string()),
+            TokenKind::Modularize => Ok("modularize".to_string()),
+            TokenKind::Decompose => Ok("decompose".to_string()),
+            TokenKind::Architecture => Ok("architecture".to_string()),
+            TokenKind::Repair => Ok("repair".to_string()),
+            TokenKind::Gravity => Ok("gravity".to_string()),
+            TokenKind::Deny => Ok("deny".to_string()),
+            TokenKind::Into => Ok("into".to_string()),
+            TokenKind::From => Ok("from".to_string()),
+            TokenKind::Toward => Ok("toward".to_string()),
+            TokenKind::Optimize => Ok("optimize".to_string()),
+            TokenKind::RejectIf => Ok("reject_if".to_string()),
+            TokenKind::Never => Ok("never".to_string()),
+            TokenKind::After => Ok("after".to_string()),
+            TokenKind::Remove => Ok("remove".to_string()),
+            TokenKind::Hide => Ok("hide".to_string()),
+            TokenKind::Focus => Ok("focus".to_string()),
+            TokenKind::By => Ok("by".to_string()),
+            TokenKind::Through => Ok("through".to_string()),
+            TokenKind::Bridge => Ok("bridge".to_string()),
+            TokenKind::Derives => Ok("derives".to_string()),
+            TokenKind::Override => Ok("override".to_string()),
+            TokenKind::Extend => Ok("extend".to_string()),
+            TokenKind::InlineC => Ok("inline_c".to_string()),
+            TokenKind::Lease => Ok("lease".to_string()),
+            TokenKind::Borrow => Ok("borrow".to_string()),
+            TokenKind::During => Ok("during".to_string()),
+            TokenKind::True => Ok("true".to_string()),
+            TokenKind::False => Ok("false".to_string()),
             other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
         }
     }
 
     pub fn parse_identifier_or_string(&mut self) -> Result<String, String> {
-        match self.peek_kind() {
+        let mut res = match self.peek_kind() {
             TokenKind::StringLit(s) => {
-                let res = s.clone();
+                let r = s.clone();
                 self.advance();
-                Ok(res)
+                r
             }
-            _ => self.parse_identifier_or_keyword(),
+            _ => self.parse_identifier_or_keyword()?,
+        };
+
+        while self.match_token(&TokenKind::Dot) {
+            let next_part = self.parse_identifier_or_keyword()?;
+            res.push('.');
+            res.push_str(&next_part);
         }
+
+        Ok(res)
     }
 
     pub fn parse_string_list(&mut self) -> Result<Vec<String>, String> {
@@ -180,9 +257,8 @@ impl Parser {
                 } else {
                     list.push(self.parse_identifier_or_string()?);
                 }
-                if !self.match_token(&TokenKind::Comma) {
-                    break;
-                }
+                self.match_token(&TokenKind::Comma);
+                self.match_token(&TokenKind::SemiColon);
             }
             self.expect(TokenKind::RBracket)?;
         } else if self.match_token(&TokenKind::LBrace) {
@@ -229,6 +305,7 @@ impl Parser {
         let mut functions = Vec::new();
         let mut modules = Vec::new();
         let mut extensions = Vec::new();
+        let mut statements = Vec::new();
         let start_span = self.current_span();
 
         while !self.check(&TokenKind::EOF) {
@@ -390,13 +467,9 @@ impl Parser {
                     self.advance();
                 }
                 TokenKind::EOF => break,
-                other => {
-                    return Err(format!(
-                        "Unexpected top-level token: {:?} at line {}, col {}",
-                        other,
-                        self.current_span().line,
-                        self.current_span().col
-                    ));
+                _ => {
+                    let stmt = self.parse_statement()?;
+                    statements.push(stmt);
                 }
             }
         }
@@ -411,6 +484,7 @@ impl Parser {
             functions,
             modules,
             extensions,
+            statements,
             span: start_span,
         })
     }
@@ -922,6 +996,16 @@ impl Parser {
         let mut structs = Vec::new();
         let mut functions = Vec::new();
         let mut overrides = Vec::new();
+        let mut statements = Vec::new();
+        let mut responsibility = None;
+        let mut owns = Vec::new();
+        let mut exposes = Vec::new();
+        let mut depends = Vec::new();
+        let mut depends_only = None;
+        let mut forbid = Vec::new();
+        let mut is_sealed = false;
+        let mut purity = None;
+        let mut cohesion = None;
 
         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
             let mut pending_directives = Vec::new();
@@ -936,6 +1020,106 @@ impl Parser {
                 });
             }
             match self.peek_kind() {
+                TokenKind::Responsibility => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    responsibility = Some(self.parse_identifier_or_string()?);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Owns => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                        let mut list = self.parse_string_list()?;
+                        owns.append(&mut list);
+                    } else {
+                        owns.push(self.parse_identifier_or_string()?);
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Exposes => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                        let mut list = self.parse_string_list()?;
+                        exposes.append(&mut list);
+                    } else {
+                        exposes.push(self.parse_identifier_or_string()?);
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::DependsOnly => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                        let list = self.parse_string_list()?;
+                        depends_only = Some(list);
+                    } else {
+                        depends_only = Some(vec![self.parse_identifier_or_string()?]);
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Depends => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                        let mut list = self.parse_string_list()?;
+                        depends.append(&mut list);
+                    } else {
+                        depends.push(self.parse_identifier_or_string()?);
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Forbid => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                        let mut list = self.parse_string_list()?;
+                        forbid.append(&mut list);
+                    } else {
+                        forbid.push(self.parse_identifier_or_string()?);
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Boundary => {
+                    self.advance();
+                    if self.match_token(&TokenKind::Sealed) {
+                        is_sealed = true;
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Sealed => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.match_token(&TokenKind::True) {
+                        is_sealed = true;
+                    } else if self.match_token(&TokenKind::False) {
+                        is_sealed = false;
+                    } else {
+                        is_sealed = true;
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Purity => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    purity = Some(self.parse_identifier_or_string()?);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Cohesion => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    self.match_token(&TokenKind::GreaterEqual);
+                    self.match_token(&TokenKind::Equal);
+                    if let TokenKind::FloatLit(f) = self.peek_kind() {
+                        cohesion = Some(*f);
+                        self.advance();
+                    } else if let TokenKind::IntLit(i) = self.peek_kind() {
+                        cohesion = Some(*i as f64);
+                        self.advance();
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
                 TokenKind::Struct => {
                     structs.push(self.parse_struct(false, pending_directives)?);
                 }
@@ -967,7 +1151,13 @@ impl Parser {
                     }
                 }
                 TokenKind::SemiColon => { self.advance(); }
-                _ => { self.advance(); }
+                _ => {
+                    if let Ok(stmt) = self.parse_statement() {
+                        statements.push(stmt);
+                    } else {
+                        self.advance();
+                    }
+                }
             }
         }
         self.expect(TokenKind::RBrace)?;
@@ -975,9 +1165,19 @@ impl Parser {
             name,
             parent,
             is_pub,
+            responsibility,
+            owns,
+            exposes,
+            depends,
+            depends_only,
+            forbid,
+            is_sealed,
+            purity,
+            cohesion,
             structs,
             functions,
             overrides,
+            statements,
             span,
         })
     }
@@ -1160,10 +1360,7 @@ impl Parser {
                         let budget = self.parse_expression()?;
                         self.expect(TokenKind::RParen)?;
                         self.expect(TokenKind::For)?;
-                        let item_name = match self.advance().kind {
-                            TokenKind::Ident(n) => n,
-                            other => return Err(format!("Expected item name in lease loop, found {:?}", other)),
-                        };
+                        let item_name = self.parse_identifier_or_keyword()?;
                         self.expect(TokenKind::In)?;
                         let iterable = self.parse_expression()?;
                         let body = self.parse_block()?;
@@ -1180,10 +1377,7 @@ impl Parser {
                 // lease for item in iterable { body }  (zero-allocation fused loop)
                 if self.check(&TokenKind::For) {
                     self.advance(); // consume "for"
-                    let item_name = match self.advance().kind {
-                        TokenKind::Ident(n) => n,
-                        other => return Err(format!("Expected item name in lease for, found {:?}", other)),
-                    };
+                    let item_name = self.parse_identifier_or_keyword()?;
                     self.expect(TokenKind::In)?;
                     let iterable = self.parse_expression()?;
                     let body = self.parse_block()?;
@@ -1204,10 +1398,7 @@ impl Parser {
                     false
                 };
 
-                let name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected variable name after lease/borrow, found {:?}", other)),
-                };
+                let name = self.parse_identifier_or_keyword()?;
 
                 let mut var_type = None;
                 if self.match_token(&TokenKind::Colon) {
@@ -1250,10 +1441,7 @@ impl Parser {
                 let is_mut = self.peek_kind() == &TokenKind::Mut;
                 self.advance();
 
-                let name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected variable name, found {:?}", other)),
-                };
+                let name = self.parse_identifier_or_keyword()?;
 
                 let mut var_type = None;
                 if self.match_token(&TokenKind::Colon) {
@@ -1590,6 +1778,12 @@ impl Parser {
             }
             TokenKind::Invariant => {
                 self.advance();
+                if let TokenKind::StringLit(s) = self.peek_kind() {
+                    let s_val = s.clone();
+                    self.advance();
+                    self.match_token(&TokenKind::SemiColon);
+                    return Ok(Statement::ArchInvariantDecl { rule: s_val, span });
+                }
                 let condition = if self.check(&TokenKind::LBrace) {
                     self.advance();
                     let e = self.parse_expression()?;
@@ -2075,6 +2269,51 @@ impl Parser {
             TokenKind::Evolve => {
                 self.advance();
                 let target = self.parse_identifier_or_keyword()?;
+                if target == "architecture" {
+                    self.expect(TokenKind::LBrace)?;
+                    let mut from = String::new();
+                    let mut toward = String::new();
+                    let mut target_modules = 25;
+                    let mut preserve = Vec::new();
+                    let mut optimize = Vec::new();
+                    let mut reject_if = Vec::new();
+                    let mut verify = Vec::new();
+
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        let key = self.parse_identifier_or_keyword()?;
+                        self.match_token(&TokenKind::Colon);
+                        if key == "from" {
+                            from = self.parse_identifier_or_string()?;
+                            if self.match_token(&TokenKind::Toward) {
+                                toward = self.parse_identifier_or_string()?;
+                            }
+                        } else if key == "toward" {
+                            toward = self.parse_identifier_or_string()?;
+                        } else if key == "target" || key == "target_modules" || key == "modules" {
+                            if let TokenKind::IntLit(i) = self.peek_kind() {
+                                target_modules = *i as usize;
+                                self.advance();
+                            }
+                        } else if key == "preserve" {
+                            let mut p = self.parse_string_list()?;
+                            preserve.append(&mut p);
+                        } else if key == "optimize" {
+                            let mut opt = self.parse_string_list()?;
+                            optimize.append(&mut opt);
+                        } else if key == "reject_if" || key == "reject" {
+                            let mut r = self.parse_string_list()?;
+                            reject_if.append(&mut r);
+                        } else if key == "verify" {
+                            let mut v = self.parse_string_list()?;
+                            verify.append(&mut v);
+                        }
+                        self.match_token(&TokenKind::Comma);
+                        self.match_token(&TokenKind::SemiColon);
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                    return Ok(Statement::EvolveArchDecl { from, toward, target_modules, preserve, optimize, reject_if, verify, span });
+                }
+
                 self.expect(TokenKind::LBrace)?;
                 let mut intent = String::new();
                 let mut preserve = Vec::new();
@@ -2114,6 +2353,785 @@ impl Parser {
                     None
                 };
                 Ok(Statement::EvolveBlock { target, intent, preserve, budget, allow, reject, verify, accept, body, span })
+            }
+
+            TokenKind::Boundary => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                let mut allows = Vec::new();
+                let mut denies = Vec::new();
+                let mut is_sealed = false;
+                if self.check(&TokenKind::LBrace) {
+                    self.advance();
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        let key = self.parse_identifier_or_keyword()?;
+                        if key == "allow" {
+                            allows.push(self.parse_identifier_or_string()?);
+                        } else if key == "deny" {
+                            denies.push(self.parse_identifier_or_string()?);
+                        } else if key == "sealed" {
+                            is_sealed = true;
+                        }
+                        self.match_token(&TokenKind::Comma);
+                        self.match_token(&TokenKind::SemiColon);
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                } else if self.match_token(&TokenKind::Sealed) {
+                    is_sealed = true;
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                Ok(Statement::BoundaryDecl { name, allows, denies, is_sealed, span })
+            }
+            TokenKind::Responsibility => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let description = self.parse_identifier_or_string()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::ResponsibilityDecl { module_name: "".to_string(), description, span })
+            }
+            TokenKind::Owns => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let symbols = if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                    self.parse_string_list()?
+                } else {
+                    vec![self.parse_identifier_or_string()?]
+                };
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::OwnsDecl { module_name: "".to_string(), symbols, span })
+            }
+            TokenKind::Exposes => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let symbols = if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                    self.parse_string_list()?
+                } else {
+                    vec![self.parse_identifier_or_string()?]
+                };
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::ExposesDecl { module_name: "".to_string(), symbols, span })
+            }
+            TokenKind::DependsOnly => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let target_module = if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                    self.parse_string_list()?.join(", ")
+                } else {
+                    self.parse_identifier_or_string()?
+                };
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::DependsDecl { from_module: "".to_string(), target_module, is_only: true, span })
+            }
+            TokenKind::Depends => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let target_module = self.parse_identifier_or_string()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::DependsDecl { from_module: "".to_string(), target_module, is_only: false, span })
+            }
+            TokenKind::Forbid => {
+                self.advance();
+                let from = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::Arrow);
+                let to = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::ForbidDecl { from, to, span })
+            }
+            TokenKind::Layer => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                let mut forbid_depends = Vec::new();
+                if self.check(&TokenKind::LBrace) {
+                    self.advance();
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        if self.match_token(&TokenKind::Forbid) {
+                            if self.match_token(&TokenKind::Depends) {
+                                // consumed depends
+                            }
+                            forbid_depends.push(self.parse_identifier_or_keyword()?);
+                        } else {
+                            let _ = self.advance();
+                        }
+                        self.match_token(&TokenKind::Comma);
+                        self.match_token(&TokenKind::SemiColon);
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                } else {
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                Ok(Statement::LayerDecl { name, forbid_depends, span })
+            }
+            TokenKind::Direction => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let from = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::Arrow);
+                let to = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::DirectionDecl { from, to, span })
+            }
+            TokenKind::Split => {
+                self.advance();
+                let entity = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::Into);
+                let parts = self.parse_string_list()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::SplitDecl { entity, parts, span })
+            }
+            TokenKind::Partition => {
+                self.advance();
+                let entity = self.parse_identifier_or_keyword()?;
+                let mut by = "responsibility".to_string();
+                if self.match_token(&TokenKind::By) {
+                    by = self.parse_identifier_or_keyword()?;
+                }
+                let parts = self.parse_string_list()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::PartitionDecl { entity, by, parts, span })
+            }
+            TokenKind::Extract => {
+                self.advance();
+                self.expect(TokenKind::LBrace)?;
+                let mut symbols = Vec::new();
+                let mut into_module = String::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "symbols" || key == "symbol" {
+                        symbols = self.parse_string_list()?;
+                    } else if key == "into" {
+                        into_module = self.parse_identifier_or_string()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ExtractDecl { symbols, into_module, span })
+            }
+            TokenKind::Cluster => {
+                self.advance();
+                let mut by = "semantic".to_string();
+                if self.match_token(&TokenKind::By) {
+                    by = self.parse_identifier_or_keyword()?;
+                }
+                self.expect(TokenKind::LBrace)?;
+                let mut predicate = String::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let s = self.parse_identifier_or_string()?;
+                    if !predicate.is_empty() { predicate.push(' '); }
+                    predicate.push_str(&s);
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ClusterDecl { by, predicate, span })
+            }
+            TokenKind::Separate => {
+                self.advance();
+                let left = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::From);
+                let right = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::SeparateDecl { left, right, span })
+            }
+            TokenKind::Contract => {
+                self.advance();
+                let mut module_name = String::new();
+                while !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::EOF) {
+                    let part = self.parse_identifier_or_keyword()?;
+                    if part != "Module" && part != "mod" {
+                        module_name = part;
+                    }
+                }
+                self.expect(TokenKind::LBrace)?;
+                let mut accepts = Vec::new();
+                let mut returns = Vec::new();
+                let mut guarantees = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "accepts" || key == "accept" {
+                        accepts = self.parse_string_list()?;
+                    } else if key == "returns" || key == "return" {
+                        returns = self.parse_string_list()?;
+                    } else if key == "guarantees" || key == "guarantee" {
+                        guarantees = self.parse_string_list()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ModuleContractDecl { module_name, accepts, returns, guarantees, span })
+            }
+            TokenKind::Port => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut methods = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let m = self.parse_identifier_or_keyword()?;
+                    if self.match_token(&TokenKind::LParen) {
+                        self.match_token(&TokenKind::RParen);
+                    }
+                    methods.push(m);
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::PortDecl { name, methods, span })
+            }
+            TokenKind::Adapter => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                let mut port = String::new();
+                if self.match_token(&TokenKind::For) || self.match_token(&TokenKind::Impl) || self.peek_kind() != &TokenKind::LBrace {
+                    port = self.parse_identifier_or_keyword().unwrap_or_default();
+                }
+                let body = self.parse_block()?;
+                Ok(Statement::AdapterDecl { name, port, body, span })
+            }
+            TokenKind::Facade => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut exposes = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "expose" || key == "exposes" {
+                        if self.check(&TokenKind::LBrace) || self.check(&TokenKind::LBracket) {
+                            let mut list = self.parse_string_list()?;
+                            exposes.append(&mut list);
+                        } else {
+                            exposes.push(self.parse_identifier_or_string()?);
+                        }
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::FacadeDecl { name, exposes, span })
+            }
+            TokenKind::Gateway => {
+                self.advance();
+                let from_mod = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::From) {
+                    let f = self.parse_identifier_or_keyword()?;
+                    let _ = f;
+                }
+                self.match_token(&TokenKind::To);
+                self.match_token(&TokenKind::Arrow);
+                let to_mod = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut allowed_calls = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "allow" || key == "allows" {
+                        allowed_calls = self.parse_string_list()?;
+                    } else {
+                        allowed_calls.push(key);
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::GatewayDecl { from_mod, to_mod, allowed_calls, span })
+            }
+            TokenKind::Preserve => {
+                self.advance();
+                if self.peek_kind() == &TokenKind::Ident("refactor".to_string()) {
+                    self.advance();
+                }
+                let preserves = self.parse_string_list()?;
+                let body = self.parse_block()?;
+                Ok(Statement::PreserveRefactorDecl { preserves, body, span })
+            }
+            TokenKind::Compat => {
+                self.advance();
+                let version = self.parse_identifier_or_keyword()?;
+                let mut module_name = String::new();
+                if self.match_token(&TokenKind::For) {
+                    module_name = self.parse_identifier_or_keyword()?;
+                }
+                let body = self.parse_block()?;
+                Ok(Statement::CompatDecl { module_name, version, body, span })
+            }
+            TokenKind::Stable => {
+                self.advance();
+                let api_name = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::StableDecl { api_name, span })
+            }
+            TokenKind::Sealed => {
+                self.advance();
+                let mut boundary_name = String::new();
+                while !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) {
+                    let part = self.parse_identifier_or_keyword()?;
+                    if part != "Boundary" && part != "boundary" {
+                        boundary_name = part;
+                        break;
+                    }
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::SealedDecl { boundary_name, span })
+            }
+            TokenKind::Friend => {
+                self.advance();
+                let module_name = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::To);
+                let friend_module = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::FriendDecl { module_name, friend_module, span })
+            }
+            TokenKind::PrivateTo => {
+                self.advance();
+                let symbol = self.parse_identifier_or_keyword()?;
+                let module_name = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::PrivateToDecl { symbol, module_name, span })
+            }
+            TokenKind::Surface => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut exposes = Vec::new();
+                let mut hides = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "expose" || key == "exposes" {
+                        let mut l = self.parse_string_list()?;
+                        exposes.append(&mut l);
+                    } else if key == "hide" || key == "hides" {
+                        let mut l = self.parse_string_list()?;
+                        hides.append(&mut l);
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::SurfaceDecl { name, exposes, hides, span })
+            }
+            TokenKind::Leak => {
+                self.advance();
+                let mut module_name = String::new();
+                if self.peek_kind() == &TokenKind::Ident("check".to_string()) || self.peek_kind() == &TokenKind::Ident("payments".to_string()) {
+                    let _ = self.parse_identifier_or_keyword();
+                    module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                }
+                if self.match_token(&TokenKind::Forbid) {
+                    // consumed forbid
+                }
+                let symbol = self.parse_identifier_or_keyword()?;
+                if self.peek_kind() == &TokenKind::Ident("leaking".to_string()) {
+                    self.advance();
+                }
+                self.match_token(&TokenKind::Through);
+                let through = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::LeakCheckDecl { module_name, symbol, through, span })
+            }
+            TokenKind::Purity => {
+                self.advance();
+                let mut module_name = String::new();
+                while !self.check(&TokenKind::Colon) && !self.check(&TokenKind::Equal) && !self.check(&TokenKind::EOF) {
+                    let part = self.parse_identifier_or_keyword()?;
+                    if part != "Module" && part != "mod" {
+                        module_name = part;
+                    }
+                }
+                self.match_token(&TokenKind::Colon);
+                self.match_token(&TokenKind::Equal);
+                let level = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::PurityDecl { module_name, level, span })
+            }
+            TokenKind::View => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut includes = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "include" || key == "includes" {
+                        includes = self.parse_string_list()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ViewDecl { name, includes, span })
+            }
+            TokenKind::Lens => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut focus = String::new();
+                let mut hide = String::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "focus" {
+                        focus = self.parse_identifier_or_string()?;
+                    } else if key == "hide" {
+                        hide = self.parse_identifier_or_string()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::LensDecl { name, focus, hide, span })
+            }
+            TokenKind::AgentScope => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut modules = Vec::new();
+                let mut forbid = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "modules" || key == "module" {
+                        modules = self.parse_string_list()?;
+                    } else if key == "forbid" {
+                        forbid = self.parse_string_list()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::AgentScopeDecl { name, modules, forbid, span })
+            }
+            TokenKind::BudgetContext => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut token_budget = 8192;
+                let mut priority = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "token_budget" || key == "budget" {
+                        if let TokenKind::IntLit(i) = self.peek_kind() {
+                            token_budget = *i as usize;
+                            self.advance();
+                        }
+                    } else if key == "priority" {
+                        priority = self.parse_string_list()?;
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::BudgetContextDecl { name, token_budget, priority, span })
+            }
+            TokenKind::Move => {
+                self.advance();
+                let symbol = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::From);
+                let from_mod = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::To);
+                let to_mod = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::MoveDecl { symbol, from_mod, to_mod, span })
+            }
+            TokenKind::Migrate => {
+                self.advance();
+                let entity = self.parse_identifier_or_keyword()?;
+                let mut from_mod = String::new();
+                let mut to_mod = String::new();
+                if self.check(&TokenKind::LBrace) {
+                    self.advance();
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        let key = self.parse_identifier_or_keyword()?;
+                        self.match_token(&TokenKind::Colon);
+                        if key == "from" {
+                            from_mod = self.parse_identifier_or_string()?;
+                        } else if key == "to" {
+                            to_mod = self.parse_identifier_or_string()?;
+                        }
+                        self.match_token(&TokenKind::Comma);
+                        self.match_token(&TokenKind::SemiColon);
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                } else {
+                    self.match_token(&TokenKind::From);
+                    from_mod = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::To);
+                    to_mod = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                Ok(Statement::MigrateDecl { entity, from_mod, to_mod, span })
+            }
+            TokenKind::Redirect => {
+                self.advance();
+                let from_api = self.parse_identifier_or_string()?;
+                self.match_token(&TokenKind::Arrow);
+                let to_api = self.parse_identifier_or_string()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::RedirectDecl { from_api, to_api, span })
+            }
+            TokenKind::Deprecate => {
+                self.advance();
+                let target_api = self.parse_identifier_or_string()?;
+                let mut after_cond = String::new();
+                let mut remove_cond = String::new();
+                if self.check(&TokenKind::LBrace) {
+                    self.advance();
+                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        let key = self.parse_identifier_or_keyword()?;
+                        self.match_token(&TokenKind::Colon);
+                        if key == "after" {
+                            after_cond = self.parse_identifier_or_string()?;
+                        } else if key == "remove" {
+                            remove_cond = self.parse_identifier_or_string()?;
+                        }
+                        self.match_token(&TokenKind::Comma);
+                        self.match_token(&TokenKind::SemiColon);
+                    }
+                    self.expect(TokenKind::RBrace)?;
+                } else {
+                    if self.match_token(&TokenKind::After) {
+                        after_cond = self.parse_identifier_or_string()?;
+                    }
+                    if self.match_token(&TokenKind::Remove) {
+                        remove_cond = self.parse_identifier_or_string()?;
+                    }
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                Ok(Statement::DeprecateDecl { target_api, after_cond, remove_cond, span })
+            }
+            TokenKind::CycleFree => {
+                self.advance();
+                self.match_token(&TokenKind::Equal);
+                self.match_token(&TokenKind::Colon);
+                let scope = if self.match_token(&TokenKind::True) || self.match_token(&TokenKind::False) {
+                    "modules".to_string()
+                } else {
+                    self.parse_identifier_or_keyword().unwrap_or_else(|_| "modules".to_string())
+                };
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::CycleFreeDecl { scope, span })
+            }
+            TokenKind::MaxFanout => {
+                self.advance();
+                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                self.match_token(&TokenKind::Colon);
+                let mut limit = 5;
+                if let TokenKind::IntLit(i) = self.peek_kind() {
+                    limit = *i as usize;
+                    self.advance();
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::FanoutDecl { module_name, limit, span })
+            }
+            TokenKind::MaxFanin => {
+                self.advance();
+                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                self.match_token(&TokenKind::Colon);
+                let mut limit = 20;
+                if let TokenKind::IntLit(i) = self.peek_kind() {
+                    limit = *i as usize;
+                    self.advance();
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::FaninDecl { module_name, limit, span })
+            }
+            TokenKind::MaxDepth => {
+                self.advance();
+                self.match_token(&TokenKind::Colon);
+                let mut limit = 6;
+                if let TokenKind::IntLit(i) = self.peek_kind() {
+                    limit = *i as usize;
+                    self.advance();
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::DepthDecl { limit, span })
+            }
+            TokenKind::Cohesion => {
+                self.advance();
+                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                self.match_token(&TokenKind::GreaterEqual);
+                self.match_token(&TokenKind::Equal);
+                self.match_token(&TokenKind::Colon);
+                let mut min_threshold = 0.8;
+                if let TokenKind::FloatLit(f) = self.peek_kind() {
+                    min_threshold = *f;
+                    self.advance();
+                } else if let TokenKind::IntLit(i) = self.peek_kind() {
+                    min_threshold = *i as f64;
+                    self.advance();
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::CohesionDecl { module_name, min_threshold, span })
+            }
+            TokenKind::Modularize => {
+                self.advance();
+                let target = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut target_files_min = 5;
+                let mut target_files_max = 20;
+                let mut preserve = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "target_files" || key == "target" {
+                        if let TokenKind::IntLit(i) = self.peek_kind() {
+                            target_files_min = *i as usize;
+                            target_files_max = *i as usize;
+                            self.advance();
+                            if self.match_token(&TokenKind::Dot) && self.match_token(&TokenKind::Dot) {
+                                if let TokenKind::IntLit(i2) = self.peek_kind() {
+                                    target_files_max = *i2 as usize;
+                                    self.advance();
+                                }
+                            }
+                        }
+                    } else if key == "preserve" {
+                        let mut p = self.parse_string_list()?;
+                        preserve.append(&mut p);
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ModularizeDecl { target, target_files_min, target_files_max, preserve, span })
+            }
+            TokenKind::Decompose => {
+                self.advance();
+                let target = self.parse_identifier_or_keyword()?;
+                self.expect(TokenKind::LBrace)?;
+                let mut target_modules = None;
+                let mut optimize = Vec::new();
+                let mut preserve = Vec::new();
+                let mut gravity = None;
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    if key == "target" || key == "target_modules" || key == "modules" {
+                        if let TokenKind::IntLit(i) = self.peek_kind() {
+                            target_modules = Some(*i as usize);
+                            self.advance();
+                            let _ = self.parse_identifier_or_keyword().ok();
+                        }
+                    } else if key == "optimize" {
+                        let mut opt = self.parse_string_list()?;
+                        optimize.append(&mut opt);
+                    } else if key == "preserve" {
+                        let mut p = self.parse_string_list()?;
+                        preserve.append(&mut p);
+                    } else if key == "gravity" {
+                        gravity = Some(self.parse_identifier_or_string()?);
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::DecomposeDecl { target, target_modules, optimize, preserve, gravity, span })
+            }
+            TokenKind::Architecture => {
+                self.advance();
+                let name = self.parse_identifier_or_keyword().unwrap_or_else(|_| "system".to_string());
+                self.expect(TokenKind::LBrace)?;
+                let mut layers = Vec::new();
+                let mut rules = Vec::new();
+                let mut directions = Vec::new();
+                let mut invariants = Vec::new();
+                let mut cycle_free = false;
+                let mut max_depth = None;
+
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let key = self.parse_identifier_or_keyword()?;
+                    if key == "layers" || key == "layer" {
+                        self.match_token(&TokenKind::Colon);
+                        layers = self.parse_string_list()?;
+                    } else if key == "rules" || key == "rule" {
+                        self.match_token(&TokenKind::Colon);
+                        rules = self.parse_string_list()?;
+                    } else if key == "direction" || key == "directions" {
+                        self.match_token(&TokenKind::Colon);
+                        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) && !self.check(&TokenKind::Layer) && !self.check(&TokenKind::Ident("rules".to_string())) {
+                            if let Ok(from) = self.parse_identifier_or_keyword() {
+                                self.match_token(&TokenKind::Arrow);
+                                if let Ok(to) = self.parse_identifier_or_keyword() {
+                                    directions.push((from, to));
+                                }
+                            } else {
+                                break;
+                            }
+                            self.match_token(&TokenKind::Comma);
+                            self.match_token(&TokenKind::SemiColon);
+                        }
+                    } else if key == "invariant" || key == "invariants" {
+                        self.match_token(&TokenKind::Colon);
+                        invariants = self.parse_string_list()?;
+                    } else if key == "cycle_free" {
+                        cycle_free = true;
+                        self.match_token(&TokenKind::Colon);
+                        self.match_token(&TokenKind::Equal);
+                        if self.match_token(&TokenKind::True) || self.match_token(&TokenKind::False) {
+                            // consumed
+                        } else {
+                            let _ = self.parse_identifier_or_keyword().ok();
+                        }
+                    } else if key == "max_dependency_depth" || key == "max_depth" || key == "depth" {
+                        self.match_token(&TokenKind::Colon);
+                        if let TokenKind::IntLit(i) = self.peek_kind() {
+                            max_depth = Some(*i as usize);
+                            self.advance();
+                        }
+                    }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::ArchitectureDecl { name, layers, rules, directions, invariants, cycle_free, max_depth, span })
+            }
+            TokenKind::Repair => {
+                self.advance();
+                let target = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::RepairDecl { target, span })
+            }
+            TokenKind::Gravity => {
+                self.advance();
+                self.expect(TokenKind::LBrace)?;
+                let mut weights = Vec::new();
+                while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                    let k = self.parse_identifier_or_keyword()?;
+                    self.match_token(&TokenKind::Colon);
+                    let mut w = 1.0;
+                    if let TokenKind::IntLit(i) = self.peek_kind() {
+                        w = *i as f64 / 100.0;
+                        self.advance();
+                        self.match_token(&TokenKind::Percent);
+                    } else if let TokenKind::FloatLit(f) = self.peek_kind() {
+                        w = *f;
+                        self.advance();
+                        self.match_token(&TokenKind::Percent);
+                    }
+                    weights.push((k, w));
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Statement::GravityDecl { weights, span })
+            }
+
+            TokenKind::Bridge | TokenKind::Ident(_) if self.peek_kind() == &TokenKind::Bridge || (if let TokenKind::Ident(id) = self.peek_kind() { id == "bridge" } else { false }) => {
+                self.advance();
+                let from_mod = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::Arrow);
+                let to_mod = self.parse_identifier_or_keyword()?;
+                let mut via = String::new();
+                if self.peek_kind() == &TokenKind::Ident("via".to_string()) {
+                    self.advance();
+                    via = self.parse_identifier_or_keyword()?;
+                }
+                self.match_token(&TokenKind::SemiColon);
+                Ok(Statement::BridgeDecl { from_mod, to_mod, via, span })
             }
 
             _ => {

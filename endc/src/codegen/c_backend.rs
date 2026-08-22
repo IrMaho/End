@@ -1852,6 +1852,35 @@ impl CBackend {
             }
         }
 
+        // Process Top-Level Architectural Constructs & Statements
+        for stmt in &module.statements {
+            match stmt {
+                Statement::ForbidDecl { from, to, .. } => {
+                    self.output.push_str(&format!("/* 🚫 [FORBID DEPENDENCY: '{}' -> '{}'] */\n", from, to));
+                }
+                Statement::SplitDecl { entity, parts, .. } => {
+                    self.output.push_str(&format!("/* ✂️ [SPLIT ENTITY '{}']: into [{}] */\n", entity, parts.join(", ")));
+                }
+                Statement::ModuleContractDecl { module_name, accepts, returns, guarantees, .. } => {
+                    self.output.push_str(&format!("/* 📜 [MODULE CONTRACT '{}']: accepts=[{}], returns=[{}], guarantees=[{}] */\n",
+                        module_name, accepts.join(", "), returns.join(", "), guarantees.join(", ")));
+                }
+                Statement::AgentScopeDecl { name, modules, forbid, .. } => {
+                    self.output.push_str(&format!("/* 🤖 [AGENT SCOPE '{}']: modules=[{}], forbid=[{}] */\n",
+                        name, modules.join(", "), forbid.join(", ")));
+                }
+                Statement::DecomposeDecl { target, target_modules, .. } => {
+                    self.output.push_str(&format!("/* 💥 [DECOMPOSE MONOLITH '{}']: target_modules={} */\n",
+                        target, target_modules.unwrap_or(25)));
+                }
+                Statement::EvolveArchDecl { from, toward, target_modules, .. } => {
+                    self.output.push_str(&format!("/* 🚀 [EVOLVE ARCHITECTURE]: from='{}' toward='{}', target_modules={} */\n",
+                        from, toward, target_modules));
+                }
+                _ => {}
+            }
+        }
+
         (
             self.output.clone(),
             if is_lib { Some(self.header_output.clone()) } else { None },
@@ -2949,6 +2978,178 @@ Statement::Spawn { call, .. } => {
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
+            }
+            Statement::BoundaryDecl { name, allows, denies, is_sealed, .. } => {
+                self.output.push_str(&format!("{}/* 🏰 [ARCHITECTURAL BOUNDARY: '{}'] sealed={}, allow=[{}], deny=[{}] */\n", self.indent(), name, is_sealed, allows.join(", "), denies.join(", ")));
+            }
+            Statement::ResponsibilityDecl { module_name, description, .. } => {
+                self.output.push_str(&format!("{}/* 🎯 [MODULE RESPONSIBILITY: '{}']: \"{}\" */\n", self.indent(), module_name, description));
+            }
+            Statement::OwnsDecl { module_name, symbols, .. } => {
+                self.output.push_str(&format!("{}/* 👑 [MODULE OWNS: '{}']: [{}] */\n", self.indent(), module_name, symbols.join(", ")));
+            }
+            Statement::ExposesDecl { module_name, symbols, .. } => {
+                self.output.push_str(&format!("{}/* 🚪 [MODULE EXPOSES: '{}']: [{}] */\n", self.indent(), module_name, symbols.join(", ")));
+            }
+            Statement::DependsDecl { from_module, target_module, is_only, .. } => {
+                let only_str = if *is_only { " (depends_only)" } else { "" };
+                self.output.push_str(&format!("{}/* 🔗 [DEPENDENCY: '{}' -> '{}'{} ] */\n", self.indent(), from_module, target_module, only_str));
+            }
+            Statement::ForbidDecl { from, to, .. } => {
+                self.output.push_str(&format!("{}/* 🚫 [FORBID DEPENDENCY: '{}' -> '{}'] */\n", self.indent(), from, to));
+            }
+            Statement::LayerDecl { name, forbid_depends, .. } => {
+                self.output.push_str(&format!("{}/* 🧱 [ARCHITECTURAL LAYER: '{}'] forbid_depends=[{}] */\n", self.indent(), name, forbid_depends.join(", ")));
+            }
+            Statement::DirectionDecl { from, to, .. } => {
+                self.output.push_str(&format!("{}/* 🧭 [FLOW DIRECTION: '{}' -> '{}'] */\n", self.indent(), from, to));
+            }
+            Statement::SplitDecl { entity, parts, .. } => {
+                self.output.push_str(&format!("{}/* ✂️ [SPLIT ENTITY '{}']: into [{}] */\n", self.indent(), entity, parts.join(", ")));
+            }
+            Statement::PartitionDecl { entity, by, parts, .. } => {
+                self.output.push_str(&format!("{}/* 📦 [PARTITION ENTITY '{}' by '{}']: [{}] */\n", self.indent(), entity, by, parts.join(", ")));
+            }
+            Statement::ExtractDecl { symbols, into_module, .. } => {
+                self.output.push_str(&format!("{}/* ⛏️ [EXTRACT TO '{}']: symbols=[{}] */\n", self.indent(), into_module, symbols.join(", ")));
+            }
+            Statement::ClusterDecl { by, predicate, .. } => {
+                self.output.push_str(&format!("{}/* 🌌 [CLUSTER BY '{}']: predicate='{}' */\n", self.indent(), by, predicate));
+            }
+            Statement::SeparateDecl { left, right, .. } => {
+                self.output.push_str(&format!("{}/* ↔️ [SEPARATE MODULES]: '{}' from '{}' */\n", self.indent(), left, right));
+            }
+            Statement::ModuleContractDecl { module_name, accepts, returns, guarantees, .. } => {
+                self.output.push_str(&format!("{}/* 📜 [MODULE CONTRACT '{}']: accepts=[{}], returns=[{}], guarantees=[{}] */\n", self.indent(), module_name, accepts.join(", "), returns.join(", "), guarantees.join(", ")));
+            }
+            Statement::PortDecl { name, methods, .. } => {
+                self.output.push_str(&format!("{}/* 🔌 [PORT '{}']: methods=[{}] */\n", self.indent(), name, methods.join(", ")));
+            }
+            Statement::AdapterDecl { name, port, body, .. } => {
+                self.output.push_str(&format!("{}/* 🔌 [ADAPTER '{}' for port '{}'] */\n", self.indent(), name, port));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::FacadeDecl { name, exposes, .. } => {
+                self.output.push_str(&format!("{}/* 🏛️ [FACADE '{}']: exposes=[{}] */\n", self.indent(), name, exposes.join(", ")));
+            }
+            Statement::GatewayDecl { from_mod, to_mod, allowed_calls, .. } => {
+                self.output.push_str(&format!("{}/* 🌉 [GATEWAY '{}' -> '{}']: allowed_calls=[{}] */\n", self.indent(), from_mod, to_mod, allowed_calls.join(", ")));
+            }
+            Statement::ArchInvariantDecl { rule, .. } => {
+                self.output.push_str(&format!("{}/* ⚖️ [ARCH INVARIANT]: {} */\n", self.indent(), rule));
+            }
+            Statement::PreserveRefactorDecl { preserves, body, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [PRESERVE REFACTOR INVARIANTS: {}] */\n", self.indent(), preserves.join(", ")));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::CompatDecl { module_name, version, body, .. } => {
+                self.output.push_str(&format!("{}/* 🔄 [COMPATIBILITY REGION for '{}': v{}] */\n", self.indent(), module_name, version));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::StableDecl { api_name, .. } => {
+                self.output.push_str(&format!("{}/* ⚓ [STABLE API SYMBOLS]: {} */\n", self.indent(), api_name));
+            }
+            Statement::SealedDecl { boundary_name, .. } => {
+                self.output.push_str(&format!("{}/* 🔒 [SEALED MODULE: '{}'] */\n", self.indent(), boundary_name));
+            }
+            Statement::FriendDecl { module_name, friend_module, .. } => {
+                self.output.push_str(&format!("{}/* 🤝 [FRIEND MODULE: '{}' grants internal access to '{}'] */\n", self.indent(), module_name, friend_module));
+            }
+            Statement::PrivateToDecl { symbol, module_name, .. } => {
+                self.output.push_str(&format!("{}/* 🙈 [PRIVATE SYMBOL: '{}' is private_to '{}'] */\n", self.indent(), symbol, module_name));
+            }
+            Statement::SurfaceDecl { name, exposes, hides, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [SURFACE OF '{}']: exposes=[{}], hides=[{}] */\n", self.indent(), name, exposes.join(", "), hides.join(", ")));
+            }
+            Statement::LeakCheckDecl { module_name, symbol, through, .. } => {
+                self.output.push_str(&format!("{}/* 💧 [LEAK CHECK on '{}']: forbid '{}' leaking through '{}' */\n", self.indent(), module_name, symbol, through));
+            }
+            Statement::PurityDecl { module_name, level, .. } => {
+                self.output.push_str(&format!("{}/* ✨ [MODULE PURITY: '{}']: level='{}' */\n", self.indent(), module_name, level));
+            }
+            Statement::ViewDecl { name, includes, .. } => {
+                self.output.push_str(&format!("{}/* 🔭 [VIEW '{}']: includes=[{}] */\n", self.indent(), name, includes.join(", ")));
+            }
+            Statement::LensDecl { name, focus, hide, .. } => {
+                self.output.push_str(&format!("{}/* 🔍 [LENS '{}']: focus='{}', hide='{}' */\n", self.indent(), name, focus, hide));
+            }
+            Statement::AgentScopeDecl { name, modules, forbid, .. } => {
+                self.output.push_str(&format!("{}/* 🤖 [AGENT SCOPE '{}']: modules=[{}], forbid=[{}] */\n", self.indent(), name, modules.join(", "), forbid.join(", ")));
+            }
+            Statement::BudgetContextDecl { name, token_budget, priority, .. } => {
+                self.output.push_str(&format!("{}/* 💰 [BUDGET CONTEXT '{}']: tokens={}, priority=[{}] */\n", self.indent(), name, token_budget, priority.join(", ")));
+            }
+            Statement::MoveDecl { symbol, from_mod, to_mod, .. } => {
+                self.output.push_str(&format!("{}/* 🚚 [MOVE SYMBOL]: '{}' from '{}' -> '{}' */\n", self.indent(), symbol, from_mod, to_mod));
+            }
+            Statement::MigrateDecl { entity, from_mod, to_mod, .. } => {
+                self.output.push_str(&format!("{}/* 🏗️ [MIGRATE ENTITY]: '{}' from '{}' -> '{}' */\n", self.indent(), entity, from_mod, to_mod));
+            }
+            Statement::BridgeDecl { from_mod, to_mod, via, .. } => {
+                self.output.push_str(&format!("{}/* 🌉 [BRIDGE]: '{}' -> '{}' via '{}' */\n", self.indent(), from_mod, to_mod, via));
+            }
+            Statement::RedirectDecl { from_api, to_api, .. } => {
+                self.output.push_str(&format!("{}/* 🔀 [REDIRECT API]: '{}' -> '{}' */\n", self.indent(), from_api, to_api));
+            }
+            Statement::DeprecateDecl { target_api, after_cond, remove_cond, .. } => {
+                self.output.push_str(&format!("{}/* ⏳ [DEPRECATE '{}']: after='{}', remove_when='{}' */\n", self.indent(), target_api, after_cond, remove_cond));
+            }
+            Statement::CycleFreeDecl { .. } => {
+                self.output.push_str(&format!("{}/* 🔄 [ARCHITECTURE INVARIANT: cycle_free = true] */\n", self.indent()));
+            }
+            Statement::FanoutDecl { module_name, limit, .. } => {
+                self.output.push_str(&format!("{}/* 🌲 [MAX FANOUT on '{}']: limit={} */\n", self.indent(), module_name, limit));
+            }
+            Statement::FaninDecl { module_name, limit, .. } => {
+                self.output.push_str(&format!("{}/* 🌲 [MAX FANIN on '{}']: limit={} */\n", self.indent(), module_name, limit));
+            }
+            Statement::DepthDecl { limit, .. } => {
+                self.output.push_str(&format!("{}/* 📏 [MAX DEPTH]: limit={} */\n", self.indent(), limit));
+            }
+            Statement::CohesionDecl { module_name, min_threshold, .. } => {
+                self.output.push_str(&format!("{}/* 🧲 [COHESION REQUIREMENT on '{}']: min_threshold={:.2} */\n", self.indent(), module_name, min_threshold));
+            }
+            Statement::ModularizeDecl { target, target_files_min, target_files_max, preserve, .. } => {
+                self.output.push_str(&format!("{}/* 🧩 [MODULARIZE '{}']: target_files={}..{}, preserve=[{}] */\n", self.indent(), target, target_files_min, target_files_max, preserve.join(", ")));
+            }
+            Statement::DecomposeDecl { target, target_modules, optimize, preserve, gravity, .. } => {
+                let tm_str = target_modules.map(|n| n.to_string()).unwrap_or_else(|| "auto".to_string());
+                let g_str = gravity.as_deref().unwrap_or("semantic");
+                self.output.push_str(&format!("{}/* 💥 [DECOMPOSE MONOLITH '{}']: target_modules={}, optimize=[{}], preserve=[{}], gravity='{}' */\n",
+                    self.indent(), target, tm_str, optimize.join(", "), preserve.join(", "), g_str));
+            }
+            Statement::ArchitectureDecl { name, layers, rules, invariants, .. } => {
+                self.output.push_str(&format!("{}/* 🏛️ [ARCHITECTURE SPECIFICATION '{}']: layers=[{}], rules=[{}], invariants=[{}] */\n",
+                    self.indent(), name, layers.join(", "), rules.join(", "), invariants.join(", ")));
+            }
+            Statement::RepairDecl { target, .. } => {
+                self.output.push_str(&format!("{}/* 🔧 [ARCHITECTURE REPAIR on '{}'] */\n", self.indent(), target));
+            }
+            Statement::EvolveArchDecl { from, toward, target_modules, preserve, optimize, reject_if, verify, .. } => {
+                self.output.push_str(&format!("{}/* 🚀 [EVOLVE ARCHITECTURE]: from='{}' toward='{}', target_modules={}, preserve=[{}], optimize=[{}], reject_if=[{}], verify=[{}] */\n",
+                    self.indent(), from, toward, target_modules, preserve.join(", "), optimize.join(", "), reject_if.join(", "), verify.join(", ")));
+            }
+            Statement::GravityDecl { weights, .. } => {
+                let w_str = weights.iter().map(|(k, v)| format!("{}: {:.2}", k, v)).collect::<Vec<_>>().join(", ");
+                self.output.push_str(&format!("{}/* 🌌 [MODULE GRAVITY MATRIX]: {} */\n", self.indent(), w_str));
             }
         }
     }

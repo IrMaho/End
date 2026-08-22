@@ -104,6 +104,67 @@ pub enum TokenKind {
     On,           // 'on'
     MutateToken,  // 'mutate'
 
+    // Agent-Modular Architectural Tokens
+    Boundary,         // 'boundary'
+    Responsibility,   // 'responsibility'
+    Owns,             // 'owns'
+    Exposes,          // 'exposes'
+    DependsOnly,      // 'depends_only'
+    Depends,          // 'depends'
+    Forbid,           // 'forbid'
+    Layer,            // 'layer'
+    Direction,        // 'direction'
+    Split,            // 'split'
+    Partition,        // 'partition'
+    Extract,          // 'extract'
+    Cluster,          // 'cluster'
+    Separate,         // 'separate'
+    Contract,         // 'contract'
+    Port,             // 'port'
+    Adapter,          // 'adapter'
+    Facade,           // 'facade'
+    Gateway,          // 'gateway'
+    Compat,           // 'compat'
+    Stable,           // 'stable'
+    Sealed,           // 'sealed'
+    Friend,           // 'friend'
+    PrivateTo,        // 'private_to'
+    Surface,          // 'surface'
+    Leak,             // 'leak'
+    Purity,           // 'purity'
+    View,             // 'view'
+    Lens,             // 'lens'
+    AgentScope,       // 'agent_scope' or 'scope'
+    BudgetContext,    // 'budget_context'
+    TokenBudget,      // 'token_budget'
+    Move,             // 'move'
+    Migrate,          // 'migrate'
+    Redirect,         // 'redirect'
+    Deprecate,        // 'deprecate' or 'deprecate_after'
+    CycleFree,        // 'cycle_free'
+    MaxFanout,        // 'max_fanout' or 'fanout'
+    MaxFanin,         // 'max_fanin' or 'fan_in' or 'fanin'
+    MaxDepth,         // 'max_dependency_depth' or 'depth'
+    Cohesion,         // 'cohesion'
+    Modularize,       // 'modularize'
+    Decompose,        // 'decompose'
+    Architecture,     // 'architecture'
+    Repair,           // 'repair'
+    Gravity,          // 'gravity'
+    Deny,             // 'deny'
+    Into,             // 'into'
+    From,             // 'from'
+    Toward,           // 'toward'
+    Optimize,         // 'optimize'
+    RejectIf,         // 'reject_if'
+    Never,            // 'never'
+    After,            // 'after'
+    Remove,           // 'remove'
+    Hide,             // 'hide'
+    Focus,            // 'focus'
+    By,               // 'by'
+    Through,          // 'through'
+
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
     QuestionQuestion, // '??'
@@ -237,7 +298,7 @@ impl<'a> Lexer<'a> {
     fn skip_whitespace_and_comments(&mut self) {
         while let Some(ch) = self.peek() {
             match ch {
-                ' ' | '\t' | '\r' | '\n' => {
+                ' ' | '\t' | '\r' | '\n' | '\u{feff}' => {
                     self.advance();
                 }
                 '/' => {
@@ -466,6 +527,65 @@ impl<'a> Lexer<'a> {
                     "to" => TokenKind::To,
                     "on" => TokenKind::On,
                     "mutate" => TokenKind::MutateToken,
+                    "boundary" => TokenKind::Boundary,
+                    "responsibility" => TokenKind::Responsibility,
+                    "owns" => TokenKind::Owns,
+                    "exposes" => TokenKind::Exposes,
+                    "depends_only" => TokenKind::DependsOnly,
+                    "depends" => TokenKind::Depends,
+                    "forbid" => TokenKind::Forbid,
+                    "layer" => TokenKind::Layer,
+                    "direction" => TokenKind::Direction,
+                    "split" => TokenKind::Split,
+                    "partition" => TokenKind::Partition,
+                    "extract" => TokenKind::Extract,
+                    "cluster" => TokenKind::Cluster,
+                    "separate" => TokenKind::Separate,
+                    "contract" => TokenKind::Contract,
+                    "port" => TokenKind::Port,
+                    "adapter" => TokenKind::Adapter,
+                    "facade" => TokenKind::Facade,
+                    "gateway" => TokenKind::Gateway,
+                    "compat" => TokenKind::Compat,
+                    "stable" => TokenKind::Stable,
+                    "sealed" => TokenKind::Sealed,
+                    "friend" => TokenKind::Friend,
+                    "private_to" => TokenKind::PrivateTo,
+                    "surface" => TokenKind::Surface,
+                    "leak" => TokenKind::Leak,
+                    "purity" => TokenKind::Purity,
+                    "view" => TokenKind::View,
+                    "lens" => TokenKind::Lens,
+                    "agent_scope" | "scope" => TokenKind::AgentScope,
+                    "budget_context" => TokenKind::BudgetContext,
+                    "token_budget" => TokenKind::TokenBudget,
+                    "move" => TokenKind::Move,
+                    "migrate" => TokenKind::Migrate,
+                    "redirect" => TokenKind::Redirect,
+                    "deprecate" | "deprecate_after" => TokenKind::Deprecate,
+                    "cycle_free" => TokenKind::CycleFree,
+                    "max_fanout" | "fanout" => TokenKind::MaxFanout,
+                    "max_fanin" | "fan_in" | "fanin" => TokenKind::MaxFanin,
+                    "max_dependency_depth" | "depth" => TokenKind::MaxDepth,
+                    "cohesion" => TokenKind::Cohesion,
+                    "modularize" => TokenKind::Modularize,
+                    "decompose" => TokenKind::Decompose,
+                    "architecture" => TokenKind::Architecture,
+                    "repair" => TokenKind::Repair,
+                    "gravity" => TokenKind::Gravity,
+                    "deny" => TokenKind::Deny,
+                    "into" => TokenKind::Into,
+                    "from" => TokenKind::From,
+                    "toward" => TokenKind::Toward,
+                    "optimize" => TokenKind::Optimize,
+                    "reject_if" => TokenKind::RejectIf,
+                    "never" => TokenKind::Never,
+                    "after" => TokenKind::After,
+                    "remove" => TokenKind::Remove,
+                    "hide" => TokenKind::Hide,
+                    "focus" => TokenKind::Focus,
+                    "by" => TokenKind::By,
+                    "through" => TokenKind::Through,
                     _ => TokenKind::Ident(ident),
                 }
             };
