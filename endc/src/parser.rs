@@ -1907,6 +1907,9 @@ impl Parser {
                 if self.peek_kind() != &TokenKind::LBrace {
                     let _ = self.parse_identifier_or_keyword().ok();
                     delay_ms = self.parse_expression()?;
+                    if matches!(self.peek_kind(), TokenKind::Ident(id) if id == "ms" || id == "s" || id == "us") {
+                        self.advance();
+                    }
                 }
                 let primary = self.parse_block()?;
                 let mut fallback = Block { statements: vec![], span: span.clone() };

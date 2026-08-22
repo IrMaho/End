@@ -558,4 +558,160 @@ mod tests {
         let res = interp.run(&module).unwrap();
         assert_eq!(res, Value::Int(30));
     }
+
+    #[test]
+    fn test_race_free_data_race_detection_negative_and_positive() {
+        // Negative test: mutating shared outer variable inside race_free block
+        let bad_code = r#"
+        pub fn test_bad_race() void {
+            mut shared = 42
+            race_free {
+                shared = 100
+            }
+        }
+        "#;
+        let module = parse_str(bad_code).unwrap();
+        let mut analyzer = SemanticAnalyzer::new("test.end", bad_code);
+        let res = analyzer.analyze_module(&module);
+        assert!(res.is_err());
+        let errors = res.unwrap_err();
+        assert!(errors.iter().any(|e| e.code == "E0910" && e.message.contains("RaceConditionDetected")));
+
+        // Positive test: mutating local variable inside race_free block
+        let good_code = r#"
+        pub fn test_good_race() void {
+            race_free {
+                mut local = 42
+                local = 100
+            }
+        }
+        "#;
+        let module2 = parse_str(good_code).unwrap();
+        let mut analyzer2 = SemanticAnalyzer::new("test.end", good_code);
+        let res2 = analyzer2.analyze_module(&module2);
+        assert!(res2.is_ok());
+    }
+
+    #[test]
+    fn test_handoff_and_return_to_domain_isolation() {
+        // Negative test: accessing buffer after handing off to GPU before return_to
+        let bad_code = r#"
+        pub fn test_bad_handoff() void {
+            val buffer = 500
+            handoff buffer -> gpu;
+            val read_buf = buffer
+        }
+        "#;
+        let module = parse_str(bad_code).unwrap();
+        let mut analyzer = SemanticAnalyzer::new("test.end", bad_code);
+        let res = analyzer.analyze_module(&module);
+        assert!(res.is_err());
+        let errors = res.unwrap_err();
+        assert!(errors.iter().any(|e| e.code == "E0909" && e.message.contains("DomainBorrowConflict")));
+
+        // Positive test: returning buffer back to CPU before reading
+        let good_code = r#"
+        pub fn test_good_handoff() void {
+            val buffer = 500
+            handoff buffer -> gpu;
+            return_to cpu buffer;
+            val read_buf = buffer
+        }
+        "#;
+        let module2 = parse_str(good_code).unwrap();
+        let mut analyzer2 = SemanticAnalyzer::new("test.end", good_code);
+        let res2 = analyzer2.analyze_module(&module2);
+        assert!(res2.is_ok());
+    }
+
+    #[test]
+    fn test_static_proof_compile_time_failure() {
+        // Negative test: statically false proof obligation
+        let bad_code = r#"
+        pub fn test_bad_proof() void {
+            prove 5 > 10;
+        }
+        "#;
+        let module = parse_str(bad_code).unwrap();
+        let mut analyzer = SemanticAnalyzer::new("test.end", bad_code);
+        let res = analyzer.analyze_module(&module);
+        assert!(res.is_err());
+        let errors = res.unwrap_err();
+        assert!(errors.iter().any(|e| e.code == "E0911" && e.message.contains("StaticProofFailed")));
+
+        // Positive test: valid static proof obligation
+        let good_code = r#"
+        pub fn test_good_proof() void {
+            prove 10 > 5;
+            guarantee 100 == 100;
+        }
+        "#;
+        let module2 = parse_str(good_code).unwrap();
+        let mut analyzer2 = SemanticAnalyzer::new("test.end", good_code);
+        let res2 = analyzer2.analyze_module(&module2);
+        assert!(res2.is_ok());
+    }
+
+    #[test]
+    fn test_interpreter_checkpoint_and_rollback_behavior() {
+        let code = r#"
+        pub fn main() i64 {
+            mut current_val = 100
+            checkpoint save_point;
+            current_val = 999
+            rollback to save_point;
+            ret current_val
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        let mut interp = Interpreter::new();
+        let res = interp.run(&module).unwrap();
+        assert_eq!(res, Value::Int(100));
+    }
+
+    #[test]
+    fn test_interpreter_transaction_rollback_on_failure() {
+        let code = r#"
+        pub fn main() i64 {
+            mut balance = 100
+            transaction {
+                balance = 50
+                invariant 1 == 2;
+            }
+            ret balance
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        let mut interp = Interpreter::new();
+        let res = interp.run(&module);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("Transaction aborted and rolled back"));
+    }
+
+    #[test]
+    fn test_interpreter_race_parallel_choose_and_hedge() {
+        let code = r#"
+        pub fn main() i64 {
+            mut result = 0
+            parallel choose {
+                fast => { result = 10 },
+                slow => { result = 20 }
+            }
+            race {
+                { result = result + 5 },
+                { result = result + 5 }
+            }
+            hedge after 10ms {
+                result = result * 2
+            } fallback {
+                result = result * 2
+            }
+            ret result
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+        let mut interp = Interpreter::new();
+        let res = interp.run(&module).unwrap();
+        assert!(matches!(res, Value::Int(_)));
+    }
 }

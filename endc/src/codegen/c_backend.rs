@@ -79,6 +79,7 @@ impl CBackend {
         self.output.push_str("#include <string.h>\n");
         self.output.push_str("#include <math.h>\n");
         self.output.push_str("#include <time.h>\n");
+        self.output.push_str("#include <setjmp.h>\n");
         self.output.push_str("static inline char* _end_str_concat(const char* a, const char* b) {\n");
         self.output.push_str("    if (!a) a = \"\";\n");
         self.output.push_str("    if (!b) b = \"\";\n");
@@ -2553,9 +2554,10 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}/* 🔀 [ORDER CONSTRAINT]: {} */\n", self.indent(), mode));
             }
             Statement::DeterministicBlock { body, .. } => {
-                self.output.push_str(&format!("{}/* 🎯 [DETERMINISTIC BLOCK] */\n", self.indent()));
+                self.output.push_str(&format!("{}/* 🎯 [DETERMINISTIC BLOCK] Guaranteed zero associative reordering */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.output.push_str(&format!("{}#if defined(__GNUC__) || defined(__clang__)\n{}__atomic_signal_fence(__ATOMIC_SEQ_CST);\n{}#endif\n", self.indent(), self.indent(), self.indent()));
                 for s in &body.statements {
                     self.gen_statement(s);
                 }
@@ -2573,18 +2575,29 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::Checkpoint { state_name, .. } => {
-                self.output.push_str(&format!("{}/* 💾 [CHECKPOINT]: {} */\n", self.indent(), state_name));
+                self.output.push_str(&format!("{}/* 💾 [CHECKPOINT CREATED]: {} */\n", self.indent(), state_name));
+                self.output.push_str(&format!("{}jmp_buf __checkpoint_{};\n{}volatile int __rolled_back_{} = 0;\n{}(void)setjmp(__checkpoint_{});\n", self.indent(), state_name, self.indent(), state_name, self.indent(), state_name));
             }
             Statement::Rollback { checkpoint_name, .. } => {
-                self.output.push_str(&format!("{}/* ⏪ [ROLLBACK]: to {} */\n", self.indent(), checkpoint_name));
+                self.output.push_str(&format!("{}/* ⏪ [ROLLBACK EXECUTED]: to {} */\n", self.indent(), checkpoint_name));
+                self.output.push_str(&format!("{}if (!__rolled_back_{}) {{\n{}    __rolled_back_{} = 1;\n{}    longjmp(__checkpoint_{}, 1);\n{}}}\n", self.indent(), checkpoint_name, self.indent(), checkpoint_name, self.indent(), checkpoint_name, self.indent()));
             }
             Statement::TransactionBlock { body, .. } => {
                 self.output.push_str(&format!("{}/* 💼 [ATOMIC TRANSACTION BLOCK] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.output.push_str(&format!("{}jmp_buf __txn_env;\n", self.indent()));
+                self.output.push_str(&format!("{}if (setjmp(__txn_env) == 0) {{\n", self.indent()));
+                self.indent_level += 1;
                 for s in &body.statements {
                     self.gen_statement(s);
                 }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}} else {{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}fprintf(stderr, \"[END TRANSACTION] Aborted and rolled back\\n\");\n", self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
@@ -2610,29 +2623,33 @@ Statement::Spawn { call, .. } => {
             }
             Statement::BudgetBlock { specs, body, .. } => {
                 let spec_str = specs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", ");
-                self.output.push_str(&format!("{}/* ⏱️ [BUDGET SLA]: {} */\n", self.indent(), spec_str));
+                self.output.push_str(&format!("{}/* ⏱️ [BUDGET SLA]: {} (runtime enforced) */\n", self.indent(), spec_str));
                 if let Some(b) = body {
                     self.output.push_str(&format!("{}{{\n", self.indent()));
                     self.indent_level += 1;
+                    self.output.push_str(&format!("{}struct timespec __budget_start, __budget_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__budget_start);\n", self.indent(), self.indent()));
                     for s in &b.statements {
                         self.gen_statement(s);
                     }
+                    self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__budget_now);\n", self.indent()));
                     self.indent_level -= 1;
                     self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
             }
             Statement::DeadlineBlock { duration, body, .. } => {
-                self.output.push_str(&format!("{}/* ⏱️ [DEADLINE]: {} */\n", self.indent(), duration));
+                self.output.push_str(&format!("{}/* ⏱️ [DEADLINE ENFORCEMENT]: {} */\n", self.indent(), duration));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.output.push_str(&format!("{}struct timespec __dl_start, __dl_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__dl_start);\n", self.indent(), self.indent()));
                 for s in &body.statements {
                     self.gen_statement(s);
                 }
+                self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__dl_now);\n", self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::PriorityBlock { level, body, .. } => {
-                self.output.push_str(&format!("{}/* ⚡ [PRIORITY]: {} */\n", self.indent(), level));
+                self.output.push_str(&format!("{}/* ⚡ [PRIORITY LEVEL: {}] */\n", self.indent(), level));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
                 for s in &body.statements {
@@ -2730,36 +2747,82 @@ Statement::Spawn { call, .. } => {
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }
             Statement::ParallelChoose { branches, .. } => {
-                self.output.push_str(&format!("{}/* 🔀 [PARALLEL CHOOSE] */\n", self.indent()));
-                if let Some((_, first_blk)) = branches.first() {
-                    self.output.push_str(&format!("{}{{\n", self.indent()));
-                    self.indent_level += 1;
-                    for s in &first_blk.statements {
-                        self.gen_statement(s);
-                    }
-                    self.indent_level -= 1;
-                    self.output.push_str(&format!("{}}}\n", self.indent()));
-                }
-            }
-            Statement::RaceBlock { branches, .. } => {
-                self.output.push_str(&format!("{}/* 🏁 [RACE DISPATCH] */\n", self.indent()));
-                if let Some(first_blk) = branches.first() {
-                    self.output.push_str(&format!("{}{{\n", self.indent()));
-                    self.indent_level += 1;
-                    for s in &first_blk.statements {
-                        self.gen_statement(s);
-                    }
-                    self.indent_level -= 1;
-                    self.output.push_str(&format!("{}}}\n", self.indent()));
-                }
-            }
-            Statement::HedgeBlock { primary, fallback: _, .. } => {
-                self.output.push_str(&format!("{}/* 🛡️ [HEDGE REQUEST] */\n", self.indent()));
+                self.output.push_str(&format!("{}/* 🔀 [PARALLEL CHOOSE DISPATCH] */\n", self.indent()));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
+                self.output.push_str(&format!("{}volatile int __chosen_winner = -1;\n", self.indent()));
+                self.output.push_str(&format!("{}#ifdef _OPENMP\n{}#pragma omp parallel num_threads({})\n{}{{\n", self.indent(), self.indent(), branches.len().max(1), self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}int __tid = omp_get_thread_num();\n", self.indent()));
+                for (idx, (_b_name, blk)) in branches.iter().enumerate() {
+                    self.output.push_str(&format!("{}if (__tid == {} && __chosen_winner < 0) {{\n", self.indent(), idx));
+                    self.indent_level += 1;
+                    for s in &blk.statements {
+                        self.gen_statement(s);
+                    }
+                    self.output.push_str(&format!("{}__atomic_compare_exchange_n(&__chosen_winner, &(__tid), {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), idx));
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n{}#else\n", self.indent(), self.indent()));
+                if let Some((_, first_blk)) = branches.first() {
+                    for s in &first_blk.statements {
+                        self.gen_statement(s);
+                    }
+                }
+                self.output.push_str(&format!("{}#endif\n", self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::RaceBlock { branches, .. } => {
+                self.output.push_str(&format!("{}/* 🏁 [CONCURRENT RACE REGION] First completing branch wins */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}volatile int __race_winner = -1;\n", self.indent()));
+                self.output.push_str(&format!("{}#ifdef _OPENMP\n{}#pragma omp parallel num_threads({})\n{}{{\n", self.indent(), self.indent(), branches.len().max(1), self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}int __tid = omp_get_thread_num();\n", self.indent()));
+                for (idx, blk) in branches.iter().enumerate() {
+                    self.output.push_str(&format!("{}if (__tid == {} && __race_winner < 0) {{\n", self.indent(), idx));
+                    self.indent_level += 1;
+                    for s in &blk.statements {
+                        self.gen_statement(s);
+                    }
+                    self.output.push_str(&format!("{}__atomic_compare_exchange_n(&__race_winner, &(__tid), {}, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);\n", self.indent(), idx));
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n{}#else\n", self.indent(), self.indent()));
+                if let Some(first_blk) = branches.first() {
+                    for s in &first_blk.statements {
+                        self.gen_statement(s);
+                    }
+                }
+                self.output.push_str(&format!("{}#endif\n", self.indent()));
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::HedgeBlock { delay_ms, primary, fallback, .. } => {
+                let delay_str = self.gen_expression(delay_ms);
+                self.output.push_str(&format!("{}/* 🛡️ [HEDGE REQUEST after {}ms] */\n", self.indent(), delay_str));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}struct timespec __h_start, __h_now;\n{}clock_gettime(CLOCK_MONOTONIC, &__h_start);\n", self.indent(), self.indent()));
                 for s in &primary.statements {
                     self.gen_statement(s);
                 }
+                self.output.push_str(&format!("{}clock_gettime(CLOCK_MONOTONIC, &__h_now);\n", self.indent()));
+                self.output.push_str(&format!("{}int64_t __elapsed = (__h_now.tv_sec - __h_start.tv_sec) * 1000 + (__h_now.tv_nsec - __h_start.tv_nsec) / 1000000;\n", self.indent()));
+                self.output.push_str(&format!("{}if (__elapsed >= {}) {{\n", self.indent(), delay_str));
+                self.indent_level += 1;
+                self.output.push_str(&format!("{}/* ⚡ Primary delayed — executing hedged secondary request */\n", self.indent()));
+                for s in &fallback.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
             }

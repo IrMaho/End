@@ -42,6 +42,8 @@ pub struct SemanticAnalyzer {
     ownership_scopes: Vec<HashMap<String, OwnershipState>>,
     active_loans: Vec<ActiveLoan>,
     pub frozen_symbols: HashSet<String>,
+    pub domain_ownership: HashMap<String, String>,
+    pub in_race_free_block: bool,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -72,6 +74,8 @@ impl SemanticAnalyzer {
             ownership_scopes: vec![HashMap::new()],
             active_loans: Vec::new(),
             frozen_symbols: HashSet::new(),
+            domain_ownership: HashMap::new(),
+            in_race_free_block: false,
         }
     }
 
@@ -406,6 +410,22 @@ impl SemanticAnalyzer {
                             repair_suggestion: Some(format!("ensure borrow '{}' goes out of scope before modifying '{}'", loan.holder, target_name)),
                         });
                     }
+
+                    // Enforce race_free static guarantee: no shared mutable outer variable mutation
+                    if self.in_race_free_block {
+                        if let Some(current_scope) = self.var_scopes.last() {
+                            if !current_scope.contains_key(target_name) && self.lookup_var(target_name).is_some() {
+                                self.errors.push(DiagnosticError {
+                                    code: "E0910".to_string(),
+                                    message: format!("RaceConditionDetected: mutation of shared outer variable '{}' at line {} inside race_free block violates data-race freedom", target_name, span.line),
+                                    line: span.line,
+                                    col: span.col,
+                                    kind: "RaceConditionError".to_string(),
+                                    repair_suggestion: Some(format!("use atomic operation 'atomic_add(&{}, ...)' or declare '{}' locally inside race_free block", target_name, target_name)),
+                                });
+                            }
+                        }
+                    }
                 }
             }
             Statement::Return { value, span } => {
@@ -546,15 +566,61 @@ impl SemanticAnalyzer {
                     self.analyze_block(b);
                 }
             }
-            Statement::Prove { condition, .. }
-            | Statement::Assume { condition, .. }
-            | Statement::Guarantee { condition, .. }
-            | Statement::Invariant { condition, .. } => {
+            Statement::Prove { condition, span } => {
+                self.analyze_expression(condition);
+                if self.eval_static_const_bool(condition) == Some(false) {
+                    self.errors.push(DiagnosticError {
+                        code: "E0911".to_string(),
+                        message: format!("StaticProofFailed: static proof obligation failed at line {} (expression is provably false at compile time)", span.line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "StaticProofError".to_string(),
+                        repair_suggestion: Some("verify preconditions or fix logical contradiction in proof obligation".to_string()),
+                    });
+                }
+            }
+            Statement::Assume { condition, .. } => {
                 self.analyze_expression(condition);
             }
-            Statement::VerifyBlock { invariants, .. } => {
+            Statement::Guarantee { condition, span } => {
+                self.analyze_expression(condition);
+                if self.eval_static_const_bool(condition) == Some(false) {
+                    self.errors.push(DiagnosticError {
+                        code: "E0911".to_string(),
+                        message: format!("StaticProofFailed: postcondition guarantee is provably false at line {}", span.line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "StaticProofError".to_string(),
+                        repair_suggestion: Some("ensure function return value satisfies the stated guarantee".to_string()),
+                    });
+                }
+            }
+            Statement::Invariant { condition, span } => {
+                self.analyze_expression(condition);
+                if self.eval_static_const_bool(condition) == Some(false) {
+                    self.errors.push(DiagnosticError {
+                        code: "E0911".to_string(),
+                        message: format!("StaticProofFailed: invariant is provably false at line {}", span.line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "StaticProofError".to_string(),
+                        repair_suggestion: Some("invariant must hold true in all execution states".to_string()),
+                    });
+                }
+            }
+            Statement::VerifyBlock { invariants, span } => {
                 for inv in invariants {
                     self.analyze_expression(inv);
+                    if self.eval_static_const_bool(inv) == Some(false) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0911".to_string(),
+                            message: format!("StaticProofFailed: verify contract clause is provably false at line {}", span.line),
+                            line: span.line,
+                            col: span.col,
+                            kind: "StaticProofError".to_string(),
+                            repair_suggestion: Some("correct contract clause before verifying".to_string()),
+                        });
+                    }
                 }
             }
             Statement::ProtectBlock { body, .. }
@@ -565,12 +631,38 @@ impl SemanticAnalyzer {
             | Statement::FallbackBlock { body, .. }
             | Statement::CancelSafeBlock { body, .. }
             | Statement::TaskDecl { body, .. }
-            | Statement::PatchDecl { body, .. }
-            | Statement::RaceFreeBlock { body, .. } => {
+            | Statement::PatchDecl { body, .. } => {
                 self.analyze_block(body);
+            }
+            Statement::RaceFreeBlock { body, .. } => {
+                let prev = self.in_race_free_block;
+                self.in_race_free_block = true;
+                self.analyze_block(body);
+                self.in_race_free_block = prev;
             }
             Statement::Frozen { symbol, .. } => {
                 self.frozen_symbols.insert(symbol.clone());
+            }
+            Statement::Handoff { resource, target_domain, span } => {
+                if self.lookup_var(resource).is_none() {
+                    self.errors.push(DiagnosticError {
+                        code: "E0902".to_string(),
+                        message: format!("UndefinedSymbol: cannot handoff unknown resource '{}' at line {}", resource, span.line),
+                        line: span.line,
+                        col: span.col,
+                        kind: "UndefinedSymbolError".to_string(),
+                        repair_suggestion: Some(format!("declare '{}' before transferring to domain '{}'", resource, target_domain)),
+                    });
+                } else {
+                    self.domain_ownership.insert(resource.clone(), target_domain.clone());
+                }
+            }
+            Statement::ReturnTo { source_domain, resource, .. } => {
+                if source_domain == "cpu" || source_domain == "host" {
+                    self.domain_ownership.remove(resource);
+                } else {
+                    self.domain_ownership.insert(resource.clone(), source_domain.clone());
+                }
             }
             Statement::Owned { name, var_type, initializer, span } => {
                 let inferred_ty = self.analyze_expression(initializer);
@@ -640,6 +732,75 @@ impl SemanticAnalyzer {
         }
     }
 
+    pub fn eval_static_const_int(&self, expr: &Expression) -> Option<i64> {
+        match expr {
+            Expression::Lit(Literal::Int(n), _) => Some(*n),
+            Expression::Binary { left, op, right, .. } => {
+                let l = self.eval_static_const_int(left)?;
+                let r = self.eval_static_const_int(right)?;
+                match op {
+                    BinaryOp::Add => Some(l + r),
+                    BinaryOp::Sub => Some(l - r),
+                    BinaryOp::Mul => Some(l * r),
+                    BinaryOp::Div if r != 0 => Some(l / r),
+                    BinaryOp::Mod if r != 0 => Some(l % r),
+                    BinaryOp::BitAnd => Some(l & r),
+                    BinaryOp::BitOr => Some(l | r),
+                    BinaryOp::BitXor => Some(l ^ r),
+                    BinaryOp::Shl => Some(l << r),
+                    BinaryOp::Shr => Some(l >> r),
+                    _ => None,
+                }
+            }
+            Expression::Unary { expr, op, .. } => {
+                let val = self.eval_static_const_int(expr)?;
+                match op {
+                    UnaryOp::Negate => Some(-val),
+                    UnaryOp::BitNot => Some(!val),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    pub fn eval_static_const_bool(&self, expr: &Expression) -> Option<bool> {
+        match expr {
+            Expression::Lit(Literal::Bool(b), _) => Some(*b),
+            Expression::Binary { left, op, right, .. } => {
+                if let (Some(l), Some(r)) = (self.eval_static_const_int(left), self.eval_static_const_int(right)) {
+                    match op {
+                        BinaryOp::Equal => Some(l == r),
+                        BinaryOp::NotEqual => Some(l != r),
+                        BinaryOp::LessThan => Some(l < r),
+                        BinaryOp::LessEqual => Some(l <= r),
+                        BinaryOp::GreaterThan => Some(l > r),
+                        BinaryOp::GreaterEqual => Some(l >= r),
+                        _ => None,
+                    }
+                } else if let (Some(l_b), Some(r_b)) = (self.eval_static_const_bool(left), self.eval_static_const_bool(right)) {
+                    match op {
+                        BinaryOp::And => Some(l_b && r_b),
+                        BinaryOp::Or => Some(l_b || r_b),
+                        BinaryOp::Equal => Some(l_b == r_b),
+                        BinaryOp::NotEqual => Some(l_b != r_b),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+            Expression::Unary { expr, op, .. } => {
+                if *op == UnaryOp::Not {
+                    self.eval_static_const_bool(expr).map(|b| !b)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
     fn analyze_expression(&mut self, expr: &Expression) -> Type {
         match expr {
             Expression::Lit(Literal::Int(_), _) => Type::I64,
@@ -648,6 +809,18 @@ impl SemanticAnalyzer {
             Expression::Lit(Literal::Bool(_), _) => Type::Bool,
             Expression::Lit(Literal::Null, _) => Type::Pointer(Box::new(Type::Void)),
             Expression::Ident(name, span) => {
+                if let Some(domain) = self.domain_ownership.get(name) {
+                    if domain != "cpu" && domain != "host" {
+                        self.errors.push(DiagnosticError {
+                            code: "E0909".to_string(),
+                            message: format!("DomainBorrowConflict: resource '{}' has been handed off to domain '{}' and cannot be accessed on CPU at line {} before 'return_to cpu {}'", name, domain, span.line, name),
+                            line: span.line,
+                            col: span.col,
+                            kind: "DomainBorrowConflictError".to_string(),
+                            repair_suggestion: Some(format!("call 'return_to cpu {}' before reading or modifying on host CPU", name)),
+                        });
+                    }
+                }
                 if let Some(OwnershipState::Moved { to, at_line }) = self.get_ownership_state(name) {
                     self.errors.push(DiagnosticError {
                         code: "E0906".to_string(),

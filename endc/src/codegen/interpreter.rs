@@ -47,9 +47,12 @@ impl std::fmt::Display for Value {
     }
 }
 
+#[derive(Clone)]
 pub struct Interpreter {
     variables: Vec<HashMap<String, Value>>,
     functions: HashMap<String, FunctionDef>,
+    pub snapshots: HashMap<String, Vec<HashMap<String, Value>>>,
+    pub domain_ownership: HashMap<String, String>,
 }
 
 impl Interpreter {
@@ -57,6 +60,8 @@ impl Interpreter {
         Self {
             variables: vec![HashMap::new()],
             functions: HashMap::new(),
+            snapshots: HashMap::new(),
+            domain_ownership: HashMap::new(),
         }
     }
 
@@ -464,10 +469,57 @@ impl Interpreter {
                 }
                 Ok(None)
             }
+            Statement::Checkpoint { state_name, .. } => {
+                self.snapshots.insert(state_name.clone(), self.variables.clone());
+                Ok(None)
+            }
+            Statement::Rollback { checkpoint_name, span } => {
+                if let Some(snap) = self.snapshots.get(checkpoint_name).cloned() {
+                    self.variables = snap;
+                    Ok(None)
+                } else {
+                    Err(format!("Rollback failed at line {}: checkpoint '{}' does not exist", span.line, checkpoint_name))
+                }
+            }
+            Statement::TransactionBlock { body, .. } => {
+                let pre_txn = self.variables.clone();
+                self.push_scope();
+                let mut txn_err = None;
+                for s in &body.statements {
+                    match self.eval_statement(s) {
+                        Ok(Some(ret)) => {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                        Ok(None) => {}
+                        Err(e) => {
+                            txn_err = Some(e);
+                            break;
+                        }
+                    }
+                }
+                self.pop_scope();
+                if let Some(err) = txn_err {
+                    self.variables = pre_txn;
+                    return Err(format!("Transaction aborted and rolled back: {}", err));
+                }
+                Ok(None)
+            }
+            Statement::Handoff { resource, target_domain, .. } => {
+                self.domain_ownership.insert(resource.clone(), target_domain.clone());
+                Ok(None)
+            }
+            Statement::ReturnTo { source_domain, resource, .. } => {
+                if source_domain == "cpu" || source_domain == "host" {
+                    self.domain_ownership.remove(resource);
+                } else {
+                    self.domain_ownership.insert(resource.clone(), source_domain.clone());
+                }
+                Ok(None)
+            }
             Statement::ProtectBlock { body, .. }
             | Statement::DeterministicBlock { body, .. }
             | Statement::ReplayBlock { body, .. }
-            | Statement::TransactionBlock { body, .. }
             | Statement::SpeculativeBlock { body, .. }
             | Statement::FallbackBlock { body, .. }
             | Statement::CancelSafeBlock { body, .. }
@@ -567,41 +619,126 @@ impl Interpreter {
                 Ok(None)
             }
             Statement::ParallelChoose { branches, .. } => {
-                if let Some((_, blk)) = branches.first() {
-                    self.push_scope();
-                    for s in &blk.statements {
-                        if let Some(ret) = self.eval_statement(s)? {
-                            self.pop_scope();
-                            return Ok(Some(ret));
+                let (tx, rx) = std::sync::mpsc::channel();
+                for (branch_name, blk) in branches {
+                    let blk_c = blk.clone();
+                    let mut interp_c = self.clone();
+                    let tx_c = tx.clone();
+                    let b_name = branch_name.clone();
+                    std::thread::spawn(move || {
+                        interp_c.push_scope();
+                        let mut res = None;
+                        for s in &blk_c.statements {
+                            if let Ok(Some(ret)) = interp_c.eval_statement(s) {
+                                res = Some(ret);
+                                break;
+                            }
+                        }
+                        let _ = tx_c.send((b_name, res, interp_c.variables));
+                    });
+                }
+                drop(tx);
+                if let Ok((_chosen_name, maybe_val, updated_vars)) = rx.recv_timeout(std::time::Duration::from_millis(500)) {
+                    if let Some(top_scope) = updated_vars.last() {
+                        for (k, v) in top_scope {
+                            self.set_var(k, v.clone());
                         }
                     }
-                    self.pop_scope();
+                    if let Some(v) = maybe_val {
+                        return Ok(Some(v));
+                    }
                 }
                 Ok(None)
             }
             Statement::RaceBlock { branches, .. } => {
-                if let Some(blk) = branches.first() {
-                    self.push_scope();
-                    for s in &blk.statements {
-                        if let Some(ret) = self.eval_statement(s)? {
-                            self.pop_scope();
-                            return Ok(Some(ret));
+                let (tx, rx) = std::sync::mpsc::channel();
+                for (idx, blk) in branches.iter().enumerate() {
+                    let blk_c = blk.clone();
+                    let mut interp_c = self.clone();
+                    let tx_c = tx.clone();
+                    std::thread::spawn(move || {
+                        interp_c.push_scope();
+                        let mut res = None;
+                        for s in &blk_c.statements {
+                            if let Ok(Some(ret)) = interp_c.eval_statement(s) {
+                                res = Some(ret);
+                                break;
+                            }
+                        }
+                        let _ = tx_c.send((idx, res, interp_c.variables));
+                    });
+                }
+                drop(tx);
+                if let Ok((_winner_idx, maybe_val, updated_vars)) = rx.recv_timeout(std::time::Duration::from_millis(500)) {
+                    if let Some(top_scope) = updated_vars.last() {
+                        for (k, v) in top_scope {
+                            self.set_var(k, v.clone());
                         }
                     }
-                    self.pop_scope();
+                    if let Some(v) = maybe_val {
+                        return Ok(Some(v));
+                    }
                 }
                 Ok(None)
             }
-            Statement::HedgeBlock { primary, .. } => {
-                self.push_scope();
-                for s in &primary.statements {
-                    if let Some(ret) = self.eval_statement(s)? {
-                        self.pop_scope();
-                        return Ok(Some(ret));
+            Statement::HedgeBlock { delay_ms, primary, fallback, .. } => {
+                let delay_ms_val = match self.eval_expression(delay_ms)? {
+                    Value::Int(n) if n > 0 => n as u64,
+                    _ => 20,
+                };
+                let (tx, rx) = std::sync::mpsc::channel();
+                let prim_blk = primary.clone();
+                let mut prim_interp = self.clone();
+                let tx_prim = tx.clone();
+                std::thread::spawn(move || {
+                    prim_interp.push_scope();
+                    let mut res = None;
+                    for s in &prim_blk.statements {
+                        if let Ok(Some(ret)) = prim_interp.eval_statement(s) {
+                            res = Some(ret);
+                            break;
+                        }
+                    }
+                    let _ = tx_prim.send(("primary", res, prim_interp.variables));
+                });
+
+                match rx.recv_timeout(std::time::Duration::from_millis(delay_ms_val)) {
+                    Ok((_, maybe_v, updated_vars)) => {
+                        if let Some(top_scope) = updated_vars.last() {
+                            for (k, v) in top_scope {
+                                self.set_var(k, v.clone());
+                            }
+                        }
+                        Ok(maybe_v)
+                    }
+                    Err(_) => {
+                        let fb_blk = fallback.clone();
+                        let mut fb_interp = self.clone();
+                        let tx_fb = tx.clone();
+                        std::thread::spawn(move || {
+                            fb_interp.push_scope();
+                            let mut res = None;
+                            for s in &fb_blk.statements {
+                                if let Ok(Some(ret)) = fb_interp.eval_statement(s) {
+                                    res = Some(ret);
+                                    break;
+                                }
+                            }
+                            let _ = tx_fb.send(("fallback", res, fb_interp.variables));
+                        });
+                        drop(tx);
+                        if let Ok((_, maybe_v, updated_vars)) = rx.recv_timeout(std::time::Duration::from_millis(500)) {
+                            if let Some(top_scope) = updated_vars.last() {
+                                for (k, v) in top_scope {
+                                    self.set_var(k, v.clone());
+                                }
+                            }
+                            Ok(maybe_v)
+                        } else {
+                            Ok(None)
+                        }
                     }
                 }
-                self.pop_scope();
-                Ok(None)
             }
             _ => Ok(None),
         }
