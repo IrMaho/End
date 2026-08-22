@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Span {
     pub line: usize,
     pub col: usize,
@@ -129,11 +129,18 @@ pub struct StructField {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct StructDef {
     pub name: String,
     pub generic_params: Vec<String>,
     pub is_pub: bool,
+    pub is_partial: bool,
+    pub is_sealed: bool,
+    pub is_extension_only: bool,
+    pub is_open: bool,
+    pub is_closed: bool,
+    pub friend_modules: Vec<String>,
+    pub extension_points: Vec<String>,
     pub fields: Vec<StructField>,
     pub directives: Vec<Directive>,
     pub span: Span,
@@ -203,11 +210,29 @@ pub struct ImplBlock {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModuleFacets {
+    pub api: Vec<FunctionDef>,
+    pub implementation: Vec<FunctionDef>,
+    pub tests: Vec<FunctionDef>,
+    pub extension: Vec<FunctionDef>,
+    pub architecture: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModuleContract {
+    pub requires: Vec<String>,
+    pub provides: Vec<String>,
+    pub guarantees: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleDef {
     pub name: String,
     pub parent: Option<String>,
     pub is_pub: bool,
+    pub is_partial: bool,
+    pub is_evolvable: bool,
     pub responsibility: Option<String>,
     pub owns: Vec<String>,
     pub exposes: Vec<String>,
@@ -217,6 +242,10 @@ pub struct ModuleDef {
     pub is_sealed: bool,
     pub purity: Option<String>,
     pub cohesion: Option<f64>,
+    pub facets: Option<ModuleFacets>,
+    pub contract: Option<ModuleContract>,
+    pub overlay_target: Option<String>,
+    pub skills: Vec<String>,
     pub structs: Vec<StructDef>,
     pub functions: Vec<FunctionDef>,
     pub overrides: Vec<FunctionDef>,
@@ -224,11 +253,21 @@ pub struct ModuleDef {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionBlock {
     pub target: String,
     pub is_struct: bool,
+    pub is_augment: bool,
+    pub trait_name: Option<String>,
+    pub at_hook: Option<String>,
+    pub required_capability: Option<String>,
+    pub when_feature: Option<String>,
+    pub generic_params: Vec<String>,
+    pub version_req: Option<String>,
+    pub owned_by: Option<String>,
+    pub lifecycle: Option<String>,
     pub functions: Vec<FunctionDef>,
+    pub overrides: Vec<FunctionDef>,
     pub span: Span,
 }
 
@@ -1182,6 +1221,265 @@ pub enum Statement {
         items: Vec<String>,
         span: Span,
     },
+
+    // Layer 1 Extensibility DNA Statements
+    PartialDecl {
+        kind: String,
+        name: String,
+        body_struct: Option<StructDef>,
+        body_module: Option<ModuleDef>,
+        span: Span,
+    },
+    AugmentDecl(ExtensionBlock),
+    OverrideDecl {
+        target: String,
+        method: FunctionDef,
+        span: Span,
+    },
+    ExtensionPointDecl {
+        target: String,
+        points: Vec<String>,
+        span: Span,
+    },
+    LayerSealedDecl {
+        target_kind: String,
+        target_name: String,
+        span: Span,
+    },
+    LayerFriendDecl {
+        target_kind: String,
+        target_name: String,
+        friend_name: String,
+        span: Span,
+    },
+
+    // Layer 2 Super Module System
+    ReplaceModuleDecl {
+        target: String,
+        replacement: String,
+        span: Span,
+    },
+    ModuleMigrationDecl {
+        module_name: String,
+        from_version: usize,
+        to_version: usize,
+        renames: Vec<(String, String)>,
+        span: Span,
+    },
+    ModuleFacadeDecl {
+        name: String,
+        methods: Vec<String>,
+        span: Span,
+    },
+    ModuleOverlayDecl {
+        name: String,
+        target_env: String,
+        body: Block,
+        span: Span,
+    },
+    ModuleComposeDecl {
+        modules: Vec<String>,
+        span: Span,
+    },
+
+    // Layer 3 Type System for Extensibility
+    OpenClosedTypeDecl {
+        is_open: bool,
+        name: String,
+        span: Span,
+    },
+    ExtensionTraitDecl {
+        trait_name: String,
+        target_type: String,
+        methods: Vec<FunctionDef>,
+        span: Span,
+    },
+    ExtensionConflictDecl {
+        target_type: String,
+        resolutions: Vec<(String, String)>,
+        span: Span,
+    },
+
+    // Layer 4 Syntax Extensibility
+    SyntaxDecl {
+        name: String,
+        pattern: Option<String>,
+        namespace: Option<String>,
+        version: Option<usize>,
+        params: Vec<FunctionParam>,
+        return_type: Option<Type>,
+        body: Option<Block>,
+        span: Span,
+    },
+    UseSyntaxDecl {
+        namespace: String,
+        version: Option<usize>,
+        span: Span,
+    },
+
+    // Layer 5 Compile-time Extensibility
+    CompilerPluginDecl {
+        name: String,
+        kind: String,
+        span: Span,
+    },
+    CustomLinterDecl {
+        name: String,
+        rules: Vec<String>,
+        span: Span,
+    },
+    CustomAnalyzerDecl {
+        name: String,
+        checks: Vec<String>,
+        span: Span,
+    },
+    CustomTypeRuleDecl {
+        target_type: String,
+        rules: Vec<String>,
+        span: Span,
+    },
+    CustomOptimizerDecl {
+        name: String,
+        pass: String,
+        span: Span,
+    },
+    BuildPluginDecl {
+        name: String,
+        hooks: Vec<String>,
+        span: Span,
+    },
+    GeneratorDecl {
+        name: String,
+        target_format: String,
+        span: Span,
+    },
+    ReflectDecl {
+        target_type: String,
+        queries: Vec<String>,
+        span: Span,
+    },
+
+    // Layer 6 Architecture as Code
+    ArchitectureContractDecl {
+        name: String,
+        rules: Vec<String>,
+        span: Span,
+    },
+    ForbiddenDependencyDecl {
+        from: String,
+        to: String,
+        span: Span,
+    },
+    AllowedDependencyDecl {
+        from: String,
+        to: String,
+        span: Span,
+    },
+    ArchitectureBoundaryDecl {
+        name: String,
+        components: Vec<String>,
+        span: Span,
+    },
+    ArchitectureOwnerDecl {
+        target: String,
+        owner: String,
+        span: Span,
+    },
+    ArchitectureStabilityDecl {
+        target: String,
+        level: String,
+        span: Span,
+    },
+    ArchitectureEvolutionDecl {
+        module_name: String,
+        from_v: String,
+        to_v: String,
+        span: Span,
+    },
+    ArchitectureTestDecl {
+        assertions: Vec<String>,
+        span: Span,
+    },
+
+    // Layer 7 Dependency Intelligence
+    ChangeBudgetDecl {
+        max_files: Option<usize>,
+        max_modules: Option<usize>,
+        public_api_allowed: Option<bool>,
+        span: Span,
+    },
+    DependencyLockDecl {
+        locked: bool,
+        span: Span,
+    },
+    SemanticImportDecl {
+        feature_intent: String,
+        alias: Option<String>,
+        span: Span,
+    },
+
+    // Layer 8 API Evolution
+    ApiStabilityDecl {
+        target: String,
+        level: String,
+        span: Span,
+    },
+    DeprecationDecl {
+        target: String,
+        replace_with: Option<String>,
+        span: Span,
+    },
+    ApiSnapshotDecl {
+        module_name: String,
+        span: Span,
+    },
+    VerifyCompatibilityDecl {
+        target1: String,
+        target2: String,
+        span: Span,
+    },
+
+    // Layer 9 Agent-Native Extensibility
+    AgentExtensionContractDecl {
+        name: String,
+        purpose: String,
+        inputs: Vec<String>,
+        outputs: Vec<String>,
+        constraints: Vec<String>,
+        tests: Vec<String>,
+        permissions: Vec<String>,
+        span: Span,
+    },
+    AgentChangeProposalDecl {
+        title: String,
+        files: Vec<String>,
+        symbols: Vec<String>,
+        dependencies: Vec<String>,
+        risks: Vec<String>,
+        migration: Option<String>,
+        span: Span,
+    },
+    AgentProofGateDecl {
+        checks: Vec<String>,
+        span: Span,
+    },
+    AgentTransactionDecl {
+        action: String,
+        body: Option<Block>,
+        span: Span,
+    },
+
+    // Layer 10 Code Evolution Engine & @evolvable
+    WhyMetadataDecl {
+        why: String,
+        reason: Option<String>,
+        span: Span,
+    },
+    EvolvableDecl {
+        module_name: String,
+        metrics_target: Option<String>,
+        span: Span,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1608,6 +1906,71 @@ impl Statement {
             Statement::DecisionDecl { span, .. } => span,
             Statement::AgentCapabilityDecl { span, .. } => span,
             Statement::RegressionGuardDecl { span, .. } => span,
+
+            // Layer 1
+            Statement::PartialDecl { span, .. } => span,
+            Statement::AugmentDecl(aug) => &aug.span,
+            Statement::OverrideDecl { span, .. } => span,
+            Statement::ExtensionPointDecl { span, .. } => span,
+            Statement::LayerSealedDecl { span, .. } => span,
+            Statement::LayerFriendDecl { span, .. } => span,
+
+            // Layer 2
+            Statement::ReplaceModuleDecl { span, .. } => span,
+            Statement::ModuleMigrationDecl { span, .. } => span,
+            Statement::ModuleFacadeDecl { span, .. } => span,
+            Statement::ModuleOverlayDecl { span, .. } => span,
+            Statement::ModuleComposeDecl { span, .. } => span,
+
+            // Layer 3
+            Statement::OpenClosedTypeDecl { span, .. } => span,
+            Statement::ExtensionTraitDecl { span, .. } => span,
+            Statement::ExtensionConflictDecl { span, .. } => span,
+
+            // Layer 4
+            Statement::SyntaxDecl { span, .. } => span,
+            Statement::UseSyntaxDecl { span, .. } => span,
+
+            // Layer 5
+            Statement::CompilerPluginDecl { span, .. } => span,
+            Statement::CustomLinterDecl { span, .. } => span,
+            Statement::CustomAnalyzerDecl { span, .. } => span,
+            Statement::CustomTypeRuleDecl { span, .. } => span,
+            Statement::CustomOptimizerDecl { span, .. } => span,
+            Statement::BuildPluginDecl { span, .. } => span,
+            Statement::GeneratorDecl { span, .. } => span,
+            Statement::ReflectDecl { span, .. } => span,
+
+            // Layer 6
+            Statement::ArchitectureContractDecl { span, .. } => span,
+            Statement::ForbiddenDependencyDecl { span, .. } => span,
+            Statement::AllowedDependencyDecl { span, .. } => span,
+            Statement::ArchitectureBoundaryDecl { span, .. } => span,
+            Statement::ArchitectureOwnerDecl { span, .. } => span,
+            Statement::ArchitectureStabilityDecl { span, .. } => span,
+            Statement::ArchitectureEvolutionDecl { span, .. } => span,
+            Statement::ArchitectureTestDecl { span, .. } => span,
+
+            // Layer 7
+            Statement::ChangeBudgetDecl { span, .. } => span,
+            Statement::DependencyLockDecl { span, .. } => span,
+            Statement::SemanticImportDecl { span, .. } => span,
+
+            // Layer 8
+            Statement::ApiStabilityDecl { span, .. } => span,
+            Statement::DeprecationDecl { span, .. } => span,
+            Statement::ApiSnapshotDecl { span, .. } => span,
+            Statement::VerifyCompatibilityDecl { span, .. } => span,
+
+            // Layer 9
+            Statement::AgentExtensionContractDecl { span, .. } => span,
+            Statement::AgentChangeProposalDecl { span, .. } => span,
+            Statement::AgentProofGateDecl { span, .. } => span,
+            Statement::AgentTransactionDecl { span, .. } => span,
+
+            // Layer 10
+            Statement::WhyMetadataDecl { span, .. } => span,
+            Statement::EvolvableDecl { span, .. } => span,
         }
     }
 }

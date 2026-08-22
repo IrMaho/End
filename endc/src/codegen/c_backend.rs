@@ -3306,6 +3306,9 @@ Statement::Spawn { call, .. } => {
             Statement::RegressionGuardDecl { items, .. } => {
                 self.output.push_str(&format!("{}/* 🛡️ [REGRESSION GUARD]: [{}] */\n", self.indent(), items.join(", ")));
             }
+            _ => {
+                // Extensibility & Architectural Declarations (compile-time semantics & verification)
+            }
         }
     }
 

@@ -23,6 +23,7 @@ pub mod universal_resource;
 pub mod adaptive_intent;
 pub mod type_security;
 pub mod reality_types;
+pub mod evolution_engine;
 
 pub use self_healing::SelfHealingEngine;
 pub use code_slicing::SemanticCodeSlicer;
@@ -45,6 +46,10 @@ pub use universal_resource::{UniversalResourceManager, UniversalResourceReport, 
 pub use adaptive_intent::{IntentOptimizationEngine, OptimizationIntent, PerformanceBudget, ParetoOptimizationResult};
 pub use type_security::{TypeLevelSecurityEngine, TypeSecurityAuditReport, TaintFlowViolation};
 pub use reality_types::{RealityAwareEngine, PhysicalDataLayout, StateMachineTransition, IntentProofBinaryReport};
+pub use evolution_engine::{
+    EvolutionEngine, SemanticDependencyGraph, DependencyNode, DependencyEdge, DependencyEdgeKind,
+    ImpactReport, ReplaceabilityScore, ExtensibilityScore, ApiSnapshot, ApiDiffReport, EvolutionAnalysisReport,
+};
 
 pub struct AgentApi<'a> {
     graph: &'a SemanticGraph,

@@ -58,6 +58,9 @@ pub struct SemanticAnalyzer {
     pub arch_directions: Vec<(String, String)>,
     pub arch_cycle_free: bool,
     pub arch_max_depth: Option<usize>,
+    pub sealed_modules: HashSet<String>,
+    pub sealed_structs: HashSet<String>,
+    pub arch_locked: bool,
     pub security_level: crate::security::SecurityLevel,
 }
 
@@ -105,6 +108,9 @@ impl SemanticAnalyzer {
             arch_directions: Vec::new(),
             arch_cycle_free: false,
             arch_max_depth: None,
+            sealed_modules: HashSet::new(),
+            sealed_structs: HashSet::new(),
+            arch_locked: false,
             security_level: crate::security::SecurityLevel::Standard,
         }
     }
@@ -930,6 +936,34 @@ impl SemanticAnalyzer {
                         col: span.col,
                         kind: "ArchitecturalViolation".to_string(),
                         repair_suggestion: Some("invert dependency using port/adapter or extract common interface".to_string()),
+                    });
+                }
+            }
+            Statement::LayerSealedDecl { target_kind, target_name, .. } => {
+                if target_kind == "module" {
+                    self.sealed_modules.insert(target_name.clone());
+                } else {
+                    self.sealed_structs.insert(target_name.clone());
+                }
+            }
+            Statement::LayerFriendDecl { target_kind: _, friend_name, target_name, .. } => {
+                let target = if target_name.is_empty() { "global".to_string() } else { target_name.clone() };
+                self.module_friends.entry(target).or_default().insert(friend_name.clone());
+            }
+            Statement::DependencyLockDecl { locked, .. } => {
+                if *locked {
+                    self.arch_locked = true;
+                }
+            }
+            Statement::ChangeBudgetDecl { max_files, max_modules, span, .. } => {
+                if *max_files == Some(0) || *max_modules == Some(0) {
+                    self.errors.push(DiagnosticError {
+                        code: "E0921".to_string(),
+                        message: "InvalidChangeBudget: budget limits for files and modules must be strictly positive (> 0)".to_string(),
+                        line: span.line,
+                        col: span.col,
+                        kind: "ArchitecturalViolation".to_string(),
+                        repair_suggestion: Some("specify change limits >= 1".to_string()),
                     });
                 }
             }

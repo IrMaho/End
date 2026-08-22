@@ -157,5 +157,23 @@
 | **Windows x86_64 Support** | 🟢 Stable | Full tier-1 support with native Win32 APIs and MSVC/GCC runtime integration. |
 | **Linux x86_64 / ARM64 Support** | 🔵 Beta | POSIX thread, socket, and memory region support. |
 | **macOS Apple Silicon (M1/M2/M3) Support** | 🔵 Beta | ARM64 compilation via `zig cc` / `clang`. |
-| **WebAssembly (WASM) Target** | ⚪ Planned | Standalone browser execution without JavaScript runtime overhead. |
-| **Decentralized Package Registry** | ⚪ Planned | Cryptographically signed package manager (`end package install`). |
+| **WebAssembly (WASM) Target** | 🔵 Beta | Standalone browser execution with reactive EndUI HTML5/WASM renderer. |
+| **Decentralized Package Registry** | 🟢 Stable | Cryptographically signed package manager with PubGrub SAT solver (`end install`). |
+
+---
+
+## 10. Extensibility DNA & Architectural Evolution (80 Features Across 10 Layers)
+
+| Extensibility DNA Layer | Status | Core Primitives & Compiler Verification |
+| :--- | :---: | :--- |
+| **Layer 1: Language-Level Safe Extensions** | 🟢 Stable | `partial struct`, `partial mod`, `augment struct`, `override fn`, `extension_point`, `sealed struct`, `friend mod`. |
+| **Layer 2: Evolvable Module Architecture** | 🟢 Stable | Multi-faceted modules (`@facets(api, impl, tests, ext, arch)`), `replace mod`, `migration mod`, `overlay mod`, `compose mod`. |
+| **Layer 3: Open-Closed Type System** | 🟢 Stable | `open struct`, `closed struct`, conditional generic extensions (`extend<T: Trait>`), `resolve extension`. |
+| **Layer 4: Stable Namespaced Syntax API** | 🟢 Stable | `syntax query(...) in namespace`, `use syntax name@version`, `use feature(...)`. |
+| **Layer 5: Compiler & Toolchain Plugins** | 🟢 Stable | `compiler_plugin`, `lint`, `analyzer`, `type_rule`, `optimizer`, `generator`, `reflect Target { ... }`. |
+| **Layer 6: Architecture as Code** | 🟢 Stable | `architecture App { UI -> Domain, UI !-> Database }`, `boundary`, `architecture_test { no_cycles }`. |
+| **Layer 7: Semantic Graph & Metrics** | 🟢 Stable | `SemanticDependencyGraph`, `ReplaceabilityScore` (0-100), `ExtensibilityScore` (0-100), `change_limit`, `lock architecture`. |
+| **Layer 8: API Evolution & Migration** | 🟢 Stable | `@api(stable/experimental)`, `end api snapshot`, SemVer diff engine (`end api diff`), migration path generators. |
+| **Layer 9: AI Agent Contracts & Proof Gates** | 🟢 Stable | `agent_extension`, `proposal`, `proof_gate { require ... }`, `agent_transaction { begin, commit }`. |
+| **Layer 10: Master Lifecycle Pipeline** | 🟢 Stable | `@evolvable`, `end evolve`, automated ASCII evolution audit reports, dead extension detection. |
+

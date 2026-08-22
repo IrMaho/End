@@ -650,6 +650,32 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         json: bool,
     },
+    /// Deeply evaluate evolvable modules, generate extensibility DNA report, and compute impact
+    Evolve {
+        /// Target module name or struct to evaluate (e.g. all, User, Auth)
+        #[arg(default_value = "all")]
+        target: String,
+        /// Path to .end source file
+        #[arg(short, long)]
+        file: Option<PathBuf>,
+        /// Format as machine-readable JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Manage API stability, snapshots, SemVer diffs, and migration paths
+    Api {
+        /// Action: snapshot, diff, verify, migrate
+        #[arg(default_value = "snapshot")]
+        action: String,
+        /// Primary .end source file or v1 snapshot
+        file: PathBuf,
+        /// Secondary .end source file or v2 snapshot for diffing
+        #[arg(short, long)]
+        target_file: Option<PathBuf>,
+        /// Format as JSON
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -2757,6 +2783,103 @@ no_unused_imports = true             # Warn/error on unused imports
                     }
                     std::process::exit(1);
                 }
+            }
+        }
+        Commands::Evolve { target, file, json } => {
+            let target_file = file.unwrap_or_else(|| {
+                let current_files = find_all_end_files(std::path::Path::new("."));
+                current_files.into_iter().next().unwrap_or_else(|| PathBuf::from("main.end"))
+            });
+
+            let (module, _) = match load_and_analyze(&target_file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let mut mod_def = module.modules.iter().find(|m| m.name == target || target == "all").cloned().unwrap_or_default();
+            if mod_def.name.is_empty() {
+                mod_def.name = if target == "all" { module.name.clone() } else { target.clone() };
+                mod_def.structs = module.structs.clone();
+                mod_def.functions = module.functions.clone();
+                mod_def.statements = module.statements.clone();
+            }
+
+            let report = crate::agent_api::evolution_engine::EvolutionEngine::evaluate_evolvable_module(&mod_def);
+
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+            } else {
+                println!("{}", report.formatted_output);
+            }
+        }
+        Commands::Api { action, file, target_file, json } => {
+            let (module1, _) = match load_and_analyze(&file) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("{} {}", "Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let mut mod_def1 = module1.modules.first().cloned().unwrap_or_default();
+            if mod_def1.name.is_empty() {
+                mod_def1.name = module1.name.clone();
+                mod_def1.structs = module1.structs.clone();
+                mod_def1.functions = module1.functions.clone();
+            }
+
+            if action == "snapshot" {
+                let snap = crate::agent_api::evolution_engine::EvolutionEngine::create_snapshot(&mod_def1, 1);
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&snap).unwrap_or_default());
+                } else {
+                    println!("📸 {} Generated API Snapshot for {} v{}", "End API:".green().bold(), snap.module_name.cyan().bold(), snap.version);
+                    println!("  ├─ Symbols: {}", snap.symbols.len());
+                    println!("  └─ Hash:    {}", snap.hash.yellow());
+                }
+            } else if action == "diff" {
+                let target_path = target_file.unwrap_or_else(|| {
+                    eprintln!("{} --target-file is required for API diff", "Error:".red().bold());
+                    std::process::exit(1);
+                });
+                let (module2, _) = match load_and_analyze(&target_path) {
+                    Ok(res) => res,
+                    Err(e) => {
+                        eprintln!("{} {}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                };
+                let mut mod_def2 = module2.modules.first().cloned().unwrap_or_default();
+                if mod_def2.name.is_empty() {
+                    mod_def2.name = module2.name.clone();
+                    mod_def2.structs = module2.structs.clone();
+                    mod_def2.functions = module2.functions.clone();
+                }
+
+                let snap1 = crate::agent_api::evolution_engine::EvolutionEngine::create_snapshot(&mod_def1, 1);
+                let snap2 = crate::agent_api::evolution_engine::EvolutionEngine::create_snapshot(&mod_def2, 2);
+                let diff = crate::agent_api::evolution_engine::EvolutionEngine::diff_api(&snap1, &snap2);
+
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&diff).unwrap_or_default());
+                } else {
+                    println!("🧬 {} API Differential Analysis between {:?} and {:?}", "End SemVer API:".green().bold(), file, target_path);
+                    println!("  SemVer Bump Required: {}", diff.semver_bump.yellow().bold());
+                    println!("  ├─ Compatible Additions: {}", diff.compatible_additions.len());
+                    println!("  ├─ Breaking Changes:     {}", diff.breaking_changes.len());
+                    println!("  └─ Deprecations:         {}", diff.deprecations.len());
+                    if !diff.breaking_changes.is_empty() {
+                        println!("\n🚨 Breaking Changes (Requires Major Version Bump / Migration Path):");
+                        for b in &diff.breaking_changes {
+                            println!("  ✖ {}", b.red());
+                        }
+                    }
+                }
+            } else {
+                eprintln!("Unknown api action: '{}'. Supported: snapshot, diff", action);
             }
         }
     }

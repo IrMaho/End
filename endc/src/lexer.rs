@@ -228,6 +228,41 @@ pub enum TokenKind {
     Recommendation,   // 'recommendation'
     Notes,            // 'notes'
 
+    // Extensibility DNA Tokens
+    Partial,          // 'partial'
+    Augment,          // 'augment'
+    ExtensionOnly,    // 'extension_only'
+    ExtensionPoint,   // 'extension_point'
+    Replace,          // 'replace'
+    Migration,        // 'migration'
+    Overlay,          // 'overlay'
+    Open,             // 'open'
+    Closed,           // 'closed'
+    Syntax,           // 'syntax'
+    CompilerPlugin,   // 'compiler_plugin'
+    Lint,             // 'lint'
+    Analyzer,         // 'analyzer'
+    TypeRule,         // 'type_rule'
+    Optimizer,        // 'optimizer'
+    BuildPlugin,      // 'build_plugin'
+    Generator,        // 'generator'
+    Reflect,          // 'reflect'
+    Lock,             // 'lock'
+    AgentExtension,   // 'agent_extension'
+    Proposal,         // 'proposal'
+    Evolvable,        // 'evolvable'
+    OwnedBy,          // 'owned_by'
+    ArchitectureTest, // 'architecture_test'
+    At,               // 'at'
+    Provides,         // 'provides'
+    Guarantees,       // 'guarantees'
+    Rename,           // 'rename'
+    Use,              // 'use'
+    Snapshot,         // 'snapshot'
+    Begin,            // 'begin'
+    Commit,           // 'commit'
+    ReplaceWith,      // 'replace_with'
+
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
     QuestionQuestion, // '??'
@@ -711,6 +746,41 @@ impl<'a> Lexer<'a> {
                     "risks" => TokenKind::Risks,
                     "recommendation" => TokenKind::Recommendation,
                     "notes" => TokenKind::Notes,
+
+                    // Extensibility DNA Keywords
+                    "partial" => TokenKind::Partial,
+                    "augment" => TokenKind::Augment,
+                    "extension_only" => TokenKind::ExtensionOnly,
+                    "extension_point" => TokenKind::ExtensionPoint,
+                    "replace" => TokenKind::Replace,
+                    "migration" => TokenKind::Migration,
+                    "overlay" => TokenKind::Overlay,
+                    "open" => TokenKind::Open,
+                    "closed" => TokenKind::Closed,
+                    "syntax" => TokenKind::Syntax,
+                    "compiler_plugin" => TokenKind::CompilerPlugin,
+                    "lint" => TokenKind::Lint,
+                    "analyzer" => TokenKind::Analyzer,
+                    "type_rule" => TokenKind::TypeRule,
+                    "optimizer" => TokenKind::Optimizer,
+                    "build_plugin" => TokenKind::BuildPlugin,
+                    "generator" => TokenKind::Generator,
+                    "reflect" => TokenKind::Reflect,
+                    "lock" => TokenKind::Lock,
+                    "agent_extension" => TokenKind::AgentExtension,
+                    "proposal" => TokenKind::Proposal,
+                    "evolvable" => TokenKind::Evolvable,
+                    "owned_by" => TokenKind::OwnedBy,
+                    "architecture_test" => TokenKind::ArchitectureTest,
+                    "at" => TokenKind::At,
+                    "provides" => TokenKind::Provides,
+                    "rename" => TokenKind::Rename,
+                    "use" => TokenKind::Use,
+                    "snapshot" => TokenKind::Snapshot,
+                    "begin" => TokenKind::Begin,
+                    "commit" => TokenKind::Commit,
+                    "replace_with" => TokenKind::ReplaceWith,
+
                     _ => TokenKind::Ident(ident),
                 }
             };
