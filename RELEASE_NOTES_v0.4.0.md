@@ -8,7 +8,7 @@ We are thrilled to announce the official release of **The End Programming Langua
 
 ### 1. ⚡ Extreme Bare-Metal Performance & Zero-GC Regions
 - **Zero-GC Memory Scopes:** Instant pointer bump allocation with 0 ns deallocation cost at frame and scope boundaries.
-- **199.0 Million Operations/sec Throughput:** Sub-15 ns P50 latency in scale benchmarks.
+- **High-Throughput Performance:** Competitive with C and Zig across 12-challenge benchmark suite (see [BENCHMARKS.md](BENCHMARKS.md) for reproducible results).
 - **C11 Bare-Metal Code Generator:** Ultra-optimized native binary compilation (`-O3 -funroll-loops -fomit-frame-pointer`).
 
 ### 2. 🛡️ Hardware Watchdog & Thermal Safety Guardrails

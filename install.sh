@@ -4,7 +4,7 @@
 
 set -e
 
-VERSION="v1.0.0"
+VERSION="v0.4.0-alpha"
 INSTALL_DIR="$HOME/.end"
 BIN_DIR="$INSTALL_DIR/bin"
 SKILL_DIR="$INSTALL_DIR/skills/end-language"

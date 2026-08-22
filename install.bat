@@ -26,7 +26,7 @@ if exist "%SRC_DIR%bin\end.exe" (
     copy /Y "%SRC_DIR%endc\target\release\endc.exe" "%BIN_DIR%\endc.exe" >nul
 ) else (
     echo [!] Downloading latest End Language release...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-windows-x64.zip' -OutFile '%TEMP%\end.zip'; Expand-Archive -Path '%TEMP%\end.zip' -DestinationPath '%INSTALL_DIR%' -Force; Remove-Item '%TEMP%\end.zip' -Force"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri 'https://github.com/IrMaho/End/releases/download/v0.4.0-alpha/end-v0.4.0-alpha-windows-x64.zip' -OutFile '%TEMP%\end.zip'; Expand-Archive -Path '%TEMP%\end.zip' -DestinationPath '%INSTALL_DIR%' -Force; Remove-Item '%TEMP%\end.zip' -Force"
 )
 
 if exist "%SRC_DIR%std" (
@@ -53,7 +53,7 @@ set "PATH=%BIN_DIR%;%PATH%"
 
 echo.
 echo ================================================================================
-echo  🎉 End Programming Language v1.0.0 successfully installed!
+echo  🎉 End Programming Language v0.4.0-alpha successfully installed!
 echo ================================================================================
 echo  • Compiler Binary:  %BIN_DIR%\end.exe
 echo  • Standard Library: %INSTALL_DIR%\std

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# 👑 Multi-Platform Release Package Builder for End Language v1.0.0 (POSIX)
+# 👑 Multi-Platform Release Package Builder for End Language v0.4.0-alpha (POSIX)
 set -e
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
-VERSION="v1.0.0"
+VERSION="v0.4.0-alpha"
 
 echo "👑 Building End Language $VERSION Release Packages..."
 mkdir -p "$DIST_DIR"

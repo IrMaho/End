@@ -138,7 +138,7 @@ impl OpenApiGenerator {
             "openapi": "3.1.0",
             "info": {
                 "title": format!("{} API Specification", passport.metadata.name),
-                "version": "1.0.0",
+                "version": passport.metadata.compiler_version.clone(),
                 "description": format!("Auto-generated OpenAPI v3.1 Specification by End Language Compiler (v{}).\nHigh-Performance, Zero-Overhead Compiled Backend Service.", passport.metadata.compiler_version),
                 "contact": {
                     "name": "End Language Engineering Team",

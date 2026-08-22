@@ -14,11 +14,32 @@ impl LlvmBackend {
     pub fn new(target_triple: Option<&str>) -> Self {
         Self {
             output: String::new(),
-            target_triple: target_triple.unwrap_or("x86_64-pc-windows-msvc").to_string(),
+            target_triple: target_triple.unwrap_or(Self::detect_host_triple()).to_string(),
             temp_var_id: 0,
             block_id: 0,
             variables: HashMap::new(),
         }
+    }
+
+    fn detect_host_triple() -> &'static str {
+        #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+        { "x86_64-pc-windows-msvc" }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        { "x86_64-unknown-linux-gnu" }
+        #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+        { "x86_64-apple-darwin" }
+        #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+        { "aarch64-apple-darwin" }
+        #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+        { "aarch64-unknown-linux-gnu" }
+        #[cfg(not(any(
+            all(target_os = "windows", target_arch = "x86_64"),
+            all(target_os = "linux", target_arch = "x86_64"),
+            all(target_os = "macos", target_arch = "x86_64"),
+            all(target_os = "macos", target_arch = "aarch64"),
+            all(target_os = "linux", target_arch = "aarch64"),
+        )))]
+        { "x86_64-unknown-linux-gnu" }
     }
 
     fn next_temp(&mut self) -> String {

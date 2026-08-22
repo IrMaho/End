@@ -12,6 +12,9 @@ SUITE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_SUITE_DIR = SUITE_DIR
 os.makedirs(REPO_SUITE_DIR, exist_ok=True)
 
+# Platform-adaptive binary extension
+EXE_EXT = ".exe" if os.name == "nt" else ""
+
 BENCHMARK_NAMES = [
     "1. 3D SDF Raymarcher (250K Rays)",
     "2. Binary Trees (Depth 16 Dynamic)",
@@ -32,36 +35,36 @@ LANGUAGES = [
         "name": "End (C11 Backend)",
         "icon": "👑",
         "file": "suite12_end.end",
-        "exe": "suite12_end.exe",
-        "compile": [os.path.join(os.path.dirname(os.path.dirname(SUITE_DIR)), "bin", "end.exe"), "build", os.path.join(SUITE_DIR, "suite12_end.end"), "--strip", "-o", os.path.join(SUITE_DIR, "suite12_end.exe")]
+        "exe": f"suite12_end{EXE_EXT}",
+        "compile": [os.path.join(os.path.dirname(os.path.dirname(SUITE_DIR)), "bin", f"end{EXE_EXT}"), "build", os.path.join(SUITE_DIR, "suite12_end.end"), "--strip", "-o", os.path.join(SUITE_DIR, f"suite12_end{EXE_EXT}")]
     },
     {
         "name": "Zig (0.16.0)",
         "icon": "⚡",
         "file": "suite12_zig.zig",
-        "exe": "suite12_zig.exe",
+        "exe": f"suite12_zig{EXE_EXT}",
         "compile": ["zig", "build-exe", "-O", "ReleaseFast", "-lc", os.path.join(SUITE_DIR, "suite12_zig.zig")]
     },
     {
         "name": "Rust (1.89.0)",
         "icon": "⚡",
         "file": "suite12_rust.rs",
-        "exe": "suite12_rust.exe",
-        "compile": ["rustc", "-O", "-C", "target-cpu=native", "-C", "lto=fat", "-C", "codegen-units=1", os.path.join(SUITE_DIR, "suite12_rust.rs"), "-o", os.path.join(SUITE_DIR, "suite12_rust.exe")]
+        "exe": f"suite12_rust{EXE_EXT}",
+        "compile": ["rustc", "-O", "-C", "target-cpu=native", "-C", "lto=fat", "-C", "codegen-units=1", os.path.join(SUITE_DIR, "suite12_rust.rs"), "-o", os.path.join(SUITE_DIR, f"suite12_rust{EXE_EXT}")]
     },
     {
         "name": "C (GCC 15.2)",
         "icon": "⚡",
         "file": "suite12_c.c",
-        "exe": "suite12_c.exe",
-        "compile": ["gcc", "-O3", "-march=native", "-flto", "-funroll-loops", "-fomit-frame-pointer", "-finline-functions", os.path.join(SUITE_DIR, "suite12_c.c"), "-o", os.path.join(SUITE_DIR, "suite12_c.exe")]
+        "exe": f"suite12_c{EXE_EXT}",
+        "compile": ["gcc", "-O3", "-march=native", "-flto", "-funroll-loops", "-fomit-frame-pointer", "-finline-functions", os.path.join(SUITE_DIR, "suite12_c.c"), "-o", os.path.join(SUITE_DIR, f"suite12_c{EXE_EXT}")]
     },
     {
         "name": "Go (1.25.1)",
         "icon": "⚡",
         "file": "suite12_go.go",
-        "exe": "suite12_go.exe",
-        "compile": ["go", "build", "-ldflags=-s -w", "-o", os.path.join(SUITE_DIR, "suite12_go.exe"), os.path.join(SUITE_DIR, "suite12_go.go")]
+        "exe": f"suite12_go{EXE_EXT}",
+        "compile": ["go", "build", "-ldflags=-s -w", "-o", os.path.join(SUITE_DIR, f"suite12_go{EXE_EXT}"), os.path.join(SUITE_DIR, "suite12_go.go")]
     }
 ]
 

@@ -1,15 +1,15 @@
 class EndLang < Formula
   desc "The AI-First Zero-GC Systems Programming Language"
   homepage "https://github.com/IrMaho/End"
-  version "1.0.0"
+  version "0.4.0-alpha"
   license "MIT"
 
   if OS.mac? && Hardware::CPU.arm?
-    url "https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-macos-arm64.tar.gz"
+    url "https://github.com/IrMaho/End/releases/download/v0.4.0-alpha/end-v0.4.0-alpha-macos-arm64.tar.gz"
   elsif OS.mac? && Hardware::CPU.intel?
-    url "https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-macos-x64.tar.gz"
+    url "https://github.com/IrMaho/End/releases/download/v0.4.0-alpha/end-v0.4.0-alpha-macos-x64.tar.gz"
   else
-    url "https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-linux-x64.tar.gz"
+    url "https://github.com/IrMaho/End/releases/download/v0.4.0-alpha/end-v0.4.0-alpha-linux-x64.tar.gz"
   end
 
   def install

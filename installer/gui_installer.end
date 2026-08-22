@@ -1,4 +1,4 @@
-// 👑 End Language Official Native GUI Installer (v1.0.0)
+// 👑 End Language Official Native GUI Installer (v0.4.0-alpha)
 // 100% Written in Pure End with 120 FPS Native Glassmorphism Canvas
 
 import "std/ui/window.end"
@@ -37,7 +37,7 @@ pub fn installer_render_frame(state: InstallerState, canvas: CanvasContext) Inst
 
     // 3. Render 👑 Crown Logo & Modern Typography
     canvas_draw_text(canvas, "👑 END PROGRAMMING LANGUAGE", 140, 75, 22, 255, 255, 255);
-    canvas_draw_text(canvas, "v1.0.0 Global Enterprise Release • Zero-GC Native Speed", 120, 105, 12, 139, 148, 158);
+    canvas_draw_text(canvas, "v0.4.0-alpha Global Release • Zero-GC Native Speed", 120, 105, 12, 139, 148, 158);
 
     // 4. Draw Glassmorphism Card Container
     canvas_draw_glass_rect(canvas, 40, 140, 520, 220, 16, 22, 34, 0.85);
@@ -77,7 +77,7 @@ pub fn installer_render_frame(state: InstallerState, canvas: CanvasContext) Inst
 
 pub fn main() void {
     println("👑 Launching End Language Native GUI Installer (120 FPS)...");
-    val win = ui_window_create("End Language v1.0.0 Installer", 600, 400);
+    val win = ui_window_create("End Language v0.4.0-alpha Installer", 600, 400);
     mut state = installer_state_create();
 
     while ui_window_is_open(win) {

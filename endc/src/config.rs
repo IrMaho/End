@@ -7,7 +7,10 @@ use std::path::Path;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CompilerConfig {
+    /// Architecture configuration — deserialized from `end.config.toml`.
+    /// Currently loaded and validated but enforcement is gated behind `end arch check`.
     #[serde(default)]
+    #[allow(dead_code)]
     pub architecture: ArchitectureConfig,
     #[serde(default)]
     pub files: FilesConfig,
@@ -22,10 +25,13 @@ pub struct CompilerConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ArchitectureConfig {
     #[serde(default = "default_pattern")]
+    #[allow(dead_code)]
     pub pattern: String,
     #[serde(default)]
+    #[allow(dead_code)]
     pub enforce_layers: bool,
     #[serde(default)]
+    #[allow(dead_code)]
     pub layers: Vec<String>,
 }
 
@@ -58,6 +64,7 @@ pub struct NamingConfig {
     #[serde(default = "default_snake")]
     pub function_style: String,
     #[serde(default = "default_snake")]
+    #[allow(dead_code)]
     pub variable_style: String,
 }
 
@@ -66,8 +73,10 @@ pub struct QualityConfig {
     #[serde(default = "default_complexity")]
     pub max_cyclomatic_complexity: usize,
     #[serde(default)]
+    #[allow(dead_code)]
     pub no_dead_code: bool,
     #[serde(default)]
+    #[allow(dead_code)]
     pub no_unused_imports: bool,
 }
 

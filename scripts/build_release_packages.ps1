@@ -1,7 +1,7 @@
-# 👑 Multi-Platform Release Package Builder for End Language v1.0.0 (Windows / Universal)
+# 👑 Multi-Platform Release Package Builder for End Language v0.4.0-alpha (Windows / Universal)
 
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "👑 Packaging End Language v1.0.0 Official Release Matrix..." -ForegroundColor Green
+Write-Host "👑 Packaging End Language v0.4.0-alpha Official Release Matrix..." -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 
 $Root = Split-Path -Parent $PSScriptRoot
@@ -45,15 +45,15 @@ Copy-Item (Join-Path $Root "install.ps1") (Join-Path $StagingDir "install.ps1") 
 Copy-Item (Join-Path $Root "install.sh") (Join-Path $StagingDir "install.sh") -ErrorAction SilentlyContinue
 
 # 3. Create Windows Zip Archive
-Write-Host "[3/4] Creating end-v1.0.0-windows-x64.zip archive..." -ForegroundColor Yellow
-$ZipPath = Join-Path $DistDir "end-v1.0.0-windows-x64.zip"
+Write-Host "[3/4] Creating end-v0.4.0-alpha-windows-x64.zip archive..." -ForegroundColor Yellow
+$ZipPath = Join-Path $DistDir "end-v0.4.0-alpha-windows-x64.zip"
 Compress-Archive -Path "$StagingDir\*" -DestinationPath $ZipPath -Force
 
 # 4. Generate SHA256 Checksums
 Write-Host "[4/4] Generating SHA256 Checksums..." -ForegroundColor Yellow
 $Hash = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash.ToLower()
 $ChecksumFile = Join-Path $DistDir "SHA256SUMS.txt"
-Set-Content -Path $ChecksumFile -Value "$Hash  end-v1.0.0-windows-x64.zip"
+Set-Content -Path $ChecksumFile -Value "$Hash  end-v0.4.0-alpha-windows-x64.zip"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "👑 SUCCESS: Release package ready at: $ZipPath" -ForegroundColor Green

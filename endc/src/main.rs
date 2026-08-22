@@ -638,9 +638,9 @@ fn run_app() {
             }
         }
         Commands::Version => {
-            println!("👑 End Programming Language v1.0.0 (x86_64-pc-windows-msvc)");
-            println!("⚡ Toolchain: GCC 15.2 Ultra-Optimized (LTO + Fast-Math)");
-            println!("🎯 Benchmark: 12-Challenge Grandmaster Apex Edition");
+            println!("👑 End Programming Language v0.4.0-alpha ({})", std::env::consts::ARCH);
+            println!("⚡ Toolchain: C11 Backend with GCC/Clang -O3 (LTO + Fast-Math)");
+            println!("🎯 Benchmark: 12-Challenge Reproducible Suite");
             println!("📦 Repository: https://github.com/IrMaho/End");
         }
         Commands::Skill { action } => {

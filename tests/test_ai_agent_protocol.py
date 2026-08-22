@@ -34,11 +34,13 @@ with open(temp_file, "w", encoding="utf-8") as f:
 passed = 0
 total = 0
 
+END_BINARY = "end.exe" if os.name == "nt" else "end"
+
 def test_cmd(name, cmd_args, check_fn):
     global passed, total
     total += 1
     print(f"\n[{total}] Testing: {name} (end {' '.join(cmd_args)})...")
-    res = subprocess.run(["end.exe"] + cmd_args, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    res = subprocess.run([END_BINARY] + cmd_args, capture_output=True, text=True, encoding='utf-8', errors='replace')
     out = res.stdout or ""
     err = res.stderr or ""
     if res.returncode == 0 or "arch" in cmd_args:

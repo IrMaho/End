@@ -1,10 +1,10 @@
-# ??? End Language � Formal Security Threat Model (THREAT_MODEL.md)
+# 🛡️ End Language — Formal Security Threat Model (THREAT_MODEL.md)
 
 This document establishes the threat vectors, trust boundaries, exploit mitigations, and residual risks for the **End Language** toolchain (`endc`), runtime, package ecosystem, and AI cognitive engines.
 
 ---
 
-## ?? System Boundaries & Threat Matrix
+## 🔒 System Boundaries & Threat Matrix
 
 | Asset / Boundary | Attack Vector | Impact | Mitigation Strategy | Verification / Test |
 | :--- | :--- | :--- | :--- | :--- |
@@ -19,7 +19,7 @@ This document establishes the threat vectors, trust boundaries, exploit mitigati
 
 ---
 
-## ?? Residual Risk & Ongoing Hardening
+## ⚠️ Residual Risk & Ongoing Hardening
 
 1. **Bare-Metal Freestanding Targets:** Current production target is hosted OS (Linux/Windows/macOS) with standard C runtime library. Embedded freestanding kernels are on the roadmap.
 2. **Dynamic Unsafe C FFI:** Foreign C functions invoked via `@import_c` are marked unsafe and must be wrapped in safe End contracts.

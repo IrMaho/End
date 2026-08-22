@@ -1,7 +1,7 @@
 # 📖 End Programming Language — Formal Language Specification
 
 > **The 5 Pillars: Type System, Memory Model, Compiler Architecture, Concurrency, and Foreign Function Interface (FFI).**  
-> *Version 1.0.0 — Apex Systems & Formal Specification Edition.*
+> *Version 0.4.0-alpha — Apex Systems & Language Specification Edition.*
 
 ---
 

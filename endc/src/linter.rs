@@ -3,7 +3,7 @@
 // Validates: file size, function size, naming conventions, comment language,
 //            cyclomatic complexity, doc comments, and param counts.
 
-use crate::ast::{Module, Statement, Block, FunctionDef, StructDef};
+use crate::ast::{Module, Statement, Block, FunctionDef};
 use crate::config::CompilerConfig;
 use colored::*;
 use std::path::Path;
@@ -99,6 +99,8 @@ impl Linter {
         println!();
     }
 
+    /// Output lint violations in JSON format for machine consumption (IDE/CI integration).
+    #[allow(dead_code)]
     pub fn print_violations_json(&self) {
         let violations_json: Vec<String> = self.violations.iter().map(|v| {
             format!(
@@ -241,6 +243,10 @@ impl Linter {
         self.check_function_size(&func.name, &func.body, func.span.line);
         self.check_param_count(&func.name, func.params.len(), func.span.line);
         self.check_function_naming(&func.name, func.span.line);
+        for param in &func.params {
+            self.check_variable_naming(&param.name, param.span.line);
+        }
+        self.check_variables_in_block(&func.body);
         self.check_cyclomatic_complexity(&func.name, &func.body, func.span.line);
 
         if self.config.comments.require_doc_comments && func.is_pub && func.name != "main" {
@@ -363,6 +369,80 @@ impl Linter {
                 }
             }
             _ => {}
+        }
+    }
+
+    fn check_variable_naming(&mut self, name: &str, line: usize) {
+        match self.config.naming.variable_style.as_str() {
+            "snake_case" => {
+                if !is_snake_case(name) {
+                    self.violations.push(LintViolation {
+                        file: self.file_path.clone(),
+                        line,
+                        rule: "naming.variable_style".to_string(),
+                        message: format!(
+                            "Variable '{}' violates naming convention: expected snake_case.",
+                            name
+                        ),
+                        suggestion: format!("Rename to '{}'.", to_snake_case(name)),
+                        severity: LintSeverity::Error,
+                    });
+                }
+            }
+            "camelCase" => {
+                if !is_camel_case(name) {
+                    self.violations.push(LintViolation {
+                        file: self.file_path.clone(),
+                        line,
+                        rule: "naming.variable_style".to_string(),
+                        message: format!(
+                            "Variable '{}' violates naming convention: expected camelCase.",
+                            name
+                        ),
+                        suggestion: format!("Rename to camelCase form."),
+                        severity: LintSeverity::Error,
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn check_variables_in_block(&mut self, block: &Block) {
+        for stmt in &block.statements {
+            match stmt {
+                Statement::VarDecl { name, span, .. } => {
+                    self.check_variable_naming(name, span.line);
+                }
+                Statement::If { then_block, else_block, .. } => {
+                    self.check_variables_in_block(then_block);
+                    if let Some(else_b) = else_block {
+                        self.check_variables_in_block(else_b);
+                    }
+                }
+                Statement::While { body, .. }
+                | Statement::ForIn { body, .. }
+                | Statement::ParallelFor { body, .. }
+                | Statement::RegionBlock { body, .. }
+                | Statement::TargetBlock { body, .. } => {
+                    self.check_variables_in_block(body);
+                }
+                Statement::Match { arms, .. } => {
+                    for arm in arms {
+                        self.check_variables_in_block(&arm.body);
+                    }
+                }
+                Statement::LeaseBlock { name, body, span, .. } => {
+                    self.check_variable_naming(name, span.line);
+                    self.check_variables_in_block(body);
+                }
+                Statement::LeaseCpu { body, .. }
+                | Statement::LeaseEvent { body, .. }
+                | Statement::LeaseLoop { body, .. } => {
+                    self.check_variables_in_block(body);
+                }
+                _ => {}
+            }
         }
     }
 

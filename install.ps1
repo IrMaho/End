@@ -2,7 +2,7 @@
 # Usage: irm https://raw.githubusercontent.com/IrMaho/End/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
-$Version = "v1.0.0"
+$Version = "v0.4.0-alpha"
 
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "Installing End Programming Language ($Version)..." -ForegroundColor Green
@@ -73,7 +73,7 @@ if (Test-Path $endExe) {
 }
 
 Write-Host "`n================================================================================" -ForegroundColor Cyan
-Write-Host "End Programming Language v1.0.0 successfully installed!" -ForegroundColor Green
+Write-Host "End Programming Language v0.4.0-alpha successfully installed!" -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "  * Compiler Binary:  $BinDir\end.exe" -ForegroundColor White
 Write-Host "  * Standard Library: $InstallDir\std" -ForegroundColor White

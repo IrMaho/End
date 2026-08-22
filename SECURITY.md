@@ -1,10 +1,10 @@
-# ??? End Language � Security Policy & Threat Model
+# 🛡️ End Language — Security Policy & Threat Model
 
 This document outlines the security architecture, threat model, and vulnerability reporting procedures for the **End Language** compiler (`endc`), runtime, and standard library.
 
 ---
 
-## ?? Threat Model & Security Boundaries
+## 🔒 Threat Model & Security Boundaries
 
 | Asset / Boundary | Threat Vector | Mitigation Strategy |
 | :--- | :--- | :--- |
@@ -16,6 +16,6 @@ This document outlines the security architecture, threat model, and vulnerabilit
 
 ---
 
-## ?? Reporting a Vulnerability
+## 📬 Reporting a Vulnerability
 
 Please report any security concerns directly to the core maintainers via GitHub Security Advisories or by filing a private issue.

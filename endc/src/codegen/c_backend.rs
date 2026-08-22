@@ -102,6 +102,7 @@ impl CBackend {
         self.output.push_str("    #define END_CPU_RELAX() YieldProcessor()\n");
         self.output.push_str("    #define END_CPU_SLEEP(ms) Sleep(ms)\n");
         self.output.push_str("#else\n");
+        self.output.push_str("    #include <pthread.h>\n");
         self.output.push_str("    #include <sched.h>\n");
         self.output.push_str("    #include <unistd.h>\n");
         self.output.push_str("    #include <time.h>\n");

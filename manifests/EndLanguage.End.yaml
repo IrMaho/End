@@ -1,5 +1,5 @@
 PackageIdentifier: EndLanguage.End
-PackageVersion: 1.0.0
+PackageVersion: 0.4.0-alpha
 PackageName: End Programming Language
 Publisher: EndLanguage
 License: MIT
@@ -7,7 +7,7 @@ ShortDescription: The AI-First Zero-GC Systems Programming Language
 Installers:
   - Architecture: x64
     InstallerType: zip
-    InstallerUrl: https://github.com/IrMaho/End/releases/download/v1.0.0/end-v1.0.0-windows-x64.zip
+    InstallerUrl: https://github.com/IrMaho/End/releases/download/v0.4.0-alpha/end-v0.4.0-alpha-windows-x64.zip
     NestedInstallerType: portable
     NestedInstallerFiles:
       - RelativeFilePath: bin\endc.exe
