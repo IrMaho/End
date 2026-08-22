@@ -1,0 +1,30 @@
+// ============================================================================
+// End Language Consumer Test: Part 15 - First-Class Features, Fallbacks & Variants
+// Covers:
+//   - Item 88: `feature <Name> { ... }`
+//   - Item 89: `feature <Name> extends <Base>`
+//   - Item 90: `feature <Name> uses <Capabilities>`
+//   - Item 91: `feature <Name> optional`
+//   - Item 92: `feature <Name> fallback <Default>`
+//   - Item 93: `feature <Name> variants { ... }`
+// ============================================================================
+
+feature CoreAuthentication {
+    uses SecurityModule;
+}
+
+feature EnterpriseAuth extends CoreAuthentication {
+    uses MultiFactorAuth;
+}
+
+feature Analytics optional;
+
+feature CacheStorage {
+    variant LocalMemory;
+    variant RedisCluster;
+    fallback InMemoryCache;
+}
+
+fn main() -> i64 {
+    ret 0;
+}

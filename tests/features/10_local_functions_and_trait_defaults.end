@@ -1,0 +1,27 @@
+// ============================================================================
+// End Language Consumer Test: Part 10 - Local Functions & Default Trait Methods
+// Covers:
+//   - Item 48: Local & Nested Functions
+//   - Item 49: Default Trait Implementation
+// ============================================================================
+
+trait AuditProtocol {
+    fn record(event_name: string);
+    fn log_info(msg: string) {
+        self.record(msg);
+    }
+}
+
+fn compute_recursive_sum(depth: i64) -> i64 {
+    // Local / nested function declaration
+    fn inner_helper(val: i64) -> i64 {
+        ret val * 2;
+    }
+
+    ret inner_helper(depth);
+}
+
+fn main() -> i64 {
+    val res = compute_recursive_sum(21);
+    ret res;
+}

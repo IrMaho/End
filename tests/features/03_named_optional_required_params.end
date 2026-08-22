@@ -1,0 +1,34 @@
+// ============================================================================
+// End Language Consumer Test: Part 3 - Named, Optional & Required Parameters
+// Covers:
+//   - Item 14: First-Class Named Arguments Call
+//   - Item 15: Optional / Default Parameters
+//   - Item 16: Required Named Parameters
+// ============================================================================
+
+fn initialize_network_socket(
+    host: string,
+    port: i64 = 8080,
+    @required timeout_ms: i64,
+    use_tls: bool = true,
+) -> bool {
+    ret true;
+}
+
+fn main() -> i64 {
+    // 1. Invocation with named arguments and defaults
+    val ok1 = initialize_network_socket(
+        host: "127.0.0.1",
+        timeout_ms: 3000,
+        port: 443,
+        use_tls: true,
+    );
+
+    // 2. Invocation relying on defaults
+    val ok2 = initialize_network_socket(
+        host: "0.0.0.0",
+        timeout_ms: 10000,
+    );
+
+    ret 0;
+}

@@ -1,0 +1,23 @@
+// ============================================================================
+// End Language Consumer Test: Part 9 - String Interpolation & Raw Strings
+// Covers:
+//   - Item 42: String Interpolation `$var` / `${expr}`
+//   - Item 43: Multiline & Raw Strings
+// ============================================================================
+
+fn main() -> i64 {
+    val username = "Maho";
+    val score = 95;
+
+    // 1. String interpolation
+    val greeting = "Welcome $username, score is ${score + 5}!";
+
+    // 2. Multiline raw string
+    val sql_query = r"""
+        SELECT id, name, balance
+        FROM accounts
+        WHERE status = 'ACTIVE'
+    """;
+
+    ret 0;
+}

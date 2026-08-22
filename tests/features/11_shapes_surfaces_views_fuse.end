@@ -1,0 +1,32 @@
+// ============================================================================
+// End Language Consumer Test: Part 11 - Shapes, Surfaces, Views & Fusing
+// Covers:
+//   - Item 55: `shape <Name> = <Entity> surface { ... }`
+//   - Item 56: `surface <Name> { ... }`
+//   - Item 57: `view <Name> of <Entity>`
+//   - Item 59: `fuse <T1>, <T2> into <T3>`
+//   - Item 60: `augment <Type> with <Methods>`
+// ============================================================================
+
+surface Payment.public {
+    pay;
+    refund;
+}
+
+shape User.Public = User surface {
+    id;
+    name;
+    email;
+}
+
+view PublicUser of User {
+    id;
+    username;
+}
+
+fuse Search, Pagination as SearchableList;
+augment User with Searchable;
+
+fn main() -> i64 {
+    ret 0;
+}

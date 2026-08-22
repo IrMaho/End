@@ -1,0 +1,21 @@
+// ============================================================================
+// End Language Consumer Test: Part 13 - Component Replacement, Delegation & Guards
+// Covers:
+//   - Item 73: `replace <Target> with <Implementation>`
+//   - Item 74: `delegate <Interface> to <Field>`
+//   - Item 75: `guard <Condition> else <Fallback>`
+// ============================================================================
+
+replace MockPaymentProvider with StripeLiveProvider;
+delegate BillingInterface to StripeService;
+
+guard Payment.refund {
+    capability "refund_access";
+    role "finance_officer";
+} else {
+    fallback SecurityDenialService;
+}
+
+fn main() -> i64 {
+    ret 0;
+}

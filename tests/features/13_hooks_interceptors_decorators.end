@@ -1,0 +1,22 @@
+// ============================================================================
+// End Language Consumer Test: Part 13 - Hooks, Interception & Decorators
+// Covers:
+//   - Item 70: `hook <Target> before/after { ... }`
+//   - Item 71: `intercept <Target> with <Handler>`
+//   - Item 72: `decorate <Target> using <Decorator>`
+// ============================================================================
+
+hook Payment.after_refund {
+    AuditLogger.record_transaction();
+}
+
+intercept Payment.refund with SecurityInspectionHandler;
+
+decorate PaymentService with {
+    PerformanceMetrics;
+    StructuredLogging;
+}
+
+fn main() -> i64 {
+    ret 0;
+}

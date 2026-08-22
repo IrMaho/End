@@ -1,0 +1,19 @@
+// ============================================================================
+// End Language Consumer Test: Part 5 - Collection Spreads & Null-Aware Spreads
+// Covers:
+//   - Item 23: Collection Spread Operator `...`
+//   - Item 24: Null-Aware Spread Operator `...?`
+// ============================================================================
+
+fn main() -> i64 {
+    val core_headers = [100, 200, 300];
+    val optional_body = [400, 500];
+
+    // 1. Standard collection spread
+    val full_packet = [0, ...core_headers, 999];
+
+    // 2. Null-aware collection spread
+    val response = [1, ...core_headers, ...?optional_body, 1000];
+
+    ret 0;
+}

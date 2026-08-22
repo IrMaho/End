@@ -1,0 +1,37 @@
+// ============================================================================
+// End Language Consumer Test: Part 10 - Enum Payloads & Expression Control-Flow
+// Covers:
+//   - Item 44: Enum Associated Data
+//   - Item 45: Expression `if` / `else`
+//   - Item 46: Expression `match`
+//   - Item 47: Expression Blocks
+//   - Item 50: Pattern Binding in Condition (`if x is Pattern`)
+// ============================================================================
+
+enum TaskState {
+    Queued,
+    Running(i64),
+    Completed(string),
+    Failed(i64, string),
+}
+
+fn handle_state(state: TaskState) -> string {
+    // 1. Expression match
+    val msg = match state {
+        TaskState.Running(worker_id) => "Job running on worker",
+        TaskState.Completed(hash) => "Job completed with hash",
+        TaskState.Failed(code, err) => "Job failed with error",
+        _ => "Job queued"
+    };
+
+    // 2. Expression `if`
+    val priority = if true { 10 } else { 1 };
+
+    ret msg;
+}
+
+fn main() -> i64 {
+    val state = TaskState.Running(42);
+    val res = handle_state(state);
+    ret 0;
+}

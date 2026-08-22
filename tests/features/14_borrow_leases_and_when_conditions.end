@@ -1,0 +1,19 @@
+// ============================================================================
+// End Language Consumer Test: Part 14 - Hardware Borrowing & Semantic When
+// Covers:
+//   - Item 76: `when <Condition> { ... }`
+//   - Item 78: `borrow <Resource> for <Lifetime>`
+//   - Item 85: `because <Reason>`
+// ============================================================================
+
+when SystemEnvironment.is_production {
+    enable HighSecurityPolicy;
+}
+
+borrow HardwareGpuBuffer for ExecutionScope;
+
+require CryptographicEngine because "All sensitive transactions must be signed";
+
+fn main() -> i64 {
+    ret 0;
+}

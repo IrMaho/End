@@ -1,0 +1,28 @@
+// ============================================================================
+// End Language Consumer Test: Part 7 - Destructuring Protocol & Copy
+// Covers:
+//   - Item 32: Custom Destructuring Protocol
+//   - Item 33: Immutable `.copy(...)` Syntax
+// ============================================================================
+
+struct Vector3D {
+    x: i64,
+    y: i64,
+    z: i64,
+}
+
+fn create_node() -> Vector3D {
+    ret Vector3D { x: 10, y: 20, z: 30 };
+}
+
+fn main() -> i64 {
+    val node = create_node();
+
+    // 1. Immutable struct copy with field overrides
+    val updated_node = node.copy(y: 99, z: 100);
+
+    // 2. Custom destructuring unpacking
+    (vx, vy, vz) := updated_node;
+
+    ret vx + vy + vz;
+}

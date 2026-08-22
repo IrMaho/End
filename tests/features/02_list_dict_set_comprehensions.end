@@ -1,0 +1,29 @@
+// ============================================================================
+// End Language Consumer Test: Part 2 - Comprehensions (List, Dict, Set)
+// Covers:
+//   - Item 07: List Comprehensions
+//   - Item 08: Dictionary Comprehensions
+//   - Item 09: Set Comprehensions
+// ============================================================================
+
+struct UserRecord {
+    id: i64,
+    name: string,
+    role: string,
+    score: i64,
+}
+
+fn main() -> i64 {
+    val scores = [10, 25, 40, 55, 70, 85, 100];
+
+    // 1. List Comprehension with filtering predicate
+    val high_scores_doubled = [s * 2 for s in scores if s >= 50];
+
+    // 2. Set Comprehension
+    val unique_categories = {record.role for record in user_records if record.score > 0};
+
+    // 3. Dictionary Comprehension
+    val user_score_map = {record.id: record.score for record in user_records if record.score >= 50};
+
+    ret 0;
+}

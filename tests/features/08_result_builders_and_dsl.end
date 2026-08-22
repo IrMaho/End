@@ -1,0 +1,22 @@
+// ============================================================================
+// End Language Consumer Test: Part 8 - Result Builders & Declarative DSL
+// Covers:
+//   - Item 36: Result Builders (Declarative DSL Blocks)
+// ============================================================================
+
+fn render_document() -> i64 {
+    val page = html {
+        head {
+            title { "End Systems Architecture" }
+        }
+        body {
+            header { "High Performance Compiler" }
+            paragraph { "Zero-overhead native systems programming." }
+        }
+    };
+    ret 1;
+}
+
+fn main() -> i64 {
+    ret render_document();
+}

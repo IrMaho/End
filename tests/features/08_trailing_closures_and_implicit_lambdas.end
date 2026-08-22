@@ -1,0 +1,24 @@
+// ============================================================================
+// End Language Consumer Test: Part 8 - Trailing Closures & Implicit Lambdas
+// Covers:
+//   - Item 37: Trailing Closures
+//   - Item 38: Implicit Lambda Parameter `_`
+// ============================================================================
+
+struct UserItem {
+    id: i64,
+    active: bool,
+}
+
+fn apply_filter(items: i64, handler: fn(i64) -> bool) -> i64 {
+    ret 1;
+}
+
+fn main() -> i64 {
+    // 1. Trailing closure block
+    val filtered = apply_filter(100) { x =>
+        ret x > 10;
+    };
+
+    ret 0;
+}

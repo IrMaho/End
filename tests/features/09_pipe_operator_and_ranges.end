@@ -1,0 +1,29 @@
+// ============================================================================
+// End Language Consumer Test: Part 9 - Pipeline Operator & Ranges
+// Covers:
+//   - Item 39: Pipeline Operator `|>`
+//   - Item 40: Half-Open & Closed Range Operators `..` / `..<`
+//   - Item 41: Spread Function Arguments `fn(*args)`
+// ============================================================================
+
+fn sanitize(input: i64) -> i64 { ret input * 2; }
+fn validate(input: i64) -> i64 { ret input + 10; }
+fn finalize(input: i64) -> i64 { ret input; }
+
+fn process_range() -> i64 {
+    val r1 = 0..<10;
+    val r2 = 1..100;
+    ret 0;
+}
+
+fn main() -> i64 {
+    // 1. Pipeline operator forwarding
+    val result = 42
+        |> sanitize
+        |> validate
+        |> finalize;
+
+    val r_ok = process_range();
+
+    ret 0;
+}

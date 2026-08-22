@@ -1,0 +1,27 @@
+// ============================================================================
+// End Language Consumer Test: Part 12 - Dependency Resolution, Contexts & Scopes
+// Covers:
+//   - Item 61: `require <Capability>`
+//   - Item 62: `resolve <Capability> := <Provider>`
+//   - Item 63: `resolve <Capability> when <Condition>`
+//   - Item 64: `context <Name> { ... }`
+//   - Item 65: `scope <Name> { ... }`
+// ============================================================================
+
+require DatabaseConnection;
+require PaymentProvider;
+
+resolve PaymentProvider := StripeProvider;
+resolve Storage := RedisCluster when production;
+
+context ProductionEnv {
+    resolve DatabaseConnection := PostgresPool;
+}
+
+scope AdminSession {
+    equip User with AdminCapabilities;
+}
+
+fn main() -> i64 {
+    ret 0;
+}

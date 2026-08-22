@@ -1,0 +1,21 @@
+// ============================================================================
+// End Language Consumer Test: Part 12 - Security Grants, Denial & Boundary Sealing
+// Covers:
+//   - Item 66: `grant <Capability> to <Subject>`
+//   - Item 67: `deny <Capability> to <Subject>`
+//   - Item 68: `expose <Items> to <Audience>`
+//   - Item 69: `seal <Entity> [within <Boundary>]`
+//   - Item 77: `only <Audience> can <Action>`
+// ============================================================================
+
+grant Payments.refund to FinanceAdmin;
+deny Payments.database to WebUiModule;
+
+expose Payments.public_api to ExternalClients;
+seal CoreSecurityToken within KernelBoundary;
+
+only SuperAdmin can DeleteDatabase;
+
+fn main() -> i64 {
+    ret 0;
+}

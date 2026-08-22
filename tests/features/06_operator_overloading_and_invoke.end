@@ -1,0 +1,38 @@
+// ============================================================================
+// End Language Consumer Test: Part 6 - Operator Conventions & Callable Objects
+// Covers:
+//   - Item 30: Operator Overloading by Convention
+//   - Item 31: Invoke Convention (Callable Objects)
+// ============================================================================
+
+struct Point2D {
+    x: i64,
+    y: i64,
+}
+
+extend Point2D {
+    fn op_add(other: Point2D) -> Point2D {
+        ret Point2D { x: self.x + other.x, y: self.y + other.y };
+    }
+}
+
+struct SecurityGate {
+    secret_key: i64,
+}
+
+extend SecurityGate {
+    fn invoke(token: i64) -> bool {
+        ret token == self.secret_key;
+    }
+}
+
+fn main() -> i64 {
+    val p1 = Point2D { x: 10, y: 20 };
+    val p2 = Point2D { x: 30, y: 40 };
+    val p3 = p1 + p2;
+
+    val gate = SecurityGate { secret_key: 12345 };
+    val allowed = gate(12345);
+
+    ret 0;
+}
