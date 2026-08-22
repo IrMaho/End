@@ -349,6 +349,36 @@ pub enum TokenKind {
     LBracket,  // '['
     RBracket,  // ']'
 
+    // Capability & Surface Composition Tokens
+    Access,
+    Grant,
+    Adopt,
+    Implement,
+    Attach,
+    Detach,
+    Mixin,
+    Capability,
+    Provide,
+    Require,
+    Resolve,
+    Select,
+    Project,
+    Delegate,
+    Proxy,
+    Intercept,
+    Hook,
+    Enable,
+    Disable,
+    Scope,
+    FeatureSwitch,
+    Traitify,
+    Equip,
+    Fuse,
+    Shape,
+    Only,
+    Section,
+    Before,
+
     EOF,
 }
 

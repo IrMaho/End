@@ -9,6 +9,8 @@ pub mod tests;
 pub mod security_tests;
 #[cfg(test)]
 pub mod feature_tests;
+#[cfg(test)]
+pub mod capability_tests;
 
 pub use hir::*;
 pub use mir::*;

@@ -13,7 +13,8 @@ impl Parser {
             | TokenKind::ExtensionPoint
             | TokenKind::Overlay
             | TokenKind::Open
-            | TokenKind::Closed => {}
+            | TokenKind::Closed
+            | TokenKind::Project => {}
             TokenKind::Ident(s) if s == "parallel_choose" || s == "project" => {}
             _ => return Ok(None),
         }
@@ -155,7 +156,7 @@ impl Parser {
                 self.expect(TokenKind::RBrace)?;
                 Ok(Statement::ParallelChoose { branches, span })
             }
-            TokenKind::Ident(id) if id == "project" => {
+            TokenKind::Project | TokenKind::Ident(_) => {
                 self.advance();
                 self.expect(TokenKind::LBrace)?;
                 let mut profile = std::collections::HashMap::new();

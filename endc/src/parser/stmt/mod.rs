@@ -5,6 +5,8 @@ use crate::parser::Parser;
 pub mod agent_workflow;
 pub mod architecture_boundaries;
 pub mod architecture_metrics;
+pub mod capabilities;
+pub mod capability_extensions;
 pub mod compiler_extensions;
 pub mod contracts_proofs;
 pub mod control_flow;
@@ -39,6 +41,9 @@ impl Parser {
         let span = self.current_span();
         let peek_k = self.peek_kind().clone();
 
+        if let Some(stmt) = self.parse_capability_composition_statement(&peek_k, &span)? {
+            return Ok(stmt);
+        }
         if let Some(stmt) = self.parse_control_flow_statement(&peek_k, &span)? {
             return Ok(stmt);
         }

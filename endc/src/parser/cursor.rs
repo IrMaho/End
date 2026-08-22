@@ -40,6 +40,14 @@ impl Parser {
         }
     }
 
+    pub(crate) fn peek_ahead(&self, offset: usize) -> Option<&TokenKind> {
+        if self.cursor + offset < self.tokens.len() {
+            Some(&self.tokens[self.cursor + offset].kind)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn advance(&mut self) -> Token {
         if self.cursor < self.tokens.len() {
             let tok = self.tokens[self.cursor].clone();

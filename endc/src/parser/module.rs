@@ -92,6 +92,11 @@ impl Parser {
             }
 
             let peek_k = self.peek_kind().clone();
+            let cur_span = self.current_span();
+            if let Some(cap_stmt) = self.parse_capability_composition_statement(&peek_k, &cur_span)? {
+                statements.push(cap_stmt);
+                continue;
+            }
             match peek_k {
                 TokenKind::Sealed => {
                     self.advance();

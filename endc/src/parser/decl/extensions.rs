@@ -151,6 +151,12 @@ impl Parser {
                 if self.check(&TokenKind::Fn) {
                     functions.push(self.parse_function(true, pending_directives)?);
                 }
+            } else if self.match_token(&TokenKind::Capability) {
+                let cap = self.parse_identifier_or_keyword()?;
+                self.match_token(&TokenKind::SemiColon);
+                if required_capability.is_none() {
+                    required_capability = Some(cap);
+                }
             } else {
                 self.advance();
             }

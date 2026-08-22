@@ -5,6 +5,7 @@ use crate::ast::operators::BinaryOp;
 use crate::ast::pattern::{Block, MatchArm};
 use crate::ast::expr::Expression;
 use crate::ast::decl::architecture::{ArchitectureRuleDef, ArchitectureTemplateDef, ContractDef, FeatureMigrationDef};
+use crate::ast::decl::capabilities::*;
 use crate::ast::decl::events::{EventDef, EventHubDef, ExtensionBlock, OperationDef};
 use crate::ast::decl::features::FeatureDef;
 use crate::ast::decl::functions_traits::{FunctionDef, FunctionParam, TraitMethodDef};
@@ -429,4 +430,36 @@ pub enum Statement {
     EvolveContract { target: String, adds: Vec<TraitMethodDef>, clauses: Vec<String>, span: Span, },
     ImpactQuery { target: String, span: Span, },
     UseFeature { feature: String, implementation: Option<String>, span: Span, },
+    // ── 50 Capability-Oriented & Surface Composition Statements ──
+    UseSurface { target: String, section: Option<String>, symbols: Vec<String>, alias: Option<String>, shape_fields: Vec<String>, is_borrow: bool, is_mut: bool, is_generic: Option<String>, span: Span, },
+    AccessCapability { entity: String, capability: String, span: Span, },
+    GrantCapability { target: String, capabilities: Vec<String>, span: Span, },
+    DenyCapability { target: String, capabilities: Vec<String>, span: Span, },
+    SurfaceDefinition(SurfaceDef),
+    AdoptContract { target: String, alias: Option<String>, span: Span, },
+    ImplementContract { contract: String, target: Option<String>, methods: Vec<FunctionDef>, span: Span, },
+    AttachCapability { capabilities: Vec<String>, target: String, when_cond: Option<String>, if_pred: Option<String>, span: Span, },
+    DetachCapability { capability: String, target: String, span: Span, },
+    ComposeCapability { name: String, capabilities: Vec<String>, span: Span, },
+    MixinDecl(MixinDef),
+    CapabilityDecl(CapabilityDef),
+    ProvideCapability { capability: String, span: Span, },
+    RequireCapability { contract: String, alias: Option<String>, span: Span, },
+    ResolveContract { contract: String, implementation: String, condition: Option<String>, span: Span, },
+    SelectContract { contract: String, candidates: Vec<String>, span: Span, },
+    ViewProjection { entity: String, view_shape: String, span: Span, },
+    ProjectSurface { entity: String, fields: Vec<String>, span: Span, },
+    DelegateBehavior { entity: String, method: String, target: String, span: Span, },
+    ProxyCapability { target: String, interceptor: String, span: Span, },
+    DecorateEntity { target: String, method: Option<String>, with_caps: Vec<String>, span: Span, },
+    InterceptMethod(InterceptDef),
+    HookEvent(HookDef),
+    EnableCapability { capability: String, entity: String, enabled: bool, span: Span, },
+    ScopeBoundary(ScopeDef),
+    ContextEnv(ContextDef),
+    FeatureSwitchDecl { name: String, enabled_env: String, span: Span, },
+    TraitifyCheck { entity: String, trait_name: String, span: Span, },
+    EquipEntity { entity: String, capabilities: Vec<String>, condition: Option<String>, span: Span, },
+    FuseFeatures { features: Vec<String>, alias: String, span: Span, },
+    ShapeDefinition(ShapeDef),
 }
