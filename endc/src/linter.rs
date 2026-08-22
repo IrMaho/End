@@ -441,6 +441,59 @@ impl Linter {
                 | Statement::LeaseLoop { body, .. } => {
                     self.check_variables_in_block(body);
                 }
+                Statement::Owned { name, span, .. } => {
+                    self.check_variable_naming(name, span.line);
+                }
+                Statement::Intent { body: Some(body), .. }
+                | Statement::ProtectBlock { body, .. }
+                | Statement::DeterministicBlock { body, .. }
+                | Statement::ReplayBlock { body, .. }
+                | Statement::TransactionBlock { body, .. }
+                | Statement::SpeculativeBlock { body, .. }
+                | Statement::FallbackBlock { body, .. }
+                | Statement::CancelSafeBlock { body, .. }
+                | Statement::TaskDecl { body, .. }
+                | Statement::PatchDecl { body, .. }
+                | Statement::RaceFreeBlock { body, .. }
+                | Statement::DeadlineBlock { body, .. }
+                | Statement::PriorityBlock { body, .. }
+                | Statement::QualityBlock { body, .. }
+                | Statement::TradeoffBlock { body, .. }
+                | Statement::WatchBlock { handler: body, .. }
+                | Statement::ReactBlock { handler: body, .. } => {
+                    self.check_variables_in_block(body);
+                }
+                Statement::ComputeBlock { body, fallback, .. } => {
+                    self.check_variables_in_block(body);
+                    if let Some(fb) = fallback {
+                        self.check_variables_in_block(fb);
+                    }
+                }
+                Statement::BudgetBlock { body: Some(body), .. }
+                | Statement::ContextBlock { body: Some(body), .. }
+                | Statement::AgentContract { body: Some(body), .. }
+                | Statement::EvolveBlock { body: Some(body), .. } => {
+                    self.check_variables_in_block(body);
+                }
+                Statement::AdaptBlock { branches, .. } => {
+                    for (_, blk) in branches {
+                        self.check_variables_in_block(blk);
+                    }
+                }
+                Statement::ParallelChoose { branches, .. } => {
+                    for (_, blk) in branches {
+                        self.check_variables_in_block(blk);
+                    }
+                }
+                Statement::RaceBlock { branches, .. } => {
+                    for blk in branches {
+                        self.check_variables_in_block(blk);
+                    }
+                }
+                Statement::HedgeBlock { primary, fallback, .. } => {
+                    self.check_variables_in_block(primary);
+                    self.check_variables_in_block(fallback);
+                }
                 _ => {}
             }
         }

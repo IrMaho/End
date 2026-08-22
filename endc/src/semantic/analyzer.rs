@@ -41,6 +41,7 @@ pub struct SemanticAnalyzer {
     var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
     ownership_scopes: Vec<HashMap<String, OwnershipState>>,
     active_loans: Vec<ActiveLoan>,
+    pub frozen_symbols: HashSet<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -70,6 +71,7 @@ impl SemanticAnalyzer {
             var_scopes: vec![HashMap::new()],
             ownership_scopes: vec![HashMap::new()],
             active_loans: Vec::new(),
+            frozen_symbols: HashSet::new(),
         }
     }
 
@@ -380,8 +382,20 @@ impl SemanticAnalyzer {
                 self.analyze_expression(target);
                 self.analyze_expression(value);
 
-                // Check mutation while actively borrowed
                 if let Expression::Ident(target_name, _) = target {
+                    // Enforce frozen symbol guarantee
+                    if self.frozen_symbols.contains(target_name) {
+                        self.errors.push(DiagnosticError {
+                            code: "E0908".to_string(),
+                            message: format!("FrozenViolation: cannot mutate frozen symbol '{}' at line {}", target_name, span.line),
+                            line: span.line,
+                            col: span.col,
+                            kind: "FrozenSymbolError".to_string(),
+                            repair_suggestion: Some(format!("remove 'frozen {}' or perform mutations before freezing", target_name)),
+                        });
+                    }
+
+                    // Check mutation while actively borrowed
                     if let Some(loan) = self.active_loans.iter().find(|l| l.place == *target_name && l.holder != *target_name) {
                         self.errors.push(DiagnosticError {
                             code: "E0907".to_string(),
@@ -526,6 +540,101 @@ impl SemanticAnalyzer {
                 self.declare_var(item_name, Type::I64, span.line, false);
                 self.analyze_block(body);
                 self.pop_scope();
+            }
+            Statement::Intent { body, .. } => {
+                if let Some(b) = body {
+                    self.analyze_block(b);
+                }
+            }
+            Statement::Prove { condition, .. }
+            | Statement::Assume { condition, .. }
+            | Statement::Guarantee { condition, .. }
+            | Statement::Invariant { condition, .. } => {
+                self.analyze_expression(condition);
+            }
+            Statement::VerifyBlock { invariants, .. } => {
+                for inv in invariants {
+                    self.analyze_expression(inv);
+                }
+            }
+            Statement::ProtectBlock { body, .. }
+            | Statement::DeterministicBlock { body, .. }
+            | Statement::ReplayBlock { body, .. }
+            | Statement::TransactionBlock { body, .. }
+            | Statement::SpeculativeBlock { body, .. }
+            | Statement::FallbackBlock { body, .. }
+            | Statement::CancelSafeBlock { body, .. }
+            | Statement::TaskDecl { body, .. }
+            | Statement::PatchDecl { body, .. }
+            | Statement::RaceFreeBlock { body, .. } => {
+                self.analyze_block(body);
+            }
+            Statement::Frozen { symbol, .. } => {
+                self.frozen_symbols.insert(symbol.clone());
+            }
+            Statement::Owned { name, var_type, initializer, span } => {
+                let inferred_ty = self.analyze_expression(initializer);
+                let ty = var_type.clone().unwrap_or(inferred_ty);
+                self.declare_var(name, ty, span.line, false);
+            }
+            Statement::ComputeBlock { body, fallback, .. } => {
+                self.analyze_block(body);
+                if let Some(fb) = fallback {
+                    self.analyze_block(fb);
+                }
+            }
+            Statement::BudgetBlock { body, .. }
+            | Statement::ContextBlock { body, .. }
+            | Statement::AgentContract { body, .. }
+            | Statement::EvolveBlock { body, .. } => {
+                if let Some(b) = body {
+                    self.analyze_block(b);
+                }
+            }
+            Statement::DeadlineBlock { body, .. }
+            | Statement::PriorityBlock { body, .. }
+            | Statement::QualityBlock { body, .. }
+            | Statement::TradeoffBlock { body, .. } => {
+                self.analyze_block(body);
+            }
+            Statement::AdaptBlock { branches, .. } => {
+                for (cond, blk) in branches {
+                    self.analyze_expression(cond);
+                    self.analyze_block(blk);
+                }
+            }
+            Statement::WatchBlock { handler, .. } => {
+                self.analyze_block(handler);
+            }
+            Statement::ReactBlock { event, handler, .. } => {
+                self.analyze_expression(event);
+                self.analyze_block(handler);
+            }
+            Statement::StreamBlock { source, operations, .. } => {
+                self.analyze_expression(source);
+                for op in operations {
+                    self.analyze_expression(op);
+                }
+            }
+            Statement::FlowBlock { steps, .. } => {
+                for step in steps {
+                    self.analyze_expression(step);
+                }
+            }
+            Statement::ParallelChoose { branches, .. } => {
+                for (_, blk) in branches {
+                    self.analyze_block(blk);
+                }
+            }
+            Statement::RaceBlock { branches, .. } => {
+                for blk in branches {
+                    self.analyze_block(blk);
+                }
+            }
+            Statement::HedgeBlock { delay_ms, primary, fallback, .. } => {
+                self.analyze_expression(delay_ms);
+                self.analyze_block(primary);
+                self.analyze_block(fallback);
             }
             _ => {}
         }

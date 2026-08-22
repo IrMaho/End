@@ -415,6 +415,195 @@ impl Interpreter {
                 }
                 Ok(None)
             }
+            Statement::Owned { name, initializer, .. } => {
+                let val = self.eval_expression(initializer)?;
+                self.set_var(name, val);
+                Ok(None)
+            }
+            Statement::Intent { body, .. } => {
+                if let Some(b) = body {
+                    for s in &b.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            return Ok(Some(ret));
+                        }
+                    }
+                }
+                Ok(None)
+            }
+            Statement::Prove { condition, span } => {
+                let cond_val = self.eval_expression(condition)?;
+                match cond_val {
+                    Value::Bool(false) => Err(format!("Formal proof obligation failed at line {}", span.line)),
+                    _ => Ok(None),
+                }
+            }
+            Statement::Assume { condition, .. } => {
+                let _ = self.eval_expression(condition)?;
+                Ok(None)
+            }
+            Statement::Guarantee { condition, span } => {
+                let cond_val = self.eval_expression(condition)?;
+                match cond_val {
+                    Value::Bool(false) => Err(format!("Postcondition guarantee failed at line {}", span.line)),
+                    _ => Ok(None),
+                }
+            }
+            Statement::Invariant { condition, span } => {
+                let cond_val = self.eval_expression(condition)?;
+                match cond_val {
+                    Value::Bool(false) => Err(format!("Invariant violation at line {}", span.line)),
+                    _ => Ok(None),
+                }
+            }
+            Statement::VerifyBlock { invariants, span } => {
+                for inv in invariants {
+                    let val = self.eval_expression(inv)?;
+                    if let Value::Bool(false) = val {
+                        return Err(format!("Verify contract failed at line {}", span.line));
+                    }
+                }
+                Ok(None)
+            }
+            Statement::ProtectBlock { body, .. }
+            | Statement::DeterministicBlock { body, .. }
+            | Statement::ReplayBlock { body, .. }
+            | Statement::TransactionBlock { body, .. }
+            | Statement::SpeculativeBlock { body, .. }
+            | Statement::FallbackBlock { body, .. }
+            | Statement::CancelSafeBlock { body, .. }
+            | Statement::TaskDecl { body, .. }
+            | Statement::PatchDecl { body, .. }
+            | Statement::RaceFreeBlock { body, .. }
+            | Statement::DeadlineBlock { body, .. }
+            | Statement::PriorityBlock { body, .. }
+            | Statement::QualityBlock { body, .. }
+            | Statement::TradeoffBlock { body, .. }
+            | Statement::WatchBlock { handler: body, .. } => {
+                self.push_scope();
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            Statement::ComputeBlock { body, fallback, .. } => {
+                self.push_scope();
+                for s in &body.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                if let Some(fb) = fallback {
+                    let _ = fb;
+                }
+                Ok(None)
+            }
+            Statement::BudgetBlock { body, .. }
+            | Statement::ContextBlock { body, .. }
+            | Statement::AgentContract { body, .. }
+            | Statement::EvolveBlock { body, .. } => {
+                if let Some(b) = body {
+                    self.push_scope();
+                    for s in &b.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                Ok(None)
+            }
+            Statement::AdaptBlock { branches, .. } => {
+                for (cond, blk) in branches {
+                    let cond_val = self.eval_expression(cond)?;
+                    let is_match = match cond_val {
+                        Value::Bool(b) => b,
+                        Value::Int(n) => n != 0,
+                        _ => false,
+                    };
+                    if is_match {
+                        self.push_scope();
+                        for s in &blk.statements {
+                            if let Some(ret) = self.eval_statement(s)? {
+                                self.pop_scope();
+                                return Ok(Some(ret));
+                            }
+                        }
+                        self.pop_scope();
+                        break;
+                    }
+                }
+                Ok(None)
+            }
+            Statement::ReactBlock { event, handler, .. } => {
+                let _ = self.eval_expression(event)?;
+                self.push_scope();
+                for s in &handler.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            Statement::StreamBlock { source, operations, .. } => {
+                let _ = self.eval_expression(source)?;
+                for op in operations {
+                    let _ = self.eval_expression(op)?;
+                }
+                Ok(None)
+            }
+            Statement::FlowBlock { steps, .. } => {
+                for step in steps {
+                    let _ = self.eval_expression(step)?;
+                }
+                Ok(None)
+            }
+            Statement::ParallelChoose { branches, .. } => {
+                if let Some((_, blk)) = branches.first() {
+                    self.push_scope();
+                    for s in &blk.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                Ok(None)
+            }
+            Statement::RaceBlock { branches, .. } => {
+                if let Some(blk) = branches.first() {
+                    self.push_scope();
+                    for s in &blk.statements {
+                        if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
+                            return Ok(Some(ret));
+                        }
+                    }
+                    self.pop_scope();
+                }
+                Ok(None)
+            }
+            Statement::HedgeBlock { primary, .. } => {
+                self.push_scope();
+                for s in &primary.statements {
+                    if let Some(ret) = self.eval_statement(s)? {
+                        self.pop_scope();
+                        return Ok(Some(ret));
+                    }
+                }
+                self.pop_scope();
+                Ok(None)
+            }
+            _ => Ok(None),
         }
     }
 

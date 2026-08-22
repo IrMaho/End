@@ -46,6 +46,64 @@ pub enum TokenKind {
     Borrow,   // 'borrow'
     During,   // 'during'
 
+    // 50 Next-Gen & AI-Native Semantics Tokens
+    Intent,       // 'intent'
+    Prove,        // 'prove'
+    Assume,       // 'assume'
+    Guarantee,    // 'guarantee'
+    Invariant,    // 'invariant'
+    Because,      // 'because'
+    Why,          // 'why'
+    Protect,      // 'protect'
+    Frozen,       // 'frozen'
+    MutableBy,    // 'mutable_by'
+    Owned,        // 'owned'
+    Handoff,      // 'handoff'
+    ReturnTo,     // 'return_to'
+    Compute,      // 'compute'
+    RaceFree,     // 'race_free'
+    Order,        // 'order'
+    Deterministic,// 'deterministic'
+    Replay,       // 'replay'
+    Checkpoint,   // 'checkpoint'
+    Rollback,     // 'rollback'
+    Transaction,  // 'transaction'
+    Speculative,  // 'speculative'
+    Fallback,     // 'fallback'
+    Budget,       // 'budget'
+    Deadline,     // 'deadline'
+    Priority,     // 'priority'
+    Quality,      // 'quality'
+    Tradeoff,     // 'tradeoff'
+    Adapt,        // 'adapt'
+    Observe,      // 'observe'
+    Watch,        // 'watch'
+    React,        // 'react'
+    Stream,       // 'stream'
+    Flow,         // 'flow'
+    Choose,       // 'choose'
+    Race,         // 'race'
+    Hedge,        // 'hedge'
+    CancelSafe,   // 'cancel_safe'
+    Agent,        // 'agent'
+    Task,         // 'task'
+    Accept,       // 'accept'
+    Reject,       // 'reject'
+    Baseline,     // 'baseline'
+    Regression,   // 'regression'
+    Explain,      // 'explain'
+    Context,      // 'context'
+    Slice,        // 'slice'
+    Patch,        // 'patch'
+    Evolve,       // 'evolve'
+    Verify,       // 'verify'
+    Goal,         // 'goal'
+    Preserve,     // 'preserve'
+    Allow,        // 'allow'
+    To,           // 'to'
+    On,           // 'on'
+    MutateToken,  // 'mutate'
+
     // Revolutionary Syntactic Tokens
     ValBang,          // 'val!'
     QuestionQuestion, // '??'
@@ -352,6 +410,62 @@ impl<'a> Lexer<'a> {
                     "lease" => TokenKind::Lease,
                     "borrow" => TokenKind::Borrow,
                     "during" => TokenKind::During,
+                    "intent" => TokenKind::Intent,
+                    "prove" => TokenKind::Prove,
+                    "assume" => TokenKind::Assume,
+                    "guarantee" => TokenKind::Guarantee,
+                    "invariant" => TokenKind::Invariant,
+                    "because" => TokenKind::Because,
+                    "why" => TokenKind::Why,
+                    "protect" => TokenKind::Protect,
+                    "frozen" => TokenKind::Frozen,
+                    "mutable_by" => TokenKind::MutableBy,
+                    "owned" => TokenKind::Owned,
+                    "handoff" => TokenKind::Handoff,
+                    "return_to" => TokenKind::ReturnTo,
+                    "compute" => TokenKind::Compute,
+                    "race_free" => TokenKind::RaceFree,
+                    "order" => TokenKind::Order,
+                    "deterministic" => TokenKind::Deterministic,
+                    "replay" | "replayable" => TokenKind::Replay,
+                    "checkpoint" => TokenKind::Checkpoint,
+                    "rollback" => TokenKind::Rollback,
+                    "transaction" => TokenKind::Transaction,
+                    "speculative" => TokenKind::Speculative,
+                    "fallback" => TokenKind::Fallback,
+                    "budget" => TokenKind::Budget,
+                    "deadline" => TokenKind::Deadline,
+                    "priority" => TokenKind::Priority,
+                    "quality" => TokenKind::Quality,
+                    "tradeoff" => TokenKind::Tradeoff,
+                    "adapt" => TokenKind::Adapt,
+                    "observe" => TokenKind::Observe,
+                    "watch" => TokenKind::Watch,
+                    "react" => TokenKind::React,
+                    "stream" => TokenKind::Stream,
+                    "flow" => TokenKind::Flow,
+                    "choose" => TokenKind::Choose,
+                    "race" => TokenKind::Race,
+                    "hedge" => TokenKind::Hedge,
+                    "cancel_safe" => TokenKind::CancelSafe,
+                    "agent" => TokenKind::Agent,
+                    "task" => TokenKind::Task,
+                    "accept" => TokenKind::Accept,
+                    "reject" => TokenKind::Reject,
+                    "baseline" => TokenKind::Baseline,
+                    "regression" => TokenKind::Regression,
+                    "explain" => TokenKind::Explain,
+                    "context" => TokenKind::Context,
+                    "slice" => TokenKind::Slice,
+                    "patch" => TokenKind::Patch,
+                    "evolve" => TokenKind::Evolve,
+                    "verify" => TokenKind::Verify,
+                    "goal" => TokenKind::Goal,
+                    "preserve" => TokenKind::Preserve,
+                    "allow" => TokenKind::Allow,
+                    "to" => TokenKind::To,
+                    "on" => TokenKind::On,
+                    "mutate" => TokenKind::MutateToken,
                     _ => TokenKind::Ident(ident),
                 }
             };

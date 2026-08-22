@@ -165,6 +165,24 @@ impl AstLowering {
                     line: span.line,
                 }
             }
+            Statement::Owned { name, var_type, initializer, span } => {
+                let init = Some(Self::lower_expr(initializer, var_ctx));
+                let ty = if let Some(v_ty) = var_type {
+                    Self::lower_type(v_ty)
+                } else if let Some(ref in_expr) = init {
+                    in_expr.get_type()
+                } else {
+                    HirType::I64
+                };
+                var_ctx.insert(name.clone(), ty.clone());
+                HirStatement::VarDecl {
+                    name: name.clone(),
+                    ty,
+                    is_mut: false,
+                    init,
+                    line: span.line,
+                }
+            }
             _ => HirStatement::Expression(HirExpression::LitBool(true)),
         }
     }

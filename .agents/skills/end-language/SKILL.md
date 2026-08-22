@@ -73,3 +73,72 @@ end.exe doc src/main.end -o docs/                 # Generates openapi.json, proj
 # 5. Flutter / Dart FFI Bridge Generator
 end.exe flutter bindgen src/main.end -o flutter_lib/  # Generates end_flutter_bridge.dart
 ```
+
+---
+
+## 4. 🚀 50 First-Class Semantic & AI-Native Language Syntaxes
+
+The End language features 50 revolutionary, first-class language syntaxes processed natively across all compiler stages (Lexer ➔ Parser ➔ AST ➔ Semantic Analyzer ➔ HIR/MIR ➔ C/LLVM Backend ➔ Interpreter VM ➔ LSP / Agent Protocol):
+
+### A. Intent, Formal Verification & Rationale (1-10)
+1. **`intent "<goal>" { goal: "...", preserve: [...] }`** - First-class declarative specification block defining optimization objectives and non-negotiable invariants.
+2. **`intent diff { preserve: [...], change: [...] }`** - Explicit contract specifying boundaries between permitted refactoring and strictly preserved behaviour.
+3. **`prove <condition>;`** - Formal proof obligation checked by the verifier / runtime contract engine.
+4. **`assume <condition>;` / `assume { ... }`** - Optimization assumptions enabling dead code elimination and zero-cost branch elimination.
+5. **`guarantee <condition>;`** - Formal postcondition assurance enforced on function exit.
+6. **`invariant <condition>;`** - Continuous invariant that must hold true across all state transitions.
+7. **`verify { <cond1>, <cond2>, ... }`** - Comprehensive multi-clause contract verification suite.
+8. **`because "<rationale>";`** - In-language rationale anchoring for compiler optimizations and AI agent decisions.
+9. **`why <target> { "<rationale>" }`** - Targeted architectural rationale binding.
+10. **`explain { "<topic>": "<rationale>" }`** - Self-documenting, queryable semantic metadata block.
+
+### B. Memory, Protection & Domain Ownership (11-16)
+11. **`protect { ... }`** - Hardware-isolated memory region guarding critical state.
+12. **`frozen <symbol>;`** - Immutable symbol locking preventing any subsequent mutations or agent overrides (`E0908`).
+13. **`mutable_by <role1>, <role2>;`** - Role-based authorization policy governing who or what can mutate state.
+14. **`owned <name>: <type> = <init>;`** - Single-owner linear memory declaration with compile-time borrow/move checking.
+15. **`handoff <resource> -> <domain>;`** - Zero-copy resource ownership transfer across execution domains.
+16. **`return_to <domain> <resource>;`** - Explicit ownership restitution back to the host domain.
+
+### C. Heterogeneous Compute & Resilient Concurrency (17-30)
+17. **`compute <target> { ... } fallback <target> { ... }`** - Hardware-agnostic compute dispatch across CPU, GPU, TPU, and FPGA.
+18. **`race_free { ... }`** - Compiler-proven data-race-free concurrent execution region.
+19. **`order: <mode>;`** - Memory ordering constraint declaration (`sequential`, `relaxed`, `acquire_release`, `stable`).
+20. **`deterministic { ... }`** - Floating-point associative stability and deterministic thread scheduling lock.
+21. **`replay { ... }`** - Deterministic execution trace logging for zero-overhead debug replay.
+22. **`checkpoint <name>;`** - Instantaneous execution state snapshot.
+23. **`rollback to <name>;`** - Reversible state rollback to a prior checkpoint.
+24. **`transaction { ... }`** - ACID atomic state transaction block with automatic abort-on-error.
+25. **`speculative { ... }`** - Isolated branch speculation committed only on successful completion.
+26. **`fallback <target> { ... }`** - Explicit contingency execution pipeline.
+27. **`parallel choose { <branch> => { ... }, ... }`** - First-available multi-branch parallel selection.
+28. **`race { { ... }, { ... } }`** - Concurrent race execution where the fastest branch wins and cancels remainder.
+29. **`hedge after <delay_ms> { ... } fallback { ... }`** - Latency-hedging request pattern for P99 optimization.
+30. **`cancel_safe { ... }`** - Asynchronous region guaranteed to clean up and roll back on external cancellation.
+
+### D. Budgets, Deadlines & Adaptive SLAs (31-36)
+31. **`budget { cpu: "...", memory: "..." } { ... }`** - Hard runtime SLA ceiling with automatic yielding on budget exhaustion.
+32. **`deadline "<duration>" { ... }`** - Strict latency boundary preventing frame drops and thread starvation.
+33. **`priority <level> { ... }`** - Operating system and thread-pool scheduling priority hint (`realtime`, `high`, `normal`, `idle`).
+34. **`quality { min: "...", max_latency: "..." } { ... }`** - Dynamic fidelity tuning under varying hardware load.
+35. **`tradeoff { prefer: "...", sacrifice: "..." } { ... }`** - Explicit Pareto tradeoff directive for compiler optimization passes.
+36. **`adapt { if <c1> => { ... }, ... }`** - Self-tuning multi-path adaptive dispatch based on live runtime telemetry.
+
+### E. Observability & Reactive Data Flow (37-41)
+37. **`observe <metric1>, <metric2>;`** - Zero-overhead runtime telemetry and telemetry extraction hook.
+38. **`watch <target> { on <event> => { ... } }`** - Reactive state mutation observer with sub-microsecond event dispatch.
+39. **`react to <condition> { ... }`** - Event-driven reactive execution trigger.
+40. **`stream <source> { <op1>, <op2>, ... }`** - Zero-allocation fused reactive stream pipeline.
+41. **`flow { <step1>, <step2>, ... }`** - Declarative directed acyclic data-flow pipeline.
+
+### F. AI Agent Protocol & Code Evolution (42-50)
+42. **`agent <Name> { scope: "...", goal: "...", constraints: [...] }`** - Machine-readable agent charter and boundary contract.
+43. **`task <Name> { ... }`** - Atomic units of work assignable and verifiable by AI agents.
+44. **`accept { [...] }`** - Formal acceptance criterion required before agent patches are applied.
+45. **`reject if { [...] }`** - Automated rejection guardrail preventing performance regressions or breaking changes.
+46. **`baseline { <metric>: "<val>", ... }`** - Immutable historical performance baseline anchor.
+47. **`regression { "<condition>" }`** - Automated regression assertion evaluated against established baselines.
+48. **`context <Name> { include: [...], exclude: [...] }`** - AI Agent prompt window context filter for token-efficient reasoning.
+49. **`slice <Name> { from: ..., include: [...], exclude: [...] }`** - Semantic AST code slicing for focused module editing.
+50. **`patch <Target> { ... }` & `evolve <Target> { ... }`** - Automated, formal-contract-backed codebase evolution and AST patching engine.
+

@@ -1601,6 +1601,86 @@ impl CBackend {
                     Statement::AtomicOp { value, .. } => {
                         collect_expr_calls(value, names);
                     }
+                    Statement::Owned { initializer, .. } => {
+                        collect_expr_calls(initializer, names);
+                    }
+                    Statement::Prove { condition, .. }
+                    | Statement::Assume { condition, .. }
+                    | Statement::Guarantee { condition, .. }
+                    | Statement::Invariant { condition, .. } => {
+                        collect_expr_calls(condition, names);
+                    }
+                    Statement::VerifyBlock { invariants, .. } => {
+                        for inv in invariants {
+                            collect_expr_calls(inv, names);
+                        }
+                    }
+                    Statement::Intent { body: Some(body), .. }
+                    | Statement::ProtectBlock { body, .. }
+                    | Statement::DeterministicBlock { body, .. }
+                    | Statement::ReplayBlock { body, .. }
+                    | Statement::TransactionBlock { body, .. }
+                    | Statement::SpeculativeBlock { body, .. }
+                    | Statement::FallbackBlock { body, .. }
+                    | Statement::CancelSafeBlock { body, .. }
+                    | Statement::TaskDecl { body, .. }
+                    | Statement::PatchDecl { body, .. }
+                    | Statement::RaceFreeBlock { body, .. }
+                    | Statement::DeadlineBlock { body, .. }
+                    | Statement::PriorityBlock { body, .. }
+                    | Statement::QualityBlock { body, .. }
+                    | Statement::TradeoffBlock { body, .. }
+                    | Statement::WatchBlock { handler: body, .. } => {
+                        collect_call_names(&body.statements, names);
+                    }
+                    Statement::ReactBlock { event, handler, .. } => {
+                        collect_expr_calls(event, names);
+                        collect_call_names(&handler.statements, names);
+                    }
+                    Statement::StreamBlock { source, operations, .. } => {
+                        collect_expr_calls(source, names);
+                        for op in operations {
+                            collect_expr_calls(op, names);
+                        }
+                    }
+                    Statement::FlowBlock { steps, .. } => {
+                        for step in steps {
+                            collect_expr_calls(step, names);
+                        }
+                    }
+                    Statement::ComputeBlock { body, fallback, .. } => {
+                        collect_call_names(&body.statements, names);
+                        if let Some(fb) = fallback {
+                            collect_call_names(&fb.statements, names);
+                        }
+                    }
+                    Statement::BudgetBlock { body: Some(body), .. }
+                    | Statement::ContextBlock { body: Some(body), .. }
+                    | Statement::AgentContract { body: Some(body), .. }
+                    | Statement::EvolveBlock { body: Some(body), .. } => {
+                        collect_call_names(&body.statements, names);
+                    }
+                    Statement::AdaptBlock { branches, .. } => {
+                        for (cond, blk) in branches {
+                            collect_expr_calls(cond, names);
+                            collect_call_names(&blk.statements, names);
+                        }
+                    }
+                    Statement::ParallelChoose { branches, .. } => {
+                        for (_, blk) in branches {
+                            collect_call_names(&blk.statements, names);
+                        }
+                    }
+                    Statement::RaceBlock { branches, .. } => {
+                        for blk in branches {
+                            collect_call_names(&blk.statements, names);
+                        }
+                    }
+                    Statement::HedgeBlock { delay_ms, primary, fallback, .. } => {
+                        collect_expr_calls(delay_ms, names);
+                        collect_call_names(&primary.statements, names);
+                        collect_call_names(&fallback.statements, names);
+                    }
                     _ => {}
                 }
             }
@@ -2343,6 +2423,432 @@ Statement::Spawn { call, .. } => {
                     target,
                     val_str
                 ));
+            }
+            Statement::Owned { name, var_type, initializer, .. } => {
+                if let Some(t) = var_type {
+                    self.var_types.insert(name.clone(), t.clone());
+                } else {
+                    let inferred = self.infer_type(initializer);
+                    if inferred != Type::Void {
+                        self.var_types.insert(name.clone(), inferred);
+                    }
+                }
+                let ty_str = if let Some(t) = var_type {
+                    self.map_type(t)
+                } else {
+                    "__auto_type".to_string()
+                };
+                let init_str = self.gen_expression(initializer);
+                self.output.push_str(&format!("{}/* 📦 [OWNED] Unique ownership allocated */\n", self.indent()));
+                self.output.push_str(&format!("{}{} {} = {};\n", self.indent(), ty_str, name, init_str));
+            }
+            Statement::Intent { name, goal, preserve, body, .. } => {
+                let n = name.as_deref().unwrap_or("unnamed");
+                let pres = preserve.join(", ");
+                self.output.push_str(&format!("{}/* 🎯 [INTENT '{}']: {} | preserve: [{}] */\n", self.indent(), n, goal, pres));
+                if let Some(b) = body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &b.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::IntentDiff { preserve, change, .. } => {
+                self.output.push_str(&format!("{}/* 🎯 [INTENT DIFF]: preserve=[{}], change=[{}] */\n", self.indent(), preserve.join(", "), change.join(", ")));
+            }
+            Statement::Prove { condition, .. } => {
+                let cond_str = self.gen_expression(condition);
+                self.output.push_str(&format!("{}/* 🛡️ [FORMAL PROVE] */\n", self.indent()));
+                self.output.push_str(&format!("{}if (!({})) {{ fprintf(stderr, \"[END FORMAL PROOF ERROR] 'prove' failed at %s:%d: %s\\n\", __FILE__, __LINE__, \"{}\"); }}\n", self.indent(), cond_str, cond_str.replace('"', "\\\"")));
+            }
+            Statement::Assume { condition, .. } => {
+                let cond_str = self.gen_expression(condition);
+                self.output.push_str(&format!("{}/* 🛡️ [FORMAL ASSUME] */\n", self.indent()));
+                self.output.push_str(&format!("{}#if defined(__GNUC__) || defined(__clang__)\n{}if (!({})) __builtin_unreachable();\n{}#endif\n", self.indent(), self.indent(), cond_str, self.indent()));
+            }
+            Statement::Guarantee { condition, .. } => {
+                let cond_str = self.gen_expression(condition);
+                self.output.push_str(&format!("{}/* 🛡️ [FORMAL GUARANTEE] */\n", self.indent()));
+                self.output.push_str(&format!("{}if (!({})) {{ fprintf(stderr, \"[END GUARANTEE VIOLATION] 'guarantee' postcondition failed at %s:%d: %s\\n\", __FILE__, __LINE__, \"{}\"); }}\n", self.indent(), cond_str, cond_str.replace('"', "\\\"")));
+            }
+            Statement::Invariant { condition, .. } => {
+                let cond_str = self.gen_expression(condition);
+                self.output.push_str(&format!("{}/* 🛡️ [INVARIANT] */\n", self.indent()));
+                self.output.push_str(&format!("{}if (!({})) {{ fprintf(stderr, \"[END INVARIANT VIOLATION] 'invariant' failed at %s:%d: %s\\n\", __FILE__, __LINE__, \"{}\"); }}\n", self.indent(), cond_str, cond_str.replace('"', "\\\"")));
+            }
+            Statement::VerifyBlock { invariants, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [VERIFY CONTRACT SUITE] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for inv in invariants {
+                    let inv_str = self.gen_expression(inv);
+                    self.output.push_str(&format!("{}if (!({})) {{ fprintf(stderr, \"[END VERIFY ERROR] Contract '%s' failed at %s:%d\\n\", \"{}\", __FILE__, __LINE__); }}\n", self.indent(), inv_str, inv_str.replace('"', "\\\"")));
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::Because { rationale, .. } => {
+                self.output.push_str(&format!("{}/* 💡 [BECAUSE]: {} */\n", self.indent(), rationale));
+            }
+            Statement::Why { target, rationale, .. } => {
+                self.output.push_str(&format!("{}/* 💡 [WHY '{}']: {} */\n", self.indent(), target, rationale));
+            }
+            Statement::ProtectBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🔒 [PROTECT BLOCK ENTER] Memory integrity protected */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+                self.output.push_str(&format!("{}/* 🔒 [PROTECT BLOCK EXIT] */\n", self.indent()));
+            }
+            Statement::Frozen { symbol, .. } => {
+                self.output.push_str(&format!("{}/* ❄️ [FROZEN SYMBOL]: '{}' cannot be mutated or overridden */\n", self.indent(), symbol));
+            }
+            Statement::MutableBy { roles, .. } => {
+                self.output.push_str(&format!("{}/* 🔑 [MUTABLE BY]: [{}] */\n", self.indent(), roles.join(", ")));
+            }
+            Statement::Handoff { resource, target_domain, .. } => {
+                self.output.push_str(&format!("{}/* 🔀 [HANDOFF]: Transferring '{}' -> '{}' */\n", self.indent(), resource, target_domain));
+            }
+            Statement::ReturnTo { source_domain, resource, .. } => {
+                self.output.push_str(&format!("{}/* 🔀 [RETURN_TO]: Returning '{}' to domain '{}' */\n", self.indent(), resource, source_domain));
+            }
+            Statement::ComputeBlock { target, body, fallback, .. } => {
+                self.output.push_str(&format!("{}/* ⚡ [COMPUTE ON TARGET: {}] */\n", self.indent(), target));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+                if let Some(fb) = fallback {
+                    self.output.push_str(&format!("{}/* ⚡ [COMPUTE FALLBACK PATH] */\n", self.indent()));
+                    self.output.push_str(&format!("{}if (0) {{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &fb.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::RaceFreeBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [RACE-FREE REGION] Guaranteed zero data races */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::Order { mode, .. } => {
+                self.output.push_str(&format!("{}/* 🔀 [ORDER CONSTRAINT]: {} */\n", self.indent(), mode));
+            }
+            Statement::DeterministicBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🎯 [DETERMINISTIC BLOCK] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::ReplayBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🎬 [REPLAYABLE EXECUTION FRAME] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::Checkpoint { state_name, .. } => {
+                self.output.push_str(&format!("{}/* 💾 [CHECKPOINT]: {} */\n", self.indent(), state_name));
+            }
+            Statement::Rollback { checkpoint_name, .. } => {
+                self.output.push_str(&format!("{}/* ⏪ [ROLLBACK]: to {} */\n", self.indent(), checkpoint_name));
+            }
+            Statement::TransactionBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 💼 [ATOMIC TRANSACTION BLOCK] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::SpeculativeBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🔮 [SPECULATIVE BLOCK] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::FallbackBlock { target, body, .. } => {
+                self.output.push_str(&format!("{}/* ⚡ [FALLBACK TO: {}] */\n", self.indent(), target));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::BudgetBlock { specs, body, .. } => {
+                let spec_str = specs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", ");
+                self.output.push_str(&format!("{}/* ⏱️ [BUDGET SLA]: {} */\n", self.indent(), spec_str));
+                if let Some(b) = body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &b.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::DeadlineBlock { duration, body, .. } => {
+                self.output.push_str(&format!("{}/* ⏱️ [DEADLINE]: {} */\n", self.indent(), duration));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::PriorityBlock { level, body, .. } => {
+                self.output.push_str(&format!("{}/* ⚡ [PRIORITY]: {} */\n", self.indent(), level));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::QualityBlock { min_metric, max_latency, body, .. } => {
+                self.output.push_str(&format!("{}/* 📊 [QUALITY CONSTRAINT]: min={}, max_latency={} */\n", self.indent(), min_metric, max_latency));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::TradeoffBlock { prefer, sacrifice, body, .. } => {
+                self.output.push_str(&format!("{}/* ⚖️ [TRADEOFF]: prefer={}, sacrifice={} */\n", self.indent(), prefer, sacrifice));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::AdaptBlock { branches, .. } => {
+                self.output.push_str(&format!("{}/* 🔄 [ADAPTIVE DISPATCH] */\n", self.indent()));
+                let mut first = true;
+                for (cond, blk) in branches {
+                    let cond_str = self.gen_expression(cond);
+                    if first {
+                        self.output.push_str(&format!("{}if ({}) {{\n", self.indent(), cond_str));
+                        first = false;
+                    } else {
+                        self.output.push_str(&format!("{}}} else if ({}) {{\n", self.indent(), cond_str));
+                    }
+                    self.indent_level += 1;
+                    for s in &blk.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                }
+                if !first {
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::Observe { metrics, .. } => {
+                self.output.push_str(&format!("{}/* 👁️ [OBSERVE TELEMETRY]: {} */\n", self.indent(), metrics.join(", ")));
+            }
+            Statement::WatchBlock { target, event, handler, .. } => {
+                self.output.push_str(&format!("{}/* 👁️ [WATCH '{}' ON {}] */\n", self.indent(), target, event));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &handler.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::ReactBlock { event, handler, .. } => {
+                let event_str = self.gen_expression(event);
+                self.output.push_str(&format!("{}/* ⚡ [REACT TO: {}] */\n", self.indent(), event_str));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &handler.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::StreamBlock { source, operations, .. } => {
+                let src_str = self.gen_expression(source);
+                self.output.push_str(&format!("{}/* 🌊 [STREAM PIPELINE: {}] */\n", self.indent(), src_str));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for op in operations {
+                    let op_str = self.gen_expression(op);
+                    self.output.push_str(&format!("{}{};\n", self.indent(), op_str));
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::FlowBlock { steps, .. } => {
+                self.output.push_str(&format!("{}/* 🌊 [DATA FLOW PIPELINE] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for step in steps {
+                    let step_str = self.gen_expression(step);
+                    self.output.push_str(&format!("{}{};\n", self.indent(), step_str));
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::ParallelChoose { branches, .. } => {
+                self.output.push_str(&format!("{}/* 🔀 [PARALLEL CHOOSE] */\n", self.indent()));
+                if let Some((_, first_blk)) = branches.first() {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &first_blk.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::RaceBlock { branches, .. } => {
+                self.output.push_str(&format!("{}/* 🏁 [RACE DISPATCH] */\n", self.indent()));
+                if let Some(first_blk) = branches.first() {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &first_blk.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::HedgeBlock { primary, fallback: _, .. } => {
+                self.output.push_str(&format!("{}/* 🛡️ [HEDGE REQUEST] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &primary.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::CancelSafeBlock { body, .. } => {
+                self.output.push_str(&format!("{}/* 🛑 [CANCEL-SAFE REGION] */\n", self.indent()));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::AgentContract { name, scope, goal, constraints, body, .. } => {
+                self.output.push_str(&format!("{}/* 🤖 [AGENT CONTRACT '{}']: scope='{}', goal='{}', constraints=[{}] */\n", self.indent(), name, scope, goal, constraints.join(", ")));
+                if let Some(b) = body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &b.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::TaskDecl { name, body, .. } => {
+                self.output.push_str(&format!("{}/* 📋 [TASK DECLARATION: {}] */\n", self.indent(), name));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::AcceptBlock { conditions, .. } => {
+                self.output.push_str(&format!("{}/* ✅ [ACCEPT CONDITIONS]: [{}] */\n", self.indent(), conditions.join(", ")));
+            }
+            Statement::RejectBlock { conditions, .. } => {
+                self.output.push_str(&format!("{}/* ❌ [REJECT CONDITIONS]: [{}] */\n", self.indent(), conditions.join(", ")));
+            }
+            Statement::BaselineBlock { metrics, .. } => {
+                let m_str = metrics.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", ");
+                self.output.push_str(&format!("{}/* 📊 [BASELINE PERFORMANCE METRICS]: {} */\n", self.indent(), m_str));
+            }
+            Statement::RegressionCheck { condition, .. } => {
+                self.output.push_str(&format!("{}/* 📉 [REGRESSION CHECK]: {} */\n", self.indent(), condition));
+            }
+            Statement::ExplainBlock { topic, rationale, .. } => {
+                self.output.push_str(&format!("{}/* 💡 [EXPLAIN '{}']: {} */\n", self.indent(), topic, rationale));
+            }
+            Statement::ContextBlock { name, includes, excludes, body, .. } => {
+                self.output.push_str(&format!("{}/* 🌐 [CONTEXT '{}']: include=[{}], exclude=[{}] */\n", self.indent(), name, includes.join(", "), excludes.join(", ")));
+                if let Some(b) = body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &b.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
+            }
+            Statement::SliceDecl { name, from_target, includes, excludes, .. } => {
+                self.output.push_str(&format!("{}/* 🔪 [CODE SLICE '{}']: from='{}', include=[{}], exclude=[{}] */\n", self.indent(), name, from_target, includes.join(", "), excludes.join(", ")));
+            }
+            Statement::PatchDecl { target, body, .. } => {
+                self.output.push_str(&format!("{}/* 🩹 [PATCH DECLARATION ON '{}'] */\n", self.indent(), target));
+                self.output.push_str(&format!("{}{{\n", self.indent()));
+                self.indent_level += 1;
+                for s in &body.statements {
+                    self.gen_statement(s);
+                }
+                self.indent_level -= 1;
+                self.output.push_str(&format!("{}}}\n", self.indent()));
+            }
+            Statement::EvolveBlock { target, intent, preserve, budget, allow, reject, verify, accept, body, .. } => {
+                let b_str = budget.as_deref().unwrap_or("default");
+                self.output.push_str(&format!("{}/* 🧬 [EVOLVE '{}']: intent='{}', preserve=[{}], budget='{}', allow=[{}], reject=[{}], verify=[{}], accept=[{}] */\n",
+                    self.indent(), target, intent, preserve.join(", "), b_str, allow.join(", "), reject.join(", "), verify.join(", "), accept.join(", ")));
+                if let Some(b) = body {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &b.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
+                }
             }
         }
     }
