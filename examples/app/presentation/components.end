@@ -1,73 +1,66 @@
 // ============================================================================
 // End DevOps & AI Workspace — Presentation: Reusable UI Components
 // Location: examples/app/presentation/components.end
-// Demonstrates: Component Composition & Declarative Terminal / Web UI
+// Demonstrates: Modern Declarative UI Components & Interpolated Rendering
 // ============================================================================
 
-class UIComponent {
-    component_name: String;
+pub struct MetricCardWidget {
+    pub title: str,
+    pub value: str,
+    pub delta_percentage: str,
+    pub is_positive: bool,
 
-    fn render() -> String {
-        return "<" + self.component_name + " />";
+    pub fn render(&self) -> str {
+        val sign = if self.is_positive "+" else "-";
+        ret """┌────────────────────────────────────────┐
+│ {self.title}
+│ \x1b[1;36m{self.value}\x1b[0m ({sign}{self.delta_percentage})
+└────────────────────────────────────────┘""";
     }
 }
 
-class MetricCardWidget inherits UIComponent {
-    title: String;
-    value: String;
-    delta_percentage: String;
-    is_positive: bool;
+pub struct BadgeWidget {
+    pub label: str,
+    pub badge_type: str,
 
-    fn render() -> String {
-        val sign = if self.is_positive { "+" } else { "-" };
-        return "┌────────────────────────────────────────┐\n"
-             + "│ " + self.title + "\n"
-             + "│ \x1b[1;36m" + self.value + "\x1b[0m (" + sign + self.delta_percentage + ")\n"
-             + "└────────────────────────────────────────┘";
+    pub fn render(&self) -> str {
+        ret "[{self.badge_type}: {self.label}]";
     }
 }
 
-class BadgeWidget inherits UIComponent {
-    label: String;
-    badge_type: String;
+pub struct PanelWidget {
+    pub header: str,
+    pub content: str,
 
-    fn render() -> String {
-        return "[" + self.badge_type + ": " + self.label + "]";
+    pub fn render(&self) -> str {
+        ret """═══ {self.header} ═══
+{self.content}
+══════════════════════════════════════════""";
     }
 }
 
-class PanelWidget inherits UIComponent {
-    header: String;
-    content: String;
+pub struct TimelineItemWidget {
+    pub time_str: str,
+    pub event_title: str,
+    pub details: str,
 
-    fn render() -> String {
-        return "═══ " + self.header + " ═══\n" + self.content + "\n══════════════════════════════════════════";
+    pub fn render(&self) -> str {
+        ret """  ● [{self.time_str}] {self.event_title}
+    └─ {self.details}""";
     }
 }
 
-class TimelineItemWidget inherits UIComponent {
-    time_str: String;
-    event_title: String;
-    details: String;
+pub struct ProgressBarWidget {
+    pub label: str,
+    pub percentage: i64,
 
-    fn render() -> String {
-        return "  ● [" + self.time_str + "] " + self.event_title + "\n    └─ " + self.details;
+    pub fn render(&self) -> str {
+        ret "{self.label} [====================] {self.percentage}%";
     }
 }
 
-class ProgressBarWidget inherits UIComponent {
-    label: String;
-    percentage: i64;
-
-    fn render() -> String {
-        val bar_length = (self.percentage * 20) / 100;
-        return self.label + " [" + "====================" + "] " + "100" + "%";
-    }
-}
-
-fn create_metric_card(title: String, val_str: String, delta: String, pos: bool) -> MetricCardWidget {
-    return MetricCardWidget {
-        component_name: "MetricCard",
+pub fn create_metric_card(title: str, val_str: str, delta: str, pos: bool) -> MetricCardWidget {
+    ret MetricCardWidget {
         title: title,
         value: val_str,
         delta_percentage: delta,
@@ -75,9 +68,8 @@ fn create_metric_card(title: String, val_str: String, delta: String, pos: bool) 
     };
 }
 
-fn create_badge(label: String, b_type: String) -> BadgeWidget {
-    return BadgeWidget {
-        component_name: "Badge",
+pub fn create_badge(label: str, b_type: str) -> BadgeWidget {
+    ret BadgeWidget {
         label: label,
         badge_type: b_type
     };

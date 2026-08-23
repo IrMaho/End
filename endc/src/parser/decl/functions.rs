@@ -106,6 +106,7 @@ impl Parser {
             Type::Void
         };
 
+        self.match_token(&TokenKind::Colon);
         let body = if self.check(&TokenKind::LBrace) {
             self.parse_block()?
         } else {

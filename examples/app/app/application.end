@@ -1,7 +1,7 @@
 // ============================================================================
 // End DevOps & AI Workspace — Application Orchestrator & Bootstrapper
 // Location: examples/app/app/application.end
-// Demonstrates: Clean Architecture Composition Root & Dependency Injection
+// Demonstrates: Clean Architecture Composition Root & Pattern Matching
 // ============================================================================
 
 import "../core/types.end"
@@ -48,101 +48,65 @@ import "../features/feature_explorer/feature_explorer_page.end"
 import "../features/dependency_graph/dependency_graph_page.end"
 import "../extensions/ai_code_review.end"
 
-class Application {
-    app_state: AppStateStore;
-    project_state: ProjectStateStore;
-    task_state: TaskStateStore;
-    system_state: SystemStateStore;
-    event_bus: EventBus;
-    pipeline_engine: EventPipelineEngine;
-    nav_layout: AppNavigationLayout;
-    code_review_plugin: AICodeReviewPlugin;
+pub struct Application {
+    pub app_state: AppStateStore,
+    pub project_state: ProjectStateStore,
+    pub task_state: TaskStateStore,
+    pub system_state: SystemStateStore,
+    pub event_bus: EventBus,
+    pub pipeline_engine: EventPipelineEngine,
+    pub nav_layout: AppNavigationLayout,
+    pub code_review_plugin: AICodeReviewPlugin,
 
-    fn initialize() -> bool {
+    pub fn initialize(&self) -> bool {
         val boot_ev = create_domain_event("ev-boot", DomainEventType.BuildStarted, "ApplicationRoot", "System Initialization Complete");
         self.event_bus.dispatch(boot_ev);
-        return true;
+        ret true;
     }
 }
 
-fn render_application_screen(app: Application, page: ActivePage) -> String {
+pub fn render_application_screen(app: Application, page: ActivePage) -> str {
     val top = render_topbar_layout(app.app_state.current_user_email, app.app_state.notification_badge_count);
     val side = render_sidebar_layout(page);
 
-    if page == ActivePage.Dashboard {
-        val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
-        val body = render_dashboard_view(proj, app.system_state.telemetry, app.system_state.arch_health);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.Projects {
-        val body = render_projects_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.ProjectDetails {
-        val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
-        val body = render_project_details_view(proj);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.TasksKanban {
-        val body = render_tasks_kanban_view(app.task_state);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.CodeWorkspace {
-        val body = render_code_workspace_view("examples/app/events/event_bus.end");
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.EventMonitor {
-        val body = render_event_monitor_view(app.event_bus);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.ArchitectureGraph {
-        val body = render_architecture_graph_view(app.system_state.arch_health);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.Analytics {
-        val body = render_analytics_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.Team {
-        val body = render_team_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.Notifications {
-        val body = render_notifications_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.Settings {
-        val body = render_settings_view(create_standard_sandbox());
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.SystemMonitor {
-        val body = render_system_monitor_view(app.system_state.telemetry);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.AiAgent {
-        val plan = create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.ts");
-        val body = render_ai_agent_view(plan);
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.FeatureExplorer {
-        val body = render_feature_explorer_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
-    if page == ActivePage.DependencyGraph {
-        val body = render_dependency_graph_view();
-        return top + "\n\n" + side + "\n\n" + body;
-    }
+    val body = match page {
+        ActivePage.Dashboard => {
+            val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
+            render_dashboard_view(proj, app.system_state.telemetry, app.system_state.arch_health)
+        },
+        ActivePage.Projects => render_projects_view(),
+        ActivePage.ProjectDetails => {
+            val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
+            render_project_details_view(proj)
+        },
+        ActivePage.TasksKanban => render_tasks_kanban_view(app.task_state),
+        ActivePage.CodeWorkspace => render_code_workspace_view("examples/app/events/event_bus.end"),
+        ActivePage.EventMonitor => render_event_monitor_view(app.event_bus),
+        ActivePage.ArchitectureGraph => render_architecture_graph_view(app.system_state.arch_health),
+        ActivePage.Analytics => render_analytics_view(),
+        ActivePage.Team => render_team_view(),
+        ActivePage.Notifications => render_notifications_view(),
+        ActivePage.Settings => render_settings_view(create_standard_sandbox()),
+        ActivePage.SystemMonitor => render_system_monitor_view(app.system_state.telemetry),
+        ActivePage.AiAgent => {
+            val plan = create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.ts");
+            render_ai_agent_view(plan)
+        },
+        ActivePage.FeatureExplorer => render_feature_explorer_view(),
+        ActivePage.DependencyGraph => render_dependency_graph_view(),
+        _ => ""
+    };
 
-    return top + "\n\n" + side;
+    ret "{top}\n\n{side}\n\n{body}";
 }
 
-fn create_application() -> Application {
+pub fn create_application() -> Application {
     val bus = create_event_bus();
     val pipelines = create_pipeline_engine(bus);
     val ai_prov = create_cloud_ai("https://api.frontier.ai/v2");
     val plugin = create_code_review_plugin(ai_prov, bus);
 
-    return Application {
+    ret Application {
         app_state: create_app_state_store(),
         project_state: create_project_state_store(),
         task_state: create_task_state_store(),

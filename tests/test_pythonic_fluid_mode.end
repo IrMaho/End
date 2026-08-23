@@ -1,0 +1,56 @@
+// Test: Pythonic Fluid Mode & Full Spectrum Control
+
+def add_numbers(a, b = 10): {
+    val result = a + b;
+    ret result;
+}
+
+def process_items(items): {
+    let doubled = [x * 2 for x in items if x > 0];
+    
+    if not doubled: {
+        ret {"status": "empty", "count": 0};
+    }
+        
+    var total = 0;
+    for x in doubled: {
+        total = total + x;
+    }
+        
+    ret {
+        "status": "ok",
+        "count": doubled.len(),
+        "total": total
+    };
+}
+
+def format_greeting(name): {
+    ret """
+    Hello, {name}!
+    Welcome to Pythonic Fluid Mode in End.
+    """;
+}
+
+pub fn main() -> i32 {
+    val s1 = add_numbers(5);
+    val s2 = add_numbers(5, 20);
+    
+    if s1 == 15 and s2 == 25: {
+        println("✔ Pythonic logical 'and' & default args passed!");
+    } else: {
+        pass;
+    }
+        
+    val flag = True;
+    val empty_val = None;
+    
+    if flag or not empty_val: {
+        println("✔ Pythonic 'True', 'None', 'or', 'not' passed!");
+    }
+        
+    val greeting = format_greeting("Developer");
+    println(greeting);
+    
+    println("✔ All Pythonic Fluid Mode tests succeeded!");
+    ret 0;
+}

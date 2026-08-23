@@ -92,7 +92,7 @@ impl Parser {
         Ok(CollectionElement::Expr(expr))
     }
 
-    /// Parses Dict/Set comprehensions from brace blocks `{...}`.
+    /// Parses Dict/Set comprehensions and Map/Dict literals from brace blocks `{...}`.
     pub(crate) fn try_parse_comprehension_brace(&mut self) -> Result<Option<Expression>, String> {
         let span = self.current_span();
         let checkpoint = self.cursor.clone();
@@ -102,6 +102,15 @@ impl Parser {
         }
 
         let parse_inner = |parser: &mut Self| -> Result<Option<Expression>, String> {
+            if parser.check(&TokenKind::RBrace) {
+                parser.advance();
+                return Ok(Some(Expression::StructInit {
+                    name: "".to_string(),
+                    fields: vec![],
+                    span: span.clone(),
+                }));
+            }
+
             let key_expr = parser.parse_expression()?;
             if parser.match_token(&TokenKind::Colon) {
                 let val_expr = parser.parse_expression()?;
@@ -125,6 +134,33 @@ impl Parser {
                         val_var,
                         iterable: Box::new(iterable),
                         condition,
+                        span: span.clone(),
+                    }));
+                } else {
+                    let key_name = match &key_expr {
+                        Expression::Ident(n, _) => n.clone(),
+                        Expression::Lit(Literal::String(s), _) => s.clone(),
+                        _ => format!("{:?}", key_expr),
+                    };
+                    let mut fields = vec![(key_name, val_expr)];
+                    while parser.match_token(&TokenKind::Comma) {
+                        if parser.check(&TokenKind::RBrace) {
+                            break;
+                        }
+                        let k = parser.parse_expression()?;
+                        parser.expect(TokenKind::Colon)?;
+                        let v = parser.parse_expression()?;
+                        let kn = match &k {
+                            Expression::Ident(n, _) => n.clone(),
+                            Expression::Lit(Literal::String(s), _) => s.clone(),
+                            _ => format!("{:?}", k),
+                        };
+                        fields.push((kn, v));
+                    }
+                    parser.expect(TokenKind::RBrace)?;
+                    return Ok(Some(Expression::StructInit {
+                        name: "".to_string(),
+                        fields,
                         span: span.clone(),
                     }));
                 }

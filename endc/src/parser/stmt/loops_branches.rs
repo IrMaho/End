@@ -70,9 +70,11 @@ impl Parser {
             TokenKind::If => {
                 self.advance();
                 let condition = self.parse_expression()?;
+                self.match_token(&TokenKind::Colon);
                 let then_block = self.parse_block()?;
                 let mut else_block = None;
                 if self.match_token(&TokenKind::Else) {
+                    self.match_token(&TokenKind::Colon);
                     if self.check(&TokenKind::If) {
                         let if_stmt = self.parse_statement()?;
                         else_block = Some(Block {
@@ -93,6 +95,7 @@ impl Parser {
             TokenKind::While => {
                 self.advance();
                 let condition = self.parse_expression()?;
+                self.match_token(&TokenKind::Colon);
                 let body = self.parse_block()?;
                 Ok(Statement::While {
                     condition,
@@ -104,6 +107,7 @@ impl Parser {
                 self.advance();
                 if self.match_token(&TokenKind::Choose) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "choose" } else { false }) {
                     if let TokenKind::Ident(_) = self.peek_kind() { self.advance(); }
+                    self.match_token(&TokenKind::Colon);
                     self.expect(TokenKind::LBrace)?;
                     let mut branches = Vec::new();
                     while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
@@ -126,6 +130,7 @@ impl Parser {
                 };
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
+                self.match_token(&TokenKind::Colon);
                 let body = self.parse_block()?;
                 Ok(Statement::ParallelFor {
                     item_name,
@@ -142,6 +147,7 @@ impl Parser {
                 };
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
+                self.match_token(&TokenKind::Colon);
                 let body = self.parse_block()?;
                 Ok(Statement::ForIn {
                     item_name,
@@ -153,6 +159,7 @@ impl Parser {
             TokenKind::Match => {
                 self.advance();
                 let expr = self.parse_expression()?;
+                self.match_token(&TokenKind::Colon);
                 self.expect(TokenKind::LBrace)?;
                 let mut arms = Vec::new();
                 while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
