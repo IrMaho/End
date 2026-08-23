@@ -1,0 +1,78 @@
+// ============================================================================
+// End DevOps & AI Workspace — Tests: Domain Entities & Contracts
+// Location: examples/app/tests/test_domain_and_contracts.end
+// ============================================================================
+
+import "../domain/user.end"
+import "../domain/project.end"
+import "../domain/task.end"
+import "../domain/metrics.end"
+import "../domain/agent.end"
+import "../contracts/notification.end"
+import "../contracts/storage.end"
+import "../contracts/ai.end"
+import "../services/notification_service.end"
+import "../services/storage_service.end"
+import "../services/ai_service.end"
+
+fn test_user_inheritance_and_polymorphism() -> bool {
+    val dev = create_developer("u-1", "Marcus Vance", "marcus@end-lang.org", "End/Rust");
+    val admin = create_admin("u-2", "Elena Rostova", "elena@end-lang.org", 10);
+
+    if (!dev.can_write_code()) { return false; }
+    if (dev.can_administer()) { return false; }
+    if (!admin.can_write_code()) { return false; }
+    if (!admin.can_administer()) { return false; }
+
+    return true;
+}
+
+fn test_project_and_task_domain_logic() -> bool {
+    val proj = create_showcase_project("p-1", "Core Compiler", "Desc");
+    if (proj.health_score < 80 || !proj.is_healthy()) { return false; }
+
+    val task = create_task("t-1", "Implement MIR", "Desc", TaskPriority.Critical, TaskColumn.InProgress, "u-1", "compiler");
+    if (task.completed) { return false; }
+
+    return true;
+}
+
+fn test_polymorphic_services_and_contracts() -> bool {
+    val email_srv = create_email_service("smtp.mail.internal");
+    val push_srv = create_push_service();
+    val inapp_srv = create_inapp_service();
+
+    val msg = create_notification_msg("n-1", "admin@end-lang.org", "Alert", "Body", NotificationType.Email);
+    if (!email_srv.send_notification(msg)) { return false; }
+    if (!push_srv.send_notification(msg)) { return false; }
+    if (!inapp_srv.send_notification(msg)) { return false; }
+
+    val mem_storage = create_in_memory_storage();
+    mem_storage.put("key1", "val1");
+    if (!mem_storage.exists("key1")) { return false; }
+
+    val ai_cloud = create_cloud_ai("https://api.frontier.ai");
+    val ai_req = AIRequest {
+        prompt: "Review code",
+        system_instructions: "Be rigorous",
+        max_tokens: 256,
+        temperature_scaled: 70
+    };
+    val ai_res = ai_cloud.generate_completion(ai_req);
+    if (ai_res.tokens_used <= 0) { return false; }
+
+    return true;
+}
+
+fn run_domain_tests() -> bool {
+    println("  Running test_user_inheritance_and_polymorphism... ✔");
+    if (!test_user_inheritance_and_polymorphism()) { return false; }
+
+    println("  Running test_project_and_task_domain_logic... ✔");
+    if (!test_project_and_task_domain_logic()) { return false; }
+
+    println("  Running test_polymorphic_services_and_contracts... ✔");
+    if (!test_polymorphic_services_and_contracts()) { return false; }
+
+    return true;
+}

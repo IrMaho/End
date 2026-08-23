@@ -1,0 +1,163 @@
+// ============================================================================
+// 👑 End Language DevOps & AI Workspace — Production Showcase Application
+// Location: examples/app/main.end
+// Interactive TUI: type 1-15 to navigate pages, 0 to quit.
+// ============================================================================
+
+import "app/application.end"
+
+fn print_header(email: String, badge: String) -> bool {
+    println("────────────────────────────────────────────────────────────────────────────");
+    println(" 👑 End DevOps Workspace | " + email + " | Alerts: " + badge + " | Status: \x1b[1;32mONLINE\x1b[0m");
+    println("────────────────────────────────────────────────────────────────────────────");
+    return true;
+}
+
+fn print_menu() -> bool {
+    println("  ┌──────────────────────────────────────────┐");
+    println("  │ 👑 DevOps & AI Workspace (v2.0.0)         │");
+    println("  ├──────────────────────────────────────────┤");
+    println("  │  [1]  Dashboard                          │");
+    println("  │  [2]  Projects                           │");
+    println("  │  [3]  Project Details                    │");
+    println("  │  [4]  Tasks / Kanban                     │");
+    println("  │  [5]  Code Workspace (IDE)               │");
+    println("  │  [6]  Event Monitor                      │");
+    println("  │  [7]  Architecture Graph                 │");
+    println("  │  [8]  Analytics & Telemetry              │");
+    println("  │  [9]  Team & Users                       │");
+    println("  │ [10]  Notifications & Activity           │");
+    println("  │ [11]  Settings & Security Policies       │");
+    println("  │ [12]  System & Performance Monitor       │");
+    println("  │ [13]  AI Agent Workspace                 │");
+    println("  │ [14]  Feature Explorer                   │");
+    println("  │ [15]  Dependency Graph                   │");
+    println("  ├──────────────────────────────────────────┤");
+    println("  │  [0]  Exit                               │");
+    println("  └──────────────────────────────────────────┘");
+    return true;
+}
+
+fn dispatch_page(app: Application, choice: i64) -> bool {
+    if choice == 1 {
+        println(render_application_screen(app, ActivePage.Dashboard));
+        return true;
+    }
+    if choice == 2 {
+        println(render_application_screen(app, ActivePage.Projects));
+        return true;
+    }
+    if choice == 3 {
+        println(render_application_screen(app, ActivePage.ProjectDetails));
+        return true;
+    }
+    if choice == 4 {
+        println(render_application_screen(app, ActivePage.TasksKanban));
+        return true;
+    }
+    if choice == 5 {
+        println(render_application_screen(app, ActivePage.CodeWorkspace));
+        return true;
+    }
+    if choice == 6 {
+        println(render_application_screen(app, ActivePage.EventMonitor));
+        return true;
+    }
+    if choice == 7 {
+        println(render_application_screen(app, ActivePage.ArchitectureGraph));
+        return true;
+    }
+    if choice == 8 {
+        println(render_application_screen(app, ActivePage.Analytics));
+        return true;
+    }
+    if choice == 9 {
+        println(render_application_screen(app, ActivePage.Team));
+        return true;
+    }
+    if choice == 10 {
+        println(render_application_screen(app, ActivePage.Notifications));
+        return true;
+    }
+    if choice == 11 {
+        println(render_application_screen(app, ActivePage.Settings));
+        return true;
+    }
+    if choice == 12 {
+        println(render_application_screen(app, ActivePage.SystemMonitor));
+        return true;
+    }
+    if choice == 13 {
+        println(render_application_screen(app, ActivePage.AiAgent));
+        return true;
+    }
+    if choice == 14 {
+        println(render_application_screen(app, ActivePage.FeatureExplorer));
+        return true;
+    }
+    if choice == 15 {
+        println(render_application_screen(app, ActivePage.DependencyGraph));
+        return true;
+    }
+    println("");
+    println("  ⚠  Invalid selection. Enter 1-15 to navigate, 0 to exit.");
+    return false;
+}
+
+fn main() -> i64 {
+    clear_screen();
+
+    println("");
+    println("  ╔══════════════════════════════════════════════════════════════════════╗");
+    println("  ║      👑  END LANGUAGE — DEVOPS & AI WORKSPACE  v2.0                 ║");
+    println("  ║      Built 100% in the End Programming Language                     ║");
+    println("  ╠══════════════════════════════════════════════════════════════════════╣");
+    println("  ║  ✦ Modularity     ✦ Contracts         ✦ Reactive State              ║");
+    println("  ║  ✦ Polymorphism   ✦ Event-Driven       ✦ Agent-Oriented             ║");
+    println("  ║  ✦ Composition    ✦ Clean Architecture  ✦ Access Control            ║");
+    println("  ╚══════════════════════════════════════════════════════════════════════╝");
+    println("");
+
+    val app = create_application();
+    val initialized = app.initialize();
+
+    println("  ✔ Application initialized.");
+    println("  ✔ Pipeline engine ready.");
+    println("  ✔ State store mounted.");
+    println("  ✔ Event bus active.");
+    println("");
+    print("  Press ENTER to launch the workspace › ");
+    val _boot = read_line();
+
+    while true {
+        clear_screen();
+        print_header("lead_architect@end-lang.org", "[5 alerts]");
+        println("");
+        print_menu();
+        println("");
+        print("  ❯ Navigate to (0-15): ");
+        val choice = read_int();
+
+        if choice == 0 {
+            clear_screen();
+            println("");
+            println("  ╔══════════════════════════════════════════════════════════════════════╗");
+            println("  ║   👑  END DEVOPS WORKSPACE — SESSION ENDED                          ║");
+            println("  ║   Built 100% in the End Programming Language                        ║");
+            println("  ║   github.com/end-lang/end  ·  Apache 2.0 License                   ║");
+            println("  ╚══════════════════════════════════════════════════════════════════════╝");
+            println("");
+            return 0;
+        }
+
+        clear_screen();
+        print_header("lead_architect@end-lang.org", "[5 alerts]");
+        val _rendered = dispatch_page(app, choice);
+        println("");
+        println("────────────────────────────────────────────────────────────────────────────");
+        print("  Press ENTER to return to main menu › ");
+        val _pause = read_line();
+    }
+
+    return 0;
+}

@@ -1,0 +1,104 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: User & Role Hierarchy
+// Location: examples/app/domain/user.end
+// Demonstrates: Inheritance, Subtyping, and Polymorphic Behavior
+// ============================================================================
+
+enum UserRole {
+    Admin,
+    Developer,
+    Viewer,
+    AgentBot
+}
+
+class User {
+    id: String;
+    name: String;
+    email: String;
+    role: UserRole;
+    created_at: String;
+
+    fn get_display_name() -> String {
+        return self.name + " (" + self.email + ")";
+    }
+
+    fn can_write_code() -> bool {
+        return false;
+    }
+
+    fn can_administer() -> bool {
+        return false;
+    }
+}
+
+class Admin inherits User {
+    access_level: i64;
+
+    fn get_display_name() -> String {
+        return "[ADMIN] " + self.name + " (Level " + self.email + ")";
+    }
+
+    fn can_write_code() -> bool {
+        return true;
+    }
+
+    fn can_administer() -> bool {
+        return true;
+    }
+}
+
+class Developer inherits User {
+    primary_language: String;
+    assigned_features: i64;
+
+    fn get_display_name() -> String {
+        return "[DEV] " + self.name + " [" + self.primary_language + "]";
+    }
+
+    fn can_write_code() -> bool {
+        return true;
+    }
+
+    fn can_administer() -> bool {
+        return false;
+    }
+}
+
+class Viewer inherits User {
+    organization: String;
+
+    fn get_display_name() -> String {
+        return "[VIEWER] " + self.name + " @ " + self.organization;
+    }
+
+    fn can_write_code() -> bool {
+        return false;
+    }
+
+    fn can_administer() -> bool {
+        return false;
+    }
+}
+
+fn create_developer(id: String, name: String, email: String, lang: String) -> Developer {
+    return Developer {
+        id: id,
+        name: name,
+        email: email,
+        role: UserRole.Developer,
+        created_at: "2026-08-22 10:00:00",
+        primary_language: lang,
+        assigned_features: 3
+    };
+}
+
+fn create_admin(id: String, name: String, email: String, level: i64) -> Admin {
+    return Admin {
+        id: id,
+        name: name,
+        email: email,
+        role: UserRole.Admin,
+        created_at: "2026-08-22 09:00:00",
+        access_level: level
+    };
+}

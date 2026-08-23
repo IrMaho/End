@@ -1,0 +1,42 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 11: Settings & Policies Page
+// Location: examples/app/features/settings/settings_page.end
+// Demonstrates: Compiler Invariant Policies, Capabilities & Configuration
+// ============================================================================
+
+import "../../capabilities/policies.end"
+
+fn render_settings_view(policy: SecurityBoundaryPolicy) -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   ⚙️ SETTINGS & ARCHITECTURAL POLICIES                    ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "═══ COMPILER ENFORCED ARCHITECTURE GATES ═══\n"
+         + "  [ON]  Hard File Size Limit (<= 500 Lines per File): ENFORCED\n"
+         + "  [ON]  Lossless Refactoring Verification (0 Unaccounted Symbols): ENFORCED\n"
+         + "  [ON]  Circular Dependency Prevention: ENFORCED\n"
+         + "  [ON]  Strict SOLID / SRP Invariant Checks: ENFORCED\n\n"
+         + "═══ SECURITY SANDBOX & CAPABILITY POLICIES ═══\n"
+         + "  • Environment: " + policy.environment_name + "\n"
+         + "  • Sandbox Enabled: TRUE\n"
+         + "  • Allow Raw Sockets: FALSE\n"
+         + "  • Allow Direct Disk IO: FALSE (Must use IStorageProvider contract)\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class SettingsPage {
+    policy: SecurityBoundaryPolicy;
+    auto_refactor_enabled: bool;
+    hard_loc_limit: i64;
+
+    fn render_view() -> String {
+        return render_settings_view(self.policy);
+    }
+}
+
+fn create_settings_page() -> SettingsPage {
+    return SettingsPage {
+        policy: create_standard_sandbox(),
+        auto_refactor_enabled: true,
+        hard_loc_limit: 500
+    };
+}

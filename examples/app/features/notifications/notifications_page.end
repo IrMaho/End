@@ -1,0 +1,36 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 10: Notifications & Activity Page
+// Location: examples/app/features/notifications/notifications_page.end
+// Demonstrates: Multi-Channel Notifications & Polymorphic Message Handling
+// ============================================================================
+
+import "../../contracts/notification.end"
+
+fn render_notifications_view() -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   🔔 NOTIFICATIONS & AUDIT ACTIVITY                      ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  Unread: 3 | Total Stored: 128 | Active Dispatchers: [Email, Push, InApp]\n\n"
+         + "═══ LIVE NOTIFICATION STREAM ═══\n"
+         + "  ● [10:15:00] [SYSTEM: CICDEngine] Build #1042 Finished -> PASSED\n"
+         + "  ● [10:14:30] [TASK #106 -> @marcus] Task moved to IN_PROGRESS\n"
+         + "  ● [10:12:00] [SECURITY ALERT - STRICT] Sandbox boundary check PASSED\n"
+         + "  ● [10:05:12] [SYSTEM: AutoRefactor] 10,000 LOC monolith sliced into 18 modules\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class NotificationsPage {
+    unread_count: i64;
+    total_received: i64;
+
+    fn render_view() -> String {
+        return render_notifications_view();
+    }
+}
+
+fn create_notifications_page() -> NotificationsPage {
+    return NotificationsPage {
+        unread_count: 3,
+        total_received: 128
+    };
+}

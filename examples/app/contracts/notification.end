@@ -1,0 +1,74 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: Notification System
+// Location: examples/app/contracts/notification.end
+// Demonstrates: Interface / Trait Definition & Polymorphism Contracts
+// ============================================================================
+
+enum NotificationType {
+    Email,
+    Push,
+    InApp,
+    Webhook
+}
+
+struct NotificationMessage {
+    id: String;
+    recipient: String;
+    title: String;
+    body: String;
+    notification_type: NotificationType;
+    timestamp: String;
+}
+
+fn create_notification_msg(id: String, rec: String, title: String, body: String, t: NotificationType) -> NotificationMessage {
+    return NotificationMessage {
+        id: id,
+        recipient: rec,
+        title: title,
+        body: body,
+        notification_type: t,
+        timestamp: "2026-08-22 10:15:00"
+    };
+}
+
+trait INotificationService {
+    fn send_notification(msg: NotificationMessage) -> bool;
+    fn get_provider_name() -> String;
+    fn is_available() -> bool;
+}
+
+class BaseNotification {
+    id: String;
+    title: String;
+    body: String;
+    priority: i64;
+
+    fn format_header() -> String {
+        return "[" + self.title + "]: " + self.body;
+    }
+}
+
+class SystemNotification inherits BaseNotification {
+    service_name: String;
+
+    fn format_header() -> String {
+        return "[SYSTEM: " + self.service_name + "] " + self.title + " -> " + self.body;
+    }
+}
+
+class TaskNotification inherits BaseNotification {
+    task_id: String;
+    assignee: String;
+
+    fn format_header() -> String {
+        return "[TASK " + self.task_id + " -> " + self.assignee + "] " + self.title;
+    }
+}
+
+class SecurityNotification inherits BaseNotification {
+    severity_level: String;
+
+    fn format_header() -> String {
+        return "[SECURITY ALERT - " + self.severity_level + "] " + self.title;
+    }
+}

@@ -1,0 +1,77 @@
+// ============================================================================
+// End DevOps & AI Workspace — Services: Polymorphic Storage Providers
+// Location: examples/app/services/storage_service.end
+// Demonstrates: Storage Abstraction & Multiple Concrete Backends
+// ============================================================================
+
+import "../contracts/storage.end"
+
+class InMemoryStorageService inherits IStorageProvider {
+    entries_count: i64;
+    last_saved_key: String;
+
+    fn put(key: String, value: String) -> bool {
+        self.entries_count = self.entries_count + 1;
+        self.last_saved_key = key;
+        return true;
+    }
+
+    fn get(key: String) -> String {
+        return "InMemoryValue[" + key + "]";
+    }
+
+    fn delete(key: String) -> bool {
+        if self.entries_count > 0 {
+            self.entries_count = self.entries_count - 1;
+        }
+        return true;
+    }
+
+    fn exists(key: String) -> bool {
+        return true;
+    }
+
+    fn get_medium_type() -> StorageMedium {
+        return StorageMedium.InMemory;
+    }
+}
+
+class LocalDiskStorageService inherits IStorageProvider {
+    base_directory: String;
+    writes_count: i64;
+
+    fn put(key: String, value: String) -> bool {
+        self.writes_count = self.writes_count + 1;
+        return true;
+    }
+
+    fn get(key: String) -> String {
+        return "DiskFileContent[" + self.base_directory + "/" + key + "]";
+    }
+
+    fn delete(key: String) -> bool {
+        return true;
+    }
+
+    fn exists(key: String) -> bool {
+        return true;
+    }
+
+    fn get_medium_type() -> StorageMedium {
+        return StorageMedium.LocalDisk;
+    }
+}
+
+fn create_in_memory_storage() -> InMemoryStorageService {
+    return InMemoryStorageService {
+        entries_count: 0,
+        last_saved_key: ""
+    };
+}
+
+fn create_disk_storage(dir: String) -> LocalDiskStorageService {
+    return LocalDiskStorageService {
+        base_directory: dir,
+        writes_count: 0
+    };
+}

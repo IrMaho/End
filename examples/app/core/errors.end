@@ -1,0 +1,57 @@
+// ============================================================================
+// End DevOps & AI Workspace — Error Handling & Result Wrapper
+// Location: examples/app/core/errors.end
+// ============================================================================
+
+enum ErrorCode {
+    NotFound,
+    Unauthorized,
+    PermissionDenied,
+    ValidationError,
+    ContractViolation,
+    Timeout,
+    InternalError
+}
+
+struct AppError {
+    code: ErrorCode;
+    message: String;
+    context: String;
+    source: String;
+}
+
+fn create_error(code: ErrorCode, msg: String, ctx: String, src: String) -> AppError {
+    return AppError {
+        code: code,
+        message: msg,
+        context: ctx,
+        source: src
+    };
+}
+
+fn error_to_string(err: AppError) -> String {
+    val code_str = match err.code {
+        ErrorCode.NotFound => "NOT_FOUND",
+        ErrorCode.Unauthorized => "UNAUTHORIZED",
+        ErrorCode.PermissionDenied => "PERMISSION_DENIED",
+        ErrorCode.ValidationError => "VALIDATION_ERROR",
+        ErrorCode.ContractViolation => "CONTRACT_VIOLATION",
+        ErrorCode.Timeout => "TIMEOUT",
+        ErrorCode.InternalError => "INTERNAL_ERROR"
+    };
+    return "[" + code_str + " in " + err.source + "]: " + err.message + " (Context: " + err.context + ")";
+}
+
+struct Result<T> {
+    is_success: bool;
+    value: Option<T>;
+    error: Option<AppError>;
+}
+
+fn success_result(val: String) -> String {
+    return "SUCCESS: " + val;
+}
+
+fn failure_result(err: AppError) -> String {
+    return "FAILURE: " + error_to_string(err);
+}

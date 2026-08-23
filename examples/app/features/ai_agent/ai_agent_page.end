@@ -1,0 +1,39 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 13: AI Agent Workspace Page
+// Location: examples/app/features/ai_agent/ai_agent_page.end
+// Demonstrates: Autonomous AI Code-Surgery, Invariant Verification & Tasks
+// ============================================================================
+
+import "../../domain/agent.end"
+
+fn render_ai_agent_view(plan: AgentTaskPlan) -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   🤖 AUTONOMOUS AI AGENT WORKSPACE                       ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  Task ID: " + plan.id + " | State: EXECUTING\n"
+         + "  Intent:  " + plan.intent + "\n"
+         + "  Target:  " + plan.target_module + "\n"
+         + "  Metrics: +42 lines added, -8 lines pruned | Confidence: 98%\n\n"
+         + "═══ AUTONOMOUS SURGICAL REFACTORING PIPELINE ═══\n"
+         + "  [Step 1] Deep Code Analysis & Symbol Inventory ............ \x1b[1;32m[DONE]\x1b[0m\n"
+         + "  [Step 2] Responsibility Map & Cohesion Slicing ............ \x1b[1;32m[DONE]\x1b[0m\n"
+         + "  [Step 3] Target Architecture & <= 500 LOC Enforcement ..... \x1b[1;32m[DONE]\x1b[0m\n"
+         + "  [Step 4] Incremental Extract with 100% Logic Preserved .... \x1b[1;32m[DONE]\x1b[0m\n"
+         + "  [Step 5] Symbol Conservation Audit (0 Unaccounted) ........ \x1b[1;32m[DONE]\x1b[0m\n"
+         + "  [Step 6] Compiler Build, Test & Lint Quality Gates ........ \x1b[1;32m[100% GREEN]\x1b[0m\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class AiAgentPage {
+    plan: AgentTaskPlan;
+
+    fn render_view() -> String {
+        return render_ai_agent_view(self.plan);
+    }
+}
+
+fn create_ai_agent_page() -> AiAgentPage {
+    return AiAgentPage {
+        plan: create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.ts")
+    };
+}

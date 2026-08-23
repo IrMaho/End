@@ -1,0 +1,46 @@
+// ============================================================================
+// End DevOps & AI Workspace — Tests: Features, Extensions & Access Control
+// Location: examples/app/tests/test_features_and_extensions.end
+// ============================================================================
+
+import "../capabilities/access_control.end"
+import "../capabilities/policies.end"
+import "../extensions/ai_code_review.end"
+import "../services/ai_service.end"
+import "../events/event_bus.end"
+
+fn test_capabilities_and_access_control() -> bool {
+    val dev_guard = create_developer_guard("dev-1");
+    val admin_guard = create_admin_guard("admin-1");
+
+    if (!dev_guard.check_permission(AppPermission.ProjectRead)) { return false; }
+    if (!dev_guard.check_permission(AppPermission.TaskCreate)) { return false; }
+    if (dev_guard.check_permission(AppPermission.ArchitectureModify)) { return false; }
+
+    if (!admin_guard.check_permission(AppPermission.ArchitectureModify)) { return false; }
+    if (!admin_guard.check_permission(AppPermission.SettingsAdmin)) { return false; }
+
+    return true;
+}
+
+fn test_showcase_extension_plugin() -> bool {
+    val bus = create_event_bus();
+    val ai = create_cloud_ai("https://api.frontier.ai/v2");
+    val plugin = create_code_review_plugin(ai, bus);
+
+    val res = plugin.review_file("src/compiler/lexer.rs", "fn tokenize() {}");
+    if (res.lines_analyzed <= 0 || res.score < 90) { return false; }
+    if (plugin.reviews_completed != 1) { return false; }
+
+    return true;
+}
+
+fn run_feature_and_extension_tests() -> bool {
+    println("  Running test_capabilities_and_access_control... ✔");
+    if (!test_capabilities_and_access_control()) { return false; }
+
+    println("  Running test_showcase_extension_plugin... ✔");
+    if (!test_showcase_extension_plugin()) { return false; }
+
+    return true;
+}

@@ -1,0 +1,63 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: Project Entity & Module Composition
+// Location: examples/app/domain/project.end
+// ============================================================================
+
+struct FeatureDescriptor {
+    name: String;
+    version: String;
+    is_enabled: bool;
+    dependencies_count: i64;
+}
+
+fn create_feature_descriptor(name: String, version: String, enabled: bool, deps: i64) -> FeatureDescriptor {
+    return FeatureDescriptor {
+        name: name,
+        version: version,
+        is_enabled: enabled,
+        dependencies_count: deps
+    };
+}
+
+class Project {
+    id: String;
+    name: String;
+    description: String;
+    repo_url: String;
+    health_score: i64;
+    total_tasks: i64;
+    completed_tasks: i64;
+    features_count: i64;
+    active_branches: i64;
+    last_build_status: String;
+
+    fn get_completion_percentage() -> i64 {
+        if self.total_tasks == 0 {
+            return 0;
+        }
+        return (self.completed_tasks * 100) / self.total_tasks;
+    }
+
+    fn is_healthy() -> bool {
+        return self.health_score >= 80;
+    }
+
+    fn summary() -> String {
+        return self.name + " (" + self.last_build_status + ", Health: " + "OK" + ")";
+    }
+}
+
+fn create_showcase_project(id: String, name: String, desc: String) -> Project {
+    return Project {
+        id: id,
+        name: name,
+        description: desc,
+        repo_url: "https://github.com/end-lang/workspace",
+        health_score: 98,
+        total_tasks: 45,
+        completed_tasks: 38,
+        features_count: 15,
+        active_branches: 4,
+        last_build_status: "PASSED (100% Verified)"
+    };
+}

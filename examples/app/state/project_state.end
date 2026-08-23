@@ -1,0 +1,35 @@
+// ============================================================================
+// End DevOps & AI Workspace — State: Project State Store
+// Location: examples/app/state/project_state.end
+// ============================================================================
+
+import "../domain/project.end"
+
+class ProjectStateStore {
+    active_project_id: String;
+    active_project_name: String;
+    total_projects_count: i64;
+    health_score: i64;
+    features_loaded_count: i64;
+
+    fn select_project(id: String, name: String) -> bool {
+        self.active_project_id = id;
+        self.active_project_name = name;
+        return true;
+    }
+
+    fn update_health(new_health: i64) -> i64 {
+        self.health_score = new_health;
+        return self.health_score;
+    }
+}
+
+fn create_project_state_store() -> ProjectStateStore {
+    return ProjectStateStore {
+        active_project_id: "proj-001",
+        active_project_name: "End Language Compiler & Core Runtime",
+        total_projects_count: 8,
+        health_score: 99,
+        features_loaded_count: 15
+    };
+}

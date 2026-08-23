@@ -1,0 +1,84 @@
+// ============================================================================
+// End DevOps & AI Workspace — Presentation: Reusable UI Components
+// Location: examples/app/presentation/components.end
+// Demonstrates: Component Composition & Declarative Terminal / Web UI
+// ============================================================================
+
+class UIComponent {
+    component_name: String;
+
+    fn render() -> String {
+        return "<" + self.component_name + " />";
+    }
+}
+
+class MetricCardWidget inherits UIComponent {
+    title: String;
+    value: String;
+    delta_percentage: String;
+    is_positive: bool;
+
+    fn render() -> String {
+        val sign = if self.is_positive { "+" } else { "-" };
+        return "┌────────────────────────────────────────┐\n"
+             + "│ " + self.title + "\n"
+             + "│ \x1b[1;36m" + self.value + "\x1b[0m (" + sign + self.delta_percentage + ")\n"
+             + "└────────────────────────────────────────┘";
+    }
+}
+
+class BadgeWidget inherits UIComponent {
+    label: String;
+    badge_type: String;
+
+    fn render() -> String {
+        return "[" + self.badge_type + ": " + self.label + "]";
+    }
+}
+
+class PanelWidget inherits UIComponent {
+    header: String;
+    content: String;
+
+    fn render() -> String {
+        return "═══ " + self.header + " ═══\n" + self.content + "\n══════════════════════════════════════════";
+    }
+}
+
+class TimelineItemWidget inherits UIComponent {
+    time_str: String;
+    event_title: String;
+    details: String;
+
+    fn render() -> String {
+        return "  ● [" + self.time_str + "] " + self.event_title + "\n    └─ " + self.details;
+    }
+}
+
+class ProgressBarWidget inherits UIComponent {
+    label: String;
+    percentage: i64;
+
+    fn render() -> String {
+        val bar_length = (self.percentage * 20) / 100;
+        return self.label + " [" + "====================" + "] " + "100" + "%";
+    }
+}
+
+fn create_metric_card(title: String, val_str: String, delta: String, pos: bool) -> MetricCardWidget {
+    return MetricCardWidget {
+        component_name: "MetricCard",
+        title: title,
+        value: val_str,
+        delta_percentage: delta,
+        is_positive: pos
+    };
+}
+
+fn create_badge(label: String, b_type: String) -> BadgeWidget {
+    return BadgeWidget {
+        component_name: "Badge",
+        label: label,
+        badge_type: b_type
+    };
+}

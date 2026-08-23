@@ -1,0 +1,32 @@
+// ============================================================================
+// End DevOps & AI Workspace — State: System Performance & Observability State
+// Location: examples/app/state/system_state.end
+// ============================================================================
+
+import "../domain/metrics.end"
+
+class SystemStateStore {
+    telemetry: SystemTelemetry;
+    arch_health: ArchitectureHealthMetric;
+    uptime_seconds: i64;
+    alerts_triggered_count: i64;
+
+    fn record_alert() -> i64 {
+        self.alerts_triggered_count = self.alerts_triggered_count + 1;
+        return self.alerts_triggered_count;
+    }
+
+    fn tick_uptime(delta: i64) -> i64 {
+        self.uptime_seconds = self.uptime_seconds + delta;
+        return self.uptime_seconds;
+    }
+}
+
+fn create_system_state_store() -> SystemStateStore {
+    return SystemStateStore {
+        telemetry: create_sample_telemetry(),
+        arch_health: create_showcase_arch_health(),
+        uptime_seconds: 360000,
+        alerts_triggered_count: 0
+    };
+}

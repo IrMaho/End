@@ -1,0 +1,66 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: System & Observability Metrics
+// Location: examples/app/domain/metrics.end
+// ============================================================================
+
+struct SystemTelemetry {
+    cpu_usage_percent: i64;
+    memory_usage_mb: i64;
+    active_fibers: i64;
+    event_throughput_per_sec: i64;
+    p99_latency_micros: i64;
+    total_allocations: i64;
+    gc_pause_micros: i64;
+}
+
+fn create_sample_telemetry() -> SystemTelemetry {
+    return SystemTelemetry {
+        cpu_usage_percent: 18,
+        memory_usage_mb: 64,
+        active_fibers: 128,
+        event_throughput_per_sec: 24500,
+        p99_latency_micros: 38,
+        total_allocations: 120500,
+        gc_pause_micros: 0
+    };
+}
+
+struct ArchitectureHealthMetric {
+    total_modules: i64;
+    circular_dependencies: i64;
+    files_over_500_lines: i64;
+    average_cohesion_score: i64; // e.g. 96 for 0.96
+    average_coupling_score: i64; // e.g. 14 for 0.14
+    solid_compliance_percent: i64;
+}
+
+fn create_showcase_arch_health() -> ArchitectureHealthMetric {
+    return ArchitectureHealthMetric {
+        total_modules: 24,
+        circular_dependencies: 0,
+        files_over_500_lines: 0,
+        average_cohesion_score: 95,
+        average_coupling_score: 12,
+        solid_compliance_percent: 100
+    };
+}
+
+struct BuildPipelineMetric {
+    pipeline_name: String;
+    last_build_number: i64;
+    duration_ms: i64;
+    tests_passed: i64;
+    tests_failed: i64;
+    success_rate_percent: i64;
+}
+
+fn create_sample_build_metric(name: String, build_no: i64, tests: i64) -> BuildPipelineMetric {
+    return BuildPipelineMetric {
+        pipeline_name: name,
+        last_build_number: build_no,
+        duration_ms: 120,
+        tests_passed: tests,
+        tests_failed: 0,
+        success_rate_percent: 100
+    };
+}

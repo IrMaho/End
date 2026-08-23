@@ -1,0 +1,53 @@
+// ============================================================================
+// End DevOps & AI Workspace — Events: System-Wide Event Definitions
+// Location: examples/app/events/event_definitions.end
+// Demonstrates: Event-Driven Core & Strongly-Typed Domain Events
+// ============================================================================
+
+enum DomainEventType {
+    UserCreated,
+    ProjectCreated,
+    ProjectUpdated,
+    TaskCreated,
+    TaskCompleted,
+    FeatureToggled,
+    BuildStarted,
+    BuildCompleted,
+    AgentPlanTriggered,
+    NotificationDispatched
+}
+
+struct DomainEvent {
+    event_id: String;
+    event_type: DomainEventType;
+    source: String;
+    payload: String;
+    timestamp: String;
+    processed: bool;
+}
+
+fn create_domain_event(id: String, t: DomainEventType, src: String, payload: String) -> DomainEvent {
+    return DomainEvent {
+        event_id: id,
+        event_type: t,
+        source: src,
+        payload: payload,
+        timestamp: "2026-08-22 10:20:00",
+        processed: false
+    };
+}
+
+fn domain_event_type_name(t: DomainEventType) -> String {
+    match t {
+        DomainEventType.UserCreated => { return "UserCreated"; }
+        DomainEventType.ProjectCreated => { return "ProjectCreated"; }
+        DomainEventType.ProjectUpdated => { return "ProjectUpdated"; }
+        DomainEventType.TaskCreated => { return "TaskCreated"; }
+        DomainEventType.TaskCompleted => { return "TaskCompleted"; }
+        DomainEventType.FeatureToggled => { return "FeatureToggled"; }
+        DomainEventType.BuildStarted => { return "BuildStarted"; }
+        DomainEventType.BuildCompleted => { return "BuildCompleted"; }
+        DomainEventType.AgentPlanTriggered => { return "AgentPlanTriggered"; }
+        DomainEventType.NotificationDispatched => { return "NotificationDispatched"; }
+    }
+}

@@ -1,0 +1,57 @@
+// ============================================================================
+// End DevOps & AI Workspace — Presentation: App Navigation & TopBar/Sidebar
+// Location: examples/app/presentation/navigation.end
+// ============================================================================
+
+import "../state/app_state.end"
+
+fn render_sidebar_layout(active: ActivePage) -> String {
+    val current_name = page_to_string(active);
+    return "┌──────────────────────────────────────────┐\n"
+         + "│ 👑 DevOps & AI Workspace (v2.0.0)         │\n"
+         + "├──────────────────────────────────────────┤\n"
+         + "│  [1] Dashboard                           │\n"
+         + "│  [2] Projects                            │\n"
+         + "│  [3] Project Details                     │\n"
+         + "│  [4] Tasks / Kanban                      │\n"
+         + "│  [5] Code Workspace (IDE)                │\n"
+         + "│  [6] Event Monitor                       │\n"
+         + "│  [7] Architecture Graph                  │\n"
+         + "│  [8] Analytics & Telemetry               │\n"
+         + "│  [9] Team & Users                        │\n"
+         + "│ [10] Notifications & Activity            │\n"
+         + "│ [11] Settings & Security Policies        │\n"
+         + "│ [12] System & Performance Monitor        │\n"
+         + "│ [13] AI Agent Workspace                  │\n"
+         + "│ [14] Feature Explorer                    │\n"
+         + "│ [15] Dependency Graph                    │\n"
+         + "├──────────────────────────────────────────┤\n"
+         + "│ Active View: " + current_name + " \n"
+         + "└──────────────────────────────────────────┘";
+}
+
+fn render_topbar_layout(user_email: String, notifs: i64) -> String {
+    return "────────────────────────────────────────────────────────────────────────────\n"
+         + " 👑 End DevOps Workspace | User: " + user_email + " | Alerts: (0) | Status: \x1b[1;32mONLINE\x1b[0m\n"
+         + "────────────────────────────────────────────────────────────────────────────";
+}
+
+class AppNavigationLayout {
+    app_title: String;
+    version: String;
+
+    fn render_sidebar(active: ActivePage) -> String {
+        return render_sidebar_layout(active);
+    }
+
+    fn render_topbar(user_email: String, notifs: i64) -> String {
+        return render_topbar_layout(user_email, notifs);
+    }
+}
+
+fn create_navigation_layout() -> AppNavigationLayout {
+    return AppNavigationLayout {
+        app_title: "DevOps & AI Workspace",
+        version: "2.0.0"
+    };
+}

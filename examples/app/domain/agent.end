@@ -1,0 +1,58 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: AI Agent & Autonomous Engineering Plan
+// Location: examples/app/domain/agent.end
+// ============================================================================
+
+enum AgentState {
+    Idle,
+    Analyzing,
+    Planning,
+    Executing,
+    Verifying,
+    Completed,
+    Blocked
+}
+
+fn agent_state_to_string(st: AgentState) -> String {
+    match st {
+        AgentState.Idle => { return "IDLE"; }
+        AgentState.Analyzing => { return "ANALYZING"; }
+        AgentState.Planning => { return "PLANNING"; }
+        AgentState.Executing => { return "EXECUTING"; }
+        AgentState.Verifying => { return "VERIFYING"; }
+        AgentState.Completed => { return "COMPLETED"; }
+        AgentState.Blocked => { return "BLOCKED"; }
+    }
+}
+
+class AgentTaskPlan {
+    id: String;
+    intent: String;
+    target_module: String;
+    state: AgentState;
+    confidence_score: i64;
+    lines_added: i64;
+    lines_removed: i64;
+    verification_passed: bool;
+
+    fn get_summary() -> String {
+        return "[" + agent_state_to_string(self.state) + "] " + self.intent + " -> " + self.target_module + " (Conf: " + "99%" + ")";
+    }
+
+    fn is_complete() -> bool {
+        return self.verification_passed;
+    }
+}
+
+fn create_agent_task_plan(id: String, intent: String, target: String) -> AgentTaskPlan {
+    return AgentTaskPlan {
+        id: id,
+        intent: intent,
+        target_module: target,
+        state: AgentState.Executing,
+        confidence_score: 98,
+        lines_added: 42,
+        lines_removed: 8,
+        verification_passed: true
+    };
+}

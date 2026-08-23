@@ -1,0 +1,38 @@
+// ============================================================================
+// End DevOps & AI Workspace — Master Test Runner
+// Location: examples/app/tests/run_all_tests.end
+// Executes all domain, contract, event, state, capability, and extension tests.
+// ============================================================================
+
+import "test_domain_and_contracts.end"
+import "test_events_and_state.end"
+import "test_features_and_extensions.end"
+
+fn main() -> i64 {
+    println("============================================================================");
+    println("🧪 RUNNING COMPREHENSIVE END SHOWCASE TEST SUITE");
+    println("============================================================================");
+
+    println("\n[PHASE 1] Domain Models, Inheritance & Polymorphic Contracts:");
+    if (!run_domain_tests()) {
+        println("❌ Domain & Contracts tests failed!");
+        return 1;
+    }
+
+    println("\n[PHASE 2] Event Bus, Pipelines & Reactive State Stores:");
+    if (!run_event_and_state_tests()) {
+        println("❌ Events & State tests failed!");
+        return 1;
+    }
+
+    println("\n[PHASE 3] Capabilities, Access Control & Showcase Extensions:");
+    if (!run_feature_and_extension_tests()) {
+        println("❌ Features & Extensions tests failed!");
+        return 1;
+    }
+
+    println("\n============================================================================");
+    println("🎉 ALL 9 TEST SUITES PASSED CLEANLY (100% GREEN, ZERO FAILURES)!");
+    println("============================================================================");
+    return 0;
+}

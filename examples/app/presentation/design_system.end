@@ -1,0 +1,51 @@
+// ============================================================================
+// End DevOps & AI Workspace — Presentation: Design Tokens & System Theme
+// Location: examples/app/presentation/design_system.end
+// Demonstrates: Premium UI Tokens, Color Schemes & Theme System
+// ============================================================================
+
+struct ColorPalette {
+    bg_primary: String;
+    bg_secondary: String;
+    bg_surface: String;
+    border_color: String;
+    text_primary: String;
+    text_secondary: String;
+    accent_purple: String;
+    accent_cyan: String;
+    accent_emerald: String;
+    accent_amber: String;
+    accent_rose: String;
+}
+
+fn create_dark_palette() -> ColorPalette {
+    return ColorPalette {
+        bg_primary: "#0D1117",
+        bg_secondary: "#161B22",
+        bg_surface: "#21262D",
+        border_color: "#30363D",
+        text_primary: "#F0F6FC",
+        text_secondary: "#8B949E",
+        accent_purple: "#8957E5",
+        accent_cyan: "#388BFD",
+        accent_emerald: "#2EA043",
+        accent_amber: "#D29922",
+        accent_rose: "#F85149"
+    };
+}
+
+fn create_light_palette() -> ColorPalette {
+    return ColorPalette {
+        bg_primary: "#FFFFFF",
+        bg_secondary: "#F6F8FA",
+        bg_surface: "#EAEEF2",
+        border_color: "#D0D7DE",
+        text_primary: "#24292F",
+        text_secondary: "#57606A",
+        accent_purple: "#6639BA",
+        accent_cyan: "#0969DA",
+        accent_emerald: "#1A7F37",
+        accent_amber: "#9A6700",
+        accent_rose: "#CF222E"
+    };
+}

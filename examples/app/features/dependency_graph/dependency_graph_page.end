@@ -1,0 +1,41 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 15: Dependency Graph Page
+// Location: examples/app/features/dependency_graph/dependency_graph_page.end
+// Demonstrates: Acyclic Dependency Direction & Module Coupling Metrics
+// ============================================================================
+
+fn render_dependency_graph_view() -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   🕸️ MODULE DEPENDENCY DIRECTED GRAPH                     ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  Nodes: 24 | Directed Edges: 38 | Graph Type: Directed Acyclic Graph (DAG)\n\n"
+         + "  Presentation/UI\n"
+         + "    └──> Features (Dashboard, Tasks, AI Agent, Monitor...)\n"
+         + "           └──> Application & State Stores (AppState, TaskState)\n"
+         + "                  └──> Domain Entities (User, Project, Task, Agent)\n"
+         + "                  └──> Contracts (INotification, IStorage, IAI)\n"
+         + "                         ▲\n"
+         + "  Services / Infra ──────┘ (implements abstractions)\n\n"
+         + "═══ DEPENDENCY INVERSION (DIP) AUDIT REPORT ═══\n"
+         + "  • Instability Metric (I): 0.18 (Highly Stable Core)\n"
+         + "  • Abstractness Metric (A): 0.82 (High Abstraction Density)\n"
+         + "  • Distance from Main Sequence (D): 0.00 (PERFECT BALANCE)\n"
+         + "  • Cyclic Cycles Detected: 0\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class DependencyGraphPage {
+    nodes_count: i64;
+    edges_count: i64;
+
+    fn render_view() -> String {
+        return render_dependency_graph_view();
+    }
+}
+
+fn create_dependency_graph_page() -> DependencyGraphPage {
+    return DependencyGraphPage {
+        nodes_count: 24,
+        edges_count: 38
+    };
+}

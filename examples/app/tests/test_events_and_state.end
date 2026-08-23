@@ -1,0 +1,52 @@
+// ============================================================================
+// End DevOps & AI Workspace — Tests: Events, Pipelines & Reactive State
+// Location: examples/app/tests/test_events_and_state.end
+// ============================================================================
+
+import "../events/event_definitions.end"
+import "../events/event_bus.end"
+import "../events/event_pipelines.end"
+import "../state/app_state.end"
+import "../state/project_state.end"
+import "../state/task_state.end"
+import "../state/system_state.end"
+
+fn test_event_bus_and_pipelines() -> bool {
+    val bus = create_event_bus();
+    val pipelines = create_pipeline_engine(bus);
+
+    val ok1 = pipelines.execute_task_completed_pipeline("task-99", "proj-01");
+    if (!ok1 || pipelines.pipelines_executed != 1) { return false; }
+
+    val ok2 = pipelines.execute_build_pipeline("CICD-Test");
+    if (!ok2 || pipelines.pipelines_executed != 2) { return false; }
+
+    return true;
+}
+
+fn test_reactive_state_transitions() -> bool {
+    val app_st = create_app_state_store();
+    app_st.navigate_to(ActivePage.AiAgent);
+    if (app_st.navigation_history_count <= 1) { return false; }
+
+    val task_st = create_task_state_store();
+    task_st.add_task_to_todo();
+    task_st.move_task_to_done();
+    if (task_st.done_count <= 35) { return false; }
+
+    val sys_st = create_system_state_store();
+    sys_st.tick_uptime(100);
+    if (sys_st.uptime_seconds != 360100) { return false; }
+
+    return true;
+}
+
+fn run_event_and_state_tests() -> bool {
+    println("  Running test_event_bus_and_pipelines... ✔");
+    if (!test_event_bus_and_pipelines()) { return false; }
+
+    println("  Running test_reactive_state_transitions... ✔");
+    if (!test_reactive_state_transitions()) { return false; }
+
+    return true;
+}

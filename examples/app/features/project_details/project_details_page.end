@@ -1,0 +1,39 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 3: Project Details Page
+// Location: examples/app/features/project_details/project_details_page.end
+// Demonstrates: Deep Single Project Inspection & Module Hierarchy
+// ============================================================================
+
+import "../../domain/project.end"
+
+fn render_project_details_view(project: Project) -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   🔍 PROJECT DETAILS: " + project.name + "               ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  • Repository URL: " + project.repo_url + "\n"
+         + "  • Description: " + project.description + "\n"
+         + "  • Total Task Progress: 84.4% (38 / 45 Done)\n"
+         + "  • Active Features Count: 15 Modular Features\n"
+         + "  • Last Verified Build: " + project.last_build_status + "\n\n"
+         + "═══ FEATURE SUBMODULES IN THIS PROJECT ═══\n"
+         + "  [x] core/types & error handling\n"
+         + "  [x] domain entities (User, Project, Task, Agent, Metrics)\n"
+         + "  [x] contracts (Storage, Notification, AI, Auth, Repository)\n"
+         + "  [x] capabilities & compiler architecture policies\n"
+         + "  [x] reactive event bus & pipelines\n"
+         + "  [x] polymorphic service providers\n"
+         + "  [x] AI Agent autonomous code-surgery workspace\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class ProjectDetailsPage {
+    project: Project;
+
+    fn render_view() -> String {
+        return render_project_details_view(self.project);
+    }
+}
+
+fn create_project_details_page(p: Project) -> ProjectDetailsPage {
+    return ProjectDetailsPage { project: p };
+}

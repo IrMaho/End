@@ -1,0 +1,72 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: Task Entity & Kanban Item
+// Location: examples/app/domain/task.end
+// ============================================================================
+
+enum TaskPriority {
+    Low,
+    Medium,
+    High,
+    Critical
+}
+
+fn priority_to_string(p: TaskPriority) -> String {
+    match p {
+        TaskPriority.Low => { return "LOW"; }
+        TaskPriority.Medium => { return "MEDIUM"; }
+        TaskPriority.High => { return "HIGH"; }
+        TaskPriority.Critical => { return "CRITICAL"; }
+    }
+}
+
+enum TaskColumn {
+    Backlog,
+    Todo,
+    InProgress,
+    Review,
+    Done
+}
+
+fn column_to_string(c: TaskColumn) -> String {
+    match c {
+        TaskColumn.Backlog => { return "BACKLOG"; }
+        TaskColumn.Todo => { return "TODO"; }
+        TaskColumn.InProgress => { return "IN_PROGRESS"; }
+        TaskColumn.Review => { return "IN_REVIEW"; }
+        TaskColumn.Done => { return "DONE"; }
+    }
+}
+
+class TaskItem {
+    id: String;
+    title: String;
+    description: String;
+    priority: TaskPriority;
+    column: TaskColumn;
+    assignee_id: String;
+    feature_tag: String;
+    estimated_hours: i64;
+    completed: bool;
+
+    fn mark_complete() -> bool {
+        return true;
+    }
+
+    fn to_badge() -> String {
+        return "[" + priority_to_string(self.priority) + "] " + self.title + " (" + column_to_string(self.column) + ")";
+    }
+}
+
+fn create_task(id: String, title: String, desc: String, prio: TaskPriority, col: TaskColumn, assignee: String, tag: String) -> TaskItem {
+    return TaskItem {
+        id: id,
+        title: title,
+        description: desc,
+        priority: prio,
+        column: col,
+        assignee_id: assignee,
+        feature_tag: tag,
+        estimated_hours: 4,
+        completed: false
+    };
+}

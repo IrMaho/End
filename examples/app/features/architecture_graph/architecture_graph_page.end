@@ -1,0 +1,47 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 7: Architecture Graph Page
+// Location: examples/app/features/architecture_graph/architecture_graph_page.end
+// Demonstrates: Visual Graph of Modules, Contracts, and Layer Boundaries
+// ============================================================================
+
+import "../../domain/metrics.end"
+
+fn render_architecture_graph_view(arch_health: ArchitectureHealthMetric) -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                 🌐 SYSTEM ARCHITECTURE & TOPOLOGY GRAPH                  ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "                ┌──────────────────────────────────┐\n"
+         + "                │     Presentation Layer (UI)      │\n"
+         + "                └────────────────┬─────────────────┘\n"
+         + "                                 │ (calls)\n"
+         + "                                 ▼\n"
+         + "                ┌──────────────────────────────────┐\n"
+         + "                │      Application & State Layer   │\n"
+         + "                └────────────────┬─────────────────┘\n"
+         + "                                 │ (depends on)\n"
+         + "                                 ▼\n"
+         + "                ┌──────────────────────────────────┐\n"
+         + "                │    Domain & Contracts Layer      │\n"
+         + "                └────────────────▲─────────────────┘\n"
+         + "                                 │ (implements)\n"
+         + "                ┌────────────────┴─────────────────┐\n"
+         + "                │   Infrastructure & Services      │\n"
+         + "                └──────────────────────────────────┘\n\n"
+         + "═══ COMPILED ARCHITECTURAL INVARIANTS ═══\n"
+         + "  ✔ Presentation never imports Infrastructure directly (0 violations)\n"
+         + "  ✔ Domain is 100% pure and decoupled from UI/IO (0 violations)\n"
+         + "  ✔ Circular dependencies: 0 (Acyclic Directed Graph verified)\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class ArchitectureGraphPage {
+    arch_health: ArchitectureHealthMetric;
+
+    fn render_view() -> String {
+        return render_architecture_graph_view(self.arch_health);
+    }
+}
+
+fn create_architecture_graph_page(a: ArchitectureHealthMetric) -> ArchitectureGraphPage {
+    return ArchitectureGraphPage { arch_health: a };
+}

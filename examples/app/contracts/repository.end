@@ -1,0 +1,19 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: Repository Pattern Definitions
+// Location: examples/app/contracts/repository.end
+// ============================================================================
+
+import "../domain/project.end"
+import "../domain/task.end"
+
+trait IProjectRepository {
+    fn find_by_id(id: String) -> Project;
+    fn save_project(proj: Project) -> bool;
+    fn count_active_projects() -> i64;
+}
+
+trait ITaskRepository {
+    fn find_task_by_id(id: String) -> TaskItem;
+    fn save_task(task: TaskItem) -> bool;
+    fn count_tasks_by_column(column_name: String) -> i64;
+}

@@ -1,0 +1,34 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: Storage Provider Interfaces
+// Location: examples/app/contracts/storage.end
+// ============================================================================
+
+enum StorageMedium {
+    InMemory,
+    LocalDisk,
+    CloudObjectStore
+}
+
+trait IStorageProvider {
+    fn put(key: String, value: String) -> bool;
+    fn get(key: String) -> String;
+    fn delete(key: String) -> bool;
+    fn exists(key: String) -> bool;
+    fn get_medium_type() -> StorageMedium;
+}
+
+struct StorageAuditEntry {
+    operation: String;
+    key: String;
+    size_bytes: i64;
+    success: bool;
+}
+
+fn create_storage_audit(op: String, key: String, sz: i64, ok: bool) -> StorageAuditEntry {
+    return StorageAuditEntry {
+        operation: op,
+        key: key,
+        size_bytes: sz,
+        success: ok
+    };
+}

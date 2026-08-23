@@ -447,6 +447,14 @@ impl Interpreter {
                     Expression::Ident(name, _) => {
                         self.update_var(name, val)?;
                     }
+                    Expression::FieldAccess { object, field, .. } => {
+                        if let Expression::Ident(obj_name, _) = object.as_ref() {
+                            if let Some(Value::Struct(sname, mut fields)) = self.get_var(obj_name) {
+                                fields.insert(field.clone(), val);
+                                self.update_var(obj_name, Value::Struct(sname, fields))?;
+                            }
+                        }
+                    }
                     _ => {}
                 }
                 Ok(None)
@@ -460,7 +468,10 @@ impl Interpreter {
                 }
             }
             Statement::Expression(expr) => {
-                self.eval_expression(expr)?;
+                let v = self.eval_expression(expr)?;
+                if matches!(expr, Expression::Match { .. }) && !matches!(v, Value::Void) {
+                    return Ok(Some(v));
+                }
                 Ok(None)
             }
             Statement::If {
@@ -488,6 +499,13 @@ impl Interpreter {
                             return Ok(Some(ret));
                         }
                     }
+                }
+                Ok(None)
+            }
+            Statement::ClassDecl(class_def) => {
+                for m in &class_def.methods {
+                    self.functions.insert(m.name.clone(), m.clone());
+                    self.functions.insert(format!("{}_{}", class_def.name, m.name), m.clone());
                 }
                 Ok(None)
             }
@@ -1711,6 +1729,7 @@ impl Interpreter {
                         if let (Some(b), Some(p)) = (binding, payload) {
                             out.push((b.clone(), *p.clone()));
                         }
+                        return Some(out);
                     }
                 }
                 None
@@ -1784,8 +1803,16 @@ impl Interpreter {
 
                     // String operations
                     (Value::String(a), BinaryOp::Add, Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
+                    (Value::String(a), BinaryOp::Add, other) => Ok(Value::String(format!("{}{}", a, other))),
+                    (other, BinaryOp::Add, Value::String(b)) => Ok(Value::String(format!("{}{}", other, b))),
                     (Value::String(a), BinaryOp::Equal, Value::String(b)) => Ok(Value::Bool(*a == *b)),
                     (Value::String(a), BinaryOp::NotEqual, Value::String(b)) => Ok(Value::Bool(*a != *b)),
+
+                    // Enum & Struct equality
+                    (Value::Enum(_, v1, p1), BinaryOp::Equal, Value::Enum(_, v2, p2)) => Ok(Value::Bool(v1 == v2 && p1 == p2)),
+                    (Value::Enum(_, v1, p1), BinaryOp::NotEqual, Value::Enum(_, v2, p2)) => Ok(Value::Bool(v1 != v2 || p1 != p2)),
+                    (Value::Struct(n1, f1), BinaryOp::Equal, Value::Struct(n2, f2)) => Ok(Value::Bool(n1 == n2 && f1 == f2)),
+                    (Value::Struct(n1, f1), BinaryOp::NotEqual, Value::Struct(n2, f2)) => Ok(Value::Bool(n1 != n2 || f1 != f2)),
 
                     // Operation Algebra
                     (Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..), BinaryOp::Add | BinaryOp::Shr, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) => {
@@ -1834,6 +1861,48 @@ impl Interpreter {
                             print!("{}", msg);
                         }
                         return Ok(Value::Void);
+                    }
+
+                    // read_line() → returns the trimmed stdin line as String
+                    if name == "read_line" {
+                        let mut line = String::new();
+                        std::io::stdin().read_line(&mut line).unwrap_or(0);
+                        return Ok(Value::String(line.trim().to_string()));
+                    }
+
+                    // read_int() → reads a line and parses as i64, returns 0 on failure
+                    if name == "read_int" {
+                        use std::io::Write;
+                        let _ = std::io::stdout().flush();
+                        let mut line = String::new();
+                        std::io::stdin().read_line(&mut line).unwrap_or(0);
+                        let n = line.trim().parse::<i64>().unwrap_or(0);
+                        return Ok(Value::Int(n));
+                    }
+
+                    // clear_screen() → clears the terminal
+                    if name == "clear_screen" {
+                        use std::io::Write;
+                        print!("\x1B[2J\x1B[1;1H");
+                        let _ = std::io::stdout().flush();
+                        return Ok(Value::Void);
+                    }
+
+                    // to_int(s) → parse string to int
+                    if name == "to_int" {
+                        if let Some(Value::String(s)) = eval_args.first() {
+                            let n = s.trim().parse::<i64>().unwrap_or(0);
+                            return Ok(Value::Int(n));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    // to_string(v) → convert value to string
+                    if name == "to_string" {
+                        if let Some(v) = eval_args.first() {
+                            return Ok(Value::String(v.to_string()));
+                        }
+                        return Ok(Value::String(String::new()));
                     }
 
                     if let Some(op_val) = self.operations.get(name).cloned() {
@@ -1885,6 +1954,15 @@ impl Interpreter {
                     }
                 }
 
+                if let Expression::FieldAccess { object, field, .. } = callee.as_ref() {
+                    let obj = self.eval_expression(object)?;
+                    if let Some(func) = self.functions.get(field).cloned() {
+                        let mut call_args = vec![obj];
+                        call_args.extend(eval_args);
+                        return self.eval_function(&func, call_args);
+                    }
+                }
+
                 let callee_val = self.eval_expression(callee)?;
                 if matches!(callee_val, Value::Operation { .. } | Value::ComposedOp(..) | Value::RepeatedOp(..) | Value::AlternativeOp(..) | Value::ParallelOp(..)) {
                     return self.eval_operation(&callee_val, eval_args);
@@ -1911,6 +1989,15 @@ impl Interpreter {
                         "trace" => return Ok(Value::String(format!("Trace: duration={}ns, status={}, events={:?}", duration_ns, status, events))),
                         "result" => return Ok(obj.clone()),
                         _ => {}
+                    }
+                }
+                // Treat String-as-type-name field access as an enum variant construction:
+                // e.g. when parser didn't know "ActivePage" was an enum and generated
+                // FieldAccess { object: Ident("ActivePage"), field: "Dashboard" }
+                // → produce Value::Enum("ActivePage", "Dashboard", None)
+                if let Value::String(type_name) = &obj {
+                    if type_name.chars().next().map_or(false, |c| c.is_uppercase()) {
+                        return Ok(Value::Enum(Some(type_name.clone()), field.clone(), None));
                     }
                 }
                 Ok(Value::Void)
