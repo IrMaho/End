@@ -1,0 +1,8 @@
+mod agent_contract_matrix_and_lifecycle;
+mod codegen_differential_and_modular_arch;
+mod ir_lowering_and_syntax;
+mod layers1_to_5_extensibility;
+mod layers6_to_10_architecture_and_evolution;
+mod operation_events_and_evolution;
+mod operation_values_and_algebra;
+mod semantics_contracts_and_vm;

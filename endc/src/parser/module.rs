@@ -496,6 +496,4 @@ impl Parser {
             span: start_span,
         })
     }
-
-
 }

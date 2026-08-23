@@ -5,6 +5,7 @@ use crate::parser::Parser;
 pub mod primary;
 pub mod unary_postfix;
 pub mod expressive;
+pub mod metaprogramming;
 
 impl Parser {
     pub(crate) fn parse_expression(&mut self) -> Result<Expression, String> {

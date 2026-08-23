@@ -1,0 +1,10 @@
+mod cat01_feature_core_and_grammar;
+mod cat02_feature_composition_and_evolution;
+mod cat03_architectural_guardrails;
+mod cat04_refactoring_and_evolution;
+mod cat05_ports_adapters_and_gateways;
+mod cat06_telemetry_and_reactive_architecture;
+mod cat07_operations_and_resilience;
+mod cat08_sla_quality_and_concurrency;
+mod cat09_agent_contracts_and_tasks;
+mod cat10_extensibility_dna_and_verification;

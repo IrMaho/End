@@ -3,6 +3,7 @@ pub mod attestation;
 pub mod capability_engine;
 pub mod contract_verifier;
 pub mod taint_analyzer;
+pub mod taint_ast_visitor;
 pub mod types;
 
 pub use adversarial::{AdversarialCompilationReport, AdversarialSecurityEngine};

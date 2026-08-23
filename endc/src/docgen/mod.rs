@@ -1,4 +1,5 @@
 pub mod passport;
+pub mod passport_types;
 pub mod openapi;
 pub mod html_ui;
 pub mod markdown;
