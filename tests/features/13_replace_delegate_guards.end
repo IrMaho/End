@@ -1,0 +1,27 @@
+// ============================================================================
+// End Language Consumer Test: Part 13 - Component Replacement, Delegation & Guards
+// Covers:
+//   - Item 73: `replace <Old> with <New>` (inside migration block)
+//   - Item 74: `delegate <Entity>.<method> to <Target>`
+//   - Item 75: `guard <Condition> else <Fallback>` (statement guard)
+// ============================================================================
+
+// 1. delegate: `delegate Entity.method to TargetService`
+delegate BillingInterface.charge to StripeService;
+
+// 2. replace inside a migration block (Items 73, context-aware usage)
+migration PaymentSystem from v1 to v2 {
+    replace MockPaymentProvider with StripeLiveProvider;
+}
+
+// 3. guard as a conditional statement (early exit)
+fn process_refund(user_role: string) -> i64 {
+    guard user_role == "finance_officer" else {
+        ret 1;
+    }
+    ret 0;
+}
+
+fn main() -> i64 {
+    ret process_refund("finance_officer");
+}

@@ -1,0 +1,29 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: Authentication & Session Token
+// Location: examples/app/contracts/auth.end
+// ============================================================================
+
+struct UserSession {
+    session_id: String;
+    user_id: String;
+    token_hash: String;
+    expires_at_epoch: i64;
+    is_valid: bool;
+}
+
+fn create_user_session(sid: String, uid: String, hash: String, exp: i64) -> UserSession {
+    return UserSession {
+        session_id: sid,
+        user_id: uid,
+        token_hash: hash,
+        expires_at_epoch: exp,
+        is_valid: true
+    };
+}
+
+trait IAuthenticationService {
+    fn login(email: String, password_hash: String) -> UserSession;
+    fn validate_session(session_id: String) -> bool;
+    fn revoke_session(session_id: String) -> bool;
+    fn get_current_user_id() -> String;
+}

@@ -1,0 +1,41 @@
+// ============================================================================
+// End Language Consumer Test: Part 1 - Named Destructuring & Pattern Guards
+// Covers:
+//   - Item 04: Named Struct Destructuring
+//   - Item 05: Pattern Matching with `match`
+//   - Item 06: Pattern Guards (`when` / `if`)
+// ============================================================================
+
+enum AuthStatus {
+    Authenticated(i64),
+    Guest,
+    Suspended(string),
+}
+
+struct Account {
+    id: i64,
+    role: string,
+    tier: i64,
+}
+
+fn evaluate_access(status: AuthStatus, account: Account) -> string {
+    // 1. Pattern matching with expression match and guards
+    val access_level = match status {
+        AuthStatus.Authenticated(uid) if uid < 1000 => "SuperAdmin",
+        AuthStatus.Authenticated(uid) if uid >= 1000 => "StandardUser",
+        AuthStatus.Suspended(reason) => "Denied",
+        _ => "GuestAccess"
+    };
+
+    // 2. Named struct destructuring
+    Account { id, role, tier } := account;
+
+    ret access_level;
+}
+
+fn main() -> i64 {
+    val acc = Account { id: 42, role: "admin", tier: 3 };
+    val status = AuthStatus.Authenticated(100);
+    val result = evaluate_access(status, acc);
+    ret 0;
+}

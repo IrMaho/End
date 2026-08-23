@@ -1,0 +1,77 @@
+// ============================================================================
+// End DevOps & AI Workspace — Domain: AI Agent & Autonomous Engineering Plan
+// Location: examples/app/domain/agent.end
+// Demonstrates: First-Class Agent Contracts & Autonomous Task Specs
+// ============================================================================
+
+pub enum AgentState {
+    Idle,
+    Analyzing,
+    Planning,
+    Executing,
+    Verifying,
+    Completed,
+    Blocked
+}
+
+pub fn agent_state_to_string(st: AgentState) -> str {
+    ret match st {
+        AgentState.Idle => "IDLE",
+        AgentState.Analyzing => "ANALYZING",
+        AgentState.Planning => "PLANNING",
+        AgentState.Executing => "EXECUTING",
+        AgentState.Verifying => "VERIFYING",
+        AgentState.Completed => "COMPLETED",
+        AgentState.Blocked => "BLOCKED"
+    };
+}
+
+// 👑 First-Class End AI Agent Contract
+agent DevOpsArchitect {
+    scope: "src/compiler",
+    goal: "Autonomous Lossless Codebase Evolution & Verification",
+    constraints: ["symbol_conservation == 100%", "zero_breaking_changes", "smt_verified"]
+}
+
+// 👑 First-Class End AI Agent Task
+task SurgicalRefactorTask {
+    owner: "agent-devops-01",
+    status: "in_progress",
+    requirement: "Lossless decomposition of monolithic parser into cohesive submodules under 500 lines",
+    target: "src/compiler/parser.end",
+    skills: ["lossless-modular-refactor", "smt-formal-verifier"],
+    change_budget: ["max_files: 5", "max_line_delta: 200"]
+}
+
+pub struct AgentTaskPlan {
+    pub id: str,
+    pub intent: str,
+    pub target_module: str,
+    pub state: AgentState,
+    pub confidence_score: i64,
+    pub lines_added: i64,
+    pub lines_removed: i64,
+    pub verification_passed: bool,
+
+    pub fn get_summary(&self) -> str {
+        val state_str = agent_state_to_string(self.state);
+        ret "[{state_str}] {self.intent} -> {self.target_module} (Conf: {self.confidence_score}%)";
+    }
+
+    pub fn is_complete(&self) -> bool {
+        ret self.verification_passed;
+    }
+}
+
+pub fn create_agent_task_plan(id: str, intent: str, target: str) -> AgentTaskPlan {
+    ret AgentTaskPlan {
+        id: id,
+        intent: intent,
+        target_module: target,
+        state: AgentState.Executing,
+        confidence_score: 98,
+        lines_added: 42,
+        lines_removed: 8,
+        verification_passed: true
+    };
+}

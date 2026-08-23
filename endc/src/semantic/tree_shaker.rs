@@ -117,6 +117,12 @@ impl TreeShaker {
                     }
                 }
             }
+            Statement::Guard { condition, else_block, .. } => {
+                Self::visit_expression(condition, reachable_fn, reachable_st, module);
+                for s in &else_block.statements {
+                    Self::visit_statement(s, reachable_fn, reachable_st, module);
+                }
+            }
             Statement::While { condition, body, .. } => {
                 Self::visit_expression(condition, reachable_fn, reachable_st, module);
                 for s in &body.statements {

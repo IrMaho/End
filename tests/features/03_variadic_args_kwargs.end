@@ -1,0 +1,25 @@
+// ============================================================================
+// End Language Consumer Test: Part 3 - Variadics & Keyword Arguments
+// Covers:
+//   - Item 12: Variadic Arguments `*args`
+//   - Item 13: Keyword Arguments `**kwargs`
+// ============================================================================
+
+fn aggregate_metrics(prefix: string, *values: i64) -> i64 {
+    val mut sum = 0;
+    ret sum;
+}
+
+fn configure_engine(name: string, **options: string) {
+    // Arbitrary named configurations
+}
+
+fn main() -> i64 {
+    // 1. Variadic argument invocation
+    val total = aggregate_metrics("cpu_usage", 10, 20, 30, 40, 50);
+
+    // 2. Keyword arguments invocation
+    configure_engine("v8_opt", tier: "production", debug: "false", timeout: "5000");
+
+    ret 0;
+}

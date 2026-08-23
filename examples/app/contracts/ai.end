@@ -1,0 +1,43 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: AI Inference & Agent Execution
+// Location: examples/app/contracts/ai.end
+// ============================================================================
+
+enum AIModelKind {
+    LocalSmall,
+    LocalQuantized,
+    CloudFrontier,
+    FormalProver
+}
+
+struct AIRequest {
+    prompt: String;
+    system_instructions: String;
+    max_tokens: i64;
+    temperature_scaled: i64; // e.g. 70 for 0.7
+}
+
+struct AIResponse {
+    content: String;
+    model_name: String;
+    tokens_used: i64;
+    latency_ms: i64;
+    is_cached: bool;
+}
+
+fn create_ai_response(content: String, model: String, tokens: i64, lat: i64) -> AIResponse {
+    return AIResponse {
+        content: content,
+        model_name: model,
+        tokens_used: tokens,
+        latency_ms: lat,
+        is_cached: false
+    };
+}
+
+trait IAIProvider {
+    fn generate_completion(req: AIRequest) -> AIResponse;
+    fn analyze_code_structure(code_snippet: String) -> String;
+    fn get_model_kind() -> AIModelKind;
+    fn is_ready() -> bool;
+}

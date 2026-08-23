@@ -1,0 +1,25 @@
+// ============================================================================
+// End DevOps & AI Workspace — Services: Notification Hub (Lean Consumer Target)
+// Location: examples/app/services/notification_hub.end
+// Demonstrates: Inverted Referrer Architecture & Decoupled Consumer Target
+// ============================================================================
+
+use "../contracts/notification.end"
+
+// 👑 Lean Consumer Target: Does NOT import or hardcode concrete providers!
+// Dozens of independent referrer files attach/refer themselves to this hub.
+pub class NotificationHub {
+    pub active_channels: i64,
+    pub total_dispatched: i64,
+
+    pub fn dispatch(&mut self, msg: NotificationMessage) {
+        self.total_dispatched = self.total_dispatched + 1;
+    }
+}
+
+pub fn create_notification_hub() -> NotificationHub {
+    ret NotificationHub {
+        active_channels: 3,
+        total_dispatched: 0
+    };
+}

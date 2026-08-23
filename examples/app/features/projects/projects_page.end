@@ -1,0 +1,44 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 2: Projects Overview Page
+// Location: examples/app/features/projects/projects_page.end
+// Demonstrates: Project Portfolio Management & Multi-Repository State
+// ============================================================================
+
+use "../../domain/project.end"
+
+fn render_projects_view() -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                       📁 PROJECT PORTFOLIO MANAGER                       ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  [1] End Language Compiler & Core Runtime\n"
+         + "      └─ Branch: feat/v2-devops | Status: PASSED (100%) | Health: 99%\n"
+         + "      └─ Features: 15 modules | Active Tasks: 7 | Lead: @architect\n\n"
+         + "  [2] High-Throughput Event Mesh Engine\n"
+         + "      └─ Branch: main | Status: ACTIVE | Health: 96%\n"
+         + "      └─ Features: 8 modules | Active Tasks: 3 | Lead: @devops_lead\n\n"
+         + "  [3] AI Autonomous Surgical Refactoring Daemon\n"
+         + "      └─ Branch: main | Status: VERIFIED | Health: 100%\n"
+         + "      └─ Features: 12 modules | Active Tasks: 0 | Lead: @ai_specialist\n\n"
+         + "  [4] Cross-Platform 120 FPS GUI Runtime\n"
+         + "      └─ Branch: feat/metal-vulkan | Status: IN_PROGRESS | Health: 92%\n"
+         + "      └─ Features: 6 modules | Active Tasks: 4 | Lead: @graphics_eng\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class ProjectsPage {
+    total_projects: i64;
+    active_projects: i64;
+    archived_projects: i64;
+
+    fn render_view() -> String {
+        return render_projects_view();
+    }
+}
+
+fn create_projects_page() -> ProjectsPage {
+    return ProjectsPage {
+        total_projects: 4,
+        active_projects: 4,
+        archived_projects: 0
+    };
+}

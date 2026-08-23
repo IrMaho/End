@@ -12,23 +12,28 @@
     { "open": "{", "close": "}" },
     { "open": "[", "close": "]" },
     { "open": "(", "close": ")" },
+    { "open": "\"\"\"", "close": "\"\"\"", "notIn": ["string"] },
     { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "'", "close": "'", "notIn": ["string"] },
     { "open": "/*", "close": "*/", "notIn": ["string"] }
   ],
   "surroundingPairs": [
     ["{", "}"],
     ["[", "]"],
     ["(", ")"],
-    ["\"", "\""]
+    ["\"\"\"", "\"\"\""],
+    ["\"", "\""],
+    ["'", "'"]
   ],
   "folding": {
     "markers": {
-      "start": "^\\s*(region|fn|st|struct|enum|match)\\b.*\\{\\s*$",
-      "end": "^\\s*\\}\\s*$"
+      "start": "^\\s*(feature|module|agent|task|skill|hub|operation|region|lease|fn|def|pub\\s+fn|st|struct|class|enum|trait|impl|match|if|for|while)\\b.*(\\{|:)\\s*$",
+      "end": "^\\s*(\\}\\s*$|pass$|skip$)"
     }
   },
   "indentationRules": {
-    "increaseIndentPattern": "^.*\\{[^}]*$",
-    "decreaseIndentPattern": "^\\s*\\}"
-  }
+    "increaseIndentPattern": "^.*(\\{|:\\s*)$",
+    "decreaseIndentPattern": "^\\s*(\\}|pass|skip)"
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)"
 }

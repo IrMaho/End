@@ -1,0 +1,57 @@
+// ============================================================================
+// End DevOps & AI Workspace — Capabilities: Access Control & Permissions
+// Location: examples/app/capabilities/access_control.end
+// Demonstrates: Capability-based Security & Role Policies
+// ============================================================================
+
+enum AppPermission {
+    ProjectRead,
+    ProjectWrite,
+    TaskCreate,
+    TaskDelete,
+    CodeDeploy,
+    ArchitectureModify,
+    AgentTrigger,
+    SettingsAdmin
+}
+
+class CapabilityGuard {
+    subject_id: String;
+    is_admin: bool;
+    can_write: bool;
+    can_deploy: bool;
+
+    fn check_permission(perm: AppPermission) -> bool {
+        if self.is_admin {
+            return true;
+        }
+        match perm {
+            AppPermission.ProjectRead => { return true; }
+            AppPermission.TaskCreate => { return self.can_write; }
+            AppPermission.ProjectWrite => { return self.can_write; }
+            AppPermission.CodeDeploy => { return self.can_deploy; }
+            AppPermission.AgentTrigger => { return self.can_write; }
+            AppPermission.TaskDelete => { return self.is_admin; }
+            AppPermission.ArchitectureModify => { return self.is_admin; }
+            AppPermission.SettingsAdmin => { return self.is_admin; }
+        }
+    }
+}
+
+fn create_developer_guard(dev_id: String) -> CapabilityGuard {
+    return CapabilityGuard {
+        subject_id: dev_id,
+        is_admin: false,
+        can_write: true,
+        can_deploy: false
+    };
+}
+
+fn create_admin_guard(admin_id: String) -> CapabilityGuard {
+    return CapabilityGuard {
+        subject_id: admin_id,
+        is_admin: true,
+        can_write: true,
+        can_deploy: true
+    };
+}

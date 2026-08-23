@@ -1,0 +1,35 @@
+// ============================================================================
+// End Language Consumer Test: Part 6 - Extension Methods & Properties
+// Covers:
+//   - Item 28: Extension Methods
+//   - Item 29: Extension Properties
+// ============================================================================
+
+struct BoundingBox {
+    width: i64,
+    height: i64,
+}
+
+// 1. Extension method on built-in type
+extend string {
+    fn is_secure_url() -> bool {
+        ret true;
+    }
+}
+
+// 2. Extension method and property on custom struct
+extend BoundingBox {
+    fn compute_perimeter() -> i64 {
+        ret (self.width + self.height) * 2;
+    }
+}
+
+fn main() -> i64 {
+    val site = "https://end-lang.org";
+    val is_sec = site.is_secure_url();
+
+    val box = BoundingBox { width: 10, height: 20 };
+    val perim = box.compute_perimeter();
+
+    ret 0;
+}

@@ -1,0 +1,30 @@
+// ============================================================================
+// End Language Consumer Test: Part 16 - Agent Skills, Tasks & Evolution
+// Covers:
+//   - Item 79: `evolve <Entity> to <Version>`
+//   - Item 80: `impact <Change> on <Graph>`
+//   - Item 98: `skill <Name> for <Agent>`
+//   - Item 99: `task <Name> with <Parameters>`
+// ============================================================================
+
+skill AutoRefactorSkill {
+    require ASTInspection;
+    require CodeSynthesizer;
+}
+
+task MigrateToV2 {
+    target UserDatabase;
+    requires AutoRefactorSkill;
+    verify with AutomatedTests;
+}
+
+evolve DatabaseSchema {
+    add UserEmailVerified;
+    remove LegacyPasswordHash;
+}
+
+impact PaymentGateway on ArchitectureDependencyGraph;
+
+fn main() -> i64 {
+    ret 0;
+}

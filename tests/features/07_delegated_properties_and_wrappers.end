@@ -1,0 +1,22 @@
+// ============================================================================
+// End Language Consumer Test: Part 7 - Property Delegation & Wrappers
+// Covers:
+//   - Item 34: Delegated Property `by` / `using`
+//   - Item 35: Property Wrappers (`@wrapper`)
+// ============================================================================
+
+struct Configuration {
+    @clamped(min: 0, max: 100)
+    @observable
+    val memory_limit_mb: i64 = 64;
+
+    val lazy_db_pool: i64 by lazy_initializer;
+}
+
+fn main() -> i64 {
+    val cfg = Configuration {
+        memory_limit_mb: 80,
+        lazy_db_pool: 1,
+    };
+    ret 0;
+}

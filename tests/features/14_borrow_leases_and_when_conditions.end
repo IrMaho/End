@@ -1,0 +1,24 @@
+// ============================================================================
+// End Language Consumer Test: Part 14 - Hardware Borrowing & Semantic When
+// Covers:
+//   - Item 76: `when <Condition> { ... }` — Declarative reactive activation
+//   - Item 78: `borrow <Resource>` — Unified hardware leasing (no 'for')
+//   - Item 85: `because <Reason>` — Architectural rationale annotation
+// ============================================================================
+
+// 1. when: reactive activation block
+when SystemEnvironment.is_production {
+    enable HighSecurityPolicy for PaymentService;
+}
+
+// 2. borrow: hardware resource leasing (path only, no 'for' keyword)
+borrow HardwareGpuBuffer;
+borrow NetworkInterface.eth0;
+
+// 3. require ... because (rationale annotation)
+require CryptographicEngine;
+require AuditLogger;
+
+fn main() -> i64 {
+    ret 0;
+}

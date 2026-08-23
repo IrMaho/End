@@ -1,0 +1,37 @@
+// ============================================================================
+// End Language Consumer Test: Part 11 - Shapes, Surfaces, Views & Fusing
+// Covers:
+//   - Item 55: `shape <Name>` — Declarative shape definition
+//   - Item 56: `surface <Name>.<section> { ... }` — Fine-grained surface
+//   - Item 57: `view <Entity> as <Shape>` — Concrete view projection
+//   - Item 59: `fuse { A, B } as C` — Feature fusing with braces
+//   - Item 60: `augment <Type> { capability X }` — Retroactive expansion
+// ============================================================================
+
+// 1. surface: `surface Entity.section { fields }`
+surface Payment.public {
+    pay;
+    refund;
+}
+
+// 2. shape: `shape Entity.ShapeName { fields }`
+shape User.Public {
+    id;
+    name;
+    email;
+}
+
+// 3. view: `view Entity as ShapeName`
+view User as PublicUser;
+
+// 4. fuse: `fuse { A, B } as Alias`
+fuse { Search, Pagination } as SearchableList;
+
+// 5. augment: `augment Entity { capability X }`
+augment User {
+    capability Searchable;
+}
+
+fn main() -> i64 {
+    ret 0;
+}

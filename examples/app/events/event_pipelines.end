@@ -1,0 +1,54 @@
+// ============================================================================
+// End DevOps & AI Workspace — Events: Reactive Event Pipelines & Workflows
+// Location: examples/app/events/event_pipelines.end
+// Demonstrates: Event Pipelines (e.g. TaskCompleted -> Metrics -> Notification)
+// ============================================================================
+
+use "event_definitions.end"
+use "event_bus.end"
+
+class EventPipelineEngine {
+    bus: EventBus;
+    pipelines_executed: i64;
+    activity_log_count: i64;
+
+    fn execute_task_completed_pipeline(task_id: String, project_id: String) -> bool {
+        // Step 1: Emit TaskCompleted
+        val ev1 = create_domain_event("ev-001", DomainEventType.TaskCompleted, "KanbanBoard", task_id);
+        self.bus.dispatch(ev1);
+
+        // Step 2: Emit ProjectUpdated
+        val ev2 = create_domain_event("ev-002", DomainEventType.ProjectUpdated, "MetricsCollector", project_id);
+        self.bus.dispatch(ev2);
+
+        // Step 3: Emit NotificationDispatched
+        val ev3 = create_domain_event("ev-003", DomainEventType.NotificationDispatched, "NotificationHub", "Task " + task_id + " completed!");
+        self.bus.dispatch(ev3);
+
+        self.pipelines_executed = self.pipelines_executed + 1;
+        self.activity_log_count = self.activity_log_count + 3;
+        return true;
+    }
+
+    fn execute_build_pipeline(pipeline_name: String) -> bool {
+        // Step 1: Emit BuildStarted
+        val ev1 = create_domain_event("ev-010", DomainEventType.BuildStarted, "CICDEngine", pipeline_name);
+        self.bus.dispatch(ev1);
+
+        // Step 2: Emit BuildCompleted
+        val ev2 = create_domain_event("ev-011", DomainEventType.BuildCompleted, "TestRunner", pipeline_name + " (PASSED)");
+        self.bus.dispatch(ev2);
+
+        self.pipelines_executed = self.pipelines_executed + 1;
+        self.activity_log_count = self.activity_log_count + 2;
+        return true;
+    }
+}
+
+fn create_pipeline_engine(bus: EventBus) -> EventPipelineEngine {
+    return EventPipelineEngine {
+        bus: bus,
+        pipelines_executed: 0,
+        activity_log_count: 0
+    };
+}

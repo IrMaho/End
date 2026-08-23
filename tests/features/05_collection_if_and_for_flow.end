@@ -1,0 +1,43 @@
+// ============================================================================
+// End Language Consumer Test: Part 5 - Collection Control-Flow (`if` & `for`)
+// Covers:
+//   - Item 25: Collection `if`
+//   - Item 26: Collection `for`
+//   - Item 27: Nested Collection Control Flow
+// ============================================================================
+
+struct Component {
+    title: string,
+    id: i64,
+}
+
+fn main() -> i64 {
+    val is_logged_in = true;
+    val user_ids = [101, 102, 103];
+
+    // 1. Collection `if` inside array literal
+    val nav_tree = [
+        "Home",
+        if is_logged_in "Dashboard" else "Login",
+        "Settings"
+    ];
+
+    // 2. Collection `for` inside array literal
+    val user_badges = [
+        for uid in user_ids uid * 10
+    ];
+
+    // 3. Nested control-flow in collection
+    val complex_dashboard = [
+        "Header",
+        if is_logged_in [
+            for uid in user_ids [
+                uid,
+                uid + 100
+            ]
+        ],
+        "Footer"
+    ];
+
+    ret 0;
+}

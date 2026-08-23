@@ -1,0 +1,49 @@
+// ============================================================================
+// End DevOps & AI Workspace — Capabilities: Architecture & Safety Policies
+// Location: examples/app/capabilities/policies.end
+// Demonstrates: Compiler Architecture Invariant Modeling
+// ============================================================================
+
+struct ArchitectureRule {
+    rule_name: String;
+    layer_from: String;
+    layer_to: String;
+    is_allowed: bool;
+    enforcement_level: String;
+}
+
+fn create_arch_rule(name: String, from: String, to: String, allowed: bool) -> ArchitectureRule {
+    return ArchitectureRule {
+        rule_name: name,
+        layer_from: from,
+        layer_to: to,
+        is_allowed: allowed,
+        enforcement_level: "STRICT_COMPILER_GATE"
+    };
+}
+
+class SecurityBoundaryPolicy {
+    environment_name: String;
+    sandbox_enabled: bool;
+    allow_raw_file_io: bool;
+    allow_network_sockets: bool;
+
+    fn validate_action(target_resource: String) -> bool {
+        if target_resource == "RawSocket" {
+            return self.allow_network_sockets;
+        }
+        if target_resource == "RawDisk" {
+            return self.allow_raw_file_io;
+        }
+        return true;
+    }
+}
+
+fn create_standard_sandbox() -> SecurityBoundaryPolicy {
+    return SecurityBoundaryPolicy {
+        environment_name: "ProductionWorkspace",
+        sandbox_enabled: true,
+        allow_raw_file_io: false,
+        allow_network_sockets: false
+    };
+}

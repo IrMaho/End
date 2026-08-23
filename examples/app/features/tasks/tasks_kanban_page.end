@@ -1,0 +1,38 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 4: Tasks / Kanban Board Page
+// Location: examples/app/features/tasks/tasks_kanban_page.end
+// Demonstrates: Multi-Column Kanban Workflow & Task Progression
+// ============================================================================
+
+use "../../domain/task.end"
+use "../../state/task_state.end"
+
+fn render_tasks_kanban_view(state: TaskStateStore) -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                       📋 AGILE KANBAN TASK BOARD                         ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "┌──────────────┬──────────────┬──────────────┬──────────────┬──────────────┐\n"
+         + "│ BACKLOG (8)  │  TODO (12)   │ IN PROG (6)  │  REVIEW (4)  │  DONE (35)   │\n"
+         + "├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤\n"
+         + "│ #112 FFI gen │ #109 WASM gc │ #106 AI plan │ #105 LLVM op │ #101 EventBus│\n"
+         + "│ #113 Lint v2 │ #110 SIMD 512│ #107 Refactor│ #108 MIR cut │ #102 AST span│\n"
+         + "│ #114 DB sync │ #111 TCP sock│              │              │ #103 Polymorph\n"
+         + "│              │              │              │              │ #104 Tests ok│\n"
+         + "└──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘\n\n"
+         + "═══ TASK PIPELINE EXECUTION ═══\n"
+         + "  ● Drag/Drop Event -> TaskMoved(106, 'IN_PROG' -> 'REVIEW')\n"
+         + "  ● Validation Gate -> Lint: PASS | Tests: 100% | Arch: ZERO CYCLES\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class TasksKanbanPage {
+    state: TaskStateStore;
+
+    fn render_view() -> String {
+        return render_tasks_kanban_view(self.state);
+    }
+}
+
+fn create_tasks_kanban_page(st: TaskStateStore) -> TasksKanbanPage {
+    return TasksKanbanPage { state: st };
+}

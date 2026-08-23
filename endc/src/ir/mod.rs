@@ -9,6 +9,18 @@ pub mod tests;
 pub mod security_tests;
 #[cfg(test)]
 pub mod feature_tests;
+#[cfg(test)]
+pub mod capability_tests;
+#[cfg(test)]
+pub mod expressive_tests;
+#[cfg(test)]
+pub mod consumer_feature_tests;
+#[cfg(test)]
+pub mod event_graph_tests;
+#[cfg(test)]
+pub mod inheritance_contract_tests;
+#[cfg(test)]
+pub mod refactoring_engine_tests;
 
 pub use hir::*;
 pub use mir::*;

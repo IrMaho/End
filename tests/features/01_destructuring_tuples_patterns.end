@@ -1,0 +1,35 @@
+// ============================================================================
+// End Language Consumer Test: Part 1 - Destructuring, Tuples & Patterns
+// Covers:
+//   - Item 01: Multi-value Return & Unpacking Assignment
+//   - Item 02: Rest Unpacking with `*`
+//   - Item 03: `_` Wildcard Ignore
+// ============================================================================
+
+struct UserProfile {
+    id: i64,
+    username: string,
+    email: string,
+    is_active: bool,
+}
+
+fn fetch_user_credentials(id: i64) -> (i64, string, string, bool) {
+    ret (id, "alice_prime", "alice@end-lang.org", true);
+}
+
+fn process_metrics_stream() -> (i64, i64, i64, i64, i64) {
+    ret (100, 200, 300, 400, 500);
+}
+
+fn main() -> i64 {
+    // 1. Multi-value tuple return and unpacking
+    (uid, uname, uemail, uactive) := fetch_user_credentials(101);
+    
+    // 2. Star rest unpacking
+    (first_metric, *middle_metrics, last_metric) := process_metrics_stream();
+
+    // 3. Wildcard `_` ignore
+    (_, active_name, _, _) := fetch_user_credentials(102);
+
+    ret uid + first_metric + last_metric;
+}

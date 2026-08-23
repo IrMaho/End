@@ -135,6 +135,22 @@ impl AstLowering {
                     line: span.line,
                 }
             }
+            Statement::Guard { condition, else_block, span } => {
+                let mut else_ctx = var_ctx.clone();
+                let else_branch = else_block.statements.iter().map(|s| Self::lower_statement(s, &mut else_ctx)).collect();
+                let lowered_cond = Self::lower_expr(condition, var_ctx);
+                let negated_cond = HirExpression::Unary {
+                    op: "!".to_string(),
+                    expr: Box::new(lowered_cond),
+                    result_type: HirType::Bool,
+                };
+                HirStatement::If {
+                    cond: negated_cond,
+                    then_branch: else_branch,
+                    else_branch: None,
+                    line: span.line,
+                }
+            }
             Statement::While { condition, body, span } => {
                 let mut body_ctx = var_ctx.clone();
                 let b = body.statements.iter().map(|s| Self::lower_statement(s, &mut body_ctx)).collect();

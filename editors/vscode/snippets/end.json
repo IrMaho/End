@@ -1,17 +1,114 @@
 {
-  "Function Definition": {
-    "prefix": "fn",
+  "Feature Definition": {
+    "prefix": "feature",
     "body": [
-      "fn ${1:name}(${2:params}) ${3:void} {",
+      "pub feature ${1:FeatureName} @version(\"${2:1.0.0}\") @owner(\"${3:team}\") {",
+      "\tdepends: [${4:Dependencies}];",
       "\t$0",
       "}"
     ],
-    "description": "Define a function in End Language"
+    "description": "Define a Feature-Oriented Architecture module"
+  },
+  "Referrer Statement": {
+    "prefix": "refer",
+    "body": [
+      "// Autonomous Referrer binding to Consumer Hub",
+      "refer ${1:HandlerName} to ${2:ConsumerHub};"
+    ],
+    "description": "Inverted Referrer declaration binding provider to consumer"
+  },
+  "Conditional Referrer": {
+    "prefix": "referwhen",
+    "body": [
+      "refer ${1:HandlerName} to ${2:ConsumerHub} when ${3:env == \"production\"};"
+    ],
+    "description": "Conditionally refer a handler to a consumer target"
+  },
+  "AI Agent Contract": {
+    "prefix": "agent",
+    "body": [
+      "agent ${1:AgentName} {",
+      "\tscope: \"${2:src/module}\",",
+      "\tgoal: \"${3:Autonomous System Verification}\",",
+      "\tconstraints: [\"${4:zero_breaking_changes}\", \"${5:smt_verified}\"]",
+      "}"
+    ],
+    "description": "Define a First-Class AI Agent Contract"
+  },
+  "AI Task Contract": {
+    "prefix": "task",
+    "body": [
+      "task ${1:TaskName} {",
+      "\towner: \"${2:agent-id}\",",
+      "\tstatus: \"${3:in_progress}\",",
+      "\trequirement: \"${4:Decomposition of subsystem}\",",
+      "\ttarget: \"${5:src/module.end}\",",
+      "\tskills: [\"${6:lossless-modular-refactor}\"],",
+      "\tchange_budget: [\"${7:max_files: 5}\", \"${8:max_line_delta: 200}\"]",
+      "}"
+    ],
+    "description": "Define an AI Engineering Task Contract"
+  },
+  "Event Hub Definition": {
+    "prefix": "hub",
+    "body": [
+      "pub hub ${1:EventHubName} {",
+      "\tpub total_events: i64,",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define a Reactive Event Hub"
+  },
+  "First-Class Operation": {
+    "prefix": "operation",
+    "body": [
+      "operation ${1:OperationName}(${2:params}) -> ${3:ReturnType} {",
+      "\trequires: ${4:condition};",
+      "\tguarantees: ${5:post_condition};",
+      "\tretry: ${6:3} times;",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define an algebraic Operation with pre/post-conditions"
+  },
+  "Declarative UI Widget": {
+    "prefix": "widget",
+    "body": [
+      "@widget",
+      "pub fn ${1:WidgetName}(${2:props}) {",
+      "\tret Container {",
+      "\t\tchild: Column {",
+      "\t\t\tchildren: [",
+      "\t\t\t\tText(\"${3:Title}\"),",
+      "\t\t\t\t$0",
+      "\t\t\t]",
+      "\t\t}",
+      "\t};",
+      "}"
+    ],
+    "description": "Define a 120 FPS Declarative UI Widget"
+  },
+  "Pythonic Function Definition": {
+    "prefix": "def",
+    "body": [
+      "def ${1:name}(${2:params}):",
+      "\t$0"
+    ],
+    "description": "Define a Pythonic fluid function"
+  },
+  "Typed Function Definition": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:name}(${2:params}) -> ${3:str} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define a typed function"
   },
   "Public Function Definition": {
     "prefix": "pubfn",
     "body": [
-      "pub fn ${1:name}(${2:params}) ${3:void} {",
+      "pub fn ${1:name}(${2:params}) -> ${3:str} {",
       "\t$0",
       "}"
     ],
@@ -20,20 +117,42 @@
   "Zero-GC Region Block": {
     "prefix": "region",
     "body": [
-      "region ${1:frame_scope} {",
+      "region ${1:FrameArena} {",
       "\t$0",
       "}"
     ],
     "description": "Define a deterministic zero-GC Region memory scope"
   },
+  "Ephemeral Lease Scope": {
+    "prefix": "lease",
+    "body": [
+      "lease val ${1:buffer} = alloc(${2:4096}) {",
+      "\t$0",
+      "};"
+    ],
+    "description": "Define an Ephemeral Resource Lease (recycled at 0 ns)"
+  },
   "Struct Definition": {
     "prefix": "st",
     "body": [
-      "pub st ${1:StructName} {",
-      "\t${2:field}: ${3:type},",
+      "pub struct ${1:StructName} {",
+      "\tpub ${2:field}: ${3:str},",
       "}"
     ],
     "description": "Define a Struct"
+  },
+  "Class with Inheritance": {
+    "prefix": "class",
+    "body": [
+      "pub class ${1:ClassName} inherits ${2:BaseContract} {",
+      "\tpub ${3:field}: ${4:str},",
+      "",
+      "\tpub fn ${5:method_name}(self) {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Define a Class with Inheritance"
   },
   "Enum Definition": {
     "prefix": "enum",
@@ -49,90 +168,23 @@
     "prefix": "match",
     "body": [
       "match ${1:expr} {",
-      "\t.${2:Variant} => {",
+      "\t${2:Variant1} => {",
       "\t\t$0",
       "\t},",
+      "\t_ => {}",
       "}"
     ],
     "description": "Exhaustive Pattern Matching"
   },
-  "Enterprise Unit Test": {
+  "Unit Test": {
     "prefix": "test",
     "body": [
       "@test(\"${1:Test Description}\")",
-      "pub fn test_${2:feature}() bool {",
+      "pub fn test_${2:feature}() -> bool {",
       "\t$0",
-      "\tret true",
+      "\tret true;",
       "}"
     ],
     "description": "Define an automated unit test with @test attribute"
-  },
-  "FastAPI-Style Route POST": {
-    "prefix": "post",
-    "body": [
-      "@post(\"/api/v1/${1:endpoint}\")",
-      "pub fn handle_${2:action}(req: RequestContext, body: ${3:Dto}) HyperResponse {",
-      "\t$0",
-      "\tret hyper_response_ok(\"{\\\"status\\\": \\\"ok\\\"}\")",
-      "}"
-    ],
-    "description": "Define a declarative EndHyper POST Route"
-  },
-  "120 FPS WebSocket Game Handler": {
-    "prefix": "ws",
-    "body": [
-      "@ws(\"/ws/game/{${1:room_id}}\")",
-      "pub fn game_socket_handler(client: WebSocketClient, room: str) void {",
-      "\tval state = ws_pack_game_state(${2:1001}, ${3:145.5}, ${4:320.0}, ${5:12.4}, ${6:60})",
-      "\tws_broadcast_state(client, state)",
-      "}"
-    ],
-    "description": "Define a 120 FPS Binary WebSocket Game Handler"
-  },
-  "Hardware Socket Guard": {
-    "prefix": "sockguard",
-    "body": [
-      "val socket_guard = socket_guard_create(50)",
-      "if !safe_socket_is_valid(${1:sock_fd}) {",
-      "\tcpu_sleep_ms(10)",
-      "\tret false",
-      "}"
-    ],
-    "description": "Dual-Check Hardware Socket Safeguard with Exponential Backoff"
-  },
-  "Thermal Circuit Breaker": {
-    "prefix": "circuitbreaker",
-    "body": [
-      "val cb = circuit_breaker_create(\"${1:Service}\", 5, 85)",
-      "if !circuit_breaker_allow_request(cb, ${2:cpu_percent}) {",
-      "\tret hyper_response_json(503, \"{\\\"error\\\": \\\"Service Throttled\\\"}\")",
-      "}"
-    ],
-    "description": "Thermal Software Fuse and CPU Resource Quota Circuit Breaker"
-  },
-  "What-If Differential Mutation": {
-    "prefix": "whatif",
-    "body": [
-      "val baseline = ${1:100.0}",
-      "val mutated = ${2:85.0}",
-      "val diff = simulation_compare_outputs(\"${3:Scenario}\", baseline, mutated)"
-    ],
-    "description": "What-If Differential Mutation comparison and variance matrix"
-  },
-  "Parallel For Loop": {
-    "prefix": "parallel",
-    "body": [
-      "parallel for ${1:i} in ${2:count} {",
-      "\t$0",
-      "}"
-    ],
-    "description": "Hardware-accelerated parallel loop"
-  },
-  "Print Line": {
-    "prefix": "pl",
-    "body": [
-      "println(${1:\"message\"})"
-    ],
-    "description": "Print line to standard output"
   }
 }

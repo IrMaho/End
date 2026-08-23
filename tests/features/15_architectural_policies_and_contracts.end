@@ -1,0 +1,41 @@
+// ============================================================================
+// End Language Consumer Test: Part 15 - Governance Policies & Architectural Contracts
+// Covers:
+//   - Item 94: `policy { ... }` inside feature block
+//   - Item 95: `architecture <Name> { Layer -> Layer }`
+//   - Item 96: `contract <Name> { methods }`
+//   - Item 97: `implement <Contract> for <Entity> { ... }`
+//   - Item 86: `replaceable` marker inside feature
+// ============================================================================
+
+// 1. contract definition (Item 96)
+contract PaymentGatewayContract {
+    process_charge(cents: i64) -> bool
+    refund_charge(tx_id: string) -> bool
+}
+
+// 2. feature with policy and replaceable marker (Items 86, 94)
+feature SecurePaymentFeature {
+    replaceable;
+    policy {
+        no_plaintext_passwords;
+        enforce_tls_v13;
+    }
+}
+
+// 3. architecture with arrow-based layer flows (Item 95)
+architecture HexagonalCleanArchitecture {
+    UI -> Application
+    Application -> Domain
+    Infrastructure -> Domain
+}
+
+// 4. implement contract for entity (Item 97)
+implement PaymentGatewayContract for StripeService {
+    fn process_charge(cents: i64) -> bool { ret true; }
+    fn refund_charge(tx_id: string) -> bool { ret true; }
+}
+
+fn main() -> i64 {
+    ret 0;
+}

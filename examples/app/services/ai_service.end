@@ -1,0 +1,75 @@
+// ============================================================================
+// End DevOps & AI Workspace — Services: Polymorphic AI Inference Providers
+// Location: examples/app/services/ai_service.end
+// Demonstrates: AI Service Strategy & Multi-Model Execution
+// ============================================================================
+
+use "../contracts/ai.end"
+
+class LocalSmallAIProvider inherits IAIProvider {
+    model_path: String;
+    inferences_count: i64;
+
+    fn generate_completion(req: AIRequest) -> AIResponse {
+        self.inferences_count = self.inferences_count + 1;
+        return create_ai_response(
+            "Local Small Model Analysis: Architecture clean, 0 circular dependencies detected.",
+            "EndLocalSmall-7B",
+            128,
+            15
+        );
+    }
+
+    fn analyze_code_structure(code_snippet: String) -> String {
+        return "Local Model: Found 3 functions, 1 class, zero security violations.";
+    }
+
+    fn get_model_kind() -> AIModelKind {
+        return AIModelKind.LocalSmall;
+    }
+
+    fn is_ready() -> bool {
+        return true;
+    }
+}
+
+class CloudFrontierAIProvider inherits IAIProvider {
+    api_endpoint: String;
+    inferences_count: i64;
+
+    fn generate_completion(req: AIRequest) -> AIResponse {
+        self.inferences_count = self.inferences_count + 1;
+        return create_ai_response(
+            "Frontier Model: Generated refactoring plan for 5 modules with formal invariant proof.",
+            "EndFrontier-Omni-v2",
+            512,
+            120
+        );
+    }
+
+    fn analyze_code_structure(code_snippet: String) -> String {
+        return "Frontier Model: Deep semantic graph analysis complete. Cohesion: 0.96, Coupling: 0.12.";
+    }
+
+    fn get_model_kind() -> AIModelKind {
+        return AIModelKind.CloudFrontier;
+    }
+
+    fn is_ready() -> bool {
+        return true;
+    }
+}
+
+fn create_local_ai(path: String) -> LocalSmallAIProvider {
+    return LocalSmallAIProvider {
+        model_path: path,
+        inferences_count: 0
+    };
+}
+
+fn create_cloud_ai(endpoint: String) -> CloudFrontierAIProvider {
+    return CloudFrontierAIProvider {
+        api_endpoint: endpoint,
+        inferences_count: 0
+    };
+}

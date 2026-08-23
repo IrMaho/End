@@ -1,0 +1,52 @@
+// ============================================================================
+// End Language Consumer Test: Part 4 - Null Safety & Coalescing
+// Covers:
+//   - Item 17: Null-Aware Member Access `?.`
+//   - Item 18: Null-Aware Assignment
+//   - Item 19: Null-Coalescing Operator `??`
+//   - Item 20: Null-Coalescing Assignment `??=`
+// ============================================================================
+
+struct Address {
+    street: string,
+    city: string,
+}
+
+struct Profile {
+    nickname: string,
+    address: Address,
+}
+
+struct User {
+    id: i64,
+    profile: Profile,
+}
+
+fn fetch_active_session() -> User {
+    ret User {
+        id: 1,
+        profile: Profile {
+            nickname: "Neo",
+            address: Address {
+                street: "Zion Main",
+                city: "Matrix City",
+            },
+        },
+    };
+}
+
+fn main() -> i64 {
+    val user = fetch_active_session();
+
+    // 1. Null-aware member chaining
+    val city_name = user?.profile?.address?.city;
+
+    // 2. Null-coalescing with fallbacks
+    val display_title = user?.profile?.nickname ?? "DefaultGuest";
+
+    // 3. Null-coalescing assignment
+    val mut cache_pool = 0;
+    cache_pool ??= 100;
+
+    ret 0;
+}

@@ -1,0 +1,76 @@
+// ============================================================================
+// End DevOps & AI Workspace — Presentation: Reusable UI Components
+// Location: examples/app/presentation/components.end
+// Demonstrates: Modern Declarative UI Components & Interpolated Rendering
+// ============================================================================
+
+pub class MetricCardWidget {
+    pub title: str,
+    pub value: str,
+    pub delta_percentage: str,
+    pub is_positive: bool,
+
+    pub fn render(self) -> str {
+        val sign = if self.is_positive { "+" } else { "-" };
+        ret """┌────────────────────────────────────────┐
+│ {self.title}
+│ \x1b[1;36m{self.value}\x1b[0m ({sign}{self.delta_percentage})
+└────────────────────────────────────────┘""";
+    }
+}
+
+pub class BadgeWidget {
+    pub label: str,
+    pub badge_type: str,
+
+    pub fn render(self) -> str {
+        ret "[{self.badge_type}: {self.label}]";
+    }
+}
+
+pub class PanelWidget {
+    pub header: str,
+    pub content: str,
+
+    pub fn render(self) -> str {
+        ret """═══ {self.header} ═══
+{self.content}
+══════════════════════════════════════════""";
+    }
+}
+
+pub class TimelineItemWidget {
+    pub time_str: str,
+    pub event_title: str,
+    pub details: str,
+
+    pub fn render(self) -> str {
+        ret """  ● [{self.time_str}] {self.event_title}
+    └─ {self.details}""";
+    }
+}
+
+pub class ProgressBarWidget {
+    pub label: str,
+    pub percentage: i64,
+
+    pub fn render(self) -> str {
+        ret "{self.label} [====================] {self.percentage}%";
+    }
+}
+
+pub fn create_metric_card(title: str, val_str: str, delta: str, pos: bool) -> MetricCardWidget {
+    ret MetricCardWidget {
+        title: title,
+        value: val_str,
+        delta_percentage: delta,
+        is_positive: pos
+    };
+}
+
+pub fn create_badge(label: str, b_type: str) -> BadgeWidget {
+    ret BadgeWidget {
+        label: label,
+        badge_type: b_type
+    };
+}

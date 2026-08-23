@@ -1,0 +1,83 @@
+// ============================================================================
+// End DevOps & AI Workspace — Services: Polymorphic Notification Providers
+// Location: examples/app/services/notification_service.end
+// Demonstrates: Void Event Methods, Memory Auto-Disposal & Polymorphism
+// ============================================================================
+
+use "../contracts/notification.end"
+
+pub class EmailNotificationService inherits INotificationService {
+    pub smtp_host: str,
+    pub sent_count: i64,
+
+    // 👑 VOID Side-Effect Function: No return statement required!
+    pub fn send_notification(&mut self, msg: NotificationMessage) {
+        self.sent_count = self.sent_count + 1;
+        // Memory buffer is ephemeral and auto-reclaimed at scope exit without GC
+    }
+
+    pub fn get_provider_name(&self) -> str {
+        ret "SMTP Email Provider ({self.smtp_host})";
+    }
+
+    pub fn is_available(&self) -> bool {
+        ret true;
+    }
+}
+
+pub class PushNotificationService inherits INotificationService {
+    pub gateway_url: str,
+    pub sent_count: i64,
+
+    // 👑 VOID Event Trigger: Fires signal without needing boolean return codes
+    pub fn send_notification(&mut self, msg: NotificationMessage) {
+        self.sent_count = self.sent_count + 1;
+    }
+
+    pub fn get_provider_name(&self) -> str {
+        ret "WebPush & APNS Gateway";
+    }
+
+    pub fn is_available(&self) -> bool {
+        ret true;
+    }
+}
+
+pub class InAppNotificationService inherits INotificationService {
+    pub feed_buffer_size: i64,
+    pub sent_count: i64,
+
+    // 👑 Memory-safe In-App notification with instant lease cleanup
+    pub fn send_notification(&mut self, msg: NotificationMessage) {
+        self.sent_count = self.sent_count + 1;
+    }
+
+    pub fn get_provider_name(&self) -> str {
+        ret "In-App Toast & Live Feed Manager";
+    }
+
+    pub fn is_available(&self) -> bool {
+        ret true;
+    }
+}
+
+pub fn create_email_service(host: str) -> EmailNotificationService {
+    ret EmailNotificationService {
+        smtp_host: host,
+        sent_count: 0
+    };
+}
+
+pub fn create_push_service() -> PushNotificationService {
+    ret PushNotificationService {
+        gateway_url: "https://push.workspace.internal",
+        sent_count: 0
+    };
+}
+
+pub fn create_inapp_service() -> InAppNotificationService {
+    ret InAppNotificationService {
+        feed_buffer_size: 100,
+        sent_count: 0
+    };
+}

@@ -1,0 +1,122 @@
+use super::value::*;
+use crate::ast::{EventHandlerDef, EventHubDef, FunctionDef, Module};
+use std::collections::{HashMap, HashSet};
+
+#[derive(Clone)]
+pub struct Interpreter {
+    pub variables: Vec<HashMap<String, Value>>,
+    pub functions: HashMap<String, FunctionDef>,
+    pub operations: HashMap<String, Value>,
+    pub event_hubs: HashMap<String, EventHubDef>,
+    pub event_handlers: HashMap<String, Vec<EventHandlerDef>>,
+    pub emitted_events: Vec<String>,
+    pub traces: Vec<String>,
+    pub memoized_cache: HashMap<String, Value>,
+    pub snapshots: HashMap<String, Vec<HashMap<String, Value>>>,
+    pub domain_ownership: HashMap<String, String>,
+    pub features: HashMap<String, (Option<String>, Vec<String>, Vec<String>)>,
+    pub skills: HashMap<String, SkillDefState>,
+    pub requirements: HashMap<String, String>,
+    pub requirement_implements: HashMap<String, Vec<String>>,
+    pub requirement_verifies: HashMap<String, Vec<String>>,
+    pub tasks_state: HashMap<String, TaskState>,
+    pub todos_state: HashMap<String, TodoState>,
+    pub agent_leases: HashMap<String, (String, String)>,
+    pub knowledge_base: HashMap<String, (Vec<String>, Vec<String>)>,
+    pub decision_records: HashMap<String, (String, String, String)>,
+    pub agent_reports: Vec<AgentReportState>,
+    pub verified_tasks: HashSet<String>,
+    pub project_profile: HashMap<String, String>,
+}
+
+impl Interpreter {
+    pub fn new() -> Self {
+        Self {
+            variables: vec![HashMap::new()],
+            functions: HashMap::new(),
+            operations: HashMap::new(),
+            event_hubs: HashMap::new(),
+            event_handlers: HashMap::new(),
+            emitted_events: Vec::new(),
+            traces: Vec::new(),
+            memoized_cache: HashMap::new(),
+            snapshots: HashMap::new(),
+            domain_ownership: HashMap::new(),
+            features: HashMap::new(),
+            skills: HashMap::new(),
+            requirements: HashMap::new(),
+            requirement_implements: HashMap::new(),
+            requirement_verifies: HashMap::new(),
+            tasks_state: HashMap::new(),
+            todos_state: HashMap::new(),
+            agent_leases: HashMap::new(),
+            knowledge_base: HashMap::new(),
+            decision_records: HashMap::new(),
+            agent_reports: Vec::new(),
+            verified_tasks: HashSet::new(),
+            project_profile: HashMap::new(),
+        }
+    }
+
+    pub fn run(&mut self, module: &Module) -> Result<Value, String> {
+        for s in &module.statements {
+            self.eval_statement(s)?;
+        }
+
+        for f in &module.functions {
+            self.functions.insert(f.name.clone(), f.clone());
+        }
+
+        if let Some(main_fn) = self.functions.get("main").cloned() {
+            self.eval_function(&main_fn, vec![])
+        } else {
+            Err("No 'main' function found in module".to_string())
+        }
+    }
+
+    pub fn eval_named_function(&mut self, module: &Module, name: &str, args: Vec<Value>) -> Result<Value, String> {
+        for f in &module.functions {
+            self.functions.insert(f.name.clone(), f.clone());
+        }
+
+        if let Some(target_fn) = self.functions.get(name).cloned() {
+            self.eval_function(&target_fn, args)
+        } else {
+            Err(format!("Function '{}' not found in module", name))
+        }
+    }
+
+    pub(crate) fn push_scope(&mut self) {
+        self.variables.push(HashMap::new());
+    }
+
+    pub(crate) fn pop_scope(&mut self) {
+        self.variables.pop();
+    }
+
+    pub(crate) fn set_var(&mut self, name: &str, val: Value) {
+        if let Some(scope) = self.variables.last_mut() {
+            scope.insert(name.to_string(), val);
+        }
+    }
+
+    pub(crate) fn update_var(&mut self, name: &str, val: Value) -> Result<(), String> {
+        for scope in self.variables.iter_mut().rev() {
+            if scope.contains_key(name) {
+                scope.insert(name.to_string(), val);
+                return Ok(());
+            }
+        }
+        self.set_var(name, val);
+        Ok(())
+    }
+
+    pub fn get_var(&self, name: &str) -> Option<Value> {
+        for scope in self.variables.iter().rev() {
+            if let Some(val) = scope.get(name) {
+                return Some(val.clone());
+            }
+        }
+        None
+    }
+}

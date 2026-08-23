@@ -1,0 +1,42 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 9: Team & Users Management Page
+// Location: examples/app/features/team/team_page.end
+// Demonstrates: Team Roles, Permissions, and Active Sessions
+// ============================================================================
+
+use "../../domain/user.end"
+
+fn render_team_view() -> String {
+    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
+         + "║                   👥 TEAM COLLABORATION & USER ACCESS                    ║\n"
+         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
+         + "  [1] Dr. Elena Rostova (@architect)\n"
+         + "      └─ Role: ADMIN (Access Level 10) | Email: elena@end-lang.org\n"
+         + "      └─ Capabilities: [ProjectWrite, CodeDeploy, ArchModify, AgentTrigger]\n\n"
+         + "  [2] Marcus Vance (@backend_lead)\n"
+         + "      └─ Role: DEVELOPER (Rust/End) | Email: marcus@end-lang.org\n"
+         + "      └─ Capabilities: [ProjectRead, ProjectWrite, TaskCreate]\n\n"
+         + "  [3] Sarah Chen (@graphics_eng)\n"
+         + "      └─ Role: DEVELOPER (Vulkan/Metal) | Email: sarah@end-lang.org\n"
+         + "      └─ Capabilities: [ProjectRead, ProjectWrite, TaskCreate]\n\n"
+         + "  [4] AutoRefactor Bot (@ai_agent_v2)\n"
+         + "      └─ Role: AGENT_BOT (Autonomous Engine) | Email: bot@internal.ai\n"
+         + "      └─ Capabilities: [CodeSurgery, ProofVerify, InvariantAudit]\n"
+         + "══════════════════════════════════════════════════════════════════════════";
+}
+
+class TeamPage {
+    total_members: i64;
+    active_now: i64;
+
+    fn render_view() -> String {
+        return render_team_view();
+    }
+}
+
+fn create_team_page() -> TeamPage {
+    return TeamPage {
+        total_members: 4,
+        active_now: 4
+    };
+}

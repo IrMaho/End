@@ -1,0 +1,22 @@
+// ============================================================================
+// End Language Consumer Test: Part 14 - Formal Verification & Proof Contracts
+// Covers:
+//   - Item 81: `assume <Precondition>`
+//   - Item 82: `guarantee <Postcondition>`
+//   - Item 83: `prove <Invariant>`
+//   - Item 84: `expect <Assertion>`
+// ============================================================================
+
+fn transfer_funds(amount: i64) -> i64 {
+    assume { amount > 0 };
+    guarantee { amount > 0 };
+    prove { amount >= 0 };
+    expect { latency_ms < 50 };
+    
+    ret amount;
+}
+
+fn main() -> i64 {
+    val res = transfer_funds(500);
+    ret 0;
+}

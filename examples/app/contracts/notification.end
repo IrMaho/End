@@ -1,0 +1,66 @@
+// ============================================================================
+// End DevOps & AI Workspace — Contracts: Notification System
+// Location: examples/app/contracts/notification.end
+// Demonstrates: Modern Interface / Trait Definition with Void Event Handlers
+// ============================================================================
+
+pub enum NotificationType {
+    Email,
+    Push,
+    InApp,
+    Webhook
+}
+
+pub struct NotificationMessage {
+    pub id: str,
+    pub recipient: str,
+    pub title: str,
+    pub body: str,
+    pub notification_type: NotificationType,
+    pub timestamp: str,
+}
+
+pub fn create_notification_msg(id: str, rec: str, title: str, body: str, t: NotificationType) -> NotificationMessage {
+    ret NotificationMessage {
+        id: id,
+        recipient: rec,
+        title: title,
+        body: body,
+        notification_type: t,
+        timestamp: "2026-08-22 10:15:00"
+    };
+}
+
+// 👑 Modern Trait: Notice that send_notification is pure VOID (No forced return!)
+pub trait INotificationService {
+    fn send_notification(msg: NotificationMessage);
+    fn get_provider_name() -> str;
+    fn is_available() -> bool;
+}
+
+pub class BaseNotification {
+    pub id: str,
+    pub title: str,
+    pub body: str,
+    pub priority: i64,
+
+    pub fn format_header(&self) -> str {
+        ret "[{self.title}]: {self.body}";
+    }
+}
+
+pub class SystemNotification inherits BaseNotification {
+    pub service_name: str,
+
+    pub fn format_header(&self) -> str {
+        ret "[SYSTEM: {self.service_name}] {self.title} -> {self.body}";
+    }
+}
+
+pub class TaskNotification inherits BaseNotification {
+    pub task_id: str,
+
+    pub fn format_header(&self) -> str {
+        ret "[TASK: {self.task_id}] {self.title} -> {self.body}";
+    }
+}

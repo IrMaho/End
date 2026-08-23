@@ -1,0 +1,72 @@
+use super::state::CBackend;
+use crate::ast::{BinaryOp, Expression, Literal, Type};
+
+impl CBackend {
+    pub(crate) fn map_type(&self, ty: &Type) -> String {
+        match ty {
+            Type::Void => "void".to_string(),
+            Type::Bool => "bool".to_string(),
+            Type::I8 => "int8_t".to_string(),
+            Type::I16 => "int16_t".to_string(),
+            Type::I32 => "int32_t".to_string(),
+            Type::I64 => "int64_t".to_string(),
+            Type::U8 => "uint8_t".to_string(),
+            Type::U16 => "uint16_t".to_string(),
+            Type::U32 => "uint32_t".to_string(),
+            Type::U64 => "uint64_t".to_string(),
+            Type::F32 => "float".to_string(),
+            Type::F64 => "double".to_string(),
+            Type::Simd(inner, lanes) => format!("{}_vec{}", self.map_type(inner), lanes),
+            Type::Str => "const char*".to_string(),
+            Type::Custom(name) => name.clone(),
+            Type::Pointer(inner) => format!("{}*", self.map_type(inner)),
+            Type::Slice(inner) => format!("{}*", self.map_type(inner)),
+            Type::Array(inner, size) => format!("{}[{}]", self.map_type(inner), size),
+            Type::Tuple(_) => "void*".to_string(),
+            Type::Generic(name, _) => name.clone(),
+            Type::Result(inner, _) => self.map_type(inner),
+            Type::Box(inner) => format!("{}*", self.map_type(inner)),
+            Type::Rc(inner) => format!("{}*", self.map_type(inner)),
+            Type::Arc(inner) => format!("{}*", self.map_type(inner)),
+            Type::Channel(_) => "EndChannel*".to_string(),
+            Type::Region(_) => "EndArena*".to_string(),
+            Type::Allocator => "EndAllocator*".to_string(),
+            Type::Operation(_, _) => "EndOperation*".to_string(),
+            Type::Event(name) => format!("EndEvent_{}", name),
+            Type::OperationResult => "EndOperationResult*".to_string(),
+        }
+    }
+
+    pub fn infer_type(&self, expr: &Expression) -> Type {
+        match expr {
+            Expression::Lit(Literal::String(_), _) => Type::Str,
+            Expression::Lit(Literal::Int(_), _) => Type::I64,
+            Expression::Lit(Literal::Float(_), _) => Type::F64,
+            Expression::Lit(Literal::Bool(_), _) => Type::Bool,
+            Expression::Ident(name, _) => self.var_types.get(name).cloned().unwrap_or(Type::Void),
+            Expression::Call { .. } => Type::Void,
+            Expression::FieldAccess { .. } => Type::Void,
+            Expression::Binary { op, left, right: _, .. } => {
+                let l_ty = self.infer_type(left);
+                if matches!(op, BinaryOp::Add) && l_ty == Type::Str { Type::Str } else { l_ty }
+            }
+            _ => Type::Void,
+        }
+    }
+
+    pub(crate) fn is_operation_expr(&self, expr: &Expression) -> bool {
+        match expr {
+            Expression::OperationLiteral { .. }
+            | Expression::Compose { .. }
+            | Expression::Repeat { .. }
+            | Expression::Parallel { .. }
+            | Expression::Alternative { .. }
+            | Expression::ConditionalOp { .. }
+            | Expression::Memoize { .. } => true,
+            Expression::Ident(name, _) => {
+                name.contains("op") || name.contains("step") || name.contains("flow") || name.contains("pipeline")
+            }
+            _ => false,
+        }
+    }
+}

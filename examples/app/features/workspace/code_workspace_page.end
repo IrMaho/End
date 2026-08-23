@@ -1,0 +1,54 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature 5: Code / Workspace (IDE) Page
+// Location: examples/app/features/workspace/code_workspace_page.end
+// Demonstrates: Developer Workspace, Code Editing & Diagnostic Analysis
+// ============================================================================
+
+pub fn render_code_workspace_view(filename: str) -> str {
+    ret """╔══════════════════════════════════════════════════════════════════════════╗
+║                   💻 INTEGRATED DEVELOPER WORKSPACE (IDE)                ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+  📁 File: {filename} (Line 42, Col 1)
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  1 | // 👑 End Language Event Mesh Node                              │
+  │  2 | use "events/event_bus.end"                                      │
+  │  3 |                                                                 │
+  │  4 | pub class EventMeshDispatcher {                                 │
+  │  5 |     pub bus: EventBus;                                          │
+  │  6 |     pub fn dispatch_telemetry(self) -> bool {                   │
+  │  7 |         val ev = create_domain_event("e1", UserCreated, ...);   │
+  │  8 |         ret self.bus.dispatch(ev);                              │
+  │  9 |     }                                                           │
+  │ 10 | }                                                               │
+  └──────────────────────────────────────────────────────────────────────┘
+
+═══ LIVE LANGUAGE SERVER PROTOCOL (LSP) DIAGNOSTICS ═══
+  • Errors: 0 | Warnings: 0 | Type Check: \x1b[1;32m100% SOUND\x1b[0m
+  • Refactoring Check: strictly <= 500 lines constraint SATISFIED (42/500)
+══════════════════════════════════════════════════════════════════════════""";
+}
+
+pub class CodeWorkspacePage {
+    pub active_filename: str,
+    pub total_lines: i64,
+    pub cursor_line: i64,
+    pub cursor_col: i64,
+    pub diagnostics_errors: i64,
+    pub diagnostics_warnings: i64,
+
+    pub fn render_view(self) -> str {
+        ret render_code_workspace_view(self.active_filename);
+    }
+}
+
+pub fn create_code_workspace_page() -> CodeWorkspacePage {
+    ret CodeWorkspacePage {
+        active_filename: "examples/app/events/event_bus.end",
+        total_lines: 42,
+        cursor_line: 7,
+        cursor_col: 14,
+        diagnostics_errors: 0,
+        diagnostics_warnings: 0
+    };
+}

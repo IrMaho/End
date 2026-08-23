@@ -1,0 +1,46 @@
+// ============================================================================
+// End DevOps & AI Workspace — Feature: AI Agent Workspace Page
+// Location: examples/app/features/ai_agent/ai_agent_page.end
+// Demonstrates: Autonomous AI Agent Contracts, Tasks & Invariants
+// ============================================================================
+
+use "../../domain/agent.end"
+
+pub feature AiAgentFeature @version("2.0.0") @owner("ai_core") {
+    depends: [AgentDomain];
+}
+
+pub fn render_ai_agent_view(plan: AgentTaskPlan) -> str {
+    val state_str = agent_state_to_string(plan.state);
+    ret """╔══════════════════════════════════════════════════════════════════════════╗
+║                   🤖 AUTONOMOUS AI AGENT WORKSPACE                       ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+  Task ID: {plan.id} | State: \x1b[1;36m{state_str}\x1b[0m
+  Intent:  {plan.intent}
+  Target:  {plan.target_module}
+  Metrics: +{plan.lines_added} lines added, -{plan.lines_removed} lines pruned | Confidence: {plan.confidence_score}%
+
+═══ AUTONOMOUS SURGICAL REFACTORING PIPELINE ═══
+  [Step 1] Deep Code Analysis & Symbol Inventory ............ \x1b[1;32m[DONE]\x1b[0m
+  [Step 2] Responsibility Map & Cohesion Slicing ............ \x1b[1;32m[DONE]\x1b[0m
+  [Step 3] Target Architecture & <= 500 LOC Enforcement ..... \x1b[1;32m[DONE]\x1b[0m
+  [Step 4] Incremental Extract with 100% Logic Preserved .... \x1b[1;32m[DONE]\x1b[0m
+  [Step 5] Symbol Conservation Audit (0 Unaccounted) ........ \x1b[1;32m[DONE]\x1b[0m
+  [Step 6] Compiler Build, Test & Lint Quality Gates ........ \x1b[1;32m[100% GREEN]\x1b[0m
+══════════════════════════════════════════════════════════════════════════""";
+}
+
+pub struct AiAgentPage {
+    pub plan: AgentTaskPlan,
+
+    pub fn render_view(&self) -> str {
+        ret render_ai_agent_view(self.plan);
+    }
+}
+
+pub fn create_ai_agent_page() -> AiAgentPage {
+    ret AiAgentPage {
+        plan: create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.end")
+    };
+}

@@ -1,0 +1,24 @@
+// ============================================================================
+// End Language Consumer Test: Part 2 - Conditional & Walrus Expressions
+// Covers:
+//   - Item 10: Conditional Expressions (`x if c else y`)
+//   - Item 11: Walrus Operator (`:=`)
+// ============================================================================
+
+fn query_pending_requests() -> i64 {
+    ret 42;
+}
+
+fn main() -> i64 {
+    val is_admin = true;
+    
+    // 1. Inline conditional expression
+    val role_tag = "ADMINISTRATOR" if is_admin else "GUEST_USER";
+
+    // 2. Walrus assignment inside control-flow condition
+    if (pending := query_pending_requests()) > 0 {
+        val total_processed = pending * 2;
+    }
+
+    ret 0;
+}

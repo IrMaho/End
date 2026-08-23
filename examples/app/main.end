@@ -1,0 +1,124 @@
+// ============================================================================
+// 👑 End Language DevOps & AI Workspace — Production Showcase Application
+// Location: examples/app/main.end
+// Interactive TUI: type 1-15 to navigate pages, 0 to quit.
+// ============================================================================
+
+use "app/application.end"
+
+pub fn print_header(email: str, badge: str) -> bool {
+    println("────────────────────────────────────────────────────────────────────────────");
+    println(" 👑 End DevOps Workspace | {email} | Alerts: {badge} | Status: \x1b[1;32mONLINE\x1b[0m");
+    println("────────────────────────────────────────────────────────────────────────────");
+    ret true;
+}
+
+pub fn print_menu() -> bool {
+    println("""  ┌──────────────────────────────────────────┐
+  │ 👑 DevOps & AI Workspace (v2.0.0)         │
+  ├──────────────────────────────────────────┤
+  │  [1]  Dashboard                          │
+  │  [2]  Projects                           │
+  │  [3]  Project Details                    │
+  │  [4]  Tasks / Kanban                     │
+  │  [5]  Code Workspace (IDE)               │
+  │  [6]  Event Monitor                      │
+  │  [7]  Architecture Graph                 │
+  │  [8]  Analytics & Telemetry              │
+  │  [9]  Team & Users                       │
+  │ [10]  Notifications & Activity           │
+  │ [11]  Settings & Security Policies       │
+  │ [12]  System & Performance Monitor       │
+  │ [13]  AI Agent Workspace                 │
+  │ [14]  Feature Explorer                   │
+  │ [15]  Dependency Graph                   │
+  ├──────────────────────────────────────────┤
+  │  [0]  Exit                               │
+  └──────────────────────────────────────────┘""");
+    ret true;
+}
+
+pub fn dispatch_page(app: Application, choice: i64) -> bool {
+    val page_opt = match choice {
+        1 => ActivePage.Dashboard,
+        2 => ActivePage.Projects,
+        3 => ActivePage.ProjectDetails,
+        4 => ActivePage.TasksKanban,
+        5 => ActivePage.CodeWorkspace,
+        6 => ActivePage.EventMonitor,
+        7 => ActivePage.ArchitectureGraph,
+        8 => ActivePage.Analytics,
+        9 => ActivePage.Team,
+        10 => ActivePage.Notifications,
+        11 => ActivePage.Settings,
+        12 => ActivePage.SystemMonitor,
+        13 => ActivePage.AiAgent,
+        14 => ActivePage.FeatureExplorer,
+        15 => ActivePage.DependencyGraph,
+        _ => null
+    };
+
+    if page_opt != null {
+        println(render_application_screen(app, page_opt));
+        ret true;
+    }
+
+    println("\n  ⚠  Invalid selection. Enter 1-15 to navigate, 0 to exit.");
+    ret false;
+}
+
+pub fn main() -> i64 {
+    clear_screen();
+
+    println("""
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║      👑  END LANGUAGE — DEVOPS & AI WORKSPACE  v2.0                 ║
+  ║      Built 100% in the End Programming Language                     ║
+  ╠══════════════════════════════════════════════════════════════════════╣
+  ║  ✦ Modularity     ✦ Contracts         ✦ Reactive State              ║
+  ║  ✦ Polymorphism   ✦ Event-Driven       ✦ Agent-Oriented             ║
+  ║  ✦ Composition    ✦ Clean Architecture  ✦ Access Control            ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+""");
+
+    val app = create_application();
+    val _initialized = app.initialize();
+
+    println("  ✔ Application initialized.");
+    println("  ✔ Pipeline engine ready.");
+    println("  ✔ State store mounted.");
+    println("  ✔ Event bus active.\n");
+    print("  Press ENTER to launch the workspace › ");
+    val _boot = read_line();
+
+    while true {
+        clear_screen();
+        print_header("lead_architect@end-lang.org", "[5 alerts]");
+        println("");
+        print_menu();
+        println("");
+        print("  ❯ Navigate to (0-15): ");
+        val choice = read_int();
+
+        if choice == 0 {
+            clear_screen();
+            println("""
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║   👑  END DEVOPS WORKSPACE — SESSION ENDED                          ║
+  ║   Built 100% in the End Programming Language                        ║
+  ║   github.com/end-lang/end  ·  Apache 2.0 License                   ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+""");
+            ret 0;
+        }
+
+        clear_screen();
+        print_header("lead_architect@end-lang.org", "[5 alerts]");
+        val _rendered = dispatch_page(app, choice);
+        println("\n────────────────────────────────────────────────────────────────────────────");
+        print("  Press ENTER to return to main menu › ");
+        val _pause = read_line();
+    }
+
+    ret 0;
+}

@@ -1,0 +1,130 @@
+// ============================================================================
+// End Language Consumer Feature Test: 18 - Architectural & Contractual Inheritance (v2.0)
+// ============================================================================
+
+// 1. Nominal Class Inheritance & Multiple Inheritance
+class Vehicle {
+    speed: i64;
+    fn get_speed() -> i64 {
+        ret 80;
+    }
+}
+
+class ConnectedDevice {
+    ip: String;
+    fn is_online() -> bool {
+        ret true;
+    }
+}
+
+class SmartCar extends Vehicle, ConnectedDevice {
+    battery: i64;
+    fn drive() -> i64 {
+        ret 120;
+    }
+}
+
+// 2. Contract & Trait Hierarchies
+contract Animal {
+    fn speak() -> String;
+}
+
+contract FlyingAnimal extends Animal {
+    fn fly() -> i64;
+}
+
+trait Serializable {
+    fn serialize() -> String;
+}
+
+trait Auditable extends Serializable {
+    fn audit_log() -> String;
+}
+
+// 3. Abstract Classes & Method Enforcement
+abstract class PaymentProcessor {
+    abstract fn process() -> bool;
+}
+
+class StripeProcessor extends PaymentProcessor {
+    fn process() -> bool {
+        ret true;
+    }
+}
+
+// 4. Mixin Composition & Multiple Interface Blocks
+class UserAccount with Cacheable, Auditable {
+    id: i64;
+}
+
+class PaymentGateway implements { PaymentProvider, RefundProvider } {
+    fn charge() -> bool {
+        ret true;
+    }
+}
+
+// 5. Explicit Semantic & Multi-Dimensional Inheritance (`inherits`)
+inherit Admin User only { permissions, profile };
+inherit Guest User except { delete, resetPassword() };
+inherit SuperUser User as BaseUser;
+inherit ApiAdmin User.surface Public;
+inherit AccountAdmin User.shape Account;
+inherit AuditedAdmin behavior Auditable;
+
+// 6. Capability, Permission, Event, Feature, Policy & Architecture Inheritance
+inherit Admin capabilities User;
+inherit RestrictedAdmin permissions User without permissions User.admin;
+inherit EnterprisePayment feature Payment;
+inherit EnterprisePayment architecture Payment;
+inherit SecurePayment policy SecureBase;
+inherit AuditManager events User;
+
+// 7. Controlled Inheritance Modifiers: Sealed, Open, Replaceable, Locked
+sealed class SecurityToken {
+    token: String;
+}
+
+open class ExtensiblePlugin {
+    plugin_id: String;
+}
+
+inherit Service replaceable BaseService;
+
+class EnterpriseUser extends User lock User.api {
+    id: i64;
+}
+
+// 8. Super Invocation, Named Super & SuperChain
+fn execute_super_demo() {
+    super.save();
+    super(User).save();
+    super(Auditable).audit_log();
+}
+
+// 9. Conflict Declaration, Resolution & Diamond Inheritance
+conflict ServiceA.log ServiceB.log;
+resolve ServiceA.log over ServiceB.log;
+inspect inheritance Admin;
+impact inheritance User;
+
+class AutonomousVehicle extends Vehicle, ConnectedDevice {
+    share Vehicle;
+    virtual ConnectedDevice;
+    fn auto_pilot() -> i64 {
+        ret 1;
+    }
+}
+
+// 10. Transformative, Mapping, Delegation & Contractual Proofs
+inherit Admin User transform { rename email -> adminEmail, hide password, expose permissions };
+inherit ApiUser User map { id -> user_id, name -> display_name };
+inherit PaymentFacade delegation PaymentService;
+
+inherit VerifiedAdmin User contractually {
+    inherit capability Storage.read;
+    deny capability Storage.delete;
+};
+
+fn main() -> i64 {
+    ret 0;
+}

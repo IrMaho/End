@@ -1,0 +1,33 @@
+// ============================================================================
+// End Language Consumer Test: Part 4 - Cascades & Null-Aware Cascades
+// Covers:
+//   - Item 21: Dart-Style Method Cascade Operator `..`
+//   - Item 22: Null-Aware Cascade Operator `?..`
+// ============================================================================
+
+struct CanvasPainter {
+    stroke_color: i64,
+    line_width: i64,
+    is_antialiased: bool,
+}
+
+fn create_painter() -> CanvasPainter {
+    ret CanvasPainter {
+        stroke_color: 0,
+        line_width: 1,
+        is_antialiased: true,
+    };
+}
+
+fn main() -> i64 {
+    // 1. Method and property cascade chaining
+    val painter = create_painter()
+        ..set_color(0xFF00FF)
+        ..set_stroke_width(4)
+        ..set_antialias(true);
+
+    // 2. Null-aware cascade
+    painter?..flush_buffer()?..render_scene();
+
+    ret 0;
+}

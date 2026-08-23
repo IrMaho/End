@@ -1,0 +1,69 @@
+// ============================================================================
+// End DevOps & AI Workspace — Core Types & Base Value Objects
+// Location: examples/app/core/types.end
+// ============================================================================
+
+struct Timestamp {
+    epoch_ms: i64;
+    formatted: String;
+}
+
+fn create_timestamp(epoch_ms: i64, formatted: String) -> Timestamp {
+    return Timestamp {
+        epoch_ms: epoch_ms,
+        formatted: formatted
+    };
+}
+
+struct UUID {
+    value: String;
+}
+
+fn create_uuid(val: String) -> UUID {
+    return UUID { value: val };
+}
+
+enum Status {
+    Active,
+    Pending,
+    Completed,
+    Failed,
+    Degraded,
+    Archived
+}
+
+fn status_to_string(status: Status) -> String {
+    match status {
+        Status.Active => { return "ACTIVE"; }
+        Status.Pending => { return "PENDING"; }
+        Status.Completed => { return "COMPLETED"; }
+        Status.Failed => { return "FAILED"; }
+        Status.Degraded => { return "DEGRADED"; }
+        Status.Archived => { return "ARCHIVED"; }
+    }
+}
+
+enum Severity {
+    Info,
+    Warning,
+    Error,
+    Critical
+}
+
+fn severity_to_string(sev: Severity) -> String {
+    match sev {
+        Severity.Info => { return "INFO"; }
+        Severity.Warning => { return "WARNING"; }
+        Severity.Error => { return "ERROR"; }
+        Severity.Critical => { return "CRITICAL"; }
+    }
+}
+
+struct KeyValuePair {
+    key: String;
+    value: String;
+}
+
+fn create_kv(k: String, v: String) -> KeyValuePair {
+    return KeyValuePair { key: k, value: v };
+}

@@ -1,0 +1,76 @@
+// ============================================================================
+// End DevOps & AI Workspace — Services: Polymorphic Storage Providers
+// Location: examples/app/services/storage_service.end
+// Demonstrates: Storage Abstraction with Void Actions & Zero-Cost Scopes
+// ============================================================================
+
+use "../contracts/storage.end"
+
+pub class InMemoryStorageService inherits IStorageProvider {
+    pub entries_count: i64,
+    pub last_saved_key: str,
+
+    // 👑 VOID Mutation: No return code needed
+    pub fn put(&mut self, key: str, value: str) {
+        self.entries_count = self.entries_count + 1;
+        self.last_saved_key = key;
+    }
+
+    pub fn get(&self, key: str) -> str {
+        ret "InMemoryValue[{key}]";
+    }
+
+    // 👑 VOID Disposal / Removal
+    pub fn delete(&mut self, key: str) {
+        if self.entries_count > 0 {
+            self.entries_count = self.entries_count - 1;
+        }
+    }
+
+    pub fn exists(&self, key: str) -> bool {
+        ret true;
+    }
+
+    pub fn get_medium_type(&self) -> StorageMedium {
+        ret StorageMedium.InMemory;
+    }
+}
+
+pub class LocalDiskStorageService inherits IStorageProvider {
+    pub base_directory: str,
+    pub writes_count: i64,
+
+    pub fn put(&mut self, key: str, value: str) {
+        self.writes_count = self.writes_count + 1;
+    }
+
+    pub fn get(&self, key: str) -> str {
+        ret "DiskFileContent[{self.base_directory}/{key}]";
+    }
+
+    pub fn delete(&mut self, key: str) {
+        // Disk unlink side-effect
+    }
+
+    pub fn exists(&self, key: str) -> bool {
+        ret true;
+    }
+
+    pub fn get_medium_type(&self) -> StorageMedium {
+        ret StorageMedium.LocalDisk;
+    }
+}
+
+pub fn create_in_memory_storage() -> InMemoryStorageService {
+    ret InMemoryStorageService {
+        entries_count: 0,
+        last_saved_key: ""
+    };
+}
+
+pub fn create_local_disk_storage(dir: str) -> LocalDiskStorageService {
+    ret LocalDiskStorageService {
+        base_directory: dir,
+        writes_count: 0
+    };
+}

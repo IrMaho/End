@@ -1,0 +1,119 @@
+// ============================================================================
+// End DevOps & AI Workspace — Application Orchestrator & Bootstrapper
+// Location: examples/app/app/application.end
+// Demonstrates: Clean Architecture Composition Root, Modules & Pattern Matching
+// ============================================================================
+
+use "../core/types.end"
+use "../core/errors.end"
+use "../domain/user.end"
+use "../domain/project.end"
+use "../domain/task.end"
+use "../domain/metrics.end"
+use "../domain/agent.end"
+use "../contracts/notification.end"
+use "../contracts/storage.end"
+use "../contracts/ai.end"
+use "../contracts/auth.end"
+use "../capabilities/access_control.end"
+use "../capabilities/policies.end"
+use "../events/event_definitions.end"
+use "../events/event_bus.end"
+use "../events/event_pipelines.end"
+use "../services/notification_service.end"
+use "../services/storage_service.end"
+use "../services/ai_service.end"
+use "../services/auth_service.end"
+use "../state/app_state.end"
+use "../state/project_state.end"
+use "../state/task_state.end"
+use "../state/system_state.end"
+use "../presentation/design_system.end"
+use "../presentation/components.end"
+use "../presentation/navigation.end"
+use "../features/dashboard/dashboard_page.end"
+use "../features/projects/projects_page.end"
+use "../features/project_details/project_details_page.end"
+use "../features/tasks/tasks_kanban_page.end"
+use "../features/workspace/code_workspace_page.end"
+use "../features/event_monitor/event_monitor_page.end"
+use "../features/architecture_graph/architecture_graph_page.end"
+use "../features/analytics/analytics_page.end"
+use "../features/team/team_page.end"
+use "../features/notifications/notifications_page.end"
+use "../features/settings/settings_page.end"
+use "../features/system_monitor/system_monitor_page.end"
+use "../features/ai_agent/ai_agent_page.end"
+use "../features/feature_explorer/feature_explorer_page.end"
+use "../features/dependency_graph/dependency_graph_page.end"
+use "../extensions/ai_code_review.end"
+
+pub struct Application {
+    pub app_state: AppStateStore,
+    pub project_state: ProjectStateStore,
+    pub task_state: TaskStateStore,
+    pub system_state: SystemStateStore,
+    pub event_bus: EventBus,
+    pub pipeline_engine: EventPipelineEngine,
+    pub nav_layout: AppNavigationLayout,
+    pub code_review_plugin: AICodeReviewPlugin,
+
+    pub fn initialize(&self) -> bool {
+        val boot_ev = create_domain_event("ev-boot", DomainEventType.BuildStarted, "ApplicationRoot", "System Initialization Complete");
+        self.event_bus.dispatch(boot_ev);
+        ret true;
+    }
+}
+
+pub fn render_application_screen(app: Application, page: ActivePage) -> str {
+    val top = render_topbar_layout(app.app_state.current_user_email, app.app_state.notification_badge_count);
+    val side = render_sidebar_layout(page);
+
+    val body = match page {
+        ActivePage.Dashboard => {
+            val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
+            render_dashboard_view(proj, app.system_state.telemetry, app.system_state.arch_health)
+        },
+        ActivePage.Projects => render_projects_view(),
+        ActivePage.ProjectDetails => {
+            val proj = create_showcase_project("p1", "End Compiler Core", "Core Language Subsystem");
+            render_project_details_view(proj)
+        },
+        ActivePage.TasksKanban => render_tasks_kanban_view(app.task_state),
+        ActivePage.CodeWorkspace => render_code_workspace_view("examples/app/events/event_bus.end"),
+        ActivePage.EventMonitor => render_event_monitor_view(app.event_bus),
+        ActivePage.ArchitectureGraph => render_architecture_graph_view(app.system_state.arch_health),
+        ActivePage.Analytics => render_analytics_view(),
+        ActivePage.Team => render_team_view(),
+        ActivePage.Notifications => render_notifications_view(),
+        ActivePage.Settings => render_settings_view(create_standard_sandbox()),
+        ActivePage.SystemMonitor => render_system_monitor_view(app.system_state.telemetry),
+        ActivePage.AiAgent => {
+            val plan = create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.end");
+            render_ai_agent_view(plan)
+        },
+        ActivePage.FeatureExplorer => render_feature_explorer_view(),
+        ActivePage.DependencyGraph => render_dependency_graph_view(),
+        _ => ""
+    };
+
+    ret "{top}\n\n{side}\n\n{body}";
+}
+
+pub fn create_application() -> Application {
+    val bus = create_event_bus();
+    val pipelines = create_pipeline_engine(bus);
+    val ai_prov = create_cloud_ai("https://api.frontier.ai/v2");
+    val plugin = create_code_review_plugin(ai_prov, bus);
+
+    ret Application {
+        app_state: create_app_state_store(),
+        project_state: create_project_state_store(),
+        task_state: create_task_state_store(),
+        system_state: create_system_state_store(),
+        event_bus: bus,
+        pipeline_engine: pipelines,
+        nav_layout: create_navigation_layout(),
+        code_review_plugin: plugin
+    };
+}

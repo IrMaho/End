@@ -1,0 +1,30 @@
+// ============================================================================
+// End Language Consumer Test: Part 11 - Composition, Equipment & Attachments
+// Covers:
+//   - Item 51: `use <Capability>`
+//   - Item 52: `equip <Entity> with <Capability>`
+//   - Item 53: `attach <Capability> to <Entity>`
+//   - Item 54: `detach <Capability> from <Entity>`
+//   - Item 58: `compose <Type> from <Parts>`
+// ============================================================================
+
+use Payments.api;
+use Analytics.telemetry;
+
+compose SecureUser {
+    Authentication;
+    Authorization;
+    AuditLog;
+}
+
+equip User with {
+    Cacheable;
+    Auditable;
+}
+
+attach MetricsCollector to PaymentGateway;
+detach LegacyLogger from PaymentGateway;
+
+fn main() -> i64 {
+    ret 0;
+}

@@ -1,0 +1,40 @@
+// ============================================================================
+// End DevOps & AI Workspace — State: Task State Store
+// Location: examples/app/state/task_state.end
+// ============================================================================
+
+use "../domain/task.end"
+
+class TaskStateStore {
+    backlog_count: i64;
+    todo_count: i64;
+    in_progress_count: i64;
+    review_count: i64;
+    done_count: i64;
+    total_tasks: i64;
+
+    fn move_task_to_done() -> bool {
+        if self.in_progress_count > 0 {
+            self.in_progress_count = self.in_progress_count - 1;
+            self.done_count = self.done_count + 1;
+        }
+        return true;
+    }
+
+    fn add_task_to_todo() -> bool {
+        self.todo_count = self.todo_count + 1;
+        self.total_tasks = self.total_tasks + 1;
+        return true;
+    }
+}
+
+fn create_task_state_store() -> TaskStateStore {
+    return TaskStateStore {
+        backlog_count: 8,
+        todo_count: 12,
+        in_progress_count: 6,
+        review_count: 4,
+        done_count: 35,
+        total_tasks: 65
+    };
+}

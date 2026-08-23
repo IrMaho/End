@@ -1,0 +1,19 @@
+// ============================================================================
+// End DevOps & AI Workspace — Referrer: Security Audit Logger
+// Location: examples/app/services/referrers/audit_referrer.end
+// Demonstrates: Conditional Referrer self-registering with when clause
+// ============================================================================
+
+use "../notification_hub.end"
+use "../../contracts/notification.end"
+
+pub class AuditReferrerLogger {
+    pub audit_log_path: str,
+
+    pub fn log_event(self, msg: NotificationMessage) {
+        // Writes immutable audit log
+    }
+}
+
+// 👑 Conditional Referrer: Attaches to NotificationHub when environment is production
+refer AuditReferrerLogger to NotificationHub when env == "production";
