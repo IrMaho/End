@@ -1,31 +1,32 @@
 // ============================================================================
 // End DevOps & AI Workspace — State: Project State Store
 // Location: examples/app/state/project_state.end
+// Demonstrates: Reactive Project State Store & Property Accessors
 // ============================================================================
 
 use "../domain/project.end"
 
-class ProjectStateStore {
-    active_project_id: String;
-    active_project_name: String;
-    total_projects_count: i64;
-    health_score: i64;
-    features_loaded_count: i64;
+pub class ProjectStateStore {
+    pub active_project_id: str,
+    pub active_project_name: str,
+    pub total_projects_count: i64,
+    pub health_score: i64,
+    pub features_loaded_count: i64,
 
-    fn select_project(id: String, name: String) -> bool {
+    pub fn select_project(self, id: str, name: str) -> bool {
         self.active_project_id = id;
         self.active_project_name = name;
-        return true;
+        ret true;
     }
 
-    fn update_health(new_health: i64) -> i64 {
+    pub fn update_health(self, new_health: i64) -> i64 {
         self.health_score = new_health;
-        return self.health_score;
+        ret self.health_score;
     }
 }
 
-fn create_project_state_store() -> ProjectStateStore {
-    return ProjectStateStore {
+pub fn create_project_state_store() -> ProjectStateStore {
+    ret ProjectStateStore {
         active_project_id: "proj-001",
         active_project_name: "End Language Compiler & Core Runtime",
         total_projects_count: 8,

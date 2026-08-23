@@ -96,11 +96,11 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        // Identifiers or keywords
-        if ch.is_alphabetic() || ch == '_' {
+        // Identifiers or keywords (ASCII only)
+        if ch.is_ascii_alphabetic() || ch == '_' {
             let mut ident = String::new();
             while let Some(c) = self.peek() {
-                if c.is_alphanumeric() || c == '_' {
+                if c.is_ascii_alphanumeric() || c == '_' {
                     ident.push(c);
                     self.advance();
                 } else {

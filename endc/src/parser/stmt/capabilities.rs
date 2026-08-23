@@ -200,7 +200,7 @@ impl Parser {
                 }))
             }
             TokenKind::Extend => Ok(None),
-            TokenKind::Attach => {
+            TokenKind::Attach | TokenKind::Refer => {
                 self.advance();
                 let capabilities = if self.check(&TokenKind::LBrace) {
                     self.parse_brace_ident_list()?

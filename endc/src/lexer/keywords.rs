@@ -306,6 +306,7 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "mixin" => TokenKind::Mixin,
                     "capability" => TokenKind::Capability,
                     "provide" => TokenKind::Provide,
+                    "refer" => TokenKind::Refer,
                     "resolve" => TokenKind::Resolve,
                     "select" => TokenKind::Select,
                     "project" => TokenKind::Project,

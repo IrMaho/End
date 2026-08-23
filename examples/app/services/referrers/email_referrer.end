@@ -1,0 +1,19 @@
+// ============================================================================
+// End DevOps & AI Workspace — Referrer: Email Notification Provider
+// Location: examples/app/services/referrers/email_referrer.end
+// Demonstrates: Autonomous Referrer Module self-registering to Consumer Target
+// ============================================================================
+
+use "../notification_hub.end"
+use "../../contracts/notification.end"
+
+pub class EmailReferrerHandler {
+    pub host: str,
+
+    pub fn handle_email(self, msg: NotificationMessage) {
+        // Sends email via SMTP and frees buffer
+    }
+}
+
+// 👑 Autonomous Referrer Statement: Inverts dependency by referring to NotificationHub!
+refer EmailReferrerHandler to NotificationHub;

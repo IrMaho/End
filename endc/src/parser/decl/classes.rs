@@ -137,8 +137,10 @@ impl Parser {
                 }
             }
 
-            if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" } else { false }) {
-                self.advance(); // consume fn
+            let is_pub_member = self.match_token(&TokenKind::Pub);
+
+            if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" || s == "def" } else { false }) {
+                self.advance(); // consume fn or def
                 let f_name = self.parse_identifier_or_keyword()?;
                 self.expect(TokenKind::LParen)?;
                 let mut params = Vec::new();
@@ -146,7 +148,11 @@ impl Parser {
                     let p_span = self.current_span();
                     let is_mut = self.match_token(&TokenKind::Mut);
                     let p_name = self.parse_identifier_or_keyword()?;
-                    let mut p_ty = Type::Void;
+                    let mut p_ty = if p_name == "self" || p_name == "&self" {
+                        Type::Custom(name.clone())
+                    } else {
+                        Type::Void
+                    };
                     if self.match_token(&TokenKind::Colon) {
                         p_ty = self.parse_type()?;
                     }
@@ -190,7 +196,7 @@ impl Parser {
                 methods.push(FunctionDef {
                     name: f_name,
                     generic_params: vec![],
-                    is_pub: true,
+                    is_pub: is_pub_member || is_pub,
                     params,
                     return_type,
                     body,
@@ -199,15 +205,18 @@ impl Parser {
                     span: member_span,
                 });
             } else {
-                // Field declaration: name: Type, or val name = expr;
+                // Field declaration: [pub] [val|mut] name: Type, or val name = expr;
+                let is_pub_field = is_pub_member || self.match_token(&TokenKind::Pub);
                 let is_val = self.match_token(&TokenKind::Val);
+                let is_mut = self.match_token(&TokenKind::Mut);
                 let f_name = self.parse_identifier_or_keyword()?;
                 let mut field_type = Type::Custom("Any".to_string());
                 if self.match_token(&TokenKind::Colon) {
                     field_type = self.parse_type()?;
-                }
-                if self.match_token(&TokenKind::Equal) {
+                } else if self.match_token(&TokenKind::Equal) {
                     let _init = self.parse_expression()?;
+                } else if !is_val && !is_mut {
+                    return Err(format!("Expected ':' or '=' after field name '{}' in class at line {}", f_name, member_span.line));
                 }
                 self.match_token(&TokenKind::SemiColon);
                 self.match_token(&TokenKind::Comma);
@@ -215,7 +224,7 @@ impl Parser {
                 fields.push(StructField {
                     name: f_name,
                     field_type,
-                    is_pub: true,
+                    is_pub: is_pub_field || is_pub,
                     span: member_span,
                 });
             }

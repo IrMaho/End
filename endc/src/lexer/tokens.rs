@@ -372,6 +372,7 @@ pub enum TokenKind {
     Mixin,
     Capability,
     Provide,
+    Refer,
     Require,
     Resolve,
     Select,

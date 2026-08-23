@@ -4,44 +4,46 @@
 // Demonstrates: Developer Workspace, Code Editing & Diagnostic Analysis
 // ============================================================================
 
-fn render_code_workspace_view(filename: String) -> String {
-    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
-         + "║                   💻 INTEGRATED DEVELOPER WORKSPACE (IDE)                ║\n"
-         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
-         + "  📁 File: " + filename + " (Line 42, Col 1)\n"
-         + "  ┌──────────────────────────────────────────────────────────────────────┐\n"
-         + "  │  1 | // 👑 End Language Event Mesh Node                              │\n"
-         + "  │  2 | import \"events/event_bus.end\"                                   │\n"
-         + "  │  3 |                                                                 │\n"
-         + "  │  4 | class EventMeshDispatcher {                                     │\n"
-         + "  │  5 |     bus: EventBus;                                              │\n"
-         + "  │  6 |     fn dispatch_telemetry() -> bool {                           │\n"
-         + "  │  7 |         val ev = create_domain_event(\"e1\", UserCreated, ...);    │\n"
-         + "  │  8 |         return self.bus.dispatch(ev);                           │\n"
-         + "  │  9 |     }                                                           │\n"
-         + "  │ 10 | }                                                               │\n"
-         + "  └──────────────────────────────────────────────────────────────────────┘\n\n"
-         + "═══ LIVE LANGUAGE SERVER PROTOCOL (LSP) DIAGNOSTICS ═══\n"
-         + "  • Errors: 0 | Warnings: 0 | Type Check: \x1b[1;32m100% SOUND\x1b[0m\n"
-         + "  • Refactoring Check: strictly <= 500 lines constraint SATISFIED (42/500)\n"
-         + "══════════════════════════════════════════════════════════════════════════";
+pub fn render_code_workspace_view(filename: str) -> str {
+    ret """╔══════════════════════════════════════════════════════════════════════════╗
+║                   💻 INTEGRATED DEVELOPER WORKSPACE (IDE)                ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+  📁 File: {filename} (Line 42, Col 1)
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  1 | // 👑 End Language Event Mesh Node                              │
+  │  2 | use "events/event_bus.end"                                      │
+  │  3 |                                                                 │
+  │  4 | pub class EventMeshDispatcher {                                 │
+  │  5 |     pub bus: EventBus;                                          │
+  │  6 |     pub fn dispatch_telemetry(self) -> bool {                   │
+  │  7 |         val ev = create_domain_event("e1", UserCreated, ...);   │
+  │  8 |         ret self.bus.dispatch(ev);                              │
+  │  9 |     }                                                           │
+  │ 10 | }                                                               │
+  └──────────────────────────────────────────────────────────────────────┘
+
+═══ LIVE LANGUAGE SERVER PROTOCOL (LSP) DIAGNOSTICS ═══
+  • Errors: 0 | Warnings: 0 | Type Check: \x1b[1;32m100% SOUND\x1b[0m
+  • Refactoring Check: strictly <= 500 lines constraint SATISFIED (42/500)
+══════════════════════════════════════════════════════════════════════════""";
 }
 
-class CodeWorkspacePage {
-    active_filename: String;
-    total_lines: i64;
-    cursor_line: i64;
-    cursor_col: i64;
-    diagnostics_errors: i64;
-    diagnostics_warnings: i64;
+pub class CodeWorkspacePage {
+    pub active_filename: str,
+    pub total_lines: i64,
+    pub cursor_line: i64,
+    pub cursor_col: i64,
+    pub diagnostics_errors: i64,
+    pub diagnostics_warnings: i64,
 
-    fn render_view() -> String {
-        return render_code_workspace_view(self.active_filename);
+    pub fn render_view(self) -> str {
+        ret render_code_workspace_view(self.active_filename);
     }
 }
 
-fn create_code_workspace_page() -> CodeWorkspacePage {
-    return CodeWorkspacePage {
+pub fn create_code_workspace_page() -> CodeWorkspacePage {
+    ret CodeWorkspacePage {
         active_filename: "examples/app/events/event_bus.end",
         total_lines: 42,
         cursor_line: 7,

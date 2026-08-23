@@ -57,6 +57,7 @@ When writing code in End (`.end` files), developers and AI agents can choose the
 8. **Pattern Matching First:** Use `match expr { ... }` instead of deeply nested, repetitive `if-else` chains.
 9. **Zero Memory Leaks:** Wrap scratch buffers in `lease val buf = alloc(...) { ... }` or `region Temp { ... }`.
 10. **Declarative UI:** Annotate UI functions with `@widget` and use declarative trees (`Container`, `Column`, `Row`, `Text`, `Button`, `Card`).
+11. **Referrer Architecture (`refer ... to ...`):** Invert dependencies by having modular provider files self-register to lean consumer targets (`refer EmailHandler to NotificationHub;`) instead of writing monolithic 1000+ line consumer files.
 
 ---
 

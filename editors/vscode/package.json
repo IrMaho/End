@@ -1,7 +1,7 @@
 {
   "name": "end-lang",
   "displayName": "End Programming Language",
-  "description": "Official High-Performance Language Toolchain, LSP, CodeLens, Interactive Simulation Studio & 120 FPS Canvas for End",
+  "description": "Official High-Performance Language Toolchain, LSP, IntelliSense, Run/Test Buttons & 120 FPS Canvas for End",
   "version": "0.4.0",
   "publisher": "EndLanguage",
   "license": "MIT",
@@ -20,17 +20,6 @@
     "Linters",
     "Testing",
     "Other"
-  ],
-  "activationEvents": [
-    "onLanguage:end",
-    "onCommand:end.openStudio",
-    "onCommand:end.runTest",
-    "onCommand:end.simulateMutation",
-    "onCommand:end.bench1MOps",
-    "onCommand:end.traceSymbol",
-    "onCommand:end.evalLine",
-    "onCommand:end.buildNative",
-    "onCommand:end.startDevServer"
   ],
   "contributes": {
     "languages": [
@@ -64,6 +53,24 @@
       }
     ],
     "commands": [
+      {
+        "command": "end.runFile",
+        "title": "End: Run Current File (VM)",
+        "icon": "$(play)",
+        "category": "End"
+      },
+      {
+        "command": "end.checkFile",
+        "title": "End: Check Syntax & Types",
+        "icon": "$(check)",
+        "category": "End"
+      },
+      {
+        "command": "end.runAllTests",
+        "title": "End: Run All Project Tests",
+        "icon": "$(beaker)",
+        "category": "End"
+      },
       {
         "command": "end.openStudio",
         "title": "End: Open Visual Studio & Simulation Studio",
@@ -139,31 +146,56 @@
     "menus": {
       "editor/title": [
         {
-          "command": "end.openStudio",
+          "command": "end.runFile",
           "when": "resourceExtname == .end",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
-          "command": "end.runTest",
+          "command": "end.runAllTests",
           "when": "resourceExtname == .end",
-          "group": "navigation"
+          "group": "navigation@2"
+        },
+        {
+          "command": "end.checkFile",
+          "when": "resourceExtname == .end",
+          "group": "navigation@3"
+        },
+        {
+          "command": "end.openStudio",
+          "when": "resourceExtname == .end",
+          "group": "navigation@4"
         }
       ],
       "editor/context": [
         {
-          "command": "end.simulateMutation",
+          "command": "end.runFile",
           "when": "resourceExtname == .end",
           "group": "1_end"
+        },
+        {
+          "command": "end.checkFile",
+          "when": "resourceExtname == .end",
+          "group": "1_end"
+        },
+        {
+          "command": "end.runAllTests",
+          "when": "resourceExtname == .end",
+          "group": "1_end"
+        },
+        {
+          "command": "end.simulateMutation",
+          "when": "resourceExtname == .end",
+          "group": "2_end"
         },
         {
           "command": "end.bench1MOps",
           "when": "resourceExtname == .end",
-          "group": "1_end"
+          "group": "2_end"
         },
         {
           "command": "end.traceSymbol",
           "when": "resourceExtname == .end",
-          "group": "1_end"
+          "group": "2_end"
         }
       ]
     },
@@ -205,4 +237,3 @@
     "typescript": "^5.3.3"
   }
 }
-

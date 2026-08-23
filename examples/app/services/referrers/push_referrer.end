@@ -1,0 +1,19 @@
+// ============================================================================
+// End DevOps & AI Workspace — Referrer: Push Notification Provider
+// Location: examples/app/services/referrers/push_referrer.end
+// Demonstrates: Independent Mobile/WebPush Referrer self-registering to Hub
+// ============================================================================
+
+use "../notification_hub.end"
+use "../../contracts/notification.end"
+
+pub class PushReferrerHandler {
+    pub endpoint: str,
+
+    pub fn handle_push(self, msg: NotificationMessage) {
+        // Dispatches push notification signal
+    }
+}
+
+// 👑 Push Referrer attaches directly to consumer target
+refer PushReferrerHandler to NotificationHub;

@@ -273,6 +273,7 @@ impl Parser {
             TokenKind::Mixin => Ok("mixin".to_string()),
             TokenKind::Capability => Ok("capability".to_string()),
             TokenKind::Provide => Ok("provide".to_string()),
+            TokenKind::Refer => Ok("refer".to_string()),
             TokenKind::Require => Ok("require".to_string()),
             TokenKind::Resolve => Ok("resolve".to_string()),
             TokenKind::Select => Ok("select".to_string()),

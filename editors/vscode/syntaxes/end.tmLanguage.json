@@ -1,43 +1,140 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "End",
+  "scopeName": "source.end",
   "patterns": [
-    {
-      "include": "#comments"
-    },
-    {
-      "include": "#decorators"
-    },
-    {
-      "include": "#keywords"
-    },
-    {
-      "include": "#types"
-    },
-    {
-      "include": "#strings"
-    },
-    {
-      "include": "#numbers"
-    },
-    {
-      "include": "#functions"
-    },
-    {
-      "include": "#operators"
-    }
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#decorators" },
+    { "include": "#keywords" },
+    { "include": "#feature_declarations" },
+    { "include": "#class_struct_declarations" },
+    { "include": "#function_definitions" },
+    { "include": "#member_access" },
+    { "include": "#field_declarations" },
+    { "include": "#types" },
+    { "include": "#numbers" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
   ],
   "repository": {
     "comments": {
       "patterns": [
         {
+          "name": "comment.block.documentation.end",
+          "begin": "///|//!",
+          "end": "$",
+          "patterns": [
+            {
+              "name": "keyword.operator.heading.end",
+              "match": "#+\\s.*"
+            },
+            {
+              "name": "markup.inline.raw.string.end",
+              "match": "`[^`]+`"
+            },
+            {
+              "name": "markup.bold.end",
+              "match": "\\*\\*[^*]+\\*\\*"
+            },
+            {
+              "name": "markup.italic.end",
+              "match": "\\*[^*]+\\*"
+            },
+            {
+              "name": "storage.type.annotation.end",
+              "match": "@(param|return|returns|throws|brief|see|author|note|warning|invariant)\\b"
+            }
+          ]
+        },
+        {
           "name": "comment.line.double-slash.end",
-          "match": "//.*$"
+          "begin": "//",
+          "end": "$",
+          "patterns": [
+            {
+              "name": "storage.type.class.todo.end",
+              "match": "\\b(TODO|FIXME|NOTE|BUG|HACK|OPTIMIZE|WARNING|SAFETY|INVARIANT|IMPORTANT)\\b:?"
+            }
+          ]
         },
         {
           "name": "comment.block.end",
           "begin": "/\\*",
-          "end": "\\*/"
+          "end": "\\*/",
+          "patterns": [
+            {
+              "name": "storage.type.class.todo.end",
+              "match": "\\b(TODO|FIXME|NOTE|BUG|HACK|OPTIMIZE|WARNING|SAFETY|INVARIANT|IMPORTANT)\\b:?"
+            }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.triple.double.end",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.end",
+              "match": "\\\\([nrtvfb0\"'\\\\]|x[0-9a-fA-F]{2}|u\\{[0-9a-fA-F]+\\}|\\[[0-9;]*m)"
+            },
+            {
+              "name": "meta.interpolation.end",
+              "begin": "\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": { "name": "punctuation.section.embedded.begin.end" }
+              },
+              "endCaptures": {
+                "0": { "name": "punctuation.section.embedded.end.end" }
+              },
+              "patterns": [
+                { "include": "$self" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.end",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.end",
+              "match": "\\\\([nrtvfb0\"'\\\\]|x[0-9a-fA-F]{2}|u\\{[0-9a-fA-F]+\\}|\\[[0-9;]*m)"
+            },
+            {
+              "name": "meta.interpolation.end",
+              "begin": "\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": { "name": "punctuation.section.embedded.begin.end" }
+              },
+              "endCaptures": {
+                "0": { "name": "punctuation.section.embedded.end.end" }
+              },
+              "patterns": [
+                { "include": "$self" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.end",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.end",
+              "match": "\\\\([nrtvfb0\"'\\\\]|x[0-9a-fA-F]{2}|u\\{[0-9a-fA-F]+\\})"
+            }
+          ]
         }
       ]
     },
@@ -45,27 +142,108 @@
       "patterns": [
         {
           "name": "entity.name.tag.decorator.end",
-          "match": "@(get|post|put|delete|ws|test|bench|export|c_export|import_c|link|inline|always_inline|invariant|telemetry|comptime|watchdog|trace_fn|log_state|target|optimize|align|intrinsic|pure|effect)\\b"
+          "match": "@(widget|state|effect|memo|prop|action|layout|component|version|owner|owned|evolvable|sealed|purity|contract|security|boundary|stable|compat|benchmark|test|bench|inline|always_inline|invariant|telemetry|comptime|watchdog|trace_fn|log_state|target|optimize|align|intrinsic|pure|get|post|put|delete|ws|export|c_export|import_c|link)\\b"
+        }
+      ]
+    },
+    "feature_declarations": {
+      "patterns": [
+        {
+          "match": "\\b(feature|module|mod|agent|task|skill|hub|operation|surface|capability)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "keyword.control.feature.end" },
+            "2": { "name": "entity.name.type.class.end" }
+          }
+        }
+      ]
+    },
+    "class_struct_declarations": {
+      "patterns": [
+        {
+          "match": "\\b(class|struct|st|enum|trait|interface)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "keyword.declaration.end" },
+            "2": { "name": "entity.name.type.class.end" }
+          }
+        }
+      ]
+    },
+    "function_definitions": {
+      "patterns": [
+        {
+          "match": "\\b(def|fn|pub\\s+fn)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "keyword.declaration.end" },
+            "2": { "name": "entity.name.function.definition.end" }
+          }
+        }
+      ]
+    },
+    "member_access": {
+      "patterns": [
+        {
+          "match": "(self)\\.([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "variable.language.this.end" },
+            "2": { "name": "variable.other.property.end" }
+          }
+        },
+        {
+          "match": "\\.([a-zA-Z_][a-zA-Z0-9_]*)\\b(?![\\(])",
+          "captures": {
+            "1": { "name": "variable.other.property.end" }
+          }
+        }
+      ]
+    },
+    "field_declarations": {
+      "patterns": [
+        {
+          "match": "\\b(pub\\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*",
+          "captures": {
+            "1": { "name": "keyword.declaration.end" },
+            "2": { "name": "variable.other.property.end" }
+          }
         }
       ]
     },
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.end",
-          "match": "\\b(if|else|while|for|in|ret|return|break|continue|match|parallel|defer|unsafe|spawn|async|await)\\b"
-        },
-        {
-          "name": "keyword.other.memory.end",
-          "match": "\\b(region|lease|borrow|during|mut|val|pure|effect|alloc|free|promote|catch|skip)\\b"
+          "name": "keyword.control.flow.end",
+          "match": "\\b(if|else|while|for|in|match|ret|return|break|continue|defer|pass|skip|when|and|or|not|is)\\b"
         },
         {
           "name": "keyword.declaration.end",
-          "match": "\\b(pub|fn|extern|inline_c|st|struct|enum|trait|impl|asm|import|as|from|mod|module|override|extend|bridge|with|derives)\\b"
+          "match": "\\b(pub|fn|def|val|mut|let|var|const|static|struct|st|enum|trait|impl|class|inherits|extends|interface|type|alias|override)\\b"
         },
         {
-          "name": "constant.language.boolean.end",
-          "match": "\\b(true|false|null|void)\\b"
+          "name": "keyword.control.feature.end",
+          "match": "\\b(feature|module|mod|use|surface|capability|refer|to|grant|deny|adopt|implement|attach|detach|mixin|provide|require|resolve|select|project|delegate|proxy|intercept|hook|enable|disable|scope|feature_switch|traitify|equip|fuse|shape|only|section|before|as|from|with|derives|bridge)\\b"
+        },
+        {
+          "name": "keyword.control.agent.end",
+          "match": "\\b(agent|task|skill|intent|invariants|requirements|requirement|evidence|change_budget|contract|prove|assume|guarantee|gate|todo|claim|complete|verify|pow|sandbox|baseline|regression|explain|context|slice|patch|evolve|tradeoff|prefer|sacrifice)\\b"
+        },
+        {
+          "name": "keyword.control.reactive.end",
+          "match": "\\b(event|hub|derive|topology|debounce|throttle|sample|coalesce|window|ack|require_ack|emit|listen|subscribe|on|pipe|relay|stream|dispatch|fire|signal|once|every|state)\\b"
+        },
+        {
+          "name": "keyword.control.operation.end",
+          "match": "\\b(operation|compose|retry|memoize|fallback|parallel|race|choose|hedge|budget|timeout|deadline|handoff|transaction|checkpoint|rollback|commit|begin)\\b"
+        },
+        {
+          "name": "keyword.other.memory.end",
+          "match": "\\b(region|lease|borrow|during|alloc|free|dealloc|unsafe|spawn|async|await|asm|inline_c|volatile|atomic|fence|promote|catch)\\b"
+        },
+        {
+          "name": "variable.language.this.end",
+          "match": "\\b(self|Self)\\b"
+        },
+        {
+          "name": "constant.language.end",
+          "match": "\\b(true|false|True|False|null|None|void|Void)\\b"
         }
       ]
     },
@@ -73,10 +251,14 @@
       "patterns": [
         {
           "name": "storage.type.primitive.end",
-          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|char|str|void|Box|Rc|Arc|Channel|Allocator|Result|List|HashMap|DbConnection|KvDatabase|Instant|StreamChunk|SseEvent|EndArena|SocketGuard|CircuitBreaker|TelemetryRingBuffer|WhatIfParameter|StressMetricsReport)\\b"
+          "match": "\\b(i8|i16|i32|i64|i128|u8|u16|u32|u64|u128|f32|f64|isize|usize|bool|char|str|String|void|Void|Any|f32x4|f32x8|f64x2|f64x4|i32x4|i32x8|u8x16|u8x32)\\b"
         },
         {
-          "name": "entity.name.type.struct.end",
+          "name": "storage.type.generic.end",
+          "match": "\\b(Option|Result|Box|Rc|Arc|Channel|Cell|RefCell|List|Map|HashMap|HashSet|Vec|Deque|RingBuffer|Future|Stream|Context|Error|Either)\\b"
+        },
+        {
+          "name": "entity.name.type.class.end",
           "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
         }
       ]
@@ -85,22 +267,23 @@
       "patterns": [
         {
           "name": "support.function.builtin.end",
-          "match": "\\b(println|print|end_println|inspect|trace|effects|impact|assert|alloc|free|cpu_yield|cpu_relax|cpu_sleep_ms|safe_socket_poll|high_res_time_ns|instant_now|instant_elapsed_micros|instant_elapsed_nanos|instant_elapsed_millis|time_now_nanos|time_now_micros|time_now_millis|list_create|list_push_str|list_get_str|list_len|map_create|map_set|map_get|map_has|map_delete|map_len|db_open|db_set|db_get|db_close|kv_database_open|kv_set|kv_get|kv_has|kv_delete|kv_count|kv_close|ws_handshake_accept|ws_compute_accept_key|argon2_hash_password|argon2_verify|oauth2_generate_pkce|sse_format_event|sse_chunk_encode|socket_guard_create|circuit_breaker_create|ring_buffer_create|hot_reload_store_create)\\b"
+          "match": "\\b(println|print|eprintln|eprint|panic|assert|assert_eq|inspect|trace|effects|impact|alloc|free|dealloc|len|push|pop|insert|remove|contains|clone|clear|keys|values|entries|format|parse|to_string|to_str|as_str|as_bytes|cpu_yield|cpu_relax|cpu_sleep_ms|high_res_time_ns|instant_now|instant_elapsed_micros|instant_elapsed_nanos|instant_elapsed_millis|time_now_nanos|time_now_micros|time_now_millis|list_create|list_push_str|list_get_str|list_len|map_create|map_set|map_get|map_has|map_delete|map_len|db_open|db_set|db_get|db_close|kv_database_open|kv_set|kv_get|kv_has|kv_delete|kv_count|kv_close|ws_handshake_accept|ws_compute_accept_key|argon2_hash_password|argon2_verify|oauth2_generate_pkce|sse_format_event|sse_chunk_encode|socket_guard_create|circuit_breaker_create|ring_buffer_create|hot_reload_store_create)\\b"
         },
         {
-          "name": "entity.name.function.end",
+          "name": "entity.name.function.call.end",
           "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
         }
       ]
     },
-    "strings": {
-      "name": "string.quoted.double.end",
-      "begin": "\"",
-      "end": "\"",
+    "variables": {
       "patterns": [
         {
-          "name": "constant.character.escape.end",
-          "match": "\\\\."
+          "name": "variable.parameter.end",
+          "match": "(?<=[\\(,])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=:)"
+        },
+        {
+          "name": "variable.other.readwrite.end",
+          "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
         }
       ]
     },
@@ -115,12 +298,16 @@
           "match": "\\b0b[01_]+\\b"
         },
         {
-          "name": "constant.numeric.float.end",
-          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9]+)?\\b"
+          "name": "constant.numeric.octal.end",
+          "match": "\\b0o[0-7_]+\\b"
         },
         {
-          "name": "constant.numeric.decimal.end",
-          "match": "\\b[0-9][0-9_]*\\b"
+          "name": "constant.numeric.float.end",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9]+)?(f32|f64)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.end",
+          "match": "\\b[0-9][0-9_]*(i8|i16|i32|i64|i128|u8|u16|u32|u64|u128|isize|usize)?\\b"
         }
       ]
     },
@@ -128,10 +315,25 @@
       "patterns": [
         {
           "name": "keyword.operator.end",
-          "match": "(\\~\\>|\\<\\+\\=|\\?\\?|\\?|val\\!|\\+|\\-|\\*|\\/|\\%|\\=|\\=\\=|\\!\\=|\\<|\\>|\\<\\=|\\>\\=|\\&|\\||\\^|\\~|\\=\\>|\\-\\>|\\!)"
+          "match": "(:=|\\?\\?=|\\?\\?|\\?|\\~\\>|\\<\\+\\=|\\|\\>|\\>\\>|\\<\\<|\\=\\>|\\-\\>|\\=\\=|\\!\\=|\\<\\=|\\>\\=|\\<|\\>|\\&\\&|\\|\\||\\&|\\||\\^|\\~|\\!|\\+|\\-|\\*\\*|\\*|\\/|\\%|\\=)"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.end",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.end",
+          "match": "[,:]"
+        },
+        {
+          "name": "punctuation.accessor.end",
+          "match": "\\."
         }
       ]
     }
-  },
-  "scopeName": "source.end"
+  }
 }
