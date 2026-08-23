@@ -326,21 +326,23 @@ end build src/main.end --release -o my_app.exe
 
 ---
 
-## 📚 Complete Documentation Hierarchy
+## 📚 Complete Documentation Hub (61 Technical Guides)
 
-| Topic | Document Reference | Description |
+End is documented across **10 Architectural Pillars** and **61 technical guides and formal specifications**.  
+👉 **Browse the full, categorized index at [`docs/README.md`](docs/README.md)**.
+
+| Architectural Pillar | Core Documentation Reference | Key Topics & Specifications |
 | :--- | :--- | :--- |
-| **Canonical Vision** | [`docs/VISION.md`](docs/VISION.md) | The philosophy, thesis, and full-spectrum domain vision of End. |
-| **Feature Taxonomy** | [`docs/FEATURES.md`](docs/FEATURES.md) | Complete feature maturity matrix, status classifications, and capabilities. |
-| **AI-Native Protocol** | [`docs/AGENT_NATIVE.md`](docs/AGENT_NATIVE.md) | Semantic tools, slicing, vibecoding, and machine-verifiable agent workflows. |
-| **Agent Contracts** | [`docs/AGENT_CONTRACT_SYSTEM.md`](docs/AGENT_CONTRACT_SYSTEM.md) | Full 50-feature specification for `Intent → Task → Skill → Evidence → Verify`. |
-| **Operation Values** | [`docs/OPERATION_VALUES_AND_ALGEBRA.md`](docs/OPERATION_VALUES_AND_ALGEBRA.md) | First-class operations, algebraic composition, event hubs, and refactoring. |
-| **Memory Architecture**| [`docs/MEMORY_MODEL.md`](docs/MEMORY_MODEL.md) | 4-Tier memory model, regions, borrow checking, and resource safety. |
-| **Compiler Specs** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Lowering pipeline, AST, HIR/MIR, C11 backend, and runtime architecture. |
-| **Packages & Modules** | [`docs/PACKAGES.md`](docs/PACKAGES.md) | Package manifests, dependency management, capabilities, and module firewalls. |
-| **Frameworks** | [`docs/FRAMEWORKS.md`](docs/FRAMEWORKS.md) | EndHyper, EndForge, EndNexus, EndCrypto, EndKV, and UI Canvas. |
-| **Roadmap & Gaps** | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestone schedule, gap analysis, and prioritized engineering targets. |
-| **Project Status** | [`docs/STATUS.md`](docs/STATUS.md) | Truth classification table, evidence inventory, and platform support. |
+| **1. Vision & Foundations** | [`docs/VISION.md`](docs/VISION.md) • [`docs/STATUS.md`](docs/STATUS.md) | Philosophical thesis, domain unification, developer guide |
+| **2. Syntax & Paradigms** | [`docs/LANGUAGE_SPECIFICATION.md`](docs/LANGUAGE_SPECIFICATION.md) • [`docs/PYTHONIC_FLUID_MODE_AND_CONTROL_SPECTRUM.md`](docs/PYTHONIC_FLUID_MODE_AND_CONTROL_SPECTRUM.md) | Formal grammar, 50 syntactic innovations, Pythonic mode |
+| **3. Memory & Safety** | [`docs/MEMORY_MODEL.md`](docs/MEMORY_MODEL.md) • [`docs/EPHEMERAL_LEASING_AND_RESOURCE_MANAGEMENT.md`](docs/EPHEMERAL_LEASING_AND_RESOURCE_MANAGEMENT.md) | 4-Tier memory model, linear regions, SMT verification |
+| **4. AI-Native Contracts** | [`docs/AGENT_CONTRACT_SYSTEM.md`](docs/AGENT_CONTRACT_SYSTEM.md) • [`docs/END_INTELLIGENCE_PLATFORM.md`](docs/END_INTELLIGENCE_PLATFORM.md) | 50 agent contracts, EIP CLI tools, DeepSift integration |
+| **5. Security by Construction** | [`docs/SECURITY_BY_CONSTRUCTION.md`](docs/SECURITY_BY_CONSTRUCTION.md) • [`docs/CAPABILITY_SYSTEM.md`](docs/CAPABILITY_SYSTEM.md) | Static taint tracking, zero ambient authority, AST firewall |
+| **6. Compiler & Codegen** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) • [`docs/LLVM_BACKEND.md`](docs/LLVM_BACKEND.md) | AST lowering, C11/LLVM backends, MIR optimizations |
+| **7. Operations & Concurrency**| [`docs/OPERATION_VALUES_AND_ALGEBRA.md`](docs/OPERATION_VALUES_AND_ALGEBRA.md) • [`docs/EVENT_PRIMITIVES_AND_EXECUTION_GRAPHS.md`](docs/EVENT_PRIMITIVES_AND_EXECUTION_GRAPHS.md) | First-class ops, algebraic pipelines, M:N fibers, Raft |
+| **8. Frameworks & Standard Lib** | [`docs/FRAMEWORKS.md`](docs/FRAMEWORKS.md) • [`docs/STDLIB_POWERHOUSE_DB_AI_UI.md`](docs/STDLIB_POWERHOUSE_DB_AI_UI.md) | EndHyper, EndForge, EndNexus, EndCrypto, GGUF tensors |
+| **9. Architecture as Code** | [`docs/END_EXTENSIBILITY_DNA_SPECIFICATION.md`](docs/END_EXTENSIBILITY_DNA_SPECIFICATION.md) • [`docs/AUTONOMOUS_LOSSLESS_REFACTORING_ENGINE.md`](docs/AUTONOMOUS_LOSSLESS_REFACTORING_ENGINE.md) | 80 extensibility features, evolvable modules, refactoring |
+| **10. Tooling, Tests & Benchmarks** | [`docs/UNIVERSAL_DOCUMENTATION_AND_PASSPORT.md`](docs/UNIVERSAL_DOCUMENTATION_AND_PASSPORT.md) • [`docs/BENCHMARK_AUDIT_REPORT.md`](docs/BENCHMARK_AUDIT_REPORT.md) | `end doc` passport, LSP 3.17, 12 benchmark challenges |
 
 ---
 
