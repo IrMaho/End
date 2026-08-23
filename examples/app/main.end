@@ -4,7 +4,7 @@
 // Interactive TUI: type 1-15 to navigate pages, 0 to quit.
 // ============================================================================
 
-import "app/application.end"
+use "app/application.end"
 
 pub fn print_header(email: str, badge: str) -> bool {
     println("────────────────────────────────────────────────────────────────────────────");

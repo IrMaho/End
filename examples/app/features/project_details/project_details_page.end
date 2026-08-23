@@ -4,7 +4,7 @@
 // Demonstrates: Deep Single Project Inspection & Module Hierarchy
 // ============================================================================
 
-import "../../domain/project.end"
+use "../../domain/project.end"
 
 fn render_project_details_view(project: Project) -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

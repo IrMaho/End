@@ -208,6 +208,18 @@ impl Parser {
                 TokenKind::Augment => {
                     extensions.push(self.parse_extension_block()?);
                 }
+                TokenKind::Use => {
+                    let checkpoint = self.cursor;
+                    self.advance();
+                    if self.check(&TokenKind::Syntax) || self.check(&TokenKind::Feature) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "syntax" || s == "feature" } else { false }) {
+                        self.cursor = checkpoint;
+                        let stmt = self.parse_statement()?;
+                        statements.push(stmt);
+                    } else {
+                        self.cursor = checkpoint;
+                        imports.push(self.parse_import()?);
+                    }
+                }
                 TokenKind::Import => {
                     imports.push(self.parse_import()?);
                 }

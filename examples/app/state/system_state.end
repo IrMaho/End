@@ -3,7 +3,7 @@
 // Location: examples/app/state/system_state.end
 // ============================================================================
 
-import "../domain/metrics.end"
+use "../domain/metrics.end"
 
 class SystemStateStore {
     telemetry: SystemTelemetry;

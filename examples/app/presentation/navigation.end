@@ -4,7 +4,7 @@
 // Demonstrates: Modern Multi-line String Interpolation & Clean Architecture
 // ============================================================================
 
-import "../state/app_state.end"
+use "../state/app_state.end"
 
 pub fn render_sidebar_layout(active: ActivePage) -> str {
     val current_name = page_to_string(active);

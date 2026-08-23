@@ -3,11 +3,11 @@
 // Location: examples/app/tests/test_features_and_extensions.end
 // ============================================================================
 
-import "../capabilities/access_control.end"
-import "../capabilities/policies.end"
-import "../extensions/ai_code_review.end"
-import "../services/ai_service.end"
-import "../events/event_bus.end"
+use "../capabilities/access_control.end"
+use "../capabilities/policies.end"
+use "../extensions/ai_code_review.end"
+use "../services/ai_service.end"
+use "../events/event_bus.end"
 
 fn test_capabilities_and_access_control() -> bool {
     val dev_guard = create_developer_guard("dev-1");

@@ -5,7 +5,13 @@ use crate::parser::Parser;
 impl Parser {
     pub(crate) fn parse_import(&mut self) -> Result<ImportStmt, String> {
         let span = self.current_span();
-        self.expect(TokenKind::Import)?;
+        if self.check(&TokenKind::Import) {
+            self.advance();
+        } else if self.check(&TokenKind::Use) {
+            self.advance();
+        } else {
+            return Err(format!("Expected 'use' or 'import', found {:?}", self.peek_kind()));
+        }
 
         let (kind, path) = match self.peek_kind() {
             TokenKind::Directive(d) => {
@@ -43,8 +49,20 @@ impl Parser {
                             full_path.push('.');
                             self.advance();
                         }
+                        TokenKind::Colon => {
+                            self.advance();
+                            if self.match_token(&TokenKind::Colon) {
+                                full_path.push_str("::");
+                            } else {
+                                full_path.push(':');
+                            }
+                        }
                         TokenKind::Star => {
                             full_path.push('*');
+                            self.advance();
+                        }
+                        TokenKind::Slash => {
+                            full_path.push('/');
                             self.advance();
                         }
                         _ => break,
@@ -52,7 +70,7 @@ impl Parser {
                 }
                 (ImportKind::Standard, full_path.clone())
             }
-            other => return Err(format!("Invalid import syntax: {:?} at line {}", other, span.line)),
+            other => return Err(format!("Invalid import/use syntax: {:?} at line {}", other, span.line)),
         };
 
         let mut alias = None;
@@ -72,5 +90,4 @@ impl Parser {
             span,
         })
     }
-
 }

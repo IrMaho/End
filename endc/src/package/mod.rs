@@ -49,13 +49,16 @@ pub struct Lockfile {
 
 impl PackageManifest {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self, String> {
-        let manifest_path = dir.as_ref().join("end.toml");
+        let mut manifest_path = dir.as_ref().join("end.toml");
         if !manifest_path.exists() {
-            return Err(format!("Manifest 'end.toml' not found in {:?}", dir.as_ref()));
+            manifest_path = dir.as_ref().join("End.toml");
+        }
+        if !manifest_path.exists() {
+            return Err(format!("Manifest 'end.toml' or 'End.toml' not found in {:?}", dir.as_ref()));
         }
         let content = fs::read_to_string(&manifest_path)
-            .map_err(|e| format!("Failed to read end.toml: {}", e))?;
-        toml::from_str(&content).map_err(|e| format!("Invalid end.toml syntax: {}", e))
+            .map_err(|e| format!("Failed to read manifest: {}", e))?;
+        toml::from_str(&content).map_err(|e| format!("Invalid manifest syntax: {}", e))
     }
 
     pub fn save_to_dir<P: AsRef<Path>>(&self, dir: P) -> Result<(), String> {

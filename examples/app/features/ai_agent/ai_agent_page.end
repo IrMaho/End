@@ -1,39 +1,46 @@
 // ============================================================================
-// End DevOps & AI Workspace — Feature 13: AI Agent Workspace Page
+// End DevOps & AI Workspace — Feature: AI Agent Workspace Page
 // Location: examples/app/features/ai_agent/ai_agent_page.end
-// Demonstrates: Autonomous AI Code-Surgery, Invariant Verification & Tasks
+// Demonstrates: Autonomous AI Agent Contracts, Tasks & Invariants
 // ============================================================================
 
-import "../../domain/agent.end"
+use "../../domain/agent.end"
 
-fn render_ai_agent_view(plan: AgentTaskPlan) -> String {
-    return "╔══════════════════════════════════════════════════════════════════════════╗\n"
-         + "║                   🤖 AUTONOMOUS AI AGENT WORKSPACE                       ║\n"
-         + "╚══════════════════════════════════════════════════════════════════════════╝\n\n"
-         + "  Task ID: " + plan.id + " | State: EXECUTING\n"
-         + "  Intent:  " + plan.intent + "\n"
-         + "  Target:  " + plan.target_module + "\n"
-         + "  Metrics: +42 lines added, -8 lines pruned | Confidence: 98%\n\n"
-         + "═══ AUTONOMOUS SURGICAL REFACTORING PIPELINE ═══\n"
-         + "  [Step 1] Deep Code Analysis & Symbol Inventory ............ \x1b[1;32m[DONE]\x1b[0m\n"
-         + "  [Step 2] Responsibility Map & Cohesion Slicing ............ \x1b[1;32m[DONE]\x1b[0m\n"
-         + "  [Step 3] Target Architecture & <= 500 LOC Enforcement ..... \x1b[1;32m[DONE]\x1b[0m\n"
-         + "  [Step 4] Incremental Extract with 100% Logic Preserved .... \x1b[1;32m[DONE]\x1b[0m\n"
-         + "  [Step 5] Symbol Conservation Audit (0 Unaccounted) ........ \x1b[1;32m[DONE]\x1b[0m\n"
-         + "  [Step 6] Compiler Build, Test & Lint Quality Gates ........ \x1b[1;32m[100% GREEN]\x1b[0m\n"
-         + "══════════════════════════════════════════════════════════════════════════";
+pub feature AiAgentFeature @version("2.0.0") @owner("ai_core") {
+    depends: [AgentDomain];
 }
 
-class AiAgentPage {
-    plan: AgentTaskPlan;
+pub fn render_ai_agent_view(plan: AgentTaskPlan) -> str {
+    val state_str = agent_state_to_string(plan.state);
+    ret """╔══════════════════════════════════════════════════════════════════════════╗
+║                   🤖 AUTONOMOUS AI AGENT WORKSPACE                       ║
+╚══════════════════════════════════════════════════════════════════════════╝
 
-    fn render_view() -> String {
-        return render_ai_agent_view(self.plan);
+  Task ID: {plan.id} | State: \x1b[1;36m{state_str}\x1b[0m
+  Intent:  {plan.intent}
+  Target:  {plan.target_module}
+  Metrics: +{plan.lines_added} lines added, -{plan.lines_removed} lines pruned | Confidence: {plan.confidence_score}%
+
+═══ AUTONOMOUS SURGICAL REFACTORING PIPELINE ═══
+  [Step 1] Deep Code Analysis & Symbol Inventory ............ \x1b[1;32m[DONE]\x1b[0m
+  [Step 2] Responsibility Map & Cohesion Slicing ............ \x1b[1;32m[DONE]\x1b[0m
+  [Step 3] Target Architecture & <= 500 LOC Enforcement ..... \x1b[1;32m[DONE]\x1b[0m
+  [Step 4] Incremental Extract with 100% Logic Preserved .... \x1b[1;32m[DONE]\x1b[0m
+  [Step 5] Symbol Conservation Audit (0 Unaccounted) ........ \x1b[1;32m[DONE]\x1b[0m
+  [Step 6] Compiler Build, Test & Lint Quality Gates ........ \x1b[1;32m[100% GREEN]\x1b[0m
+══════════════════════════════════════════════════════════════════════════""";
+}
+
+pub struct AiAgentPage {
+    pub plan: AgentTaskPlan,
+
+    pub fn render_view(&self) -> str {
+        ret render_ai_agent_view(self.plan);
     }
 }
 
-fn create_ai_agent_page() -> AiAgentPage {
-    return AiAgentPage {
-        plan: create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.ts")
+pub fn create_ai_agent_page() -> AiAgentPage {
+    ret AiAgentPage {
+        plan: create_agent_task_plan("task-surgical-01", "Lossless decomposition of monolithic subsystem", "src/compiler/parser.end")
     };
 }

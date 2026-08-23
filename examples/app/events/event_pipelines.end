@@ -4,8 +4,8 @@
 // Demonstrates: Event Pipelines (e.g. TaskCompleted -> Metrics -> Notification)
 // ============================================================================
 
-import "event_definitions.end"
-import "event_bus.end"
+use "event_definitions.end"
+use "event_bus.end"
 
 class EventPipelineEngine {
     bus: EventBus;

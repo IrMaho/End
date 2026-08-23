@@ -3,7 +3,7 @@
 // Location: examples/app/state/project_state.end
 // ============================================================================
 
-import "../domain/project.end"
+use "../domain/project.end"
 
 class ProjectStateStore {
     active_project_id: String;

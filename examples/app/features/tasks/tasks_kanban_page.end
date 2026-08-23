@@ -4,8 +4,8 @@
 // Demonstrates: Multi-Column Kanban Workflow & Task Progression
 // ============================================================================
 
-import "../../domain/task.end"
-import "../../state/task_state.end"
+use "../../domain/task.end"
+use "../../state/task_state.end"
 
 fn render_tasks_kanban_view(state: TaskStateStore) -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

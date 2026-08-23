@@ -3,8 +3,8 @@
 // Location: examples/app/contracts/repository.end
 // ============================================================================
 
-import "../domain/project.end"
-import "../domain/task.end"
+use "../domain/project.end"
+use "../domain/task.end"
 
 trait IProjectRepository {
     fn find_by_id(id: String) -> Project;

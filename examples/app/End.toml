@@ -1,0 +1,73 @@
+# ============================================================================
+# 👑 End Programming Language — Project & Compiler Configuration Manifest
+# File: examples/app/end.toml
+# ============================================================================
+
+[package]
+name = "end_devops_workspace"
+version = "2.0.0"
+edition = "2026"
+description = "Production-grade DevOps & AI Agent Workspace showcase built 100% in End"
+authors = ["End Core Architecture Team <architect@end-lang.org>"]
+license = "Apache-2.0"
+repository = "https://github.com/end-lang/end"
+
+[compiler]
+target = "native"
+opt_level = 3
+strip = true
+memory_model = "ephemeral_lease"
+strict_null_safety = true
+differential_build = true
+smt_proof_gates = true
+emit = ["bin", "wasm", "flutter_bridge"]
+
+[architecture]
+paradigm = "feature-oriented"
+enforce_boundaries = true
+cycle_free = true
+max_file_lines = 500
+solid_audit = true
+symbol_conservation = true
+
+[features]
+default = ["dashboard", "code_workspace", "event_monitor", "ai_agent", "telemetry"]
+dashboard = { enabled = true, level = "stable" }
+code_workspace = { enabled = true, level = "stable" }
+event_monitor = { enabled = true, level = "stable" }
+ai_agent = { enabled = true, level = "production", autotune = true }
+telemetry = { enabled = true, level = "realtime" }
+security_policies = { enabled = true, level = "strict" }
+dependency_graph = { enabled = true, level = "reactive" }
+
+[agents.DevOpsArchitect]
+role = "Autonomous Architecture & System Orchestration"
+capabilities = ["read_ast", "analyze_impact", "dispatch_events", "manage_state"]
+cannot = ["direct_hardware_mutation", "unsealed_declassification"]
+sandbox_tier = "ephemeral_lease"
+
+[agents.CodeReviewerAgent]
+role = "Continuous Automated AI Code Review & AST Verification"
+capabilities = ["read_ast", "lint_rules", "propose_patches", "smt_verify"]
+cannot = ["unverified_commit"]
+sandbox_tier = "read_only"
+
+[agents.SurgicalRefactorAgent]
+role = "Lossless Modular File Decomposition & SOLID Compliance"
+capabilities = ["extract_symbol", "move_symbol", "audit_conservation", "rollback_transaction"]
+cannot = ["delete_untracked_symbol"]
+sandbox_tier = "transactional"
+
+[skills]
+"lossless-modular-refactor" = { version = "1.0.0", verified = true }
+"semantic-diff" = { version = "2.0.0", verified = true }
+"smt-formal-verifier" = { version = "1.5.0", verified = true }
+
+[dependencies]
+"std.ui" = { version = "2.0.0", features = ["120fps_canvas", "declarative_tree"] }
+"std.db" = { version = "2.0.0", features = ["postgres", "sqlite", "redis"] }
+"std.ai" = { version = "2.0.0", features = ["gguf", "simd_tensor"] }
+"std.net" = { version = "2.0.0", features = ["http2", "nexus_rpc"] }
+"std.crypto" = { version = "2.0.0", features = ["argon2id", "jwt"] }
+"std.async" = { version = "2.0.0", features = ["fibers", "channels"] }
+"std.telemetry" = { version = "2.0.0", features = ["realtime_metrics", "traces"] }

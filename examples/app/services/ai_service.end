@@ -4,7 +4,7 @@
 // Demonstrates: AI Service Strategy & Multi-Model Execution
 // ============================================================================
 
-import "../contracts/ai.end"
+use "../contracts/ai.end"
 
 class LocalSmallAIProvider inherits IAIProvider {
     model_path: String;

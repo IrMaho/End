@@ -3,7 +3,7 @@
 // Location: examples/app/services/auth_service.end
 // ============================================================================
 
-import "../contracts/auth.end"
+use "../contracts/auth.end"
 
 class AuthenticationServiceImpl inherits IAuthenticationService {
     active_sessions_count: i64;

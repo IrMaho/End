@@ -3,7 +3,7 @@
 // Location: examples/app/state/task_state.end
 // ============================================================================
 
-import "../domain/task.end"
+use "../domain/task.end"
 
 class TaskStateStore {
     backlog_count: i64;

@@ -4,7 +4,7 @@
 // Demonstrates: Event Bus, Handler Registry, and Pub/Sub Subscriptions
 // ============================================================================
 
-import "event_definitions.end"
+use "event_definitions.end"
 
 class EventBus {
     total_events_dispatched: i64;

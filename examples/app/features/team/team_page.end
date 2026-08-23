@@ -4,7 +4,7 @@
 // Demonstrates: Team Roles, Permissions, and Active Sessions
 // ============================================================================
 
-import "../../domain/user.end"
+use "../../domain/user.end"
 
 fn render_team_view() -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

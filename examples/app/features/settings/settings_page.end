@@ -4,7 +4,7 @@
 // Demonstrates: Compiler Invariant Policies, Capabilities & Configuration
 // ============================================================================
 
-import "../../capabilities/policies.end"
+use "../../capabilities/policies.end"
 
 fn render_settings_view(policy: SecurityBoundaryPolicy) -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

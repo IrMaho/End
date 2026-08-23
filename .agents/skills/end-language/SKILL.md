@@ -1,11 +1,11 @@
 ---
 name: end-language
-description: Comprehensive expert guide and definitive reference manual for writing 100% accurate, error-free End Programming Language code across Pythonic Fluid scripting, modern enterprise systems, 120 FPS declarative UI, operation algebra, and bare-metal assembly architectures.
+description: Comprehensive expert guide and definitive reference manual for writing 100% accurate, error-free End Programming Language code across Pythonic Fluid scripting, feature-oriented architecture, native AI agent/task contracts, modern 120 FPS declarative UI, operation algebra, and bare-metal assembly architectures.
 ---
 
 # End Programming Language: Master Agent Reference & Architecture Guide
 
-> **The End Programming Language (`endc` / `end`)** is an ultra-fast, zero-overhead, memory-safe, statically typed, general-purpose systems programming language providing **The Full Spectrum of Control**: from **Python-like fluid scripting** for high-velocity coding, to **Modern Systems & 120 FPS Declarative UI**, down to **Bare-Metal Hardware & Assembly Control**.
+> **The End Programming Language (`endc` / `end`)** is an ultra-fast, zero-overhead, memory-safe, statically typed, general-purpose systems programming language providing **The Full Spectrum of Control**: from **Python-like fluid scripting** for high-velocity coding, to **Feature-Oriented Systems, Native AI Agents & 120 FPS Declarative UI**, down to **Bare-Metal Hardware & Assembly Control**.
 
 ---
 
@@ -22,13 +22,16 @@ When writing code in End (`.end` files), developers and AI agents can choose the
 │     • Optional type annotations, string interpolation "{var}", comprehensions │
 │     • Pattern matching match, walrus :=, multi-line strings """..."""       │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  🏛️ LEVEL 2: Modern Systems & Enterprise Architecture                         │
+│  🏛️ LEVEL 2: Feature-Oriented Systems, AI Agents & Enterprise Architecture    │
+│     • Feature-Oriented Paradigm: feature X { ... }, module Y { ... }         │
+│     • Modern use syntax: use namespace.feature; (NO legacy imports!)         │
+│     • Native First-Class AI Agents: agent, task, skill, intent, prove, gate  │
+│     • Project Manifest: End.toml / end.toml                                  │
 │     • Strict static typing (i64, f64, str, !T, Box<T>, Arc<T>, Channel<T>)   │
 │     • 120 FPS Declarative UI (@widget), Web Services (EndNexus)             │
 │     • First-Class Operation Algebra (compose, retry, memoize, >>, ||)       │
 │     • Reactive Event Topologies (event, hub, derive, topology, debounce)    │
 │     • Capability Surfaces (surface, capability, grant, deny, attach, mixin) │
-│     • AI Agent Contracts (agent, task, intent, prove, assume, guarantee)   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ⚡ LEVEL 3: Bare-Metal, Systems & Assembly Control                           │
 │     • Ephemeral Resource Leases: lease val buf = alloc(size) { ... }       │
@@ -44,28 +47,66 @@ When writing code in End (`.end` files), developers and AI agents can choose the
 
 ## 2. 🛑 The Golden Rules of End Code Generation
 
-1. **Flexible Variable Declarations:** Use `val` or `let` for immutable bindings (default); use `mut` or `var` for mutable variables.
-2. **Flexible Functions:** Use `pub fn` for exportable typed functions or `def` for quick Pythonic functions.
-3. **Statement Semicolons:** Terminate statements with `;`.
-4. **Clean String Formatting:** Use native interpolation `"{variable}"` or multiline raw strings `"""..."""` instead of ugly manual string concatenations (`"a" + "b" + "\n"`).
-5. **Pattern Matching First:** Use `match expr { ... }` instead of deeply nested, repetitive `if-else` chains.
-6. **No Memory Leaks:** Wrap heavy scratch buffers in `lease val buf = alloc(...) { ... }` or `region Temp { ... }`.
-7. **Declarative UI:** Annotate UI functions with `@widget` and use declarative trees (`Container`, `Column`, `Row`, `Text`, `Button`, `Card`).
+1. **Use `use` Exclusively:** NEVER use legacy `import "..."`. Always use `use namespace.module;` or `use "relative/path.end"`.
+2. **Feature-Oriented Architecture:** Encapsulate domain features using `feature FeatureName { ... }` and modules using `module ModuleName { ... }`.
+3. **First-Class AI Agents & Tasks:** Use native `agent AgentName { ... }` and `task TaskName { ... }` blocks for AI-driven workflows.
+4. **Project Manifest (`End.toml`):** Every project must have an `End.toml` or `end.toml` specifying package metadata, compiler targets, features, and agent permissions.
+5. **Flexible Variable Declarations:** Use `val` or `let` for immutable bindings (default); use `mut` or `var` for mutable variables.
+6. **Flexible Functions:** Use `pub fn` for exportable typed functions or `def` for quick Pythonic functions.
+7. **Clean String Formatting:** Use native interpolation `"{variable}"` or multiline raw strings `"""..."""` instead of manual string concatenations.
+8. **Pattern Matching First:** Use `match expr { ... }` instead of deeply nested, repetitive `if-else` chains.
+9. **Zero Memory Leaks:** Wrap scratch buffers in `lease val buf = alloc(...) { ... }` or `region Temp { ... }`.
+10. **Declarative UI:** Annotate UI functions with `@widget` and use declarative trees (`Container`, `Column`, `Row`, `Text`, `Button`, `Card`).
 
 ---
 
 ## 3. Syntax Reference & Templates
 
-### 3.1 🐍 Level 1: Pythonic Fluid Mode (Rapid Scripting)
+### 3.1 🤖 Native AI Agent & Task Contracts
 ```end
-// Pythonic function with optional types and default arguments
+// First-Class AI Agent Contract
+agent DevOpsArchitect {
+    scope: "src/compiler",
+    goal: "Lossless Codebase Evolution & Verification",
+    constraints: ["symbol_conservation == 100%", "zero_breaking_changes", "smt_verified"]
+}
+
+// First-Class AI Agent Task
+task SurgicalRefactorTask {
+    owner: "agent-devops-01",
+    status: "in_progress",
+    requirement: "Lossless decomposition of monolithic parser into cohesive submodules under 500 lines",
+    target: "src/compiler/parser.end",
+    skills: ["lossless-modular-refactor", "smt-formal-verifier"],
+    change_budget: ["max_files: 5", "max_line_delta: 200"]
+}
+```
+
+### 3.2 🏛️ Feature-Oriented Architecture & `use`
+```end
+use app.domain.user;
+use app.domain.project;
+use app.presentation.components;
+
+pub feature ProjectDashboardFeature @version("2.0.0") @owner("core_team") {
+    depends: [UserDomain, ProjectDomain];
+}
+
+pub fn render_dashboard(p: Project) -> str {
+    val card = create_metric_card("Health", "99%", "1.2%", true);
+    ret "{card.render()}\n\nActive Project: {p.name}";
+}
+```
+
+### 3.3 🐍 Pythonic Fluid Mode (Rapid Scripting)
+```end
 def process_data(items, multiplier = 2):
     val filtered = [x * multiplier for x in items if x > 0];
     
     if not filtered:
         ret {"status": "empty", "total": 0};
         
-    mut sum = 0;
+    var sum = 0;
     for x in filtered:
         sum = sum + x;
         
@@ -75,7 +116,6 @@ def process_data(items, multiplier = 2):
         "total": sum
     };
 
-// Pythonic multi-line formatted reports
 def generate_summary(name, count, total):
     ret """
     ========================================
@@ -84,96 +124,18 @@ def generate_summary(name, count, total):
     Total Value: {total}
     ========================================
     """;
-
-// Pythonic control flow & walrus assignment
-def check_status(queue):
-    if (size := queue.len()) > 0 and not queue.is_empty():
-        println("Queue has {size} active items.");
-    else:
-        pass;
 ```
 
-### 3.2 🏛️ Level 2: Modern Systems & Enterprise Architecture
+### 3.4 ⚡ Bare-Metal Systems & Assembly Control
 ```end
-// 1. Strongly Typed Domain Models
-@export(C, Flutter, WASM)
-pub struct User {
-    pub id: i64,
-    pub name: str,
-    pub email: str,
-    pub balance: f64,
-    pub is_active: bool,
-}
-
-// 2. Pattern Matching with Expression Return
-pub fn evaluate_user_status(user: User) -> str {
-    ret match user.is_active {
-        true if user.balance > 1000.0 => "VIP Active",
-        true => "Standard Active",
-        false => "Inactive Account",
-        _ => "Unknown"
-    };
-}
-
-// 3. Dart-Style Cascades (.. and ?..)
-pub fn setup_theme() -> PaintConfig {
-    val config = PaintConfig()
-        ..color = Color.Blue
-        ..stroke_width = 3
-        ..anti_alias = true;
-    ret config;
-}
-
-// 4. First-Class Operation Algebra
-operation FetchBalance(user_id: i64) -> f64 {
-    requires: user_id > 0;
-    guarantees: result >= 0.0;
-    effects: [DatabaseRead];
-    
-    ret http_get("/users/{user_id}/balance").parse_f64();
-}
-
-val ResilientBalancePipeline = compose {
-    retry FetchBalance up to 3;
-};
-
-// 5. 120 FPS Declarative UI Widget
-@widget
-pub fn UserDashboard(user: User) {
-    Container {
-        padding: 16,
-        background: Color.from_hex("#1E1E2E"),
-        
-        Column {
-            Text {
-                content: "Welcome, {user.name}",
-                font_size: 24,
-                color: Color.White,
-                font_weight: "Bold"
-            },
-            Spacer { height: 12 },
-            Row {
-                Card {
-                    title: "Balance",
-                    value: "${user.balance}",
-                    color: Color.Green
-                }
-            }
-        }
-    }
-}
-```
-
-### 3.3 ⚡ Level 3: Bare-Metal Systems & Assembly Control
-```end
-// 1. Ephemeral Memory Leases (Recycled in 0 ns without GC)
+// Ephemeral Memory Leases (Recycled in 0 ns without GC)
 pub fn process_scratch_buffer(size: usize) {
     lease val buffer = alloc(size) {
         buffer[0] = 0x5A;
     }; // Memory is reclaimed instantly here
 }
 
-// 2. Bump-Allocated Region Arena
+// Bump-Allocated Region Arena
 pub fn render_frame() {
     region FrameArena {
         val node = alloc_node();
@@ -181,16 +143,7 @@ pub fn render_frame() {
     }; // Entire FrameArena is bulk-reset instantly
 }
 
-// 3. Vectorized Hardware SIMD Registers (AVX-512 / NEON)
-pub fn dot_product_simd(a: []f32x8, b: []f32x8, count: usize) -> f32 {
-    mut acc = f32x8.zero();
-    for i in 0..<count {
-        acc = acc + (a[i] * b[i]);
-    }
-    ret acc.horizontal_sum();
-}
-
-// 4. Direct Inline Assembly
+// Direct Inline Assembly
 pub fn fast_cpu_clock() -> u64 {
     asm "x86_64" {
         "rdtsc"
@@ -199,51 +152,41 @@ pub fn fast_cpu_clock() -> u64 {
         "ret"
     }
 }
-
-// 5. Direct C Header Imports
-@import_c("<math.h>")
-pub fn compute_fast_sqrt(val: f64) -> f64 {
-    ret sqrt(val);
-}
 ```
 
 ---
 
-## 4. Standard Library Cheatsheet
+## 4. Project Configuration (`End.toml` / `end.toml`)
 
-| Module | Purpose | Common Functions / Classes |
-| :--- | :--- | :--- |
-| `std.net.http` | HTTP/1.1 & HTTP/2 Server & Client | `HttpServer.bind()`, `HttpResponse.ok()`, `HttpResponse.json()` |
-| `std.db.postgres` | Native PostgreSQL Client | `PostgresPool.connect()`, `client.query()` |
-| `std.db.sqlite` | Embedded SQLite Client | `SqliteDb.open()`, `db.execute()` |
-| `std.db.redis` | Redis RESP3 Client | `RedisClient.connect()`, `redis.set_ex()`, `redis.get()` |
-| `std.ai.gguf` | Local GGUF LLM Parser | `GgufModel.load_file()` |
-| `std.ai.tensor` | Hardware-Accelerated SIMD Tensors | `Tensor.matmul_simd()`, `Tensor.softmax()` |
-| `std.ui` | 120 FPS Declarative Widgets | `Container`, `Column`, `Row`, `Text`, `Button`, `Card` |
-| `std.crypto.jwt` | JSON Web Tokens | `Jwt.sign()`, `Jwt.verify()` |
-| `std.crypto.argon2` | Secure Password Hashing | `Argon2id.hash()`, `Argon2id.verify()` |
-| `std.async` | Lightweight Fiber Concurrency | `FiberGroup.create()`, `group.spawn()`, `group.wait_all()` |
+```toml
+[package]
+name = "my_app"
+version = "1.0.0"
+edition = "2026"
 
----
+[compiler]
+target = "native"
+opt_level = 3
+strip = true
+memory_model = "ephemeral_lease"
+smt_proof_gates = true
 
-## 5. Toolchain CLI Commands
+[architecture]
+paradigm = "feature-oriented"
+enforce_boundaries = true
+cycle_free = true
+max_file_lines = 500
 
-```bash
-# Instant execution via VM
-endc run src/main.end
+[features]
+default = ["dashboard", "ai_agent"]
+dashboard = { enabled = true, level = "stable" }
+ai_agent = { enabled = true, level = "production" }
 
-# Compile native stripped binary with -O3
-endc build src/main.end -o bin/app.exe --strip
+[agents.DevOpsArchitect]
+role = "Autonomous System Architect"
+capabilities = ["read_ast", "analyze_impact", "dispatch_events"]
+cannot = ["unsealed_declassification"]
 
-# Compile dynamic library (.dll / .so / .dylib)
-endc build src/main.end --dll -o bin/libcore.dll
-
-# Launch 120 FPS UI DevServer + AI Canvas
-endc ui src/main.end --dev --serve --port 3000 --open
-
-# Generate OpenAPI 3.1 & AI Project Passport
-endc doc src/main.end -o docs/
-
-# Generate Dart/Flutter FFI bindings
-endc flutter bindgen src/main.end -o flutter_lib/
+[skills]
+"lossless-modular-refactor" = { version = "1.0.0", verified = true }
 ```

@@ -4,7 +4,7 @@
 // Demonstrates: Nanosecond Telemetry, Hardware Gauges & Zero-Allocation Path
 // ============================================================================
 
-import "../../domain/metrics.end"
+use "../../domain/metrics.end"
 
 fn render_system_monitor_view(telemetry: SystemTelemetry) -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

@@ -4,7 +4,7 @@
 // Demonstrates: Project Portfolio Management & Multi-Repository State
 // ============================================================================
 
-import "../../domain/project.end"
+use "../../domain/project.end"
 
 fn render_projects_view() -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

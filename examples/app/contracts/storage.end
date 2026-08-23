@@ -1,31 +1,33 @@
 // ============================================================================
 // End DevOps & AI Workspace — Contracts: Storage Provider Interfaces
 // Location: examples/app/contracts/storage.end
+// Demonstrates: Modern Trait with Void Mutation & Disposal Methods
 // ============================================================================
 
-enum StorageMedium {
+pub enum StorageMedium {
     InMemory,
     LocalDisk,
     CloudObjectStore
 }
 
-trait IStorageProvider {
-    fn put(key: String, value: String) -> bool;
-    fn get(key: String) -> String;
-    fn delete(key: String) -> bool;
-    fn exists(key: String) -> bool;
+// 👑 Modern Storage Trait: put and delete are pure VOID mutations (no dummy return needed!)
+pub trait IStorageProvider {
+    fn put(key: str, value: str);
+    fn get(key: str) -> str;
+    fn delete(key: str);
+    fn exists(key: str) -> bool;
     fn get_medium_type() -> StorageMedium;
 }
 
-struct StorageAuditEntry {
-    operation: String;
-    key: String;
-    size_bytes: i64;
-    success: bool;
+pub struct StorageAuditEntry {
+    pub operation: str,
+    pub key: str,
+    pub size_bytes: i64,
+    pub success: bool,
 }
 
-fn create_storage_audit(op: String, key: String, sz: i64, ok: bool) -> StorageAuditEntry {
-    return StorageAuditEntry {
+pub fn create_storage_audit(op: str, key: str, sz: i64, ok: bool) -> StorageAuditEntry {
+    ret StorageAuditEntry {
         operation: op,
         key: key,
         size_bytes: sz,

@@ -4,7 +4,7 @@
 // Demonstrates: Live Event Stream Inspection, Latency & Error Retries
 // ============================================================================
 
-import "../../events/event_bus.end"
+use "../../events/event_bus.end"
 
 fn render_event_monitor_view(bus: EventBus) -> String {
     return "╔══════════════════════════════════════════════════════════════════════════╗\n"

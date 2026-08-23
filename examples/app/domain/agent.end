@@ -1,9 +1,10 @@
 // ============================================================================
 // End DevOps & AI Workspace — Domain: AI Agent & Autonomous Engineering Plan
 // Location: examples/app/domain/agent.end
+// Demonstrates: First-Class Agent Contracts & Autonomous Task Specs
 // ============================================================================
 
-enum AgentState {
+pub enum AgentState {
     Idle,
     Analyzing,
     Planning,
@@ -13,39 +14,57 @@ enum AgentState {
     Blocked
 }
 
-fn agent_state_to_string(st: AgentState) -> String {
-    match st {
-        AgentState.Idle => { return "IDLE"; }
-        AgentState.Analyzing => { return "ANALYZING"; }
-        AgentState.Planning => { return "PLANNING"; }
-        AgentState.Executing => { return "EXECUTING"; }
-        AgentState.Verifying => { return "VERIFYING"; }
-        AgentState.Completed => { return "COMPLETED"; }
-        AgentState.Blocked => { return "BLOCKED"; }
+pub fn agent_state_to_string(st: AgentState) -> str {
+    ret match st {
+        AgentState.Idle => "IDLE",
+        AgentState.Analyzing => "ANALYZING",
+        AgentState.Planning => "PLANNING",
+        AgentState.Executing => "EXECUTING",
+        AgentState.Verifying => "VERIFYING",
+        AgentState.Completed => "COMPLETED",
+        AgentState.Blocked => "BLOCKED"
+    };
+}
+
+// 👑 First-Class End AI Agent Contract
+agent DevOpsArchitect {
+    scope: "src/compiler",
+    goal: "Autonomous Lossless Codebase Evolution & Verification",
+    constraints: ["symbol_conservation == 100%", "zero_breaking_changes", "smt_verified"]
+}
+
+// 👑 First-Class End AI Agent Task
+task SurgicalRefactorTask {
+    owner: "agent-devops-01",
+    status: "in_progress",
+    requirement: "Lossless decomposition of monolithic parser into cohesive submodules under 500 lines",
+    target: "src/compiler/parser.end",
+    skills: ["lossless-modular-refactor", "smt-formal-verifier"],
+    change_budget: ["max_files: 5", "max_line_delta: 200"]
+}
+
+pub struct AgentTaskPlan {
+    pub id: str,
+    pub intent: str,
+    pub target_module: str,
+    pub state: AgentState,
+    pub confidence_score: i64,
+    pub lines_added: i64,
+    pub lines_removed: i64,
+    pub verification_passed: bool,
+
+    pub fn get_summary(&self) -> str {
+        val state_str = agent_state_to_string(self.state);
+        ret "[{state_str}] {self.intent} -> {self.target_module} (Conf: {self.confidence_score}%)";
+    }
+
+    pub fn is_complete(&self) -> bool {
+        ret self.verification_passed;
     }
 }
 
-class AgentTaskPlan {
-    id: String;
-    intent: String;
-    target_module: String;
-    state: AgentState;
-    confidence_score: i64;
-    lines_added: i64;
-    lines_removed: i64;
-    verification_passed: bool;
-
-    fn get_summary() -> String {
-        return "[" + agent_state_to_string(self.state) + "] " + self.intent + " -> " + self.target_module + " (Conf: " + "99%" + ")";
-    }
-
-    fn is_complete() -> bool {
-        return self.verification_passed;
-    }
-}
-
-fn create_agent_task_plan(id: String, intent: String, target: String) -> AgentTaskPlan {
-    return AgentTaskPlan {
+pub fn create_agent_task_plan(id: str, intent: str, target: str) -> AgentTaskPlan {
+    ret AgentTaskPlan {
         id: id,
         intent: intent,
         target_module: target,

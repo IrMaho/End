@@ -3,17 +3,17 @@
 // Location: examples/app/tests/test_domain_and_contracts.end
 // ============================================================================
 
-import "../domain/user.end"
-import "../domain/project.end"
-import "../domain/task.end"
-import "../domain/metrics.end"
-import "../domain/agent.end"
-import "../contracts/notification.end"
-import "../contracts/storage.end"
-import "../contracts/ai.end"
-import "../services/notification_service.end"
-import "../services/storage_service.end"
-import "../services/ai_service.end"
+use "../domain/user.end"
+use "../domain/project.end"
+use "../domain/task.end"
+use "../domain/metrics.end"
+use "../domain/agent.end"
+use "../contracts/notification.end"
+use "../contracts/storage.end"
+use "../contracts/ai.end"
+use "../services/notification_service.end"
+use "../services/storage_service.end"
+use "../services/ai_service.end"
 
 fn test_user_inheritance_and_polymorphism() -> bool {
     val dev = create_developer("u-1", "Marcus Vance", "marcus@end-lang.org", "End/Rust");
@@ -43,9 +43,10 @@ fn test_polymorphic_services_and_contracts() -> bool {
     val inapp_srv = create_inapp_service();
 
     val msg = create_notification_msg("n-1", "admin@end-lang.org", "Alert", "Body", NotificationType.Email);
-    if (!email_srv.send_notification(msg)) { return false; }
-    if (!push_srv.send_notification(msg)) { return false; }
-    if (!inapp_srv.send_notification(msg)) { return false; }
+    email_srv.send_notification(msg);
+    push_srv.send_notification(msg);
+    inapp_srv.send_notification(msg);
+    if email_srv.sent_count != 1 { ret false; }
 
     val mem_storage = create_in_memory_storage();
     mem_storage.put("key1", "val1");

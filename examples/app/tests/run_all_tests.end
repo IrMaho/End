@@ -4,9 +4,9 @@
 // Executes all domain, contract, event, state, capability, and extension tests.
 // ============================================================================
 
-import "test_domain_and_contracts.end"
-import "test_events_and_state.end"
-import "test_features_and_extensions.end"
+use "test_domain_and_contracts.end"
+use "test_events_and_state.end"
+use "test_features_and_extensions.end"
 
 fn main() -> i64 {
     println("============================================================================");

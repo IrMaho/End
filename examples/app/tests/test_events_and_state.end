@@ -3,13 +3,13 @@
 // Location: examples/app/tests/test_events_and_state.end
 // ============================================================================
 
-import "../events/event_definitions.end"
-import "../events/event_bus.end"
-import "../events/event_pipelines.end"
-import "../state/app_state.end"
-import "../state/project_state.end"
-import "../state/task_state.end"
-import "../state/system_state.end"
+use "../events/event_definitions.end"
+use "../events/event_bus.end"
+use "../events/event_pipelines.end"
+use "../state/app_state.end"
+use "../state/project_state.end"
+use "../state/task_state.end"
+use "../state/system_state.end"
 
 fn test_event_bus_and_pipelines() -> bool {
     val bus = create_event_bus();

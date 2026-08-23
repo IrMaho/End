@@ -4,9 +4,9 @@
 // Demonstrates: Frictionless Feature Extensibility & Open-Closed Principle (OCP)
 // ============================================================================
 
-import "../contracts/ai.end"
-import "../events/event_bus.end"
-import "../capabilities/access_control.end"
+use "../contracts/ai.end"
+use "../events/event_bus.end"
+use "../capabilities/access_control.end"
 
 enum CodeReviewVerdict {
     Approved,
