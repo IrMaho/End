@@ -10,6 +10,7 @@ serde_json = "1.0"
 colored = "2.1"
 toml = "0.8"
 sha2 = "0.10"
+z3 = "0.20.2"
 
 [profile.release]
 opt-level = 2

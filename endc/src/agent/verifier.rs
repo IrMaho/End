@@ -361,7 +361,7 @@ impl ContractVerifier {
                                 attempt_number: prior_repair_history.len() + 1,
                                 timestamp: format!("{:?}", Instant::now()),
                                 failure_reason: "required_test_failed".to_string(),
-                                failed_test: Some(test_name),
+                                failed_test: Some(test_name.clone()),
                                 assertion: Some(AssertionDetail {
                                     expected: serde_json::json!(true),
                                     actual: serde_json::json!(false),
@@ -408,6 +408,70 @@ impl ContractVerifier {
                             }),
                             resolved: false,
                         });
+                    }
+                }
+            }
+        }
+
+        // 8b. Formal Verification Obligations Check in Target Source Modules
+        for rel_file in &target_files {
+            let abs_file = project_root.join(rel_file);
+            if let Ok((module, _)) = load_and_analyze(&abs_file) {
+                let smt_report = crate::semantic::SmtFormalProver::prove_module(&module);
+                if smt_report.obligations_checked > 0
+                    && smt_report.obligations_proven < smt_report.obligations_checked
+                {
+                    for obl_res in &smt_report.results {
+                        if !obl_res.result.is_verified() {
+                            let desc = match &obl_res.result {
+                                crate::semantic::ProofResult::Counterexample(model) => {
+                                    format!(
+                                        "Formal obligation '{}' at line {} refuted by counterexample: {:?}",
+                                        obl_res.obligation_name, obl_res.span.line, model
+                                    )
+                                }
+                                crate::semantic::ProofResult::Unknown(reason) => {
+                                    format!(
+                                        "Formal obligation '{}' at line {} is UNKNOWN: {}",
+                                        obl_res.obligation_name, obl_res.span.line, reason
+                                    )
+                                }
+                                crate::semantic::ProofResult::Timeout => {
+                                    format!(
+                                        "Formal obligation '{}' at line {} timed out",
+                                        obl_res.obligation_name, obl_res.span.line
+                                    )
+                                }
+                                crate::semantic::ProofResult::SolverError(e) => {
+                                    format!(
+                                        "Formal obligation '{}' at line {} solver error: {}",
+                                        obl_res.obligation_name, obl_res.span.line, e
+                                    )
+                                }
+                                _ => "Formal verification failed".to_string(),
+                            };
+                            failure_reasons.push(desc.clone());
+
+                            if structured_feedback.is_none() {
+                                structured_feedback = Some(RepairAttempt {
+                                    attempt_number: prior_repair_history.len() + 1,
+                                    timestamp: format!("{:?}", Instant::now()),
+                                    failure_reason: "formal_verification_failed".to_string(),
+                                    failed_test: Some(obl_res.obligation_name.clone()),
+                                    assertion: Some(AssertionDetail {
+                                        expected: serde_json::json!("VERIFIED"),
+                                        actual: serde_json::json!(obl_res.result.status_string()),
+                                    }),
+                                    suggested_fix_area: Some(SuggestedFixArea {
+                                        file: rel_file.clone(),
+                                        line_start: obl_res.span.line,
+                                        line_end: obl_res.span.line,
+                                        hint: desc,
+                                    }),
+                                    resolved: false,
+                                });
+                            }
+                        }
                     }
                 }
             }
