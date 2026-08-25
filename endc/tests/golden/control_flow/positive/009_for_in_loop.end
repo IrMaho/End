@@ -3,7 +3,6 @@
 // 0
 // 1
 // 2
-// 3
 
 fn main() void {
     for i in 0..3 {

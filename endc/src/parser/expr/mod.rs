@@ -250,6 +250,8 @@ impl Parser {
             || self.check(&TokenKind::GreaterEqual)
             || self.check(&TokenKind::DotDot)
             || self.check(&TokenKind::DotDotLess)
+            || self.check(&TokenKind::DotDotEqual)
+            || self.check(&TokenKind::DotDotDot)
             || self.check(&TokenKind::Is)
             || self.check(&TokenKind::In)
         {
@@ -259,7 +261,7 @@ impl Parser {
                 left = Expression::Range {
                     start: Box::new(left),
                     end: Box::new(right),
-                    inclusive: true,
+                    inclusive: false,
                     span,
                 };
             } else if self.match_token(&TokenKind::DotDotLess) {
@@ -268,6 +270,14 @@ impl Parser {
                     start: Box::new(left),
                     end: Box::new(right),
                     inclusive: false,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::DotDotEqual) || self.match_token(&TokenKind::DotDotDot) {
+                let right = self.parse_shift()?;
+                left = Expression::Range {
+                    start: Box::new(left),
+                    end: Box::new(right),
+                    inclusive: true,
                     span,
                 };
             } else if self.match_token(&TokenKind::Is) {

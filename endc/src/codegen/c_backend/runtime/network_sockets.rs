@@ -4,7 +4,9 @@ pub fn emit_network_sockets_runtime(out: &mut String) {
     out.push_str("#if defined(_WIN32)\n");
     out.push_str("    #include <winsock2.h>\n");
     out.push_str("    #include <ws2tcpip.h>\n");
+    out.push_str("    #if defined(_MSC_VER)\n");
     out.push_str("    #pragma comment(lib, \"ws2_32.lib\")\n");
+    out.push_str("    #endif\n");
     out.push_str("    static inline void _end_socket_init(void) {\n");
     out.push_str("        static bool _inited = false;\n");
     out.push_str("        if (!_inited) { WSADATA wsa; WSAStartup(MAKEWORD(2, 2), &wsa); _inited = true; }\n");

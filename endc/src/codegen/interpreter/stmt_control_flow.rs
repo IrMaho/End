@@ -134,12 +134,29 @@ impl Interpreter {
                 body,
                 ..
             } => {
-                let count = match self.eval_expression(iterable)? {
-                    Value::Int(n) => n,
-                    _ => 0,
+                let (start_val, end_val, is_inclusive) = match iterable {
+                    crate::ast::Expression::Range { start, end, inclusive, .. } => {
+                        let s = match self.eval_expression(start)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        let e = match self.eval_expression(end)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        (s, e, *inclusive)
+                    }
+                    _ => {
+                        let count = match self.eval_expression(iterable)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        (0, count, false)
+                    }
                 };
                 self.push_scope();
-                for i in 0..count {
+                let limit = if is_inclusive { end_val + 1 } else { end_val };
+                for i in start_val..limit {
                     self.set_var(item_name, Value::Int(i));
                     for s in &body.statements {
                         if let Some(ret) = self.eval_statement(s)? {

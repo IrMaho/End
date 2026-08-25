@@ -149,7 +149,7 @@ impl CBackend {
                 self.map_type(&f.return_type)
             };
             let mut params_str = Vec::new();
-            if f.name == "main" && !f.params.is_empty() {
+            if f.name == "main" {
                 params_str.push("int argc".to_string());
                 params_str.push("char** argv".to_string());
             } else {
@@ -329,7 +329,7 @@ impl CBackend {
         };
 
         let mut params_str = Vec::new();
-        if func.name == "main" && !func.params.is_empty() {
+        if func.name == "main" {
             params_str.push("int argc".to_string());
             params_str.push("char** argv".to_string());
         } else {
@@ -384,6 +384,9 @@ impl CBackend {
         self.indent_level += 1;
         self.scope_vars = vec![HashSet::new()];
         self.var_types.clear();
+        if func.name == "main" {
+            self.output.push_str(&format!("{}(void)argc; (void)argv;\n", self.indent()));
+        }
         for p in &func.params {
             self.declare_c_var(&p.name, p.param_type.clone());
         }
@@ -404,6 +407,20 @@ impl CBackend {
         }
         if func.name == "main" {
             self.output.push_str(&format!("{}return 0;\n", self.indent()));
+        } else if func.return_type != Type::Void {
+            if let Type::Custom(name) = &func.return_type {
+                self.output.push_str(&format!("{}return ({}){{0}};\n", self.indent(), name));
+            } else if matches!(func.return_type, Type::F32 | Type::F64) {
+                self.output.push_str(&format!("{}return 0.0;\n", self.indent()));
+            } else if matches!(func.return_type, Type::Bool) {
+                self.output.push_str(&format!("{}return false;\n", self.indent()));
+            } else if matches!(func.return_type, Type::Str) {
+                self.output.push_str(&format!("{}return \"\";\n", self.indent()));
+            } else if matches!(func.return_type, Type::Pointer(_)) {
+                self.output.push_str(&format!("{}return NULL;\n", self.indent()));
+            } else {
+                self.output.push_str(&format!("{}return 0;\n", self.indent()));
+            }
         }
         self.indent_level -= 1;
         self.output.push_str("}\n\n");

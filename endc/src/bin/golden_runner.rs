@@ -785,9 +785,9 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
     let mut gcc_cmd = Command::new("gcc");
     gcc_cmd
         .arg("-O0")
-        .arg("-Wno-incompatible-pointer-types")
-        .arg("-Wno-unused-variable")
-        .arg("-Wno-unused-function")
+        .arg("-Wall")
+        .arg("-Werror")
+        .arg("-std=c11")
         .arg(c_file_path.to_str().unwrap())
         .arg("-o")
         .arg(bin_path.to_str().unwrap());

@@ -185,7 +185,7 @@ impl CBackend {
                 self.output.push_str(&format!("{}/* 🛡️ [TRUE LATENCY HEDGING: Primary at t=0, Fallback after {}ms delay] */\n", self.indent(), delay_str));
                 self.output.push_str(&format!("{}{{\n", self.indent()));
                 self.indent_level += 1;
-                self.output.push_str(&format!("{}volatile int __hedge_winner = -1;\n", self.indent()));
+                self.output.push_str(&format!("{}volatile int __hedge_winner __attribute__((unused)) = -1;\n", self.indent()));
                 self.output.push_str(&format!("{}#ifdef _OPENMP\n{}#pragma omp parallel num_threads(2)\n{}{{\n", self.indent(), self.indent(), self.indent()));
                 self.indent_level += 1;
                 self.output.push_str(&format!("{}int __tid = omp_get_thread_num();\n", self.indent()));

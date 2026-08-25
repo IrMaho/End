@@ -84,6 +84,40 @@ impl CBackend {
                 let l_ty = self.infer_type(left);
                 if matches!(op, BinaryOp::Add) && l_ty == Type::Str { Type::Str } else { l_ty }
             }
+            Expression::Cast { target_type, .. } => target_type.clone(),
+            Expression::Alloc { target_type, .. } => Type::Pointer(Box::new(target_type.clone())),
+            Expression::Conditional { then_branch, else_branch, .. } => {
+                let t_ty = self.infer_type(then_branch);
+                if t_ty != Type::Void {
+                    t_ty
+                } else {
+                    self.infer_type(else_branch)
+                }
+            }
+            Expression::Match { arms, .. } => {
+                for arm in arms {
+                    if let Some(last) = arm.body.statements.last() {
+                        let ty = match last {
+                            crate::ast::Statement::Expression(e) => self.infer_type(e),
+                            crate::ast::Statement::Return { value: Some(e), .. } => self.infer_type(e),
+                            _ => Type::Void,
+                        };
+                        if ty != Type::Void {
+                            return ty;
+                        }
+                    }
+                }
+                Type::Void
+            }
+            Expression::Index { array, .. } => {
+                let arr_ty = self.infer_type(array);
+                match arr_ty {
+                    Type::Array(inner, _) | Type::Slice(inner) | Type::Pointer(inner) => *inner,
+                    _ => Type::Void,
+                }
+            }
+            Expression::Walrus { expr, .. } => self.infer_type(expr),
+            Expression::Catch { expr, .. } | Expression::Await { expr, .. } => self.infer_type(expr),
             _ => Type::Void,
         }
     }

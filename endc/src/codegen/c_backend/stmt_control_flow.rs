@@ -14,6 +14,9 @@ impl CBackend {
                     t.clone()
                 } else if let Some(Expression::StructInit { name: st_name, .. }) = initializer {
                     Type::Custom(st_name.clone())
+                } else if let Some(Expression::EnumInit { enum_name, variant_name, .. }) = initializer {
+                    let en = enum_name.clone().unwrap_or_else(|| self.find_enum_for_variant(variant_name));
+                    Type::Custom(en)
                 } else if let Some(Expression::Alloc { target_type, .. }) = initializer {
                     Type::Pointer(Box::new(target_type.clone()))
                 } else if let Some(Expression::Promote { expr, .. }) = initializer {
@@ -39,7 +42,7 @@ impl CBackend {
                     if let Some(init) = initializer {
                         let init_str = self.gen_expression(init);
                         self.output.push_str(&format!(
-                            "{}{} {}[{}] = {};\n",
+                            "{}{} {}[{}] __attribute__((unused)) = {};\n",
                             self.indent(),
                             inner_ty_str,
                             name,
@@ -48,7 +51,7 @@ impl CBackend {
                         ));
                     } else {
                         self.output.push_str(&format!(
-                            "{}{} {}[{}];\n",
+                            "{}{} {}[{}] __attribute__((unused));\n",
                             self.indent(),
                             inner_ty_str,
                             name,
@@ -65,7 +68,7 @@ impl CBackend {
                     if let Some(init) = initializer {
                         let init_str = self.gen_expression(init);
                         self.output.push_str(&format!(
-                            "{}{} {} = {};\n",
+                            "{}{} {} __attribute__((unused)) = {};\n",
                             self.indent(),
                             ty_str,
                             name,
@@ -73,7 +76,7 @@ impl CBackend {
                         ));
                     } else {
                         self.output.push_str(&format!(
-                            "{}{} {};\n",
+                            "{}{} {} __attribute__((unused));\n",
                             self.indent(),
                             ty_str,
                             name
@@ -168,7 +171,9 @@ impl CBackend {
                     }
                 };
                 self.output.push_str(&format!(
-                    "{}#pragma omp parallel for\n",
+                    "{}#ifdef _OPENMP\n{}#pragma omp parallel for\n{}#endif\n",
+                    self.indent(),
+                    self.indent(),
                     self.indent()
                 ));
                 self.output.push_str(&format!(
@@ -206,7 +211,8 @@ impl CBackend {
                     }
                 };
                 self.output.push_str(&format!(
-                    "{}#pragma unroll\n{}#pragma GCC ivdep\n",
+                    "{}#ifdef __GNUC__\n{}#pragma GCC ivdep\n{}#endif\n",
+                    self.indent(),
                     self.indent(),
                     self.indent()
                 ));

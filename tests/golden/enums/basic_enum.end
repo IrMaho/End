@@ -1,0 +1,37 @@
+// @test: positive
+// @expect-stdout:
+// Circle
+// 200
+
+enum Shape {
+    Circle,
+    Rectangle,
+}
+
+fn describe_shape(s: Shape) void {
+    match s {
+        .Circle => {
+            println("Circle")
+        }
+        .Rectangle => {
+            println("Rectangle")
+        }
+        _ => {
+            println("Other")
+        }
+    }
+}
+
+fn main() void {
+    val s = Shape.Circle
+    describe_shape(s)
+    val r = Shape.Rectangle
+    match r {
+        .Rectangle => {
+            println(200)
+        }
+        _ => {
+            println(0)
+        }
+    }
+}
