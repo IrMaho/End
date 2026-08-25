@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 42
+// 42
+
+fn main() void {
+    val val_box = 42
+    val ptr = &val_box
+    println(val_box)
+    println(*ptr)
+}

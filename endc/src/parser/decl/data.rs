@@ -46,7 +46,7 @@ impl Parser {
                 if ptypes.len() == 1 {
                     payload = Some(ptypes.remove(0));
                 } else if !ptypes.is_empty() {
-                    payload = Some(Type::Custom(format!("tuple_{}", ptypes.len())));
+                    payload = Some(Type::Tuple(ptypes));
                 }
             } else if self.match_token(&TokenKind::Equal) {
                 let _ = self.parse_expression()?;

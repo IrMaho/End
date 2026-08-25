@@ -172,10 +172,17 @@ fn main() {
     }
 
     // Filter tests if filter specified
-    let tests_to_run: Vec<TestCase> = if let Some(ref filter) = config.filter {
+    let tests_to_run: Vec<TestCase> = if let Some(ref raw_filter) = config.filter {
+        let filter = raw_filter.trim_matches('/').trim_matches('\\');
+        let filter_alt = filter.replace('/', "::").replace('\\', "::");
         test_cases
             .into_iter()
-            .filter(|tc| tc.id.contains(filter) || tc.feature_id.contains(filter))
+            .filter(|tc| {
+                tc.id.contains(filter)
+                    || tc.id.contains(&filter_alt)
+                    || tc.feature_id.contains(filter)
+                    || tc.path.to_string_lossy().contains(filter)
+            })
             .collect()
     } else {
         test_cases
@@ -272,12 +279,16 @@ fn main() {
     }
 
     // Gate 08: Feature Coverage
-    let coverage_pass = report_coverage(&matrix, &results_to_tests(&results), total_discovered);
-    if !coverage_pass {
-        println!("  ✖ GATE 08 (Feature Coverage):  FAILED");
-        gates_passed = false;
+    if config.filter.is_none() {
+        let coverage_pass = report_coverage(&matrix, &results_to_tests(&results), total_discovered);
+        if !coverage_pass {
+            println!("  ✖ GATE 08 (Feature Coverage):  FAILED");
+            gates_passed = false;
+        } else {
+            println!("  ✔ GATE 08 (Feature Coverage):  PASSED");
+        }
     } else {
-        println!("  ✔ GATE 08 (Feature Coverage):  PASSED");
+        println!("  ✔ GATE 08 (Feature Coverage):  SKIPPED (filtered run: {} tests executed)", results.len());
     }
 
     if !gates_passed {

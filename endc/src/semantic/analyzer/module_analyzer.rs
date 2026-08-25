@@ -55,26 +55,30 @@ impl SemanticAnalyzer {
 
             // E0931: Uncontracted Feature Implementation
             if !feat.implementations.is_empty() && feat.contracts.is_empty() && feat.api.is_none() {
-                self.errors.push(DiagnosticError {
-                    code: "E0931".to_string(),
-                    message: format!("UncontractedFeature: feature '{}' has implementations but no contract or API boundary", feat.name),
-                    line: feat.span.line,
-                    col: feat.span.col,
-                    kind: "ArchitecturalViolation".to_string(),
-                    repair_suggestion: Some(format!("declare a 'contract' or 'api' block for feature '{}'", feat.name)),
-                });
+                self.errors.push(
+                    DiagnosticError::new(
+                        "E0931",
+                        format!("UncontractedFeature: feature '{}' has implementations but no contract or API boundary", feat.name),
+                        feat.span.line,
+                        feat.span.col,
+                        "ArchitecturalViolation",
+                    )
+                    .with_suggestion(format!("declare a 'contract' or 'api' block for feature '{}'", feat.name)),
+                );
             }
 
             // E0937: 7-Pillar @evolvable Audit (must have extension points or contracts)
             if feat.is_evolvable && feat.extensions.is_empty() && feat.contracts.is_empty() {
-                self.errors.push(DiagnosticError {
-                    code: "E0937".to_string(),
-                    message: format!("UnboundedEvolvableFeature: evolvable feature '{}' must define at least one extension point or contract clause", feat.name),
-                    line: feat.span.line,
-                    col: feat.span.col,
-                    kind: "ArchitecturalViolation".to_string(),
-                    repair_suggestion: Some(format!("add an 'extension_point' or 'contract' to feature '{}'", feat.name)),
-                });
+                self.errors.push(
+                    DiagnosticError::new(
+                        "E0937",
+                        format!("UnboundedEvolvableFeature: evolvable feature '{}' must define at least one extension point or contract clause", feat.name),
+                        feat.span.line,
+                        feat.span.col,
+                        "ArchitecturalViolation",
+                    )
+                    .with_suggestion(format!("add an 'extension_point' or 'contract' to feature '{}'", feat.name)),
+                );
             }
 
             // Register dependencies
@@ -86,14 +90,16 @@ impl SemanticAnalyzer {
             for dep in &feat.needs {
                 if let Some(other) = self.features.get(&dep.name) {
                     if other.needs.iter().any(|d| d.name == feat.name) {
-                        self.errors.push(DiagnosticError {
-                            code: "E0934".to_string(),
-                            message: format!("CircularFeatureDependency: circular dependency detected between feature '{}' and '{}'", feat.name, dep.name),
-                            line: feat.span.line,
-                            col: feat.span.col,
-                            kind: "ArchitecturalViolation".to_string(),
-                            repair_suggestion: Some(format!("decouple dependency between '{}' and '{}' using contracts or events", feat.name, dep.name)),
-                        });
+                        self.errors.push(
+                            DiagnosticError::new(
+                                "E0934",
+                                format!("CircularFeatureDependency: circular dependency detected between feature '{}' and '{}'", feat.name, dep.name),
+                                feat.span.line,
+                                feat.span.col,
+                                "ArchitecturalViolation",
+                            )
+                            .with_suggestion(format!("decouple dependency between '{}' and '{}' using contracts or events", feat.name, dep.name)),
+                        );
                     }
                 }
             }
@@ -136,14 +142,16 @@ impl SemanticAnalyzer {
             }
             if let Some(thresh) = m.cohesion {
                 if thresh < 0.5 {
-                    self.errors.push(DiagnosticError {
-                        code: "E0917".to_string(),
-                        message: format!("CohesionBelowThreshold: module '{}' cohesion ({:.2}) is below threshold (0.50)", m.name, thresh),
-                        line: m.span.line,
-                        col: m.span.col,
-                        kind: "ArchitecturalViolation".to_string(),
-                        repair_suggestion: Some(format!("decompose module '{}' to improve cohesion", m.name)),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0917",
+                            format!("CohesionBelowThreshold: module '{}' cohesion ({:.2}) is below threshold (0.50)", m.name, thresh),
+                            m.span.line,
+                            m.span.col,
+                            "ArchitecturalViolation",
+                        )
+                        .with_suggestion(format!("decompose module '{}' to improve cohesion", m.name)),
+                    );
                 }
             }
 
@@ -273,14 +281,30 @@ impl SemanticAnalyzer {
         );
 
         for v in sec_report.violations {
-            self.errors.push(DiagnosticError {
-                code: v.code,
-                message: v.message,
-                line: v.line,
-                col: v.col,
-                kind: v.title,
-                repair_suggestion: Some(v.remediation),
-            });
+            self.errors.push(
+                DiagnosticError::new(v.code, v.message, v.line, v.col, v.title)
+                    .with_suggestion(v.remediation),
+            );
+        }
+
+        // Gate 12: Validate that no variable in scope remains with unresolved Type::Unknown
+        if self.errors.is_empty() {
+            for var_sym in self.env.all_symbols() {
+                if var_sym.var_type.is_unknown() {
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E002",
+                            format!("TypeInferenceFailure: could not infer concrete type for variable '{}'", var_sym.name),
+                            var_sym.line_def,
+                            1,
+                            "TypeInferenceError",
+                        )
+                        .with_expected("concrete type")
+                        .with_actual("unknown type")
+                        .with_suggestion("provide an explicit type annotation"),
+                    );
+                }
+            }
         }
 
         if self.errors.is_empty() {
@@ -292,7 +316,7 @@ impl SemanticAnalyzer {
 
     pub(crate) fn analyze_function(&mut self, func: &FunctionDef) {
         self.current_function = Some(func.name.clone());
-        self.active_loans.clear();
+        self.borrow_checker.clear();
         self.push_scope();
 
         for p in &func.params {
@@ -331,14 +355,16 @@ impl SemanticAnalyzer {
                     let impure_effects: Vec<&String> = effects.iter().filter(|e| *e == "network" || *e == "io" || *e == "database" || *e == "filesystem").collect();
                     if !impure_effects.is_empty() {
                         if let Some(sym) = self.graph.symbols.get(func_name) {
-                            self.errors.push(DiagnosticError {
-                                code: "E0904".to_string(),
-                                message: format!("PurityViolation: function '{}' is marked @pure but transitively invokes impure operations: {:?}", func_name, impure_effects),
-                                line: sym.defined_at_line,
-                                col: 1,
-                                kind: "PurityViolationError".to_string(),
-                                repair_suggestion: Some("remove @pure directive or refactor to isolate side-effects".to_string()),
-                            });
+                            self.errors.push(
+                                DiagnosticError::new(
+                                    "E0904",
+                                    format!("PurityViolation: function '{}' is marked @pure but transitively invokes impure operations: {:?}", func_name, impure_effects),
+                                    sym.defined_at_line,
+                                    1,
+                                    "PurityViolationError",
+                                )
+                                .with_suggestion("remove @pure directive or refactor to isolate side-effects"),
+                            );
                         }
                     }
                 }

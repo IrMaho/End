@@ -1,0 +1,20 @@
+// @test: negative
+// @expect-error: E010
+
+enum Direction {
+    North,
+    South,
+    East,
+    West,
+}
+
+fn dir_code(d: Direction) i64 {
+    match d {
+        .North => { ret 1 }
+        .South => { ret 2 }
+    }
+}
+
+fn main() void {
+    dir_code(.North)
+}

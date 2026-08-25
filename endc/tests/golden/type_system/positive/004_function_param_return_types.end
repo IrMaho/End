@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 120
+
+fn multiply_and_add(a: i64, b: i64, c: i64) i64 {
+    ret (a * b) + c
+}
+
+fn main() void {
+    val res = multiply_and_add(10, 11, 10)
+    println(res)
+}

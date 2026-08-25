@@ -124,7 +124,7 @@ impl Parser {
                         let mut s = self.parse_struct(false, pending_directives)?;
                         s.is_sealed = true;
                         structs.push(s);
-                    } else if self.check(&TokenKind::Boundary) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "boundary" } else { false }) {
+                    } else if self.check(&TokenKind::Boundary) || (if let TokenKind::Ident(s) = self.peek_kind() { s.eq_ignore_ascii_case("boundary") } else { false }) {
                         self.advance();
                         let name = self.parse_identifier_or_keyword()?;
                         self.match_token(&TokenKind::SemiColon);

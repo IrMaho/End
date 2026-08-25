@@ -34,6 +34,7 @@ impl CBackend {
             Type::Operation(_, _) => "EndOperation*".to_string(),
             Type::Event(name) => format!("EndEvent_{}", name),
             Type::OperationResult => "EndOperationResult*".to_string(),
+            Type::Unknown => "void*".to_string(),
         }
     }
 

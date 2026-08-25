@@ -1,0 +1,12 @@
+// @test: negative
+// @expect-error: E0906
+
+st DataBuffer {
+    capacity: i64,
+}
+
+fn main() void {
+    val buf1 = DataBuffer { capacity: 1024 }
+    val buf2 = buf1
+    val read_val = buf1.capacity
+}

@@ -37,7 +37,7 @@ impl Parser {
                 }
             }
             self.expect(TokenKind::RParen)?;
-            return Ok(Type::Custom(format!("tuple_{}", tuple_types.len())));
+            return Ok(Type::Tuple(tuple_types));
         }
 
         match self.peek_kind() {

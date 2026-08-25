@@ -1,0 +1,25 @@
+// @test: positive
+// @expect-stdout:
+// 10
+// 20
+// 50
+
+st Inner {
+    val_a: i64,
+    val_b: i64,
+}
+
+st Outer {
+    inner: Inner,
+    tag: i64,
+}
+
+fn main() void {
+    val o = Outer {
+        inner: Inner { val_a: 10, val_b: 20 },
+        tag: 50,
+    }
+    println(o.inner.val_a)
+    println(o.inner.val_b)
+    println(o.tag)
+}

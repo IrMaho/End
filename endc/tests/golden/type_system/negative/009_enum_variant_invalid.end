@@ -1,0 +1,12 @@
+// @test: negative
+// @expect-error: E009
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn main() void {
+    val c: Color = .Yellow
+}

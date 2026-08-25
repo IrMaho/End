@@ -48,6 +48,8 @@ pub enum DiagCode {
     E019_CONCURRENCY_VIOLATION,
     #[serde(rename = "E020")]
     E020_ATTRIBUTE_INVALID,
+    #[serde(rename = "E021")]
+    E021_FIELD_NOT_FOUND,
     #[serde(untagged)]
     Custom(String),
 }
@@ -76,6 +78,7 @@ impl DiagCode {
             DiagCode::E018_BORROW_CHECK_FAILURE => "E018",
             DiagCode::E019_CONCURRENCY_VIOLATION => "E019",
             DiagCode::E020_ATTRIBUTE_INVALID => "E020",
+            DiagCode::E021_FIELD_NOT_FOUND => "E021",
             DiagCode::Custom(s) => s.as_str(),
         }
     }
@@ -103,6 +106,7 @@ impl DiagCode {
             DiagCode::E018_BORROW_CHECK_FAILURE => "E018_BORROW_CHECK_FAILURE",
             DiagCode::E019_CONCURRENCY_VIOLATION => "E019_CONCURRENCY_VIOLATION",
             DiagCode::E020_ATTRIBUTE_INVALID => "E020_ATTRIBUTE_INVALID",
+            DiagCode::E021_FIELD_NOT_FOUND => "E021_FIELD_NOT_FOUND",
             DiagCode::Custom(s) => s.as_str(),
         }
     }
@@ -129,6 +133,7 @@ impl DiagCode {
             "E018" | "E018_BORROW_CHECK_FAILURE" => DiagCode::E018_BORROW_CHECK_FAILURE,
             "E019" | "E019_CONCURRENCY_VIOLATION" => DiagCode::E019_CONCURRENCY_VIOLATION,
             "E020" | "E020_ATTRIBUTE_INVALID" => DiagCode::E020_ATTRIBUTE_INVALID,
+            "E021" | "E021_FIELD_NOT_FOUND" => DiagCode::E021_FIELD_NOT_FOUND,
             other => DiagCode::Custom(other.to_string()),
         }
     }

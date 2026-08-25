@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E002
+
+fn main() void {
+    val a = 100
+    val b = "string"
+    val c = a - b
+}

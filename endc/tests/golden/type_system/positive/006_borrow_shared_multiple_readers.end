@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 42
+// 42
+// 42
+
+fn main() void {
+    val x = 42
+    val r1 = &x
+    val r2 = &x
+    println(x)
+    println(*r1)
+    println(*r2)
+}

@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0908
+
+fn main() void {
+    val x = 10
+    x = 20
+}

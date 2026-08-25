@@ -106,6 +106,15 @@ pub fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer
             if let Some(ref h) = err.repair_suggestion {
                 diag = diag.with_help(h);
             }
+            if let Some(ref exp) = err.expected {
+                diag = diag.with_expected(exp);
+            }
+            if let Some(ref act) = err.actual {
+                diag = diag.with_actual(act);
+            }
+            for ctx in &err.context {
+                diag = diag.with_context(ctx);
+            }
             eprintln!("{}", diag.render(&full_source));
         }
         return Err(format!("Found {} semantic errors", errs.len()));

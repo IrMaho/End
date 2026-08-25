@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E003
+
+fn main() void {
+    val result = nonexistent_function_call(1, 2)
+}

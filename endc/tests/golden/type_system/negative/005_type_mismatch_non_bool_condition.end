@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E002
+
+fn main() void {
+    if 42 {
+        println("should fail")
+    }
+}

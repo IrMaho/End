@@ -162,19 +162,20 @@ pub fn handle_check(args: CheckArgs) {
                         }));
                     } else {
                         for err in &errors {
-                            eprintln!("error[{}]: {}", err.code.red().bold(), err.message.bold());
-                            eprintln!("  --> {}:{}:{}", file_str.cyan(), err.line, err.col);
-                            eprintln!("   |");
-                            if err.line <= source_lines.len() && err.line > 0 {
-                                eprintln!("{:4} |     {}", err.line, source_lines[err.line - 1]);
-                                let pointer_pad = " ".repeat(err.col.saturating_sub(1));
-                                eprintln!("     |     {}^ {}", pointer_pad, "memory allocated in local arena is never freed or escaped safely".red());
+                            let mut diag = crate::diagnostics::Diagnostic::error(&err.code, &err.message, &file_str, err.line, err.col);
+                            if let Some(ref h) = err.repair_suggestion {
+                                diag = diag.with_help(h);
                             }
-                            eprintln!("   |");
-                            if let Some(ref sug) = err.repair_suggestion {
-                                eprintln!("   = {}: {}", "help".green().bold(), sug);
+                            if let Some(ref exp) = err.expected {
+                                diag = diag.with_expected(exp);
                             }
-                            eprintln!();
+                            if let Some(ref act) = err.actual {
+                                diag = diag.with_actual(act);
+                            }
+                            for ctx in &err.context {
+                                diag = diag.with_context(ctx);
+                            }
+                            eprintln!("{}", diag.render(&source));
                         }
                     }
                     std::process::exit(1);

@@ -1,0 +1,10 @@
+// @test: negative
+// @expect-error: E002
+
+fn get_number() i64 {
+    ret "not_a_number"
+}
+
+fn main() void {
+    val x = get_number()
+}

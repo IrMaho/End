@@ -40,9 +40,16 @@ impl SemanticAnalyzer {
                 if let Some(b) = budget {
                     self.analyze_expression(b);
                 }
-                self.analyze_expression(iterable);
+                let iter_ty = self.analyze_expression(iterable);
+                let elem_ty = match iter_ty {
+                    Type::Array(inner, _) | Type::Slice(inner) | Type::Pointer(inner) => *inner,
+                    Type::Generic(ref name, ref args) if name == "Range" && !args.is_empty() => args[0].clone(),
+                    Type::Str => Type::U8,
+                    Type::Unknown => Type::Unknown,
+                    _ => Type::Unknown,
+                };
                 self.push_scope();
-                self.declare_var(item_name, Type::I64, span.line, false);
+                self.declare_var(item_name, elem_ty, span.line, false);
                 self.analyze_block(body);
                 self.pop_scope();
             }
@@ -54,14 +61,16 @@ impl SemanticAnalyzer {
             Statement::Prove { condition, span } => {
                 self.analyze_expression(condition);
                 if self.eval_static_const_bool(condition) == Some(false) {
-                    self.errors.push(DiagnosticError {
-                        code: "E0911".to_string(),
-                        message: format!("StaticProofFailed: static proof obligation failed at line {} (expression is provably false at compile time)", span.line),
-                        line: span.line,
-                        col: span.col,
-                        kind: "StaticProofError".to_string(),
-                        repair_suggestion: Some("verify preconditions or fix logical contradiction in proof obligation".to_string()),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0911",
+                            format!("StaticProofFailed: static proof obligation failed at line {} (expression is provably false at compile time)", span.line),
+                            span.line,
+                            span.col,
+                            "StaticProofError",
+                        )
+                        .with_suggestion("verify preconditions or fix logical contradiction in proof obligation"),
+                    );
                 }
             }
             Statement::Assume { condition, .. } => {
@@ -70,41 +79,47 @@ impl SemanticAnalyzer {
             Statement::Guarantee { condition, span } => {
                 self.analyze_expression(condition);
                 if self.eval_static_const_bool(condition) == Some(false) {
-                    self.errors.push(DiagnosticError {
-                        code: "E0911".to_string(),
-                        message: format!("StaticProofFailed: postcondition guarantee is provably false at line {}", span.line),
-                        line: span.line,
-                        col: span.col,
-                        kind: "StaticProofError".to_string(),
-                        repair_suggestion: Some("ensure function return value satisfies the stated guarantee".to_string()),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0911",
+                            format!("StaticProofFailed: postcondition guarantee is provably false at line {}", span.line),
+                            span.line,
+                            span.col,
+                            "StaticProofError",
+                        )
+                        .with_suggestion("ensure function return value satisfies the stated guarantee"),
+                    );
                 }
             }
             Statement::Invariant { condition, span } => {
                 self.analyze_expression(condition);
                 if self.eval_static_const_bool(condition) == Some(false) {
-                    self.errors.push(DiagnosticError {
-                        code: "E0911".to_string(),
-                        message: format!("StaticProofFailed: invariant is provably false at line {}", span.line),
-                        line: span.line,
-                        col: span.col,
-                        kind: "StaticProofError".to_string(),
-                        repair_suggestion: Some("invariant must hold true in all execution states".to_string()),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0911",
+                            format!("StaticProofFailed: invariant is provably false at line {}", span.line),
+                            span.line,
+                            span.col,
+                            "StaticProofError",
+                        )
+                        .with_suggestion("invariant must hold true in all execution states"),
+                    );
                 }
             }
             Statement::VerifyBlock { invariants, span } => {
                 for inv in invariants {
                     self.analyze_expression(inv);
                     if self.eval_static_const_bool(inv) == Some(false) {
-                        self.errors.push(DiagnosticError {
-                            code: "E0911".to_string(),
-                            message: format!("StaticProofFailed: verify contract clause is provably false at line {}", span.line),
-                            line: span.line,
-                            col: span.col,
-                            kind: "StaticProofError".to_string(),
-                            repair_suggestion: Some("correct contract clause before verifying".to_string()),
-                        });
+                        self.errors.push(
+                            DiagnosticError::new(
+                                "E0911",
+                                format!("StaticProofFailed: verify contract clause is provably false at line {}", span.line),
+                                span.line,
+                                span.col,
+                                "StaticProofError",
+                            )
+                            .with_suggestion("correct contract clause before verifying"),
+                        );
                     }
                 }
             }
@@ -130,14 +145,16 @@ impl SemanticAnalyzer {
             }
             Statement::Handoff { resource, target_domain, span } => {
                 if self.lookup_var(resource).is_none() {
-                    self.errors.push(DiagnosticError {
-                        code: "E0902".to_string(),
-                        message: format!("UndefinedSymbol: cannot handoff unknown resource '{}' at line {}", resource, span.line),
-                        line: span.line,
-                        col: span.col,
-                        kind: "UndefinedSymbolError".to_string(),
-                        repair_suggestion: Some(format!("declare '{}' before transferring to domain '{}'", resource, target_domain)),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0902",
+                            format!("UndefinedSymbol: cannot handoff unknown resource '{}' at line {}", resource, span.line),
+                            span.line,
+                            span.col,
+                            "UndefinedSymbolError",
+                        )
+                        .with_suggestion(format!("declare '{}' before transferring to domain '{}'", resource, target_domain)),
+                    );
                 } else {
                     self.domain_ownership.insert(resource.clone(), target_domain.clone());
                 }
@@ -238,14 +255,16 @@ impl SemanticAnalyzer {
                 self.module_forbidden.entry(from.clone()).or_default().insert(to.clone());
                 if let Some(deps) = self.module_depends.get(from) {
                     if deps.contains(to) {
-                        self.errors.push(DiagnosticError {
-                            code: "E0913".to_string(),
-                            message: format!("ForbiddenDependencyViolation: dependency from '{}' to '{}' is explicitly forbidden by architecture constraint", from, to),
-                            line: span.line,
-                            col: span.col,
-                            kind: "ArchitecturalViolation".to_string(),
-                            repair_suggestion: Some(format!("remove forbidden dependency '{} -> {}' or use gateway/bridge", from, to)),
-                        });
+                        self.errors.push(
+                            DiagnosticError::new(
+                                "E0913",
+                                format!("ForbiddenDependencyViolation: dependency from '{}' to '{}' is explicitly forbidden by architecture constraint", from, to),
+                                span.line,
+                                span.col,
+                                "ArchitecturalViolation",
+                            )
+                            .with_suggestion(format!("remove forbidden dependency '{} -> {}' or use gateway/bridge", from, to)),
+                        );
                     }
                 }
             }
@@ -257,14 +276,16 @@ impl SemanticAnalyzer {
                 // If a dependency exists in reverse direction, flag violation
                 if let Some(deps) = self.module_depends.get(to) {
                     if deps.contains(from) {
-                        self.errors.push(DiagnosticError {
-                            code: "E0918".to_string(),
-                            message: format!("DirectionViolation: dependency '{} -> {}' violates architectural direction constraint '{} -> {}'", to, from, from, to),
-                            line: span.line,
-                            col: span.col,
-                            kind: "ArchitecturalViolation".to_string(),
-                            repair_suggestion: Some(format!("align module dependency flow with declared direction '{} -> {}'", from, to)),
-                        });
+                        self.errors.push(
+                            DiagnosticError::new(
+                                "E0918",
+                                format!("DirectionViolation: dependency '{} -> {}' violates architectural direction constraint '{} -> {}'", to, from, from, to),
+                                span.line,
+                                span.col,
+                                "ArchitecturalViolation",
+                            )
+                            .with_suggestion(format!("align module dependency flow with declared direction '{} -> {}'", from, to)),
+                        );
                     }
                 }
             }
@@ -275,52 +296,60 @@ impl SemanticAnalyzer {
                 self.private_to_symbols.insert(symbol.clone(), module_name.clone());
             }
             Statement::LeakCheckDecl { module_name, symbol, through, span } => {
-                self.errors.push(DiagnosticError {
-                    code: "E0915".to_string(),
-                    message: format!("ArchitecturalLeakDetected: module '{}' leaks internal symbol '{}' through '{}'", module_name, symbol, through),
-                    line: span.line,
-                    col: span.col,
-                    kind: "ArchitecturalLeakError".to_string(),
-                    repair_suggestion: Some(format!("encapsulate '{}' behind a facade or port in module '{}'", symbol, module_name)),
-                });
+                self.errors.push(
+                    DiagnosticError::new(
+                        "E0915",
+                        format!("ArchitecturalLeakDetected: module '{}' leaks internal symbol '{}' through '{}'", module_name, symbol, through),
+                        span.line,
+                        span.col,
+                        "ArchitecturalLeakError",
+                    )
+                    .with_suggestion(format!("encapsulate '{}' behind a facade or port in module '{}'", symbol, module_name)),
+                );
             }
             Statement::FanoutDecl { module_name, limit, span } => {
                 if let Some(deps) = self.module_depends.get(module_name) {
                     if deps.len() > *limit {
-                        self.errors.push(DiagnosticError {
-                            code: "E0916".to_string(),
-                            message: format!("FanoutLimitExceeded: module '{}' has fanout of {}, exceeding maximum allowed limit of {}", module_name, deps.len(), limit),
-                            line: span.line,
-                            col: span.col,
-                            kind: "ArchitecturalViolation".to_string(),
-                            repair_suggestion: Some(format!("decompose '{}' or introduce facade to reduce outbound coupling", module_name)),
-                        });
+                        self.errors.push(
+                            DiagnosticError::new(
+                                "E0916",
+                                format!("FanoutLimitExceeded: module '{}' has fanout of {}, exceeding maximum allowed limit of {}", module_name, deps.len(), limit),
+                                span.line,
+                                span.col,
+                                "ArchitecturalViolation",
+                            )
+                            .with_suggestion(format!("decompose '{}' or introduce facade to reduce outbound coupling", module_name)),
+                        );
                     }
                 }
             }
             Statement::CohesionDecl { module_name, min_threshold, span } => {
                 if *min_threshold > 0.95 {
-                    self.errors.push(DiagnosticError {
-                        code: "E0917".to_string(),
-                        message: format!("CohesionBelowThreshold: module '{}' measured cohesion is below required threshold ({:.2})", module_name, min_threshold),
-                        line: span.line,
-                        col: span.col,
-                        kind: "ArchitecturalViolation".to_string(),
-                        repair_suggestion: Some(format!("cluster symbols in '{}' by semantic gravity", module_name)),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0917",
+                            format!("CohesionBelowThreshold: module '{}' measured cohesion is below required threshold ({:.2})", module_name, min_threshold),
+                            span.line,
+                            span.col,
+                            "ArchitecturalViolation",
+                        )
+                        .with_suggestion(format!("cluster symbols in '{}' by semantic gravity", module_name)),
+                    );
                 }
             }
             Statement::CycleFreeDecl { span, .. } => {
                 self.arch_cycle_free = true;
                 if let Some(cycle_path) = self.detect_dependency_cycle() {
-                    self.errors.push(DiagnosticError {
-                        code: "E0914".to_string(),
-                        message: format!("CyclicDependencyDetected: architectural cycle detected across modules [{}]", cycle_path.join(" -> ")),
-                        line: span.line,
-                        col: span.col,
-                        kind: "ArchitecturalViolation".to_string(),
-                        repair_suggestion: Some("invert dependency using port/adapter or extract common interface".to_string()),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0914",
+                            format!("CyclicDependencyDetected: architectural cycle detected across modules [{}]", cycle_path.join(" -> ")),
+                            span.line,
+                            span.col,
+                            "ArchitecturalViolation",
+                        )
+                        .with_suggestion("invert dependency using port/adapter or extract common interface"),
+                    );
                 }
             }
             Statement::LayerSealedDecl { target_kind, target_name, .. } => {
@@ -341,14 +370,16 @@ impl SemanticAnalyzer {
             }
             Statement::ChangeBudgetDecl { max_files, max_modules, span, .. } => {
                 if *max_files == Some(0) || *max_modules == Some(0) {
-                    self.errors.push(DiagnosticError {
-                        code: "E0921".to_string(),
-                        message: "InvalidChangeBudget: budget limits for files and modules must be strictly positive (> 0)".to_string(),
-                        line: span.line,
-                        col: span.col,
-                        kind: "ArchitecturalViolation".to_string(),
-                        repair_suggestion: Some("specify change limits >= 1".to_string()),
-                    });
+                    self.errors.push(
+                        DiagnosticError::new(
+                            "E0921",
+                            "InvalidChangeBudget: budget limits for files and modules must be strictly positive (> 0)",
+                            span.line,
+                            span.col,
+                            "ArchitecturalViolation",
+                        )
+                        .with_suggestion("specify change limits >= 1"),
+                    );
                 }
             }
             Statement::AdapterDecl { body, .. }

@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 100
+// 200
+
+fn select_val(flag: bool) i64 {
+    if flag {
+        ret 100
+    } else {
+        ret 200
+    }
+}
+
+fn main() void {
+    println(select_val(true))
+    println(select_val(false))
+}
