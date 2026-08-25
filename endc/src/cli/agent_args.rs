@@ -62,6 +62,8 @@ pub struct ContractArgs {
     pub action: String,
     #[arg(long)]
     pub file: Option<PathBuf>,
+    #[arg(long)]
+    pub evidence: Option<PathBuf>,
     #[arg(long, default_value_t = false)]
     pub json: bool,
 }

@@ -687,3 +687,400 @@ fn test_cat_f_26_resubmission_after_stale_reverifies() {
     let new_src_hash = compute_file_hash(&src_path).unwrap();
     assert_eq!(loaded.artifact_hashes.get("src/lib.end"), Some(&new_src_hash));
 }
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP A: TAMPER DETECTION TESTS
+// ============================================================================
+
+#[test]
+fn test_p08_group_a_01_modify_state_after_signing_fails_tamper_check() {
+    let dir = create_temp_test_dir("tamper_state");
+    let secret_key = b"super-secret-key-1234567890123456";
+
+    let mut evidence = super::evidence::EvidenceBundle::new("task-tamper-01", LifecycleState::Verified);
+    evidence.sign(secret_key).expect("signing should succeed");
+
+    // Modify state after signing
+    evidence.state = LifecycleState::Rejected;
+
+    let res = evidence.verify_signature(secret_key);
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::Tampered { .. }));
+}
+
+#[test]
+fn test_p08_group_a_02_modify_test_result_fails_tamper_check() {
+    let dir = create_temp_test_dir("tamper_test");
+    let secret_key = b"super-secret-key-1234567890123456";
+
+    let mut evidence = super::evidence::EvidenceBundle::new("task-tamper-02", LifecycleState::Verified);
+    evidence.tests.push(super::evidence::TestExecutionRecord {
+        name: "tests/test_ok.end".to_string(),
+        pass: true,
+        duration_ms: 10,
+        stdout_hash: "sha256:1111".to_string(),
+        stderr_hash: "sha256:0000".to_string(),
+        exit_code: 0,
+        error_message: None,
+    });
+    evidence.sign(secret_key).expect("signing should succeed");
+
+    // Modify test result
+    evidence.tests[0].pass = false;
+
+    let res = evidence.verify_signature(secret_key);
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::Tampered { .. }));
+}
+
+#[test]
+fn test_p08_group_a_03_modify_artifact_hash_fails_tamper_check() {
+    let secret_key = b"super-secret-key-1234567890123456";
+
+    let mut evidence = super::evidence::EvidenceBundle::new("task-tamper-03", LifecycleState::Verified);
+    evidence.artifacts.source_files.insert("src/main.end".to_string(), "sha256:aaaabbbb".to_string());
+    evidence.sign(secret_key).expect("signing should succeed");
+
+    // Tamper with artifact hash
+    evidence.artifacts.source_files.insert("src/main.end".to_string(), "sha256:evilhash".to_string());
+
+    let res = evidence.verify_signature(secret_key);
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::Tampered { .. }));
+}
+
+#[test]
+fn test_p08_group_a_04_modify_environment_fails_tamper_check() {
+    let secret_key = b"super-secret-key-1234567890123456";
+
+    let mut evidence = super::evidence::EvidenceBundle::new("task-tamper-04", LifecycleState::Verified);
+    evidence.sign(secret_key).expect("signing should succeed");
+
+    // Modify environment
+    evidence.environment.gcc_version = "gcc 99.0.0 (fake)".to_string();
+
+    let res = evidence.verify_signature(secret_key);
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::Tampered { .. }));
+}
+
+#[test]
+fn test_p08_group_a_05_modify_repair_history_fails_tamper_check() {
+    let secret_key = b"super-secret-key-1234567890123456";
+
+    let mut evidence = super::evidence::EvidenceBundle::new("task-tamper-05", LifecycleState::Verified);
+    evidence.repair_attempts.push(super::evidence::RepairAttempt {
+        attempt_number: 1,
+        timestamp: "2026-01-01T00:00:00Z".to_string(),
+        failure_reason: "initial failure".to_string(),
+        failed_test: None,
+        assertion: None,
+        suggested_fix_area: None,
+        resolved: true,
+    });
+    evidence.sign(secret_key).expect("signing should succeed");
+
+    // Tamper with repair attempts (e.g. deleting past failure attempts)
+    evidence.repair_attempts.clear();
+
+    let res = evidence.verify_signature(secret_key);
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::Tampered { .. }));
+}
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP B: RETRY & REPAIR HISTORY PERSISTENCE
+// ============================================================================
+
+#[test]
+fn test_p08_group_b_06_first_failed_submission_records_attempt_1() {
+    let dir = create_temp_test_dir("retry_attempt1");
+    let contract_path = dir.join(".agents/contract.toml");
+    let test_path = dir.join("tests/test_fail.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+    fs::write(&test_path, "fn test_fail() -> bool { return false; }\n").unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-retry-06".to_string(),
+        intent: "test retry history".to_string(),
+        requirements: vec!["req".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_fail.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec![],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("retry-agent", "prompt-06", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    let outcome = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    assert!(matches!(outcome, VerificationOutcome::Rejected { .. }));
+
+    // Check evidence bundle has attempt #1
+    let evidence_path = dir.join(".agents/evidence/task-retry-06.json");
+    let content = fs::read_to_string(&evidence_path).unwrap();
+    let bundle: super::evidence::EvidenceBundle = serde_json::from_str(&content).unwrap();
+
+    assert_eq!(bundle.repair_attempts.len(), 1);
+    assert_eq!(bundle.repair_attempts[0].attempt_number, 1);
+    assert_eq!(bundle.repair_attempts[0].failure_reason, "required_test_failed");
+}
+
+#[test]
+fn test_p08_group_b_07_second_failed_submission_records_attempt_2() {
+    let dir = create_temp_test_dir("retry_attempt2");
+    let contract_path = dir.join(".agents/contract.toml");
+    let test_path = dir.join("tests/test_fail.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+    fs::write(&test_path, "fn test_fail() -> bool { return false; }\n").unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-retry-07".to_string(),
+        intent: "test second attempt".to_string(),
+        requirements: vec!["req".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_fail.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec![],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("retry-agent", "prompt-07", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    // First attempt -> rejected (attempt 1)
+    let _ = ContractVerifier::verify(&contract_path, Some(&dir), true);
+
+    // Second attempt -> rejected (attempt 2)
+    let _ = ContractVerifier::verify(&contract_path, Some(&dir), true);
+
+    let evidence_path = dir.join(".agents/evidence/task-retry-07.json");
+    let content = fs::read_to_string(&evidence_path).unwrap();
+    let bundle: super::evidence::EvidenceBundle = serde_json::from_str(&content).unwrap();
+
+    assert_eq!(bundle.repair_attempts.len(), 2);
+    assert_eq!(bundle.repair_attempts[0].attempt_number, 1);
+    assert_eq!(bundle.repair_attempts[1].attempt_number, 2);
+}
+
+#[test]
+fn test_p08_group_b_08_repair_does_not_erase_prior_attempts() {
+    let dir = create_temp_test_dir("retry_preserve");
+    let contract_path = dir.join(".agents/contract.toml");
+    let test_path = dir.join("tests/test_math.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+    fs::write(&test_path, "fn test_math() -> bool { return false; }\n").unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-retry-08".to_string(),
+        intent: "test history preservation".to_string(),
+        requirements: vec!["req".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_math.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec![],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("retry-agent", "prompt-08", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    // 1. First run fails -> Attempt #1
+    let _ = ContractVerifier::verify(&contract_path, Some(&dir), true);
+
+    // 2. Fix the test
+    fs::write(&test_path, "fn test_math() -> bool { return true; }\n").unwrap();
+
+    // 3. Second run succeeds -> VERIFIED
+    let outcome = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    assert!(outcome.is_verified());
+
+    // 4. Verify repair attempt history is preserved and marked resolved!
+    let evidence_path = dir.join(".agents/evidence/task-retry-08.json");
+    let content = fs::read_to_string(&evidence_path).unwrap();
+    let bundle: super::evidence::EvidenceBundle = serde_json::from_str(&content).unwrap();
+
+    assert_eq!(bundle.repair_attempts.len(), 1);
+    assert_eq!(bundle.repair_attempts[0].attempt_number, 1);
+    assert!(bundle.repair_attempts[0].resolved);
+}
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP C: REPAIR LOOP FEEDBACK
+// ============================================================================
+
+#[test]
+fn test_p08_group_c_09_failure_produces_structured_feedback() {
+    let dir = create_temp_test_dir("repair_feedback");
+    let contract_path = dir.join(".agents/contract.toml");
+    let test_path = dir.join("tests/test_calc.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+    fs::write(
+        &test_path,
+        "fn test_calc() -> bool {\n    let val = 42;\n    return false;\n}\n",
+    )
+    .unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-feedback-09".to_string(),
+        intent: "test structured feedback".to_string(),
+        requirements: vec!["req".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_calc.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec![],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("feedback-agent", "prompt-09", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    let outcome = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    match outcome {
+        VerificationOutcome::Rejected { feedback, .. } => {
+            assert!(feedback.is_some());
+            let fb = feedback.unwrap();
+            assert_eq!(fb.failure_reason, "required_test_failed");
+            assert_eq!(fb.failed_test, Some("tests/test_calc.end".to_string()));
+            assert!(fb.suggested_fix_area.is_some());
+            let fix = fb.suggested_fix_area.unwrap();
+            assert_eq!(fix.file, "tests/test_calc.end");
+        }
+        _ => panic!("Expected Rejected with structured feedback"),
+    }
+}
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP D: STALE EVIDENCE DETECTION
+// ============================================================================
+
+#[test]
+fn test_p08_group_d_12_modify_source_after_verified_triggers_stale() {
+    let dir = create_temp_test_dir("stale_evidence");
+    let contract_path = dir.join(".agents/contract.toml");
+    let src_path = dir.join("src/service.end");
+    let test_path = dir.join("tests/test_service.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("src")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+
+    fs::write(&src_path, "fn serve() -> i64 { return 200; }\n").unwrap();
+    fs::write(&test_path, "fn test_serve() -> bool { return true; }\n").unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-stale-12".to_string(),
+        intent: "test stale detection".to_string(),
+        requirements: vec!["req".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_service.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec!["src/service.end".to_string()],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("stale-agent", "prompt-12", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    // 1. Verify -> VERIFIED
+    let outcome1 = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    assert!(outcome1.is_verified());
+
+    // 2. Modify verified source file
+    fs::write(&src_path, "fn serve() -> i64 { return 500; }\n").unwrap();
+
+    // 3. Re-verify -> STALE
+    let outcome2 = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    assert!(matches!(outcome2, VerificationOutcome::Stale { .. }));
+}
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP E: SCHEMA VERSION COMPATIBILITY
+// ============================================================================
+
+#[test]
+fn test_p08_group_e_13_supported_schema_version_accepted() {
+    let mut evidence = super::evidence::EvidenceBundle::new("task-version-13", LifecycleState::Verified);
+    evidence.schema_version = "1.0".to_string();
+    assert!(evidence.check_schema_version().is_ok());
+}
+
+#[test]
+fn test_p08_group_e_14_unsupported_schema_version_rejected() {
+    let mut evidence = super::evidence::EvidenceBundle::new("task-version-14", LifecycleState::Verified);
+    evidence.schema_version = "9.9.0-incompatible".to_string();
+
+    let res = evidence.check_schema_version();
+    assert!(res.is_err());
+    assert!(matches!(res.unwrap_err(), super::evidence::EvidenceError::IncompatibleSchemaVersion { .. }));
+}
+
+// ============================================================================
+// PROMPT 08 — TEST GROUP F: DETERMINISTIC REBUILD VERIFICATION
+// ============================================================================
+
+#[test]
+fn test_p08_group_f_15_two_real_builds_produce_matching_hashes() {
+    let dir = create_temp_test_dir("determinism");
+    let contract_path = dir.join(".agents/contract.toml");
+    let src_path = dir.join("src/algo.end");
+    let test_path = dir.join("tests/test_algo.end");
+
+    fs::create_dir_all(dir.join(".agents")).unwrap();
+    fs::create_dir_all(dir.join("src")).unwrap();
+    fs::create_dir_all(dir.join("tests")).unwrap();
+
+    fs::write(&src_path, "fn algo(x: i64) -> i64 { return x * 2; }\n").unwrap();
+    fs::write(&test_path, "fn test_algo() -> bool { return true; }\n").unwrap();
+
+    let contract = AgentContract {
+        task_id: "task-determ-15".to_string(),
+        intent: "test rebuild determinism".to_string(),
+        requirements: vec!["algo deterministic".to_string()],
+        preconditions: vec![],
+        postconditions: vec![],
+        allowed_operations: vec![],
+        required_tests: vec!["tests/test_algo.end".to_string()],
+        evidence_requirements: vec![],
+        security_boundaries: vec![],
+        target_files: vec!["src/algo.end".to_string()],
+        artifact_hashes: HashMap::new(),
+        provenance: Provenance::new("determ-agent", "prompt-15", "gemini-3.7"),
+        lifecycle: LifecycleState::Draft,
+    };
+    contract.save_to_file(&contract_path).unwrap();
+
+    let outcome = ContractVerifier::verify(&contract_path, Some(&dir), true);
+    match outcome {
+        VerificationOutcome::Verified(ev) => {
+            assert!(ev.rebuild_deterministic, "Rebuild must be verified as deterministic");
+            assert!(!ev.artifacts.generated_c.is_empty(), "Generated C hash must be present");
+        }
+        _ => panic!("Expected VERIFIED"),
+    }
+}
+

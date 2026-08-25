@@ -74,19 +74,20 @@ impl StaleCheckResult {
 }
 
 /// Compare recorded artifact hashes against current disk contents.
-pub fn check_stale_against_disk(
+pub fn check_stale_against_disk<'a, I>(
     base_dir: &Path,
-    recorded_hashes: &HashMap<String, String>,
-) -> StaleCheckResult {
-    if recorded_hashes.is_empty() {
-        return StaleCheckResult::Unrecorded;
-    }
-
+    recorded_hashes: I,
+) -> StaleCheckResult
+where
+    I: IntoIterator<Item = (&'a String, &'a String)>,
+{
     let mut modified_files = Vec::new();
     let mut missing_files = Vec::new();
     let mut details = Vec::new();
+    let mut count = 0;
 
     for (rel_path, expected_hash) in recorded_hashes {
+        count += 1;
         let full_path = if Path::new(rel_path).is_absolute() {
             PathBuf::from(rel_path)
         } else {
@@ -110,10 +111,14 @@ pub fn check_stale_against_disk(
                 }
             }
             Err(e) => {
-                missing_files.push(rel_path.clone());
+                modified_files.push(rel_path.clone());
                 details.push(format!("Failed to hash '{}': {}", rel_path, e));
             }
         }
+    }
+
+    if count == 0 {
+        return StaleCheckResult::Unrecorded;
     }
 
     if modified_files.is_empty() && missing_files.is_empty() {
