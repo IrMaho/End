@@ -84,6 +84,26 @@ pub fn handle_run(args: RunArgs) {
                 }
             }
 
+            if exec_backend == "wasm" {
+                let mut wasm_be = WasmBackend::new(None);
+                match wasm_be.compile_and_run(&module) {
+                    Ok(res) => {
+                        print!("{}", res.stdout);
+                        if !res.stderr.is_empty() {
+                            eprint!("{}", res.stderr);
+                        }
+                        if res.exit_code != 0 {
+                            std::process::exit(res.exit_code);
+                        }
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} WebAssembly execution error: {:?}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
             if exec_backend == "cranelift" {
                 let mut cl_be = CraneliftBackend::new();
                 match cl_be.compile_and_run_jit(&module) {

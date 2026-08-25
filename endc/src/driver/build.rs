@@ -302,21 +302,18 @@ pub fn handle_build(args: BuildArgs) {
             }
 
             if emit_wasm || backend_choice == "wasm" {
+                let wasm_file_path = output.clone().unwrap_or_else(|| file.with_extension("wasm"));
                 let mut wasm_be = WasmBackend::new(target.as_deref());
-                match wasm_be.generate_wat(&module) {
-                    Ok(wat_content) => {
-                        let wat_file_path = file.with_extension("wat");
-                        if let Err(e) = fs::write(&wat_file_path, &wat_content) {
-                            eprintln!("{} Failed to write WebAssembly WAT: {}", "Error:".red().bold(), e);
-                            std::process::exit(1);
-                        }
-                        println!("{} Generated WebAssembly WAT at {:?}", "✔".green().bold(), wat_file_path);
-                        if emit_wasm {
-                            return;
-                        }
+                match wasm_be.compile_to_wasm_file(&module, &wasm_file_path) {
+                    Ok(rep) => {
+                        println!("{} Generated WebAssembly binary at {:?}", "✔".green().bold(), wasm_file_path);
+                        println!("  ├─ Target: {}", rep.target);
+                        println!("  ├─ WAT: {:?} ({} bytes)", wasm_file_path.with_extension("wat"), rep.wat_size_bytes);
+                        println!("  └─ Binary: ({} bytes, sha256: {})", rep.wasm_size_bytes, rep.wasm_sha256);
+                        return;
                     }
                     Err(e) => {
-                        eprintln!("{} WebAssembly Codegen Error: {:?}", "Error:".red().bold(), e);
+                        eprintln!("{} WebAssembly compilation failed: {:?}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }

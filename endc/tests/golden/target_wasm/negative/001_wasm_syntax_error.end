@@ -1,0 +1,10 @@
+// @test: negative
+// @expect-error: E006
+
+fn calculate(a: i64) -> i64 {
+    return "invalid_string"
+}
+
+fn main() -> i32 {
+    return 0
+}

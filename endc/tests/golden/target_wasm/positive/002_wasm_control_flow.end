@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 1
+
+fn main() -> i32 {
+    val x: i64 = 15
+    if x > 10 {
+        println(1)
+    } else {
+        println(0)
+    }
+    return 0
+}

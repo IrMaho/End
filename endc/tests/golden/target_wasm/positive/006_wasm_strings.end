@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// WebAssembly is fast
+
+fn main() -> i32 {
+    val msg: str = "WebAssembly is fast"
+    println(msg)
+    return 0
+}

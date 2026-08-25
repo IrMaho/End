@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 15
+
+fn main() -> i32 {
+    var total: i64 = 0
+    for x in 1..=5 {
+        total = total + x
+    }
+    println(total)
+    return 0
+}
