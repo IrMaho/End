@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// Hello LLVM Native Backend
+// End Programming Language
+
+fn main() -> i32 {
+    println("Hello LLVM Native Backend")
+    println("End Programming Language")
+    return 0
+}

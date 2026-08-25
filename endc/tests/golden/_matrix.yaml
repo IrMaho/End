@@ -798,15 +798,45 @@ features:
   - id: "backend_llvm"
     name: "Direct LLVM IR Code Generation Backend"
     category: "compiler_backend"
-    status: "MISSING_FEATURE"
+    status: "IMPLEMENTED"
     doc_ref: "docs/ARCHITECTURE.md"
-    positive: []
-    negative: []
-    edge: []
-    diagnostic: []
-    interpreter: []
-    native: []
-    regression: []
+    positive:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/002_control_flow_if_while.end"
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+      - "backend_llvm/positive/005_struct_fields.end"
+      - "backend_llvm/positive/006_string_literals.end"
+      - "backend_llvm/positive/007_bitwise_operations.end"
+      - "backend_llvm/positive/008_float_arithmetic.end"
+      - "backend_llvm/positive/009_nested_calls.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    negative:
+      - "backend_llvm/negative/001_type_mismatch_return.end"
+      - "backend_llvm/negative/002_undefined_variable.end"
+    edge:
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    diagnostic:
+      - "backend_llvm/negative/001_type_mismatch_return.end"
+      - "backend_llvm/negative/002_undefined_variable.end"
+    interpreter:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+    native:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/002_control_flow_if_while.end"
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+      - "backend_llvm/positive/005_struct_fields.end"
+      - "backend_llvm/positive/006_string_literals.end"
+      - "backend_llvm/positive/007_bitwise_operations.end"
+      - "backend_llvm/positive/008_float_arithmetic.end"
+      - "backend_llvm/positive/009_nested_calls.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    regression:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/005_struct_fields.end"
 
   - id: "target_wasm"
     name: "WebAssembly Standalone Backend Target"

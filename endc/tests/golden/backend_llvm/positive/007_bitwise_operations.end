@@ -1,0 +1,18 @@
+// @test: positive
+// @expect-stdout:
+// 8
+// 14
+// 6
+// 32
+
+fn main() -> i32 {
+    val a: i64 = 12
+    val b: i64 = 10
+    println(a & b)
+    println(a | b)
+    println(a ^ b)
+    val c: i64 = 8
+    val shift: i64 = 2
+    println(c << shift)
+    return 0
+}

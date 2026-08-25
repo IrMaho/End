@@ -1,0 +1,24 @@
+// @test: positive
+// @expect-stdout:
+// high
+// 10
+// 9
+// 8
+// done
+
+fn main() -> i32 {
+    val score: i64 = 95
+    if score > 90 {
+        println("high")
+    } else {
+        println("low")
+    }
+
+    mut count: i64 = 10
+    while count >= 8 {
+        println(count)
+        count = count - 1
+    }
+    println("done")
+    return 0
+}

@@ -1,171 +1,224 @@
-use super::state::LlvmBackend;
+use std::collections::HashMap;
+use inkwell::context::Context;
+use inkwell::module::Module as InkwellModule;
+use inkwell::builder::Builder;
+use inkwell::types::{BasicType, BasicTypeEnum, StructType, BasicMetadataTypeEnum};
+use inkwell::values::{BasicValueEnum, PointerValue, FunctionValue};
+use inkwell::AddressSpace;
 use crate::ast::*;
 use crate::codegen::backend_trait::BackendError;
-use std::fmt::Write;
 
-impl LlvmBackend {
-    pub fn generate_llvm_ir(&mut self, module: &Module) -> Result<String, BackendError> {
-        self.output.clear();
-        self.temp_var_id = 0;
-        self.block_id = 0;
-        self.str_literal_id = 0;
-        self.string_constants.clear();
-        self.variables.clear();
+pub struct LlvmLoweringContext<'a, 'ctx> {
+    pub context: &'ctx Context,
+    pub module: &'a InkwellModule<'ctx>,
+    pub builder: &'a Builder<'ctx>,
+    pub variables: HashMap<String, (PointerValue<'ctx>, BasicTypeEnum<'ctx>)>,
+    pub struct_defs: HashMap<String, (StructType<'ctx>, Vec<(String, Type)>)>,
+    pub function_defs: HashMap<String, FunctionValue<'ctx>>,
+    pub string_literals: HashMap<String, PointerValue<'ctx>>,
+    pub emit_debug_info: bool,
+    pub current_func_return_type: Type,
+}
 
-        let mut body_output = String::new();
-
-        // 1. Generate Struct & Enum Definitions
-        for st in &module.structs {
-            write!(self.output, "%struct.{} = type {{ ", st.name).unwrap();
-            for (i, field) in st.fields.iter().enumerate() {
-                if i > 0 {
-                    write!(self.output, ", ").unwrap();
-                }
-                write!(self.output, "{}", self.map_type(&field.field_type)).unwrap();
-            }
-            writeln!(self.output, " }}").unwrap();
+impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
+    pub fn new(
+        context: &'ctx Context,
+        module: &'a InkwellModule<'ctx>,
+        builder: &'a Builder<'ctx>,
+        emit_debug_info: bool,
+    ) -> Self {
+        Self {
+            context,
+            module,
+            builder,
+            variables: HashMap::new(),
+            struct_defs: HashMap::new(),
+            function_defs: HashMap::new(),
+            string_literals: HashMap::new(),
+            emit_debug_info,
+            current_func_return_type: Type::Void,
         }
-
-        for e in &module.enums {
-            // Tagged Union representation: { i32, [16 x i8] }
-            writeln!(self.output, "%struct.{} = type {{ i32, [16 x i8] }}", e.name).unwrap();
-        }
-        writeln!(self.output).unwrap();
-
-        // 2. Generate Functions
-        for func in &module.functions {
-            self.generate_function(func, &mut body_output)?;
-        }
-
-        // 3. Assemble Full Module with Header & Globals
-        let mut final_module = String::new();
-        writeln!(final_module, "; ModuleID = '{}'", module.name).unwrap();
-        writeln!(final_module, "target triple = \"{}\"", self.target_triple).unwrap();
-        writeln!(final_module, "source_filename = \"{}.end\"\n", module.name).unwrap();
-
-        // Global String Literals
-        for (name, val, len) in &self.string_constants {
-            writeln!(final_module, "{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", name, len, val).unwrap();
-        }
-        if !self.string_constants.is_empty() {
-            writeln!(final_module).unwrap();
-        }
-
-        // Standard LLVM & End Runtime Declarations
-        writeln!(final_module, "declare i32 @printf(i8*, ...)").unwrap();
-        writeln!(final_module, "declare i8* @malloc(i64)").unwrap();
-        writeln!(final_module, "declare void @free(i8*)").unwrap();
-        writeln!(final_module, "declare i32 @strcmp(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare void @llvm.lifetime.start.p0i8(i64, i8*)").unwrap();
-        writeln!(final_module, "declare void @llvm.lifetime.end.p0i8(i64, i8*)").unwrap();
-        writeln!(final_module, "declare i8* @end_arena_create(i64)").unwrap();
-        writeln!(final_module, "declare void @end_arena_destroy(i8*)").unwrap();
-        writeln!(final_module, "declare i8* @end_arena_alloc(i8*, i64)").unwrap();
-        writeln!(final_module, "declare i8* @end_str_concat(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare i64 @end_net_tcp_listen(i32, i32)").unwrap();
-        writeln!(final_module, "declare i64 @end_net_tcp_accept(i64)").unwrap();
-        writeln!(final_module, "declare i64 @end_net_tcp_connect(i8*, i32)").unwrap();
-        writeln!(final_module, "declare i64 @end_net_tcp_send(i64, i8*, i64)").unwrap();
-        writeln!(final_module, "declare i8* @end_net_tcp_recv(i64, i32)").unwrap();
-        writeln!(final_module, "declare void @end_net_tcp_close(i64)").unwrap();
-        writeln!(final_module, "declare i8* @end_crypto_sha256(i8*)").unwrap();
-        writeln!(final_module, "declare i8* @end_crypto_hmac_sha256(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare i8* @end_base64_encode(i8*, i32)").unwrap();
-        writeln!(final_module, "declare i8* @end_base64_decode(i8*)").unwrap();
-        writeln!(final_module, "declare i8* @end_json_get_string(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare i64 @end_json_get_int(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare i64 @end_json_get_bool(i8*, i8*)").unwrap();
-        writeln!(final_module, "declare i64 @end_tensor_create(i32, i32)").unwrap();
-        writeln!(final_module, "declare i64 @end_tensor_matmul(i64, i64)").unwrap();
-        writeln!(final_module, "declare i64 @end_ui_canvas_create(i32, i32)").unwrap();
-        writeln!(final_module, "declare void @end_ui_canvas_clear(i64, i32)").unwrap();
-        writeln!(final_module, "declare void @end_ui_canvas_draw_rect(i64, i32, i32, i32, i32, i32)").unwrap();
-        writeln!(final_module, "declare i32 @end_ui_canvas_get_pixel(i64, i32, i32)\n").unwrap();
-
-        final_module.push_str(&self.output);
-        final_module.push_str(&body_output);
-
-        if self.emit_debug_info {
-            writeln!(final_module, "\n!llvm.module.flags = !{{!0, !1}}").unwrap();
-            writeln!(final_module, "!llvm.dbg.cu = !{{!2}}").unwrap();
-            writeln!(final_module, "!0 = !{{i32 2, !\"Dwarf Version\", i32 4}}").unwrap();
-            writeln!(final_module, "!1 = !{{i32 2, !\"Debug Info Version\", i32 3}}").unwrap();
-            writeln!(final_module, "!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: \"End Compiler v2.0 (LLVM Direct)\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)").unwrap();
-            writeln!(final_module, "!3 = !DIFile(filename: \"{}.end\", directory: \".\")", module.name).unwrap();
-        }
-
-        Ok(final_module)
     }
 
-    pub(crate) fn generate_function(&mut self, func: &FunctionDef, out: &mut String) -> Result<(), BackendError> {
-        self.variables.clear();
-        let ret_ty = self.map_type(&func.return_type);
-        
-        let mut attributes = String::new();
-        for dir in &func.directives {
-            match dir.name.as_str() {
-                "@inline" => attributes.push_str(" alwaysinline"),
-                "@pure" => attributes.push_str(" readonly"),
-                "@cold" => attributes.push_str(" cold"),
-                "@c_export" => {
-                    #[cfg(target_os = "windows")]
-                    attributes.push_str(" dllexport");
+    pub fn map_basic_type(&self, ty: &Type) -> BasicTypeEnum<'ctx> {
+        match ty {
+            Type::Bool => self.context.bool_type().into(),
+            Type::I8 | Type::U8 => self.context.i8_type().into(),
+            Type::I16 | Type::U16 => self.context.i16_type().into(),
+            Type::I32 | Type::U32 => self.context.i32_type().into(),
+            Type::I64 | Type::U64 => self.context.i64_type().into(),
+            Type::F32 => self.context.f32_type().into(),
+            Type::F64 => self.context.f64_type().into(),
+            Type::Str | Type::Pointer(_) | Type::Slice(_) | Type::Box(_) | Type::Rc(_) | Type::Arc(_) => {
+                self.context.ptr_type(AddressSpace::default()).into()
+            }
+            Type::Custom(name) => {
+                if let Some((st, _)) = self.struct_defs.get(name) {
+                    (*st).into()
+                } else {
+                    self.context.ptr_type(AddressSpace::default()).into()
                 }
-                _ => {}
+            }
+            _ => self.context.i64_type().into(),
+        }
+    }
+
+    pub fn declare_builtins(&mut self) {
+        let ptr_ty = self.context.ptr_type(AddressSpace::default());
+        let i32_ty = self.context.i32_type();
+        let i64_ty = self.context.i64_type();
+        let void_ty = self.context.void_type();
+
+        // declare i32 @printf(ptr, ...)
+        let printf_type = i32_ty.fn_type(&[ptr_ty.into()], true);
+        self.module.add_function("printf", printf_type, None);
+
+        // declare ptr @malloc(i64)
+        let malloc_type = ptr_ty.fn_type(&[i64_ty.into()], false);
+        self.module.add_function("malloc", malloc_type, None);
+
+        // declare void @free(ptr)
+        let free_type = void_ty.fn_type(&[ptr_ty.into()], false);
+        self.module.add_function("free", free_type, None);
+
+        // declare i32 @strcmp(ptr, ptr)
+        let strcmp_type = i32_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
+        self.module.add_function("strcmp", strcmp_type, None);
+
+        // declare ptr @end_str_concat(ptr, ptr)
+        let str_concat_type = ptr_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
+        self.module.add_function("end_str_concat", str_concat_type, None);
+
+        // Runtime helpers
+        let arena_create_type = ptr_ty.fn_type(&[i64_ty.into()], false);
+        self.module.add_function("end_arena_create", arena_create_type, None);
+
+        let arena_destroy_type = void_ty.fn_type(&[ptr_ty.into()], false);
+        self.module.add_function("end_arena_destroy", arena_destroy_type, None);
+    }
+
+    pub fn lower_module(&mut self, ast_module: &crate::ast::Module) -> Result<(), BackendError> {
+        self.declare_builtins();
+
+        // 1. Declare and define all struct types
+        for st in &ast_module.structs {
+            let struct_type = self.context.opaque_struct_type(&st.name);
+            let fields_meta: Vec<(String, Type)> = st.fields.iter().map(|f| (f.name.clone(), f.field_type.clone())).collect();
+            self.struct_defs.insert(st.name.clone(), (struct_type, fields_meta));
+        }
+
+        for st in &ast_module.structs {
+            let mut field_llvm_types: Vec<BasicTypeEnum<'ctx>> = Vec::new();
+            for field in &st.fields {
+                field_llvm_types.push(self.map_basic_type(&field.field_type));
+            }
+            if let Some((st_type, _)) = self.struct_defs.get(&st.name) {
+                st_type.set_body(&field_llvm_types, false);
             }
         }
 
-        let is_main = func.name == "main";
-        let func_name = if is_main { "main".to_string() } else { format!("@{}", func.name) };
-        let ret_str = if is_main { "i32".to_string() } else { ret_ty.clone() };
+        // 2. Declare all functions
+        for func in &ast_module.functions {
+            let is_main = func.name == "main";
+            let ret_type = &func.return_type;
 
-        write!(out, "define {} {}(", ret_str, func_name).unwrap();
-        for (i, p) in func.params.iter().enumerate() {
-            if i > 0 {
-                write!(out, ", ").unwrap();
+            let mut param_types: Vec<BasicMetadataTypeEnum<'ctx>> = Vec::new();
+            for p in &func.params {
+                param_types.push(self.map_basic_type(&p.param_type).into());
             }
-            let p_ty = self.map_type(&p.param_type);
-            write!(out, "{} %arg_{}", p_ty, p.name).unwrap();
-        }
-        writeln!(out, "){} {{", attributes).unwrap();
-        writeln!(out, "entry:").unwrap();
 
-        // Store parameters into local allocas
-        for p in &func.params {
-            let p_ty = self.map_type(&p.param_type);
-            let ptr_reg = self.next_temp();
-            writeln!(out, "  {} = alloca {}", ptr_reg, p_ty).unwrap();
-            writeln!(out, "  store {} %arg_{}, {}* {}", p_ty, p.name, p_ty, ptr_reg).unwrap();
-            self.variables.insert(p.name.clone(), (p_ty, ptr_reg));
-        }
-
-        let mut has_ret = false;
-        for stmt in &func.body.statements {
-            if let Statement::Return { .. } = stmt {
-                has_ret = true;
-            }
-            self.generate_statement(stmt, out)?;
-        }
-
-        if !has_ret {
-            if is_main {
-                writeln!(out, "  ret i32 0").unwrap();
-            } else if func.return_type == Type::Void {
-                writeln!(out, "  ret void").unwrap();
+            let fn_val = if is_main {
+                let fn_type = self.context.i32_type().fn_type(&[], false);
+                self.module.add_function("main", fn_type, None)
+            } else if *ret_type == Type::Void {
+                let fn_type = self.context.void_type().fn_type(&param_types, false);
+                self.module.add_function(&func.name, fn_type, None)
             } else {
-                let default_val = match &func.return_type {
-                    Type::Bool => "i1 0",
-                    Type::I8 | Type::I16 | Type::I32 => "i32 0",
-                    Type::I64 | Type::U64 => "i64 0",
-                    Type::F32 => "float 0.0",
-                    Type::F64 => "double 0.0",
-                    _ => "i8* null",
-                };
-                writeln!(out, "  ret {}", default_val).unwrap();
+                let basic_ret = self.map_basic_type(ret_type);
+                let fn_type = basic_ret.fn_type(&param_types, false);
+                self.module.add_function(&func.name, fn_type, None)
+            };
+
+            self.function_defs.insert(func.name.clone(), fn_val);
+        }
+
+        // 3. Lower function bodies
+        for func in &ast_module.functions {
+            self.lower_function(func)?;
+        }
+
+        // 4. Verify the entire generated LLVM module
+        if let Err(err) = self.module.verify() {
+            return Err(BackendError::CodegenFailed(format!(
+                "LLVM Module verification failed: {}",
+                err.to_string()
+            )));
+        }
+
+        Ok(())
+    }
+
+    pub fn lower_function(&mut self, func: &FunctionDef) -> Result<(), BackendError> {
+        let func_val = *self.function_defs.get(&func.name).ok_or_else(|| {
+            BackendError::Internal(format!("Function {} not found in declarations", func.name))
+        })?;
+
+        let entry_block = self.context.append_basic_block(func_val, "entry");
+        self.builder.position_at_end(entry_block);
+        self.variables.clear();
+        self.current_func_return_type = func.return_type.clone();
+
+        // Allocate parameters and store initial arguments
+        for (i, p) in func.params.iter().enumerate() {
+            let p_ty = self.map_basic_type(&p.param_type);
+            let alloca = self.builder.build_alloca(p_ty, &p.name).map_err(|e| {
+                BackendError::CodegenFailed(format!("Failed to build alloca for param {}: {}", p.name, e))
+            })?;
+            let param_val = func_val.get_nth_param(i as u32).ok_or_else(|| {
+                BackendError::CodegenFailed(format!("Missing parameter {} for function {}", i, func.name))
+            })?;
+            self.builder.build_store(alloca, param_val).map_err(|e| {
+                BackendError::CodegenFailed(format!("Failed to store param {}: {}", p.name, e))
+            })?;
+            self.variables.insert(p.name.clone(), (alloca, p_ty));
+        }
+
+        // Lower body statements
+        for stmt in &func.body.statements {
+            self.lower_statement(stmt, func_val)?;
+        }
+
+        // Ensure current basic block has a valid terminator
+        let current_bb = self.builder.get_insert_block();
+        if let Some(bb) = current_bb {
+            if bb.get_terminator().is_none() {
+                if func.name == "main" {
+                    let zero = self.context.i32_type().const_int(0, false);
+                    self.builder.build_return(Some(&zero)).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed to build return for main: {}", e))
+                    })?;
+                } else if func.return_type == Type::Void {
+                    self.builder.build_return(None).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed to build void return: {}", e))
+                    })?;
+                } else {
+                    let default_val: BasicValueEnum<'ctx> = match &func.return_type {
+                        Type::Bool => self.context.bool_type().const_int(0, false).into(),
+                        Type::I8 | Type::U8 => self.context.i8_type().const_int(0, false).into(),
+                        Type::I16 | Type::U16 => self.context.i16_type().const_int(0, false).into(),
+                        Type::I32 | Type::U32 => self.context.i32_type().const_int(0, false).into(),
+                        Type::I64 | Type::U64 => self.context.i64_type().const_int(0, false).into(),
+                        Type::F32 => self.context.f32_type().const_float(0.0).into(),
+                        Type::F64 => self.context.f64_type().const_float(0.0).into(),
+                        _ => self.context.ptr_type(AddressSpace::default()).const_null().into(),
+                    };
+                    self.builder.build_return(Some(&default_val)).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed to build fallback return: {}", e))
+                    })?;
+                }
             }
         }
 
-        writeln!(out, "}}\n").unwrap();
         Ok(())
     }
 }

@@ -248,7 +248,7 @@ pub fn handle_build(args: BuildArgs) {
                 }
             }
 
-            if emit_llvm || backend_choice == "llvm" {
+            if emit_llvm {
                 let mut llvm_be = LlvmBackend::new(target.as_deref());
                 llvm_be.set_debug_info(debug_info);
                 match llvm_be.generate_llvm_ir(&module) {
@@ -259,12 +259,43 @@ pub fn handle_build(args: BuildArgs) {
                             std::process::exit(1);
                         }
                         println!("{} Generated LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
-                        if emit_llvm {
-                            return;
-                        }
+                        return;
                     }
                     Err(e) => {
                         eprintln!("{} LLVM Codegen Error: {:?}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
+            if backend_choice == "llvm" {
+                #[cfg(target_os = "windows")]
+                let default_ext = if is_library_mode { "dll" } else { "exe" };
+                #[cfg(not(target_os = "windows"))]
+                let default_ext = if is_library_mode { "so" } else { "" };
+
+                let bin_path = output.clone().unwrap_or_else(|| {
+                    if default_ext.is_empty() {
+                        file.with_extension("")
+                    } else {
+                        file.with_extension(default_ext)
+                    }
+                });
+
+                let mut llvm_be = LlvmBackend::new(target.as_deref());
+                llvm_be.set_debug_info(debug_info);
+                llvm_be.set_opt_level(if release { "-O3" } else { "-O0" });
+                match llvm_be.compile_to_executable(&module, &bin_path) {
+                    Ok(artifacts) => {
+                        println!("{} Generated native binary via LLVM at {:?}", "✔".green().bold(), artifacts.executable_path);
+                        println!("  ├─ Toolchain: {}", artifacts.llvm_version);
+                        println!("  ├─ LLVM IR: {:?} (sha256: {})", artifacts.ir_path, artifacts.ir_sha256);
+                        println!("  ├─ Object: {:?} (sha256: {})", artifacts.object_path, artifacts.object_sha256);
+                        println!("  └─ Executable: (sha256: {})", artifacts.executable_sha256);
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} LLVM compilation failed: {:?}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }

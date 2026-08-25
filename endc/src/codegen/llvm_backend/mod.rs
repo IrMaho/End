@@ -1,9 +1,11 @@
 pub mod expr_gen;
 pub mod module_gen;
+pub mod pipeline;
 pub mod state;
 pub mod stmt_gen;
+pub mod verification_tests;
 
-pub use state::LlvmBackend;
+pub use state::{LlvmBackend, LlvmBuildArtifacts};
 
 use crate::ast::Module;
 use crate::codegen::backend_trait::{BackendError, CodeGenBackend};

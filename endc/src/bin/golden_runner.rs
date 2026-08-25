@@ -76,6 +76,7 @@ pub struct RunnerConfig {
     pub diagnostic_coverage_only: bool,
     pub differential_only: bool,
     pub list_only: bool,
+    pub backend: String,
 }
 
 // All defined diagnostic codes in the End compiler
@@ -102,6 +103,7 @@ fn main() {
         diagnostic_coverage_only: false,
         differential_only: false,
         list_only: false,
+        backend: "c".to_string(),
     };
 
     let mut i = 1;
@@ -113,6 +115,15 @@ fn main() {
             "--verbose" | "-v" => config.verbose = true,
             "--keep-artifacts" => config.keep_artifacts = true,
             "--list" => config.list_only = true,
+            "--backend" => {
+                if i + 1 < args.len() {
+                    config.backend = args[i + 1].clone();
+                    i += 1;
+                }
+            }
+            arg if arg.starts_with("--backend=") => {
+                config.backend = arg.strip_prefix("--backend=").unwrap().to_string();
+            }
             "--threads" | "-j" => {
                 if i + 1 < args.len() {
                     config.threads = args[i + 1].parse().unwrap_or(config.threads);
@@ -790,6 +801,7 @@ pub fn run_tests_parallel(tests: Vec<TestCase>, config: &RunnerConfig) -> Vec<Te
         let tests_clone = Arc::clone(&tests_arc);
         let results_clone = Arc::clone(&results_arc);
         let keep_artifacts = config.keep_artifacts;
+        let backend = config.backend.clone();
 
         let handle = std::thread::spawn(move || loop {
             let maybe_test = {
@@ -802,7 +814,7 @@ pub fn run_tests_parallel(tests: Vec<TestCase>, config: &RunnerConfig) -> Vec<Te
                 None => break,
             };
 
-            let result = execute_single_test(&test, thread_idx, keep_artifacts);
+            let result = execute_single_test(&test, thread_idx, keep_artifacts, &backend);
 
             {
                 let mut res_lock = results_clone.lock().unwrap();
@@ -826,7 +838,7 @@ pub fn run_tests_parallel(tests: Vec<TestCase>, config: &RunnerConfig) -> Vec<Te
 // SINGLE TEST EXECUTION (REAL COMPILER + GCC + DIFFERENTIAL INTERPRETER)
 // ============================================================================
 
-fn execute_single_test(test: &TestCase, thread_idx: usize, keep_artifacts: bool) -> TestResult {
+fn execute_single_test(test: &TestCase, thread_idx: usize, keep_artifacts: bool, backend: &str) -> TestResult {
     let start_time = Instant::now();
 
     let safe_id = test.id.replace("::", "_").replace('/', "_").replace('\\', "_");
@@ -854,7 +866,7 @@ fn execute_single_test(test: &TestCase, thread_idx: usize, keep_artifacts: bool)
     }
 
     let result = match test.kind {
-        TestKind::Positive => execute_positive_pipeline(test, &sandbox_dir, start_time),
+        TestKind::Positive => execute_positive_pipeline(test, &sandbox_dir, start_time, backend),
         TestKind::Negative => execute_negative_pipeline(test, &sandbox_dir, start_time),
     };
 
@@ -865,8 +877,8 @@ fn execute_single_test(test: &TestCase, thread_idx: usize, keep_artifacts: bool)
     result
 }
 
-fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: Instant) -> TestResult {
-    // 1. Compile End -> Module -> C code using real compiler backend
+fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: Instant, backend: &str) -> TestResult {
+    // 1. Compile End -> Module -> C / LLVM code using real compiler backend
     let (module, _) = match endc::loader::load_and_analyze(&test.path) {
         Ok(res) => res,
         Err(e) => {
@@ -895,7 +907,6 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
         match interp.run(&module) {
             Ok(_) => Some(interp.stdout),
             Err(e) => {
-                // If interpreter failed to evaluate a construct
                 Some(format!("INTERPRETER_ERR: {}", e))
             }
         }
@@ -903,76 +914,16 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
         None
     };
 
-    let mut backend = endc::codegen::CBackend::new();
-    let (c_code, _) = backend.generate_with_options(&module, false);
-
-    if backend.has_errors() {
-        let acc = backend.diagnostics();
-        let diags = acc.diagnostics();
-        let diag_str: Vec<String> = diags.iter().map(|d| format!("{:?}", d)).collect();
-        return TestResult {
-            test_id: test.id.clone(),
-            path: test.path.clone(),
-            feature_id: test.feature_id.clone(),
-            kind: TestKind::Positive,
-            success: false,
-            duration: start_time.elapsed(),
-            error_message: Some(format!("C codegen reported errors:\n{}", diag_str.join("\n"))),
-            compiler_stdout: String::new(),
-            compiler_stderr: diag_str.join("\n"),
-            actual_stdout: None,
-            expected_stdout: test.expected_stdout.clone(),
-            interpreter_stdout: interp_stdout,
-            differential_match: None,
-            generated_c: Some(c_code),
-        };
-    }
-
-    // 3. Write generated C code to sandbox
-    let c_file_path = sandbox_dir.join("test.c");
-    if let Err(e) = fs::write(&c_file_path, &c_code) {
-        return TestResult {
-            test_id: test.id.clone(),
-            path: test.path.clone(),
-            feature_id: test.feature_id.clone(),
-            kind: TestKind::Positive,
-            success: false,
-            duration: start_time.elapsed(),
-            error_message: Some(format!("Failed to write generated C to {:?}: {}", c_file_path, e)),
-            compiler_stdout: String::new(),
-            compiler_stderr: String::new(),
-            actual_stdout: None,
-            expected_stdout: test.expected_stdout.clone(),
-            interpreter_stdout: interp_stdout,
-            differential_match: None,
-            generated_c: Some(c_code),
-        };
-    }
-
-    // 4. Compile generated C code with GCC
     #[cfg(windows)]
     let bin_path = sandbox_dir.join("test.exe");
     #[cfg(not(windows))]
     let bin_path = sandbox_dir.join("test_bin");
 
-    let mut gcc_cmd = Command::new("gcc");
-    gcc_cmd
-        .arg("-O0")
-        .arg("-Wall")
-        .arg("-Werror")
-        .arg("-std=c11")
-        .arg(c_file_path.to_str().unwrap())
-        .arg("-o")
-        .arg(bin_path.to_str().unwrap());
+    let mut generated_c_str: Option<String> = None;
 
-    #[cfg(windows)]
-    {
-        gcc_cmd.arg("-lws2_32").arg("-lgdi32").arg("-luser32");
-    }
-
-    let gcc_output = match gcc_cmd.output() {
-        Ok(out) => out,
-        Err(e) => {
+    if backend == "llvm" {
+        let llvm_be = endc::codegen::LlvmBackend::new(None);
+        if let Err(e) = llvm_be.compile_to_executable(&module, &bin_path) {
             return TestResult {
                 test_id: test.id.clone(),
                 path: test.path.clone(),
@@ -980,9 +931,34 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
                 kind: TestKind::Positive,
                 success: false,
                 duration: start_time.elapsed(),
-                error_message: Some(format!("Failed to invoke GCC: {}", e)),
+                error_message: Some(format!("LLVM compilation failed: {:?}", e)),
                 compiler_stdout: String::new(),
-                compiler_stderr: format!("GCC execution failed: {}", e),
+                compiler_stderr: format!("{:?}", e),
+                actual_stdout: None,
+                expected_stdout: test.expected_stdout.clone(),
+                interpreter_stdout: interp_stdout,
+                differential_match: None,
+                generated_c: None,
+            };
+        }
+    } else {
+        let mut c_backend = endc::codegen::CBackend::new();
+        let (c_code, _) = c_backend.generate_with_options(&module, false);
+
+        if c_backend.has_errors() {
+            let acc = c_backend.diagnostics();
+            let diags = acc.diagnostics();
+            let diag_str: Vec<String> = diags.iter().map(|d| format!("{:?}", d)).collect();
+            return TestResult {
+                test_id: test.id.clone(),
+                path: test.path.clone(),
+                feature_id: test.feature_id.clone(),
+                kind: TestKind::Positive,
+                success: false,
+                duration: start_time.elapsed(),
+                error_message: Some(format!("C codegen reported errors:\n{}", diag_str.join("\n"))),
+                compiler_stdout: String::new(),
+                compiler_stderr: diag_str.join("\n"),
                 actual_stdout: None,
                 expected_stdout: test.expected_stdout.clone(),
                 interpreter_stdout: interp_stdout,
@@ -990,26 +966,87 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
                 generated_c: Some(c_code),
             };
         }
-    };
 
-    if !gcc_output.status.success() {
-        let gcc_err = String::from_utf8_lossy(&gcc_output.stderr).to_string();
-        return TestResult {
-            test_id: test.id.clone(),
-            path: test.path.clone(),
-            feature_id: test.feature_id.clone(),
-            kind: TestKind::Positive,
-            success: false,
-            duration: start_time.elapsed(),
-            error_message: Some(format!("GCC compilation failed with exit code {:?}:\n{}", gcc_output.status.code(), gcc_err)),
-            compiler_stdout: String::from_utf8_lossy(&gcc_output.stdout).to_string(),
-            compiler_stderr: gcc_err,
-            actual_stdout: None,
-            expected_stdout: test.expected_stdout.clone(),
-            interpreter_stdout: interp_stdout,
-            differential_match: None,
-            generated_c: Some(c_code),
+        // Write generated C code to sandbox
+        let c_file_path = sandbox_dir.join("test.c");
+        if let Err(e) = fs::write(&c_file_path, &c_code) {
+            return TestResult {
+                test_id: test.id.clone(),
+                path: test.path.clone(),
+                feature_id: test.feature_id.clone(),
+                kind: TestKind::Positive,
+                success: false,
+                duration: start_time.elapsed(),
+                error_message: Some(format!("Failed to write generated C to {:?}: {}", c_file_path, e)),
+                compiler_stdout: String::new(),
+                compiler_stderr: String::new(),
+                actual_stdout: None,
+                expected_stdout: test.expected_stdout.clone(),
+                interpreter_stdout: interp_stdout,
+                differential_match: None,
+                generated_c: Some(c_code),
+            };
+        }
+
+        generated_c_str = Some(c_code);
+
+        // Compile generated C code with GCC
+        let mut gcc_cmd = Command::new("gcc");
+        gcc_cmd
+            .arg("-O0")
+            .arg("-Wall")
+            .arg("-Werror")
+            .arg("-std=c11")
+            .arg(c_file_path.to_str().unwrap())
+            .arg("-o")
+            .arg(bin_path.to_str().unwrap());
+
+        #[cfg(windows)]
+        {
+            gcc_cmd.arg("-lws2_32").arg("-lgdi32").arg("-luser32");
+        }
+
+        let gcc_output = match gcc_cmd.output() {
+            Ok(out) => out,
+            Err(e) => {
+                return TestResult {
+                    test_id: test.id.clone(),
+                    path: test.path.clone(),
+                    feature_id: test.feature_id.clone(),
+                    kind: TestKind::Positive,
+                    success: false,
+                    duration: start_time.elapsed(),
+                    error_message: Some(format!("Failed to invoke GCC: {}", e)),
+                    compiler_stdout: String::new(),
+                    compiler_stderr: format!("GCC execution failed: {}", e),
+                    actual_stdout: None,
+                    expected_stdout: test.expected_stdout.clone(),
+                    interpreter_stdout: interp_stdout,
+                    differential_match: None,
+                    generated_c: generated_c_str,
+                };
+            }
         };
+
+        if !gcc_output.status.success() {
+            let gcc_err = String::from_utf8_lossy(&gcc_output.stderr).to_string();
+            return TestResult {
+                test_id: test.id.clone(),
+                path: test.path.clone(),
+                feature_id: test.feature_id.clone(),
+                kind: TestKind::Positive,
+                success: false,
+                duration: start_time.elapsed(),
+                error_message: Some(format!("GCC compilation failed with exit code {:?}:\n{}", gcc_output.status.code(), gcc_err)),
+                compiler_stdout: String::from_utf8_lossy(&gcc_output.stdout).to_string(),
+                compiler_stderr: gcc_err,
+                actual_stdout: None,
+                expected_stdout: test.expected_stdout.clone(),
+                interpreter_stdout: interp_stdout,
+                differential_match: None,
+                generated_c: generated_c_str,
+            };
+        }
     }
 
     // 5. Execute the resulting binary with 5-second timeout
@@ -1035,7 +1072,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
                 expected_stdout: test.expected_stdout.clone(),
                 interpreter_stdout: interp_stdout,
                 differential_match: None,
-                generated_c: Some(c_code),
+                generated_c: generated_c_str,
             };
         }
     };
@@ -1072,7 +1109,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
             expected_stdout: test.expected_stdout.clone(),
             interpreter_stdout: interp_stdout,
             differential_match: None,
-            generated_c: Some(c_code),
+            generated_c: generated_c_str,
         };
     }
 
@@ -1093,7 +1130,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
                 expected_stdout: test.expected_stdout.clone(),
                 interpreter_stdout: interp_stdout,
                 differential_match: None,
-                generated_c: Some(c_code),
+                generated_c: generated_c_str,
             };
         }
     };
@@ -1126,7 +1163,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
             expected_stdout: test.expected_stdout.clone(),
             interpreter_stdout: interp_stdout,
             differential_match: None,
-            generated_c: Some(c_code),
+            generated_c: generated_c_str,
         };
     }
 
@@ -1148,7 +1185,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
             expected_stdout: test.expected_stdout.clone(),
             interpreter_stdout: interp_stdout,
             differential_match: None,
-            generated_c: Some(c_code),
+            generated_c: generated_c_str,
         };
     }
 
@@ -1177,7 +1214,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
                     expected_stdout: test.expected_stdout.clone(),
                     interpreter_stdout: interp_stdout,
                     differential_match: Some(false),
-                    generated_c: Some(c_code),
+                    generated_c: generated_c_str,
                 };
             }
         }
@@ -1197,7 +1234,7 @@ fn execute_positive_pipeline(test: &TestCase, sandbox_dir: &Path, start_time: In
         expected_stdout: test.expected_stdout.clone(),
         interpreter_stdout: interp_stdout,
         differential_match: diff_match,
-        generated_c: Some(c_code),
+        generated_c: generated_c_str,
     }
 }
 

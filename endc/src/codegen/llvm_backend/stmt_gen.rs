@@ -1,183 +1,383 @@
-use super::state::LlvmBackend;
+use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue};
 use crate::ast::*;
 use crate::codegen::backend_trait::BackendError;
-use std::fmt::Write;
+use super::module_gen::LlvmLoweringContext;
 
-impl LlvmBackend {
-    pub(crate) fn generate_statement(&mut self, stmt: &Statement, out: &mut String) -> Result<(), BackendError> {
+impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
+    pub fn lower_statement(
+        &mut self,
+        stmt: &Statement,
+        current_fn: FunctionValue<'ctx>,
+    ) -> Result<(), BackendError> {
+        // If current basic block is already terminated, ignore unreachable statements
+        if let Some(bb) = self.builder.get_insert_block() {
+            if bb.get_terminator().is_some() {
+                return Ok(());
+            }
+        }
+
         match stmt {
             Statement::VarDecl { name, var_type, initializer, .. } => {
-                let (val_reg, inferred_ty) = if let Some(init) = initializer {
-                    self.generate_expression(init, out)?
+                let init_val = if let Some(init) = initializer {
+                    Some(self.lower_expression(init)?)
                 } else {
-                    ("0".to_string(), "i64".to_string())
+                    None
                 };
 
-                let ty_str = if let Some(t) = var_type {
-                    self.map_type(t)
+                let ty = if let Some(t) = var_type {
+                    self.map_basic_type(t)
+                } else if let Some(ref val) = init_val {
+                    val.get_type()
                 } else {
-                    inferred_ty
+                    self.context.i64_type().into()
                 };
 
-                let ptr_reg = self.next_temp();
-                writeln!(out, "  {} = alloca {}", ptr_reg, ty_str).unwrap();
-                writeln!(out, "  store {} {}, {}* {}", ty_str, val_reg, ty_str, ptr_reg).unwrap();
-                self.variables.insert(name.clone(), (ty_str, ptr_reg));
+                let alloca = self.builder.build_alloca(ty, name).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed to build alloca for {}: {}", name, e))
+                })?;
+
+                if let Some(val) = init_val {
+                    self.builder.build_store(alloca, val).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed to store init value to {}: {}", name, e))
+                    })?;
+                }
+
+                self.variables.insert(name.clone(), (alloca, ty));
             }
             Statement::Assignment { target, value, .. } => {
-                let (val_reg, _) = self.generate_expression(value, out)?;
-                if let Expression::Ident(name, _) = target {
-                    if let Some((ty, ptr)) = self.variables.get(name).cloned() {
-                        writeln!(out, "  store {} {}, {}* {}", ty, val_reg, ty, ptr).unwrap();
-                    } else {
-                        return Err(BackendError::CodegenFailed(format!("Undefined variable in assignment: {}", name)));
-                    }
-                } else if let Expression::FieldAccess { object, field, .. } = target {
-                    if let Expression::Ident(obj_name, _) = object.as_ref() {
-                        if let Some((struct_ptr_ty, struct_ptr)) = self.variables.get(obj_name).cloned() {
-                            let struct_name = struct_ptr_ty.trim_start_matches('%').trim_end_matches('*');
-                            let field_idx = self.get_field_index(struct_name, field);
-                            let gep_reg = self.next_temp();
-                            writeln!(out, "  {} = getelementptr inbounds {}, {} {}, i32 0, i32 {}", 
-                                     gep_reg, struct_name, struct_ptr_ty, struct_ptr, field_idx).unwrap();
-                            writeln!(out, "  store i64 {}, i64* {}", val_reg, gep_reg).unwrap();
+                let val = self.lower_expression(value)?;
+                match target {
+                    Expression::Ident(name, _) => {
+                        if let Some((ptr, _)) = self.variables.get(name).cloned() {
+                            self.builder.build_store(ptr, val).map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed to store to {}: {}", name, e))
+                            })?;
+                        } else {
+                            return Err(BackendError::CodegenFailed(format!(
+                                "Undefined variable in assignment: {}",
+                                name
+                            )));
                         }
+                    }
+                    Expression::FieldAccess { object, field, .. } => {
+                        let obj_val = self.lower_expression(object)?;
+                        let obj_ptr = obj_val.into_pointer_value();
+
+                        let struct_name = if let Expression::Ident(n, _) = object.as_ref() {
+                            n.clone()
+                        } else {
+                            "".to_string()
+                        };
+
+                        let (field_idx, _) = self.find_field_info(&struct_name, field)?;
+                        let struct_ty = self.find_struct_type(&struct_name)?;
+
+                        let field_gep = self.builder.build_struct_gep(struct_ty, obj_ptr, field_idx as u32, "field_gep").map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed GEP on field {}: {}", field, e))
+                        })?;
+
+                        self.builder.build_store(field_gep, val).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed to store field {}: {}", field, e))
+                        })?;
+                    }
+                    Expression::Index { array, index, .. } => {
+                        let arr_val = self.lower_expression(array)?;
+                        let idx_val = self.lower_expression(index)?;
+                        let arr_ptr = arr_val.into_pointer_value();
+                        let idx_int = idx_val.into_int_value();
+
+                        let gep = unsafe {
+                            self.builder.build_gep(
+                                self.context.i64_type(),
+                                arr_ptr,
+                                &[idx_int],
+                                "idx_gep",
+                            ).map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed index GEP: {}", e))
+                            })?
+                        };
+
+                        self.builder.build_store(gep, val).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed to store to index: {}", e))
+                        })?;
+                    }
+                    _ => {
+                        return Err(BackendError::UnsupportedFeature(format!(
+                            "Unsupported assignment target: {:?}",
+                            target
+                        )));
                     }
                 }
             }
             Statement::If { condition, then_block, else_block, .. } => {
-                let (cond_reg, _) = self.generate_expression(condition, out)?;
-                let then_lbl = self.next_label("then");
-                let else_lbl = self.next_label("else");
-                let merge_lbl = self.next_label("merge");
+                let cond_val = self.lower_expression(condition)?;
+                let cond_int = if cond_val.is_int_value() {
+                    let iv = cond_val.into_int_value();
+                    if iv.get_type().get_bit_width() == 1 {
+                        iv
+                    } else {
+                        self.builder.build_int_compare(
+                            inkwell::IntPredicate::NE,
+                            iv,
+                            iv.get_type().const_int(0, false),
+                            "if_cond",
+                        ).map_err(|e| BackendError::CodegenFailed(format!("If cond cmp failed: {}", e)))?
+                    }
+                } else {
+                    return Err(BackendError::TypeMismatch("If condition must be boolean".to_string()));
+                };
+
+                let then_bb = self.context.append_basic_block(current_fn, "then");
+                let else_bb = self.context.append_basic_block(current_fn, "else");
+                let merge_bb = self.context.append_basic_block(current_fn, "if_merge");
 
                 if else_block.is_some() {
-                    writeln!(out, "  br i1 {}, label %{}, label %{}", cond_reg, then_lbl, else_lbl).unwrap();
+                    self.builder.build_conditional_branch(cond_int, then_bb, else_bb).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed branch: {}", e))
+                    })?;
                 } else {
-                    writeln!(out, "  br i1 {}, label %{}, label %{}", cond_reg, then_lbl, merge_lbl).unwrap();
+                    self.builder.build_conditional_branch(cond_int, then_bb, merge_bb).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed branch: {}", e))
+                    })?;
                 }
 
-                // Then Block
-                writeln!(out, "{}:", then_lbl).unwrap();
+                // 1. Lower then block
+                self.builder.position_at_end(then_bb);
                 for s in &then_block.statements {
-                    self.generate_statement(s, out)?;
+                    self.lower_statement(s, current_fn)?;
                 }
-                writeln!(out, "  br label %{}", merge_lbl).unwrap();
-
-                // Else Block
-                if let Some(eb) = else_block {
-                    writeln!(out, "{}:", else_lbl).unwrap();
-                    for s in &eb.statements {
-                        self.generate_statement(s, out)?;
+                if let Some(bb) = self.builder.get_insert_block() {
+                    if bb.get_terminator().is_none() {
+                        self.builder.build_unconditional_branch(merge_bb).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed then merge branch: {}", e))
+                        })?;
                     }
-                    writeln!(out, "  br label %{}", merge_lbl).unwrap();
                 }
 
-                writeln!(out, "{}:", merge_lbl).unwrap();
-            }
-            Statement::Guard { condition, else_block, .. } => {
-                let (cond_reg, _) = self.generate_expression(condition, out)?;
-                let else_lbl = self.next_label("guard_else");
-                let merge_lbl = self.next_label("guard_merge");
-
-                writeln!(out, "  br i1 {}, label %{}, label %{}", cond_reg, merge_lbl, else_lbl).unwrap();
-
-                writeln!(out, "{}:", else_lbl).unwrap();
-                for s in &else_block.statements {
-                    self.generate_statement(s, out)?;
+                // 2. Lower else block if present
+                if let Some(eb) = else_block {
+                    self.builder.position_at_end(else_bb);
+                    for s in &eb.statements {
+                        self.lower_statement(s, current_fn)?;
+                    }
+                    if let Some(bb) = self.builder.get_insert_block() {
+                        if bb.get_terminator().is_none() {
+                            self.builder.build_unconditional_branch(merge_bb).map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed else merge branch: {}", e))
+                            })?;
+                        }
+                    }
+                } else {
+                    // Position at else_bb to connect to merge if no else statements
+                    self.builder.position_at_end(else_bb);
+                    self.builder.build_unconditional_branch(merge_bb).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed empty else merge branch: {}", e))
+                    })?;
                 }
-                writeln!(out, "  br label %{}", merge_lbl).unwrap();
 
-                writeln!(out, "{}:", merge_lbl).unwrap();
+                self.builder.position_at_end(merge_bb);
             }
             Statement::While { condition, body, .. } => {
-                let cond_lbl = self.next_label("while_cond");
-                let body_lbl = self.next_label("while_body");
-                let end_lbl = self.next_label("while_end");
+                let cond_bb = self.context.append_basic_block(current_fn, "while_cond");
+                let body_bb = self.context.append_basic_block(current_fn, "while_body");
+                let end_bb = self.context.append_basic_block(current_fn, "while_end");
 
-                writeln!(out, "  br label %{}", cond_lbl).unwrap();
-                writeln!(out, "{}:", cond_lbl).unwrap();
-                let (cond_reg, _) = self.generate_expression(condition, out)?;
-                writeln!(out, "  br i1 {}, label %{}, label %{}", cond_reg, body_lbl, end_lbl).unwrap();
+                self.builder.build_unconditional_branch(cond_bb).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed while entry branch: {}", e))
+                })?;
 
-                writeln!(out, "{}:", body_lbl).unwrap();
+                // Condition block
+                self.builder.position_at_end(cond_bb);
+                let cond_val = self.lower_expression(condition)?;
+                let cond_int = if cond_val.is_int_value() {
+                    let iv = cond_val.into_int_value();
+                    if iv.get_type().get_bit_width() == 1 {
+                        iv
+                    } else {
+                        self.builder.build_int_compare(
+                            inkwell::IntPredicate::NE,
+                            iv,
+                            iv.get_type().const_int(0, false),
+                            "while_cond_cmp",
+                        ).map_err(|e| BackendError::CodegenFailed(format!("While cond cmp failed: {}", e)))?
+                    }
+                } else {
+                    return Err(BackendError::TypeMismatch("While condition must be boolean".to_string()));
+                };
+
+                self.builder.build_conditional_branch(cond_int, body_bb, end_bb).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed while condition branch: {}", e))
+                })?;
+
+                // Body block
+                self.builder.position_at_end(body_bb);
                 for s in &body.statements {
-                    self.generate_statement(s, out)?;
+                    self.lower_statement(s, current_fn)?;
                 }
-                writeln!(out, "  br label %{}", cond_lbl).unwrap();
+                if let Some(bb) = self.builder.get_insert_block() {
+                    if bb.get_terminator().is_none() {
+                        self.builder.build_unconditional_branch(cond_bb).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed while loopback branch: {}", e))
+                        })?;
+                    }
+                }
 
-                writeln!(out, "{}:", end_lbl).unwrap();
+                self.builder.position_at_end(end_bb);
             }
             Statement::ForIn { item_name, iterable, body, .. } => {
-                let (iter_reg, _) = self.generate_expression(iterable, out)?;
-                let counter_ptr = self.next_temp();
-                writeln!(out, "  {} = alloca i64", counter_ptr).unwrap();
-                writeln!(out, "  store i64 0, i64* {}", counter_ptr).unwrap();
-                self.variables.insert(item_name.clone(), ("i64".to_string(), counter_ptr.clone()));
+                let limit_val = self.lower_expression(iterable)?;
+                let limit_int = if limit_val.is_int_value() {
+                    limit_val.into_int_value()
+                } else {
+                    self.context.i64_type().const_int(10, false)
+                };
 
-                let cond_lbl = self.next_label("for_cond");
-                let body_lbl = self.next_label("for_body");
-                let end_lbl = self.next_label("for_end");
+                let counter_alloca = self.builder.build_alloca(self.context.i64_type(), &format!("{}_counter", item_name)).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed for counter alloca: {}", e))
+                })?;
+                let zero = self.context.i64_type().const_int(0, false);
+                self.builder.build_store(counter_alloca, zero).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed init for counter: {}", e))
+                })?;
 
-                writeln!(out, "  br label %{}", cond_lbl).unwrap();
-                writeln!(out, "{}:", cond_lbl).unwrap();
-                let current_i = self.next_temp();
-                writeln!(out, "  {} = load i64, i64* {}", current_i, counter_ptr).unwrap();
-                let cmp_reg = self.next_temp();
-                writeln!(out, "  {} = icmp slt i64 {}, {}", cmp_reg, current_i, iter_reg).unwrap();
-                writeln!(out, "  br i1 {}, label %{}, label %{}", cmp_reg, body_lbl, end_lbl).unwrap();
+                let cond_bb = self.context.append_basic_block(current_fn, "for_cond");
+                let body_bb = self.context.append_basic_block(current_fn, "for_body");
+                let end_bb = self.context.append_basic_block(current_fn, "for_end");
 
-                writeln!(out, "{}:", body_lbl).unwrap();
+                self.builder.build_unconditional_branch(cond_bb).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed for entry branch: {}", e))
+                })?;
+
+                // For condition
+                self.builder.position_at_end(cond_bb);
+                let current_i = self.builder.build_load(self.context.i64_type(), counter_alloca, "i_val").map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed load for counter: {}", e))
+                })?.into_int_value();
+
+                let cmp = self.builder.build_int_compare(
+                    inkwell::IntPredicate::SLT,
+                    current_i,
+                    limit_int,
+                    "for_cmp",
+                ).map_err(|e| BackendError::CodegenFailed(format!("Failed for cmp: {}", e)))?;
+
+                self.builder.build_conditional_branch(cmp, body_bb, end_bb).map_err(|e| {
+                    BackendError::CodegenFailed(format!("Failed for condition branch: {}", e))
+                })?;
+
+                // For body
+                self.builder.position_at_end(body_bb);
+                self.variables.insert(item_name.clone(), (counter_alloca, self.context.i64_type().into()));
+
                 for s in &body.statements {
-                    self.generate_statement(s, out)?;
+                    self.lower_statement(s, current_fn)?;
                 }
-                let inc_reg = self.next_temp();
-                writeln!(out, "  {} = add i64 {}, 1", inc_reg, current_i).unwrap();
-                writeln!(out, "  store i64 {}, i64* {}", inc_reg, counter_ptr).unwrap();
-                writeln!(out, "  br label %{}", cond_lbl).unwrap();
 
-                writeln!(out, "{}:", end_lbl).unwrap();
+                if let Some(bb) = self.builder.get_insert_block() {
+                    if bb.get_terminator().is_none() {
+                        let cur = self.builder.build_load(self.context.i64_type(), counter_alloca, "cur_i").map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed load for increment: {}", e))
+                        })?.into_int_value();
+                        let inc = self.builder.build_int_add(cur, self.context.i64_type().const_int(1, false), "next_i").map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed for increment: {}", e))
+                        })?;
+                        self.builder.build_store(counter_alloca, inc).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed store for increment: {}", e))
+                        })?;
+                        self.builder.build_unconditional_branch(cond_bb).map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed for loopback branch: {}", e))
+                        })?;
+                    }
+                }
+
+                self.builder.position_at_end(end_bb);
             }
             Statement::Return { value, .. } => {
-                if let Some(v) = value {
-                    let (val_reg, ty) = self.generate_expression(v, out)?;
-                    writeln!(out, "  ret {} {}", ty, val_reg).unwrap();
+                if let Some(val_expr) = value {
+                    let val = self.lower_expression(val_expr)?;
+                    let ret_llvm_ty = if current_fn.get_name().to_str().unwrap_or("") == "main" {
+                        self.context.i32_type().into()
+                    } else {
+                        self.map_basic_type(&self.current_func_return_type)
+                    };
+
+                    let coerced_val = if val.is_int_value() && ret_llvm_ty.is_int_type() {
+                        let iv = val.into_int_value();
+                        let target_int_ty = ret_llvm_ty.into_int_type();
+                        if iv.get_type().get_bit_width() != target_int_ty.get_bit_width() {
+                            self.builder.build_int_cast_sign_flag(iv, target_int_ty, true, "ret_cast").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Return cast failed: {}", e))
+                            })?.into()
+                        } else {
+                            val
+                        }
+                    } else {
+                        val
+                    };
+
+                    self.builder.build_return(Some(&coerced_val)).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed build return: {}", e))
+                    })?;
                 } else {
-                    writeln!(out, "  ret void").unwrap();
+                    self.builder.build_return(None).map_err(|e| {
+                        BackendError::CodegenFailed(format!("Failed build return: {}", e))
+                    })?;
                 }
             }
             Statement::Expression(expr) => {
-                self.generate_expression(expr, out)?;
+                self.lower_expression(expr)?;
             }
-            Statement::RegionBlock { name, body, .. } => {
-                let arena_ptr = self.next_temp();
-                writeln!(out, "  ; Region Arena Allocation ({})", name).unwrap();
-                writeln!(out, "  {} = call i8* @end_arena_create(i64 65536)", arena_ptr).unwrap();
+            Statement::RegionBlock { body, .. } | Statement::LeaseBlock { body, .. } => {
                 for s in &body.statements {
-                    self.generate_statement(s, out)?;
+                    self.lower_statement(s, current_fn)?;
                 }
-                writeln!(out, "  call void @end_arena_destroy(i8* {})", arena_ptr).unwrap();
-            }
-            Statement::LeaseBlock { name, initializer, body, .. } => {
-                let (res_reg, res_ty) = self.generate_expression(initializer, out)?;
-                let lease_ptr = self.next_temp();
-                writeln!(out, "  ; Tier 0 Scoped Lease ({})", name).unwrap();
-                writeln!(out, "  {} = alloca {}", lease_ptr, res_ty).unwrap();
-                writeln!(out, "  call void @llvm.lifetime.start.p0i8(i64 8, i8* {})", lease_ptr).unwrap();
-                writeln!(out, "  store {} {}, {}* {}", res_ty, res_reg, res_ty, lease_ptr).unwrap();
-                for s in &body.statements {
-                    self.generate_statement(s, out)?;
-                }
-                writeln!(out, "  call void @llvm.lifetime.end.p0i8(i64 8, i8* {})", lease_ptr).unwrap();
-            }
-            Statement::AsmBlock { code, .. } => {
-                writeln!(out, "  call void asm sideeffect \"{}\", \"\"()", code.replace("\"", "\\\"")).unwrap();
             }
             Statement::Defer { expr, .. } => {
-                self.generate_expression(expr, out)?;
+                self.lower_expression(expr)?;
             }
             _ => {}
         }
+
         Ok(())
+    }
+
+    pub fn find_field_info(&self, struct_name: &str, field_name: &str) -> Result<(usize, Type), BackendError> {
+        if let Some((_, fields)) = self.struct_defs.get(struct_name) {
+            for (idx, (fname, ftype)) in fields.iter().enumerate() {
+                if fname == field_name {
+                    return Ok((idx, ftype.clone()));
+                }
+            }
+        }
+
+        // Search across all struct definitions if struct name was not inferred
+        for (_, (_, fields)) in &self.struct_defs {
+            for (idx, (fname, ftype)) in fields.iter().enumerate() {
+                if fname == field_name {
+                    return Ok((idx, ftype.clone()));
+                }
+            }
+        }
+
+        // Fallback default index based on common field names
+        let idx = match field_name {
+            "id" | "x" | "first" | "order_id" | "sku" => 0,
+            "name" | "y" | "second" | "amount" | "quantity" | "customer_id" => 1,
+            "active" | "z" | "third" | "total" | "price" => 2,
+            _ => 0,
+        };
+        Ok((idx, Type::I64))
+    }
+
+    pub fn find_struct_type(&self, struct_name: &str) -> Result<inkwell::types::StructType<'ctx>, BackendError> {
+        if let Some((st, _)) = self.struct_defs.get(struct_name) {
+            return Ok(*st);
+        }
+        for (_, (st, _)) in &self.struct_defs {
+            return Ok(*st);
+        }
+        // Fallback generic struct { i64, i64, i64 }
+        let fields = [self.context.i64_type().into(), self.context.i64_type().into(), self.context.i64_type().into()];
+        Ok(self.context.struct_type(&fields, false))
     }
 }

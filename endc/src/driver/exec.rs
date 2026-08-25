@@ -61,6 +61,29 @@ pub fn handle_run(args: RunArgs) {
                 }
             };
 
+            if exec_backend == "llvm" {
+                let llvm_be = LlvmBackend::new(None);
+                let temp_exe = std::env::temp_dir().join(format!("end_llvm_run_{}.exe", std::process::id()));
+                match llvm_be.compile_to_executable(&module, &temp_exe) {
+                    Ok(artifacts) => {
+                        let status = Command::new(&artifacts.executable_path).status();
+                        let _ = fs::remove_file(&artifacts.executable_path);
+                        let _ = fs::remove_file(artifacts.executable_path.with_extension("ll"));
+                        let _ = fs::remove_file(artifacts.executable_path.with_extension("obj"));
+                        if let Ok(st) = status {
+                            if !st.success() {
+                                std::process::exit(st.code().unwrap_or(1));
+                            }
+                        }
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} LLVM execution error: {:?}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
             if exec_backend == "cranelift" {
                 let mut cl_be = CraneliftBackend::new();
                 match cl_be.compile_and_run_jit(&module) {
