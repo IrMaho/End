@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0906
+
+st MoveItem { id: i64, }
+fn main() void { val x = MoveItem { id: 42 };
+ val y = x;
+ val z = x;
+}

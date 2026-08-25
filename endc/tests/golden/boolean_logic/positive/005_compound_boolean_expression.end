@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// true
+
+fn main() void {
+    val res: bool = (10 < 20) && (30 > 15) && !(5 == 6)
+    println(res)
+}

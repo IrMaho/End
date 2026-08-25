@@ -18,6 +18,10 @@ pub use commands::Commands;
     long_about = None
 )]
 pub struct Cli {
+    /// Build with release optimizations (opt-level=3, LTO)
+    #[arg(long, global = true, default_value_t = false)]
+    pub release: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }

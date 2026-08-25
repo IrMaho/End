@@ -33,6 +33,131 @@ pub enum Type {
     Operation(Option<Box<Type>>, Option<Box<Type>>), // Operation<TIn, TOut>
     Event(String),                                   // Event type
     OperationResult,                                 // Rich OperationResult
+    Unknown,                                         // Transient inference state (cannot reach codegen)
+}
+
+impl Type {
+    pub fn is_unknown(&self) -> bool {
+        matches!(self, Type::Unknown)
+    }
+
+    pub fn is_numeric(&self) -> bool {
+        self.is_integer() || self.is_float()
+    }
+
+    pub fn is_integer(&self) -> bool {
+        matches!(
+            self,
+            Type::I8
+                | Type::I16
+                | Type::I32
+                | Type::I64
+                | Type::U8
+                | Type::U16
+                | Type::U32
+                | Type::U64
+        )
+    }
+
+    pub fn is_signed_integer(&self) -> bool {
+        matches!(self, Type::I8 | Type::I16 | Type::I32 | Type::I64)
+    }
+
+    pub fn is_unsigned_integer(&self) -> bool {
+        matches!(self, Type::U8 | Type::U16 | Type::U32 | Type::U64)
+    }
+
+    pub fn is_float(&self) -> bool {
+        matches!(self, Type::F32 | Type::F64)
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self, Type::Bool)
+    }
+
+    pub fn is_string(&self) -> bool {
+        matches!(self, Type::Str)
+    }
+
+    pub fn is_pointer(&self) -> bool {
+        matches!(self, Type::Pointer(_))
+    }
+
+    /// Check whether `self` is type-compatible with `expected`.
+    pub fn is_compatible_with(&self, expected: &Type) -> bool {
+        if self == expected {
+            return true;
+        }
+        if self.is_unknown() || expected.is_unknown() {
+            return true; // Unknown represents in-progress inference
+        }
+
+        // Implicit numeric conversions for integers
+        if self.is_integer() && expected.is_integer() {
+            return true;
+        }
+
+        // Float conversions
+        if self.is_float() && expected.is_float() {
+            return true;
+        }
+
+        // Generic and Custom alias compatibility
+        match (self, expected) {
+            (Type::Pointer(a), Type::Pointer(b)) => {
+                if **a == Type::Void || **b == Type::Void {
+                    true
+                } else {
+                    a.is_compatible_with(b)
+                }
+            }
+            (Type::Slice(a), Type::Slice(b)) => a.is_compatible_with(b),
+            (Type::Slice(a), Type::Array(b, _)) | (Type::Array(a, _), Type::Slice(b)) => {
+                a.is_compatible_with(b)
+            }
+            (Type::Array(a, s1), Type::Array(b, s2)) => s1 == s2 && a.is_compatible_with(b),
+            (Type::Custom(a), Type::Custom(b)) => a == b,
+            (Type::Tuple(a), Type::Tuple(b)) => {
+                a.len() == b.len() && a.iter().zip(b.iter()).all(|(x, y)| x.is_compatible_with(y))
+            }
+            (Type::Custom(s), Type::Tuple(tys)) | (Type::Tuple(tys), Type::Custom(s))
+                if s == &format!("tuple_{}", tys.len()) =>
+            {
+                true
+            }
+            (val, Type::Generic(name, params)) if !params.is_empty() => {
+                if name == "secret"
+                    || name == "tainted"
+                    || name == "verified"
+                    || name == "authority"
+                    || name == "Box"
+                    || name == "Rc"
+                    || name == "Arc"
+                {
+                    val.is_compatible_with(&params[0])
+                } else {
+                    false
+                }
+            }
+            (Type::Generic(name, params), expected) if !params.is_empty() => {
+                if name == "secret"
+                    || name == "tainted"
+                    || name == "verified"
+                    || name == "authority"
+                    || name == "Box"
+                    || name == "Rc"
+                    || name == "Arc"
+                {
+                    params[0].is_compatible_with(expected)
+                } else {
+                    false
+                }
+            }
+            (val, Type::Result(inner, _)) => val.is_compatible_with(inner),
+            (Type::Result(inner, _), expected) => inner.is_compatible_with(expected),
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for Type {
@@ -94,6 +219,7 @@ impl std::fmt::Display for Type {
             }
             Type::Event(name) => write!(f, "Event<{}>", name),
             Type::OperationResult => write!(f, "OperationResult"),
+            Type::Unknown => write!(f, "unknown"),
         }
     }
 }

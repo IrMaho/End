@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E005
+
+class {
+    val x: i32;
+}

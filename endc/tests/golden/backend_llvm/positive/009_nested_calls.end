@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 70
+
+fn add3(a: i64, b: i64, c: i64) -> i64 {
+    return a + b + c
+}
+
+fn double_it(x: i64) -> i64 {
+    return x * 2
+}
+
+fn main() -> i32 {
+    val r = double_it(add3(10, 20, 5))
+    println(r)
+    return 0
+}

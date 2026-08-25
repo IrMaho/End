@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0910
+
+fn main() void { mut data = 0;
+ race_free { data = 1; }
+}

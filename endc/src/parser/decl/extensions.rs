@@ -58,7 +58,7 @@ impl Parser {
 
         let mut version_req = None;
         let mut owned_by = None;
-        let mut lifecycle = None;
+        let lifecycle = None;
 
         if self.match_token(&TokenKind::OwnedBy) {
             owned_by = Some(self.parse_identifier_or_string()?);

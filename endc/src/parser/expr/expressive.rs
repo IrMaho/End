@@ -14,11 +14,14 @@ impl Parser {
         }
 
         // Try standard list comprehension: `[expr for var in iterable if condition]`
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
         let first_expr_res = self.parse_expression();
         if let Ok(first_expr) = first_expr_res {
             if self.match_token(&TokenKind::For) {
                 let var = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_pipe_expr()?;
                 let mut condition = None;
@@ -35,7 +38,7 @@ impl Parser {
                 });
             }
         }
-        self.cursor = checkpoint;
+        self.restore_checkpoint(checkpoint);
 
         let mut elements = Vec::new();
         while !self.check(&TokenKind::RBracket) && !self.check(&TokenKind::EOF) {
@@ -78,6 +81,9 @@ impl Parser {
         }
         if self.match_token(&TokenKind::For) {
             let item = self.parse_identifier_or_keyword()?;
+            if self.match_token(&TokenKind::Comma) {
+                let _ = self.parse_identifier_or_keyword()?;
+            }
             self.expect(TokenKind::In)?;
             let iterable = self.parse_pipe_expr()?;
             let element = self.parse_collection_element()?;
@@ -95,7 +101,7 @@ impl Parser {
     /// Parses Dict/Set comprehensions and Map/Dict literals from brace blocks `{...}`.
     pub(crate) fn try_parse_comprehension_brace(&mut self) -> Result<Option<Expression>, String> {
         let span = self.current_span();
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
 
         if !self.match_token(&TokenKind::LBrace) {
             return Ok(None);
@@ -167,6 +173,9 @@ impl Parser {
             } else if parser.match_token(&TokenKind::For) {
                 // Set Comprehension: `{x.id for x in users if cond}`
                 let var = parser.parse_identifier_or_keyword()?;
+                if parser.match_token(&TokenKind::Comma) {
+                    let _ = parser.parse_identifier_or_keyword()?;
+                }
                 parser.expect(TokenKind::In)?;
                 let iterable = parser.parse_pipe_expr()?;
                 let mut condition = None;
@@ -188,7 +197,7 @@ impl Parser {
         match parse_inner(self) {
             Ok(Some(comp)) => Ok(Some(comp)),
             _ => {
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
         }
@@ -245,7 +254,7 @@ impl Parser {
     pub(crate) fn parse_closure_or_block(&mut self) -> Result<Expression, String> {
         let span = self.current_span();
         self.expect(TokenKind::LBrace)?;
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
 
         let mut params = Vec::new();
         if self.match_token(&TokenKind::Pipe) {
@@ -300,17 +309,7 @@ impl Parser {
             }
         }
 
-        self.cursor = checkpoint;
-        let mut statements = Vec::new();
-        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-            if self.check(&TokenKind::Fn) {
-                let f = self.parse_function(false, vec![])?;
-                statements.push(Statement::LocalFunction(f));
-                continue;
-            }
-            statements.push(self.parse_statement()?);
-        }
-        self.expect(TokenKind::RBrace)?;
-        Ok(Expression::Block(Block { statements, span }))
+        self.restore_checkpoint(checkpoint);
+        Err("Not a closure block".to_string())
     }
 }

@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 100
+// 10
+
+fn main() void {
+    val x = 10
+    if true {
+        val x = 100
+        println(x)
+    }
+    println(x)
+}

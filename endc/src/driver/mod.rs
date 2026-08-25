@@ -10,9 +10,12 @@ pub mod test_sim;
 
 use crate::cli::Commands;
 
-pub fn dispatch_command(command: Commands) {
+pub fn dispatch_command(command: Commands, global_release: bool) {
     match command {
-        Commands::Build(args) => build::handle_build(args),
+        Commands::Build(mut args) => {
+            args.release = args.release || global_release;
+            build::handle_build(args);
+        }
         Commands::Run(args) => exec::handle_run(args),
         Commands::Check(args) => exec::handle_check(args),
         Commands::Version => exec::handle_version(),
@@ -62,6 +65,7 @@ pub fn dispatch_command(command: Commands) {
         Commands::Ui(args) => agent_ops::handle_ui(args),
         Commands::Agent(args) => agent_ops::handle_agent(args),
         Commands::Skill(args) => agent_ops::handle_skill(args),
+        Commands::Contract(args) => crate::agent::handle_contract_cli(args),
         Commands::Dna(args) => agent_ops::handle_dna(args),
         Commands::Context(args) => agent_ops::handle_context(args),
         Commands::Precheck(args) => agent_ops::handle_precheck(args),

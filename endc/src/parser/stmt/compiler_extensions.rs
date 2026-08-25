@@ -94,12 +94,7 @@ impl Parser {
                 let name = self.parse_identifier_or_keyword()?;
                 let mut pass = "vectorize".to_string();
                 if self.check(&TokenKind::LBrace) {
-                    self.advance();
-                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                        pass = self.parse_identifier_or_string().unwrap_or(pass);
-                        self.match_token(&TokenKind::SemiColon);
-                    }
-                    self.expect(TokenKind::RBrace)?;
+                    let _ = self.parse_block()?;
                 } else if !self.check(&TokenKind::SemiColon) {
                     pass = self.parse_identifier_or_string().unwrap_or(pass);
                     self.match_token(&TokenKind::SemiColon);

@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// true
+// false
+
+fn is_greater(a: i64, b: i64) bool {
+    ret a > b
+}
+
+fn main() void {
+    val r1: bool = is_greater(50, 20)
+    val r2: bool = is_greater(10, 20)
+    println(r1)
+    println(r2)
+}

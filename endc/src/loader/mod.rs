@@ -106,6 +106,15 @@ pub fn load_and_analyze(file: &PathBuf) -> Result<(ast::Module, SemanticAnalyzer
             if let Some(ref h) = err.repair_suggestion {
                 diag = diag.with_help(h);
             }
+            if let Some(ref exp) = err.expected {
+                diag = diag.with_expected(exp);
+            }
+            if let Some(ref act) = err.actual {
+                diag = diag.with_actual(act);
+            }
+            for ctx in &err.context {
+                diag = diag.with_context(ctx);
+            }
             eprintln!("{}", diag.render(&full_source));
         }
         return Err(format!("Found {} semantic errors", errs.len()));
@@ -145,8 +154,14 @@ pub fn load_module_recursive(
     let module = match parser.parse_module("main") {
         Ok(m) => m,
         Err(e) => {
-            let diag = Diagnostic::error("E0100", &e, &file_str, parser.current_span().line, parser.current_span().col);
-            eprintln!("{}", diag.render(&source));
+            if parser.diagnostics.has_errors() {
+                for diag in parser.diagnostics.diagnostics() {
+                    eprintln!("{}", diag.render(&source));
+                }
+            } else {
+                let diag = Diagnostic::error("E005", &e, &file_str, parser.current_span().line, parser.current_span().col);
+                eprintln!("{}", diag.render(&source));
+            }
             return Err(format!("Parsing failed for '{}'", file_str));
         }
     };

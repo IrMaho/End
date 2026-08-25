@@ -1,0 +1,24 @@
+// @test: positive
+// @expect-stdout:
+// Active
+
+enum Status {
+    Active,
+    Inactive,
+    Pending,
+}
+
+fn main() void {
+    val s = .Active
+    match s {
+        .Active => {
+            println("Active")
+        }
+        .Inactive => {
+            println("Inactive")
+        }
+        _ => {
+            println("Other")
+        }
+    }
+}

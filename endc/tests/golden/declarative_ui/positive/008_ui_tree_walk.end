@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+st TreeNode {
+    id: i64,
+}
+
+fn main() void {
+    val n = TreeNode { id: 42 }
+    println(n.id)
+}

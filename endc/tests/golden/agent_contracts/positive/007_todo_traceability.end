@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Traceability confirmed
+
+fn main() void {
+    assume 10 > 0;
+    guarantee 10 == 10;
+    println("Traceability confirmed")
+}

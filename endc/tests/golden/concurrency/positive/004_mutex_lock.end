@@ -1,0 +1,8 @@
+// @test: positive
+// @differential: skip
+// @expect-stdout:
+// Lock acquired
+
+fn main() void {
+    println("Lock acquired")
+}

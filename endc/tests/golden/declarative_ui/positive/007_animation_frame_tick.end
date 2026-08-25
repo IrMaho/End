@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 120
+
+st FrameInfo {
+    frame_num: i64,
+    fps: i64,
+}
+
+fn main() void {
+    val f = FrameInfo { frame_num: 60, fps: 120 }
+    println(f.fps)
+}

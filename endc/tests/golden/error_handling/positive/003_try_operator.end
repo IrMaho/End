@@ -1,0 +1,20 @@
+// @test: positive
+// @expect-stdout:
+// 30
+
+st Result {
+    is_ok: bool,
+    value: i64,
+}
+
+fn safe_step(n: i64) Result {
+    val v = n + 10
+    ret Result { is_ok: true, value: v }
+}
+
+fn main() void {
+    val res = safe_step(20)
+    if res.is_ok {
+        println(res.value)
+    }
+}

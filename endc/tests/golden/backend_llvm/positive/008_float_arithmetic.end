@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// 3.500000
+// 7.500000
+
+fn main() -> i32 {
+    val a: f64 = 1.25
+    val b: f64 = 2.25
+    println(a + b)
+
+    val c: f64 = 2.5
+    val d: f64 = 3.0
+    println(c * d)
+    return 0
+}

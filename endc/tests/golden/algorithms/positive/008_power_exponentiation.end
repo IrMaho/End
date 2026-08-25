@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 1024
+
+fn power(base: i64, exp: i64) i64 {
+    mut res = 1
+    mut i = 0
+    while i < exp {
+        res = res * base
+        i = i + 1
+    }
+    ret res
+}
+
+fn main() void {
+    println(power(2, 10))
+}

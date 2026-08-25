@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// 500
+
+fn main() void {
+    mut balance: i64 = 500
+    checkpoint savepoint;
+    println(balance)
+}

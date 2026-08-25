@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0100
+
+fn sort_bad() void {
+    val arr = [;
+}

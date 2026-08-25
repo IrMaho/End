@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 99
+
+st Node {
+    value: i64,
+}
+
+fn main() void {
+    val n = Node { value: 99 }
+    val ptr: *Node = &n
+    println(ptr.value)
+}

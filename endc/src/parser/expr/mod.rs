@@ -10,17 +10,27 @@ pub mod metaprogramming;
 impl Parser {
     pub(crate) fn parse_expression(&mut self) -> Result<Expression, String> {
         let expr = self.parse_pipe_expr()?;
-        if self.match_token(&TokenKind::If) {
-            let span = self.current_span();
-            let cond = self.parse_pipe_expr()?;
-            self.expect(TokenKind::Else)?;
-            let else_branch = self.parse_expression()?;
-            return Ok(Expression::Conditional {
-                condition: Box::new(cond),
-                then_branch: Box::new(expr),
-                else_branch: Box::new(else_branch),
-                span,
-            });
+        if self.check(&TokenKind::If) {
+            let prev_line = self.previous().map(|t| t.span.line).unwrap_or(0);
+            let current_line = self.peek().span.line;
+            if current_line == prev_line {
+                let checkpoint = self.checkpoint();
+                self.advance();
+                let span = self.current_span();
+                if let Ok(cond) = self.parse_pipe_expr() {
+                    if self.match_token(&TokenKind::Else) {
+                        if let Ok(else_branch) = self.parse_expression() {
+                            return Ok(Expression::Conditional {
+                                condition: Box::new(cond),
+                                then_branch: Box::new(expr),
+                                else_branch: Box::new(else_branch),
+                                span,
+                            });
+                        }
+                    }
+                }
+                self.restore_checkpoint(checkpoint);
+            }
         }
         Ok(expr)
     }
@@ -52,7 +62,7 @@ impl Parser {
                     right: Box::new(rhs),
                     span,
                 };
-            } else if self.match_token(&TokenKind::Shr) {
+            } else if self.match_token(&TokenKind::Compose) {
                 let span = self.current_span();
                 let rhs = self.parse_catch_expr()?;
                 expr = Expression::Compose {
@@ -240,6 +250,8 @@ impl Parser {
             || self.check(&TokenKind::GreaterEqual)
             || self.check(&TokenKind::DotDot)
             || self.check(&TokenKind::DotDotLess)
+            || self.check(&TokenKind::DotDotEqual)
+            || self.check(&TokenKind::DotDotDot)
             || self.check(&TokenKind::Is)
             || self.check(&TokenKind::In)
         {
@@ -249,7 +261,7 @@ impl Parser {
                 left = Expression::Range {
                     start: Box::new(left),
                     end: Box::new(right),
-                    inclusive: true,
+                    inclusive: false,
                     span,
                 };
             } else if self.match_token(&TokenKind::DotDotLess) {
@@ -258,6 +270,14 @@ impl Parser {
                     start: Box::new(left),
                     end: Box::new(right),
                     inclusive: false,
+                    span,
+                };
+            } else if self.match_token(&TokenKind::DotDotEqual) || self.match_token(&TokenKind::DotDotDot) {
+                let right = self.parse_shift()?;
+                left = Expression::Range {
+                    start: Box::new(left),
+                    end: Box::new(right),
+                    inclusive: true,
                     span,
                 };
             } else if self.match_token(&TokenKind::Is) {
@@ -314,17 +334,10 @@ impl Parser {
             } else {
                 self.advance();
                 let right = self.parse_addition()?;
-                match &mut left {
-                    Expression::Compose { ops, .. } => {
-                        ops.push(right);
-                    }
-                    _ => {
-                        left = Expression::Compose {
-                            ops: vec![left, right],
-                            span,
-                        };
-                    }
-                }
+                left = Expression::Compose {
+                    ops: vec![left, right],
+                    span,
+                };
             }
         }
         Ok(left)

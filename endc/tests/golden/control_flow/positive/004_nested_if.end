@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// Both match
+
+fn main() void {
+    val a = 10
+    val b = 20
+    if a == 10 {
+        if b == 20 {
+            println("Both match")
+        }
+    }
+}

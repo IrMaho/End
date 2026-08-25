@@ -78,14 +78,16 @@ impl InheritanceHierarchy {
                 }
                 for p in parents {
                     if p == child {
-                        return Err(DiagnosticError {
-                            code: "E_CYCLIC_INHERITANCE".to_string(),
-                            message: format!("Cyclic inheritance hierarchy detected involving class '{}'", child),
-                            line: 1,
-                            col: 1,
-                            kind: "SemanticError".to_string(),
-                            repair_suggestion: Some(format!("Break the cyclic dependency between '{}' and '{}'", child, p)),
-                        });
+                        return Err(
+                            DiagnosticError::new(
+                                "E_CYCLIC_INHERITANCE",
+                                format!("Cyclic inheritance hierarchy detected involving class '{}'", child),
+                                1,
+                                1,
+                                "SemanticError",
+                            )
+                            .with_suggestion(format!("Break the cyclic dependency between '{}' and '{}'", child, p)),
+                        );
                     }
                     if !visited.insert(p.clone()) {
                         break;
@@ -135,14 +137,16 @@ impl InheritanceHierarchy {
                 if let Some(abs_set) = self.abstract_methods.get(p) {
                     for abs_m in abs_set {
                         if !declared.contains(abs_m) {
-                            errors.push(DiagnosticError {
-                                code: "E_UNIMPLEMENTED_ABSTRACT_METHOD".to_string(),
-                                message: format!("Concrete class '{}' fails to implement abstract method '{}' from parent '{}'", class_name, abs_m, p),
-                                line: 1,
-                                col: 1,
-                                kind: "SemanticError".to_string(),
-                                repair_suggestion: Some(format!("Provide an implementation for 'fn {}()' in class '{}'", abs_m, class_name)),
-                            });
+                            errors.push(
+                                DiagnosticError::new(
+                                    "E_UNIMPLEMENTED_ABSTRACT_METHOD",
+                                    format!("Concrete class '{}' fails to implement abstract method '{}' from parent '{}'", class_name, abs_m, p),
+                                    1,
+                                    1,
+                                    "SemanticError",
+                                )
+                                .with_suggestion(format!("Provide an implementation for 'fn {}()' in class '{}'", abs_m, class_name)),
+                            );
                         }
                     }
                 }

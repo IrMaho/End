@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 250
+// 60000
+// 4000000000
+
+fn main() void {
+    val u1: u8 = 250
+    val u2: u16 = 60000
+    val u3: u32 = 4000000000
+    println(u1)
+    println(u2)
+    println(u3)
+}

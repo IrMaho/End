@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 216
+
+st Student {
+    id: i64,
+    age: i64,
+    grade: i64,
+}
+
+fn main() void {
+    val s = Student { id: 101, age: 20, grade: 95 }
+    println(s.id + s.age + s.grade)
+}

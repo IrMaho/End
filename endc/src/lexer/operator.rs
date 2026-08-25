@@ -5,11 +5,21 @@ use crate::ast::Span;
 pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize, start_col: usize) -> Result<Token, String> {
         lexer.advance();
         let kind = match ch {
-            '+' => TokenKind::Plus,
+            '+' => {
+                if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::PlusEqual
+                } else {
+                    TokenKind::Plus
+                }
+            }
             '-' => {
                 if lexer.peek() == Some('>') {
                     lexer.advance();
                     TokenKind::Arrow
+                } else if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::MinusEqual
                 } else {
                     TokenKind::Minus
                 }
@@ -18,12 +28,29 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
                 if lexer.peek() == Some('*') {
                     lexer.advance();
                     TokenKind::StarStar
+                } else if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::StarEqual
                 } else {
                     TokenKind::Star
                 }
             }
-            '/' => TokenKind::Slash,
-            '%' => TokenKind::Percent,
+            '/' => {
+                if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::SlashEqual
+                } else {
+                    TokenKind::Slash
+                }
+            }
+            '%' => {
+                if lexer.peek() == Some('=') {
+                    lexer.advance();
+                    TokenKind::PercentEqual
+                } else {
+                    TokenKind::Percent
+                }
+            }
             '=' => {
                 if lexer.peek() == Some('=') {
                     lexer.advance();
@@ -106,6 +133,10 @@ pub fn parse_operator(lexer: &mut Lexer, ch: char, span: Span, start_line: usize
                         lexer.advance(); // consume second '.'
                         lexer.advance(); // consume '<'
                         TokenKind::DotDotLess
+                    } else if lexer.peek_next() == Some('=') {
+                        lexer.advance(); // consume second '.'
+                        lexer.advance(); // consume '='
+                        TokenKind::DotDotEqual
                     } else {
                         lexer.advance(); // consume second '.'
                         TokenKind::DotDot

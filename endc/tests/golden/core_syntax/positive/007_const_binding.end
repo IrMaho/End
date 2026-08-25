@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 999
+
+fn main() void {
+    val c = 999
+    println(c)
+}

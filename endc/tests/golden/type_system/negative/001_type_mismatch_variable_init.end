@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E002
+
+fn main() void {
+    val x: i64 = "invalid_string"
+}

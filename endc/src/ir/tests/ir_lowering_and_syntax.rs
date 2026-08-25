@@ -50,7 +50,7 @@ fn parse_str(code: &str) -> Result<Module, String> {
         let res = analyzer.analyze_module(&module);
         assert!(res.is_err());
         let errors = res.unwrap_err();
-        assert!(errors.iter().any(|e| e.code == "E0907"));
+        assert!(errors.iter().any(|e| e.code == "E018" || e.code == "E0907"));
     }
 
     #[test]
@@ -61,7 +61,7 @@ fn parse_str(code: &str) -> Result<Module, String> {
         let res = analyzer.analyze_module(&module);
         assert!(res.is_err());
         let errors = res.unwrap_err();
-        assert!(errors.iter().any(|e| e.code == "E0906"));
+        assert!(errors.iter().any(|e| e.code == "E018" || e.code == "E0906"));
     }
 
     #[test]

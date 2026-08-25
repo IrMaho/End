@@ -27,6 +27,8 @@ pub struct Interpreter {
     pub agent_reports: Vec<AgentReportState>,
     pub verified_tasks: HashSet<String>,
     pub project_profile: HashMap<String, String>,
+    pub stdout: String,
+    pub capture_stdout: bool,
 }
 
 impl Interpreter {
@@ -55,7 +57,19 @@ impl Interpreter {
             agent_reports: Vec::new(),
             verified_tasks: HashSet::new(),
             project_profile: HashMap::new(),
+            stdout: String::new(),
+            capture_stdout: false,
         }
+    }
+
+    pub fn with_stdout_capture() -> Self {
+        let mut interp = Self::new();
+        interp.capture_stdout = true;
+        interp
+    }
+
+    pub fn emit_stdout(&mut self, s: &str) {
+        self.stdout.push_str(s);
     }
 
     pub fn run(&mut self, module: &Module) -> Result<Value, String> {
@@ -65,6 +79,34 @@ impl Interpreter {
 
         for f in &module.functions {
             self.functions.insert(f.name.clone(), f.clone());
+        }
+
+        for m in &module.modules {
+            for f in &m.functions {
+                self.functions.insert(format!("{}_{}", m.name, f.name), f.clone());
+                self.functions.insert(format!("{}.{}", m.name, f.name), f.clone());
+                self.functions.insert(format!("{}::{}", m.name, f.name), f.clone());
+            }
+            for f in &m.overrides {
+                self.functions.insert(format!("{}_{}", m.name, f.name), f.clone());
+                self.functions.insert(format!("{}.{}", m.name, f.name), f.clone());
+                self.functions.insert(format!("{}::{}", m.name, f.name), f.clone());
+            }
+        }
+
+        for m in &module.modules {
+            if let Some(ref parent_name) = m.parent {
+                if let Some(parent_mod) = module.modules.iter().find(|p| &p.name == parent_name) {
+                    for f in &parent_mod.functions {
+                        let key1 = format!("{}_{}", m.name, f.name);
+                        let key2 = format!("{}.{}", m.name, f.name);
+                        let key3 = format!("{}::{}", m.name, f.name);
+                        self.functions.entry(key1).or_insert_with(|| f.clone());
+                        self.functions.entry(key2).or_insert_with(|| f.clone());
+                        self.functions.entry(key3).or_insert_with(|| f.clone());
+                    }
+                }
+            }
         }
 
         if let Some(main_fn) = self.functions.get("main").cloned() {

@@ -1,0 +1,19 @@
+// @test: positive
+// @expect-stdout:
+// 10
+// 20
+// 30
+
+struct Point {
+    x: i64
+    y: i64
+    z: i64
+}
+
+fn main() -> i32 {
+    val p = Point { x: 10, y: 20, z: 30 }
+    println(p.x)
+    println(p.y)
+    println(p.z)
+    return 0
+}

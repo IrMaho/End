@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 90
+
+fn main() void {
+    val res = (10 + 20) * (30 - 15) / 5
+    println(res)
+}

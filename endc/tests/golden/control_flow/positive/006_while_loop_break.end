@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 0
+// 1
+// 2
+
+fn main() void {
+    mut i = 0
+    while i < 10 {
+        if i == 3 {
+            break
+        }
+        println(i)
+        i = i + 1
+    }
+}

@@ -104,10 +104,7 @@ impl Parser {
         }
 
         if self.match_token(&TokenKind::Dot) {
-            let vname = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                other => return Err(format!("Expected variant name after '.', found {:?}", other)),
-            };
+            let vname = self.parse_identifier_or_keyword()?;
 
             let mut payload = None;
             if self.match_token(&TokenKind::LParen) {
@@ -234,111 +231,6 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Lit(Literal::Null, span))
             }
-            TokenKind::Struct => {
-                self.advance();
-                Ok(Expression::Ident("st".to_string(), span))
-            }
-            TokenKind::Val => {
-                self.advance();
-                Ok(Expression::Ident("val".to_string(), span))
-            }
-            TokenKind::Mut => {
-                self.advance();
-                Ok(Expression::Ident("mut".to_string(), span))
-            }
-            TokenKind::Target => {
-                self.advance();
-                Ok(Expression::Ident("target".to_string(), span))
-            }
-            TokenKind::Event
-            | TokenKind::Task
-            | TokenKind::Flow
-            | TokenKind::Stream
-            | TokenKind::Watch
-            | TokenKind::React
-            | TokenKind::Observe
-            | TokenKind::Agent
-            | TokenKind::Context
-            | TokenKind::Slice
-            | TokenKind::Patch
-            | TokenKind::Evolve
-            | TokenKind::Verify
-            | TokenKind::Ident(_) => {
-                let id = self.parse_identifier_or_keyword()?;
-
-                // Check for Region Promotion: `promote(temp, outer_scope)`
-                if id == "promote" && self.match_token(&TokenKind::LParen) {
-                    let expr = self.parse_expression()?;
-                    self.expect(TokenKind::Comma)?;
-                    let target_region = match self.advance().kind {
-                        TokenKind::Ident(r) => r,
-                        other => return Err(format!("Expected target region name in promote, found {:?}", other)),
-                    };
-                    self.expect(TokenKind::RParen)?;
-                    return Ok(Expression::Promote {
-                        expr: Box::new(expr),
-                        target_region,
-                        span,
-                    });
-                }
-
-                // Check for Struct Initialization: `User { id: 1, name: "Ali" }`
-                if self.check(&TokenKind::LBrace) && id.chars().next().map_or(false, |c| c.is_uppercase()) {
-                    self.advance();
-                    let mut fields = Vec::new();
-                    while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                        let fname = self.parse_identifier_or_keyword()?;
-                        let mut fvalue = Expression::Ident(fname.clone(), self.current_span());
-                        if self.match_token(&TokenKind::Colon) {
-                            fvalue = self.parse_expression()?;
-                        }
-                        fields.push((fname, fvalue));
-                        if !self.match_token(&TokenKind::Comma) {
-                            break;
-                        }
-                    }
-                    self.expect(TokenKind::RBrace)?;
-                    return Ok(Expression::StructInit {
-                        name: id,
-                        fields,
-                        span,
-                    });
-                }
-
-                // Check for Enum Qualified Init: `Status.Pending` or `Status::Ok`
-                let is_enum_access = if self.enum_names.contains(&id) {
-                    if self.match_token(&TokenKind::Dot) {
-                        true
-                    } else if self.check(&TokenKind::Colon) {
-                        self.advance();
-                        self.match_token(&TokenKind::Colon)
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                };
-
-                if is_enum_access {
-                    let vname = match self.advance().kind {
-                        TokenKind::Ident(n) => n,
-                        other => return Err(format!("Expected enum variant name, found {:?}", other)),
-                    };
-                    let mut payload = None;
-                    if self.match_token(&TokenKind::LParen) {
-                        payload = Some(Box::new(self.parse_expression()?));
-                        self.expect(TokenKind::RParen)?;
-                    }
-                    return Ok(Expression::EnumInit {
-                        enum_name: Some(id),
-                        variant_name: vname,
-                        payload,
-                        span,
-                    });
-                }
-
-                Ok(Expression::Ident(id, span))
-            }
             TokenKind::Underscore => {
                 self.advance();
                 Ok(Expression::Ident("_".to_string(), span))
@@ -352,6 +244,15 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::DotDotDotQuestion => {
+                self.advance();
+                let expr = self.parse_expression()?;
+                Ok(Expression::Spread {
+                    expr: Box::new(expr),
+                    is_null_aware: true,
+                    span,
+                })
+            }
             TokenKind::LBracket => {
                 self.parse_bracket_collection()
             }
@@ -362,7 +263,7 @@ impl Parser {
                 }
 
                 // Check for Walrus Assignment: `(n := get_number())`
-                let checkpoint = self.cursor.clone();
+                let checkpoint = self.checkpoint();
                 if let Ok(var_name) = self.parse_identifier_or_keyword() {
                     if self.match_token(&TokenKind::ColonEqual) {
                         let val_expr = self.parse_expression()?;
@@ -374,7 +275,7 @@ impl Parser {
                         });
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
 
                 let first_expr = self.parse_expression()?;
                 if self.match_token(&TokenKind::Comma) {
@@ -412,16 +313,92 @@ impl Parser {
                     span,
                 })
             }
-            other => {
-                let checkpoint = self.cursor.clone();
+            _ => {
+                let checkpoint = self.checkpoint();
                 if let Ok(id) = self.parse_identifier_or_keyword() {
+                    // Check for Region Promotion: `promote(temp, outer_scope)`
+                    if id == "promote" && self.match_token(&TokenKind::LParen) {
+                        let expr = self.parse_expression()?;
+                        self.expect(TokenKind::Comma)?;
+                        let target_region = self.parse_identifier_or_keyword()?;
+                        self.expect(TokenKind::RParen)?;
+                        return Ok(Expression::Promote {
+                            expr: Box::new(expr),
+                            target_region,
+                            span,
+                        });
+                    }
+
+                    // Check for Struct Initialization: `User { id: 1, name: "Ali" }`
+                    if self.check(&TokenKind::LBrace) && id.chars().next().map_or(false, |c| c.is_uppercase()) {
+                        self.advance();
+                        let mut fields = Vec::new();
+                        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                            let fname = self.parse_identifier_or_keyword()?;
+                            let mut fvalue = Expression::Ident(fname.clone(), self.current_span());
+                            if self.match_token(&TokenKind::Colon) {
+                                fvalue = self.parse_expression()?;
+                            }
+                            fields.push((fname, fvalue));
+                            if !self.match_token(&TokenKind::Comma) {
+                                break;
+                            }
+                        }
+                        self.expect(TokenKind::RBrace)?;
+                        return Ok(Expression::StructInit {
+                            name: id,
+                            fields,
+                            span,
+                        });
+                    }
+
+                    // Check for Enum Qualified Init: `Status.Pending` or `Status::Ok`
+                    let is_enum_access = if self.enum_names.contains(&id) {
+                        if self.match_token(&TokenKind::Dot) {
+                            true
+                        } else if self.check(&TokenKind::Colon) && self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::Colon)) {
+                            self.advance();
+                            self.advance();
+                            true
+                        } else {
+                            false
+                        }
+                    } else if self.check(&TokenKind::Colon) && self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::Colon)) {
+                        self.advance();
+                        self.advance();
+                        true
+                    } else {
+                        false
+                    };
+
+                    if is_enum_access {
+                        let vname = self.parse_identifier_or_keyword()?;
+                        let mut payload = None;
+                        if self.match_token(&TokenKind::LParen) {
+                            payload = Some(Box::new(self.parse_expression()?));
+                            self.expect(TokenKind::RParen)?;
+                        }
+                        return Ok(Expression::EnumInit {
+                            enum_name: Some(id),
+                            variant_name: vname,
+                            payload,
+                            span,
+                        });
+                    }
+
                     return Ok(Expression::Ident(id, span));
                 }
-                self.cursor = checkpoint;
-                Err(format!(
+                self.restore_checkpoint(checkpoint);
+
+                let other = self.peek_kind().clone();
+                let actual = format!("{:?}", other);
+                let expected = "expression".to_string();
+                let raw_msg = format!(
                     "Unexpected token in expression: {:?} at line {}, col {}",
                     other, span.line, span.col
-                ))
+                );
+                let formatted = self.emit_e005(&span, &expected, &actual, &raw_msg);
+                Err(formatted)
             }
         }
     }

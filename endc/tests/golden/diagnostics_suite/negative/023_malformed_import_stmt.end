@@ -1,0 +1,4 @@
+// @test: negative
+// @expect-error: E005
+
+import ;

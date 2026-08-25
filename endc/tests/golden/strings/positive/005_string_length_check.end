@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// Compiler
+
+fn main() void {
+    val s = "Compiler"
+    println(s)
+}

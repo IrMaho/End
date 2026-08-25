@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// EndLanguage
+
+fn main() void {
+    val full: str = "EndLanguage"
+    println(full)
+}

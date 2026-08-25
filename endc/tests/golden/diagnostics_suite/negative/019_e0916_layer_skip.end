@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0916
+
+mod heavy_mod {
+    depends: [a, b, c, d, e, f, g]
+}
+max_fanout heavy_mod: 3

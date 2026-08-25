@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Proof gate passed
+
+fn main() void {
+    val x = 100
+    prove x > 0;
+    println("Proof gate passed")
+}

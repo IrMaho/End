@@ -293,7 +293,6 @@ impl Parser {
             TokenKind::Only => Ok("only".to_string()),
             TokenKind::Section => Ok("section".to_string()),
             TokenKind::Before => Ok("before".to_string()),
-            TokenKind::Is => Ok("is".to_string()),
             TokenKind::Once => Ok("once".to_string()),
             TokenKind::Every => Ok("every".to_string()),
             TokenKind::State => Ok("state".to_string()),
@@ -343,7 +342,6 @@ impl Parser {
             TokenKind::Policy => Ok("policy".to_string()),
             TokenKind::Transform => Ok("transform".to_string()),
             TokenKind::Map => Ok("map".to_string()),
-            TokenKind::Lock => Ok("lock".to_string()),
             TokenKind::Conservation => Ok("conservation".to_string()),
             TokenKind::Inventory => Ok("inventory".to_string()),
             TokenKind::AuditLog => Ok("audit_log".to_string()),
@@ -352,8 +350,13 @@ impl Parser {
             TokenKind::Solid => Ok("solid".to_string()),
             TokenKind::Unaccounted => Ok("unaccounted".to_string()),
             TokenKind::Refactor => Ok("refactor".to_string()),
-            TokenKind::Ident(s) | TokenKind::StringLit(s) => Ok(s),
-            other => Err(format!("Expected identifier, found {:?} at line {}", other, tok.span.line)),
+            TokenKind::StringLit(s) => Ok(s),
+            other => {
+                let actual = format!("{:?}", other);
+                let raw = format!("Expected identifier, found {:?} at line {}, col {}", other, tok.span.line, tok.span.col);
+                let formatted = self.emit_e005(&tok.span, "identifier", &actual, &raw);
+                Err(formatted)
+            }
         }
     }
 

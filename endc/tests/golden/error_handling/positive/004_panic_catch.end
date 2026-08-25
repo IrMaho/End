@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 100
+
+fn main() void {
+    val safe = 100
+    println(safe)
+}

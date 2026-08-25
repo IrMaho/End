@@ -203,10 +203,14 @@ impl Parser {
                         self.expect(TokenKind::LBrace)?;
                         let mut test_statements = Vec::new();
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                            if let Ok(stmt) = self.parse_statement() {
-                                test_statements.push(stmt);
-                            } else {
-                                self.advance();
+                            match self.parse_statement() {
+                                Ok(stmt) => test_statements.push(stmt),
+                                Err(_) => {
+                                    self.synchronize();
+                                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                        break;
+                                    }
+                                }
                             }
                         }
                         self.expect(TokenKind::RBrace)?;

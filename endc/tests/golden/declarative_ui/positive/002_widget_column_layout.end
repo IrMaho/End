@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 3
+
+st ColumnWidget {
+    child_count: i64,
+}
+
+fn main() void {
+    val col = ColumnWidget { child_count: 3 }
+    println(col.child_count)
+}

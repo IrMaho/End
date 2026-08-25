@@ -29,11 +29,26 @@ impl Parser {
                 continue;
             }
             if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" } else { false }) {
-                let f = self.parse_function(false, vec![])?;
-                statements.push(Statement::LocalFunction(f));
+                match self.parse_function(false, vec![]) {
+                    Ok(f) => statements.push(Statement::LocalFunction(f)),
+                    Err(_) => {
+                        self.synchronize();
+                        if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                            break;
+                        }
+                    }
+                }
                 continue;
             }
-            statements.push(self.parse_statement()?);
+            match self.parse_statement() {
+                Ok(stmt) => statements.push(stmt),
+                Err(_) => {
+                    self.synchronize();
+                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                        break;
+                    }
+                }
+            }
         }
 
         self.expect(TokenKind::RBrace)?;
@@ -145,6 +160,71 @@ impl Parser {
                 value,
                 span,
             })
+        } else if self.match_token(&TokenKind::PlusEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::Binary {
+                    left: Box::new(expr),
+                    op: BinaryOp::Add,
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
+        } else if self.match_token(&TokenKind::MinusEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::Binary {
+                    left: Box::new(expr),
+                    op: BinaryOp::Sub,
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
+        } else if self.match_token(&TokenKind::StarEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::Binary {
+                    left: Box::new(expr),
+                    op: BinaryOp::Mul,
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
+        } else if self.match_token(&TokenKind::SlashEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::Binary {
+                    left: Box::new(expr),
+                    op: BinaryOp::Div,
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
+        } else if self.match_token(&TokenKind::PercentEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Assignment {
+                target: expr.clone(),
+                value: Expression::Binary {
+                    left: Box::new(expr),
+                    op: BinaryOp::Mod,
+                    right: Box::new(value),
+                    span: span.clone(),
+                },
+                span,
+            })
         } else if self.match_token(&TokenKind::QuestionQuestionEqual) {
             let value = self.parse_expression()?;
             self.match_token(&TokenKind::SemiColon);
@@ -157,31 +237,31 @@ impl Parser {
                 },
                 span,
             })
-                } else if self.match_token(&TokenKind::LessPlusEqual) {
-                    let value = self.parse_expression()?;
-                    self.match_token(&TokenKind::SemiColon);
-                    if let Expression::Ident(target_name, _) = &expr {
-                        Ok(Statement::AtomicOp {
-                            target: target_name.clone(),
-                            op: BinaryOp::Add,
-                            value,
-                            span,
-                        })
-                    } else {
-                        Ok(Statement::Assignment {
-                            target: expr.clone(),
-                            value: Expression::Binary {
-                                left: Box::new(expr),
-                                op: BinaryOp::Add,
-                                right: Box::new(value),
-                                span: span.clone(),
-                            },
-                            span,
-                        })
-                    }
-                } else {
-                    self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::Expression(expr))
-                }
+        } else if self.match_token(&TokenKind::LessPlusEqual) {
+            let value = self.parse_expression()?;
+            self.match_token(&TokenKind::SemiColon);
+            if let Expression::Ident(target_name, _) = &expr {
+                Ok(Statement::AtomicOp {
+                    target: target_name.clone(),
+                    op: BinaryOp::Add,
+                    value,
+                    span,
+                })
+            } else {
+                Ok(Statement::Assignment {
+                    target: expr.clone(),
+                    value: Expression::Binary {
+                        left: Box::new(expr),
+                        op: BinaryOp::Add,
+                        right: Box::new(value),
+                        span: span.clone(),
+                    },
+                    span,
+                })
+            }
+        } else {
+            self.match_token(&TokenKind::SemiColon);
+            Ok(Statement::Expression(expr))
+        }
     }
 }

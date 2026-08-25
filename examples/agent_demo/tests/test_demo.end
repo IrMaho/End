@@ -1,0 +1,14 @@
+// Required Unit Test Suite for task-demo-001
+
+fn test_balance_calculation() -> bool {
+    let initial = 1000;
+    let credits = 250;
+    let debits = 50;
+    let balance = (initial + credits) - debits;
+    return balance == 1200;
+}
+
+fn test_token_verification() -> bool {
+    let token_valid = 42;
+    return token_valid > 0;
+}

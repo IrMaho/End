@@ -1,0 +1,27 @@
+// @test: positive
+// @expect-stdout:
+// 1
+// FAST_MODE
+
+enum Mode {
+    Fast,
+    Safe,
+}
+
+st Config {
+    id: i64,
+    mode: Mode,
+}
+
+fn main() void {
+    val c = Config { id: 1, mode: .Fast }
+    println(c.id)
+    match c.mode {
+        .Fast => {
+            println("FAST_MODE")
+        }
+        _ => {
+            println("OTHER")
+        }
+    }
+}

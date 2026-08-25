@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+mod BaseCalc {
+    fn multiply(a: i64, b: i64) i64 {
+        ret a * b
+    }
+}
+
+mod AdvancedCalc derives BaseCalc {
+}
+
+fn main() void {
+    println(AdvancedCalc.multiply(6, 7))
+}

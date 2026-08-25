@@ -1,0 +1,11 @@
+// @test: positive
+// @differential: skip
+// @expect-stdout:
+// 12
+
+use c <math.h>;
+
+fn main() void {
+    val s = inline_c_expr("(int64_t)sqrt(144.0)") // reason: "C FFI"
+    println(s)
+}

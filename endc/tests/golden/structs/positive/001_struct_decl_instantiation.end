@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// 10
+// 20
+
+st Point {
+    x: i64,
+    y: i64,
+}
+
+fn main() void {
+    val p = Point { x: 10, y: 20 }
+    println(p.x)
+    println(p.y)
+}

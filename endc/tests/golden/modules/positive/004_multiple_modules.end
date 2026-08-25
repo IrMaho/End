@@ -1,0 +1,19 @@
+// @test: positive
+// @expect-stdout:
+// 33
+
+mod ModA {
+    fn get_a() i64 {
+        ret 11
+    }
+}
+
+mod ModB {
+    fn get_b() i64 {
+        ret 22
+    }
+}
+
+fn main() void {
+    println(ModA.get_a() + ModB.get_b())
+}

@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Event emitted
+
+event LogEvent {
+    code: i64,
+}
+
+fn main() void {
+    emit LogEvent { code: 200 }
+    println("Event emitted")
+}

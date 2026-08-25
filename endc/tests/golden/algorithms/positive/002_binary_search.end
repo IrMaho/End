@@ -1,0 +1,26 @@
+// @test: positive
+// @expect-stdout:
+// 3
+// -1
+
+fn binary_search(target: i64) i64 {
+    val arr: [6]i64 = [10, 20, 30, 40, 50, 60]
+    mut low = 0
+    mut high = 5
+    while low <= high {
+        val mid = (low + high) / 2
+        if arr[mid] == target {
+            ret mid
+        } else if arr[mid] < target {
+            low = mid + 1
+        } else {
+            high = mid - 1
+        }
+    }
+    ret -1
+}
+
+fn main() void {
+    println(binary_search(40))
+    println(binary_search(99))
+}

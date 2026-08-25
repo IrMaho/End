@@ -1,0 +1,12 @@
+// @test: negative
+// @expect-error: E021
+
+st User {
+    id: i64,
+    name: str,
+}
+
+fn main() void {
+    val u = User { id: 1, name: "Ali" }
+    println(u.nonexistent_field)
+}

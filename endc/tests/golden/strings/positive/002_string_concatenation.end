@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// Hello, World!
+
+fn main() void {
+    val s = "Hello, World!"
+    println(s)
+}

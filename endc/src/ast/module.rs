@@ -28,6 +28,29 @@ pub struct Module {
     pub span: Span,
 }
 
+impl Module {
+    pub fn empty(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            imports: Vec::new(),
+            enums: Vec::new(),
+            structs: Vec::new(),
+            traits: Vec::new(),
+            impls: Vec::new(),
+            functions: Vec::new(),
+            modules: Vec::new(),
+            extensions: Vec::new(),
+            features: Vec::new(),
+            contracts: Vec::new(),
+            architecture_templates: Vec::new(),
+            architecture_rules: Vec::new(),
+            feature_migrations: Vec::new(),
+            statements: Vec::new(),
+            span: Span::default(),
+        }
+    }
+}
+
 
 
 

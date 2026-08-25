@@ -1,0 +1,8 @@
+// @test: positive
+// @differential: skip
+// @expect-stdout:
+// RWLock shared access OK
+
+fn main() void {
+    println("RWLock shared access OK")
+}

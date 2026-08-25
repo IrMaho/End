@@ -1,0 +1,14 @@
+// @test: positive
+// @differential: skip
+// @expect-stdout:
+// 100
+
+fn main() void {
+    mut res: i64 = 0
+    hedge after 10ms {
+        res = 100
+    } fallback {
+        res = 200
+    }
+    println(res)
+}

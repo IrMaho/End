@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 120
+// 30000
+// 2000000000
+// 9000000000000000000
+
+fn main() void {
+    val a: i8 = 120
+    val b: i16 = 30000
+    val c: i32 = 2000000000
+    val d: i64 = 9000000000000000000
+    println(a)
+    println(b)
+    println(c)
+    println(d)
+}

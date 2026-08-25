@@ -61,6 +61,29 @@ pub fn handle_run(args: RunArgs) {
                 }
             };
 
+            if exec_backend == "llvm" {
+                let llvm_be = LlvmBackend::new(None);
+                let temp_exe = std::env::temp_dir().join(format!("end_llvm_run_{}.exe", std::process::id()));
+                match llvm_be.compile_to_executable(&module, &temp_exe) {
+                    Ok(artifacts) => {
+                        let status = Command::new(&artifacts.executable_path).status();
+                        let _ = fs::remove_file(&artifacts.executable_path);
+                        let _ = fs::remove_file(artifacts.executable_path.with_extension("ll"));
+                        let _ = fs::remove_file(artifacts.executable_path.with_extension("obj"));
+                        if let Ok(st) = status {
+                            if !st.success() {
+                                std::process::exit(st.code().unwrap_or(1));
+                            }
+                        }
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} LLVM execution error: {:?}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
             if exec_backend == "cranelift" {
                 let mut cl_be = CraneliftBackend::new();
                 match cl_be.compile_and_run_jit(&module) {
@@ -125,12 +148,34 @@ pub fn handle_check(args: CheckArgs) {
                 Ok(m) => m,
                 Err(e) => {
                     if json {
-                        println!("{}", serde_json::json!({
-                            "status": "parse_error",
-                            "message": e
-                        }));
+                        if parser.diagnostics.has_errors() {
+                            let errors: Vec<serde_json::Value> = parser.diagnostics.diagnostics()
+                                .iter()
+                                .map(|d| serde_json::json!({
+                                    "code": d.code.as_code_str(),
+                                    "message": d.message,
+                                    "location": d.location
+                                }))
+                                .collect();
+                            println!("{}", serde_json::json!({
+                                "status": "parse_error",
+                                "errors": errors
+                            }));
+                        } else {
+                            println!("{}", serde_json::json!({
+                                "status": "parse_error",
+                                "message": e
+                            }));
+                        }
                     } else {
-                        eprintln!("{} {}", "Parse Error:".red().bold(), e);
+                        if parser.diagnostics.has_errors() {
+                            for diag in parser.diagnostics.diagnostics() {
+                                eprintln!("{}", diag.render(&source));
+                            }
+                        } else {
+                            let diag = Diagnostic::error("E005", &e, &file_str, parser.current_span().line, parser.current_span().col);
+                            eprintln!("{}", diag.render(&source));
+                        }
                     }
                     std::process::exit(1);
                 }
@@ -162,19 +207,20 @@ pub fn handle_check(args: CheckArgs) {
                         }));
                     } else {
                         for err in &errors {
-                            eprintln!("error[{}]: {}", err.code.red().bold(), err.message.bold());
-                            eprintln!("  --> {}:{}:{}", file_str.cyan(), err.line, err.col);
-                            eprintln!("   |");
-                            if err.line <= source_lines.len() && err.line > 0 {
-                                eprintln!("{:4} |     {}", err.line, source_lines[err.line - 1]);
-                                let pointer_pad = " ".repeat(err.col.saturating_sub(1));
-                                eprintln!("     |     {}^ {}", pointer_pad, "memory allocated in local arena is never freed or escaped safely".red());
+                            let mut diag = crate::diagnostics::Diagnostic::error(&err.code, &err.message, &file_str, err.line, err.col);
+                            if let Some(ref h) = err.repair_suggestion {
+                                diag = diag.with_help(h);
                             }
-                            eprintln!("   |");
-                            if let Some(ref sug) = err.repair_suggestion {
-                                eprintln!("   = {}: {}", "help".green().bold(), sug);
+                            if let Some(ref exp) = err.expected {
+                                diag = diag.with_expected(exp);
                             }
-                            eprintln!();
+                            if let Some(ref act) = err.actual {
+                                diag = diag.with_actual(act);
+                            }
+                            for ctx in &err.context {
+                                diag = diag.with_context(ctx);
+                            }
+                            eprintln!("{}", diag.render(&source));
                         }
                     }
                     std::process::exit(1);

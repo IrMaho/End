@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// 22
+
+fn main() void {
+    val a = 12 & 10
+    val b = 12 | 10
+    println(a + b)
+}

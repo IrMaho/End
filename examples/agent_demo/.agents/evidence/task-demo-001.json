@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "task-demo-001",
+  "state": "VERIFIED",
+  "signed_at": "1787682491.390Z",
+  "signature": "hmac-sha256:1ff458d584eaff451b46e42ce1d3ca72ab15a0a30d6d7bcdb22f643ef3fedf47",
+  "tests": [
+    {
+      "name": "tests/test_demo.end",
+      "pass": true,
+      "duration_ms": 1,
+      "stdout_hash": "sha256:18aa1a23526230c1e2f0c268827d19c13a975bdbed2e7aad96cc677014583a89",
+      "stderr_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0
+    }
+  ],
+  "artifacts": {
+    "source_files": {
+      "src/main.end": "5a340af96c1ea797a2bc979b3b0eb2dcb3d828b72919fa137f5128c491913e86",
+      "tests/test_demo.end": "1ded2758851596101b262188fefe5a1ab5c827939591c667276dcc933caadf4f"
+    },
+    "generated_c": {
+      "main.c": "sha256:9bce930bb85f9bb24284e9e3a71044adf1518ee27a1f98b1aba0e09edb1628cb"
+    },
+    "binaries": {
+      "main.exe": "a89a5dc5f8838ce3ad89d62f54ba816a91aa52b0f59d9526ac5ce6f71369ce52"
+    }
+  },
+  "coverage": {
+    "lines_total": 14,
+    "lines_covered": 14,
+    "branches_total": 2,
+    "branches_covered": 2
+  },
+  "environment": {
+    "endc_version": "2.0.0",
+    "gcc_version": "gcc (x86_64-posix-seh-rev0, Built by MinGW-Builds project) 15.2.0",
+    "target": "x86_64-windows",
+    "os": "windows"
+  },
+  "rebuild_deterministic": true,
+  "repair_attempts": [
+    {
+      "attempt_number": 1,
+      "timestamp": "Instant { t: 301771.8929413s }",
+      "failure_reason": "required_test_failed",
+      "failed_test": "tests/test_demo.end",
+      "assertion": {
+        "expected": true,
+        "actual": false
+      },
+      "suggested_fix_area": {
+        "file": "tests/test_demo.end",
+        "line_start": 8,
+        "line_end": 8,
+        "hint": "Review logic in 'tests/test_demo.end' or corresponding implementation in target files"
+      },
+      "resolved": true
+    }
+  ]
+}

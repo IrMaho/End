@@ -21,7 +21,11 @@ node_modules/
 *.o
 *.zip
 *.tar.gz
-app_*
+endc/z3/
+z3/
+/app_*
+!endc/src/ui/app_template.html
+examples/app_*
 examples/*.c
 examples/*.exe
 

@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 100
+// true
+
+fn main() void {
+    val num: i64 = 100
+    val flag: bool = true
+    println(num)
+    println(flag)
+}

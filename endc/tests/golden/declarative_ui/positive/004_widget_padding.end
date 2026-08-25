@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 16
+
+st PaddingWidget {
+    pad: i64,
+}
+
+fn main() void {
+    val p = PaddingWidget { pad: 16 }
+    println(p.pad)
+}

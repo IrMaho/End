@@ -1,0 +1,11 @@
+// @test: negative
+// @expect-error: E0910
+
+st ResourceObj { id: i64, }
+fn escape_lease() *ResourceObj {
+    lease val r = ResourceObj { id: 1 } {
+        @$$$
+        ret &r
+    }
+}
+fn main() void { escape_lease(); }

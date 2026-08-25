@@ -166,6 +166,10 @@ impl Parser {
         let mut return_type = Type::Void;
         if self.match_token(&TokenKind::Arrow) {
             return_type = self.parse_type()?;
+        } else if !self.check(&TokenKind::LBrace) && !self.check(&TokenKind::Version) && !self.check(&TokenKind::Requires) && !self.check(&TokenKind::SemiColon) {
+            if let Ok(t) = self.parse_type() {
+                return_type = t;
+            }
         }
 
         let mut version = None;
@@ -174,6 +178,22 @@ impl Parser {
                 version = Some(*v as usize);
                 self.advance();
             }
+        }
+
+        if self.match_token(&TokenKind::SemiColon) {
+            return Ok(OperationDef {
+                name,
+                is_pub,
+                params,
+                return_type,
+                version,
+                requires: Vec::new(),
+                guarantees: Vec::new(),
+                effects: Vec::new(),
+                emits: Vec::new(),
+                body: Block { statements: Vec::new(), span: span.clone() },
+                span,
+            });
         }
 
         self.expect(TokenKind::LBrace)?;
@@ -277,10 +297,7 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Trait)?;
 
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
-            other => return Err(format!("Expected trait name, found {:?} at line {}", other, span.line)),
-        };
+        let name = self.parse_identifier_or_keyword()?;
 
         let mut generic_params = Vec::new();
         if self.match_token(&TokenKind::Less) {

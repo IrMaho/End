@@ -1,12 +1,16 @@
 pub mod blast_radius;
+pub mod borrow;
 pub mod const_eval;
 pub mod expr_analyzer;
 pub mod module_analyzer;
 pub mod stmt_analyzer;
 pub mod stmt_architectural;
 pub mod stmt_control_flow;
+pub mod type_env;
 pub mod types;
 
+pub use borrow::BorrowChecker;
+pub use type_env::{TypeEnv, VarSymbol};
 pub use types::*;
 
 use crate::ast::*;
@@ -25,9 +29,8 @@ pub struct SemanticAnalyzer {
     pub(crate) current_function: Option<String>,
     pub(crate) region_depth: usize,
     pub(crate) region_allocations: Vec<HashSet<String>>, // track pointers allocated inside each region depth
-    pub(crate) var_scopes: Vec<HashMap<String, (Type, usize, bool)>>, // name -> (Type, line_def, is_mut)
-    pub(crate) ownership_scopes: Vec<HashMap<String, OwnershipState>>,
-    pub(crate) active_loans: Vec<ActiveLoan>,
+    pub env: TypeEnv,
+    pub borrow_checker: BorrowChecker,
     pub frozen_symbols: HashSet<String>,
     pub domain_ownership: HashMap<String, String>,
     pub in_race_free_block: bool,
@@ -68,9 +71,8 @@ impl SemanticAnalyzer {
             current_function: None,
             region_depth: 0,
             region_allocations: vec![HashSet::new()],
-            var_scopes: vec![HashMap::new()],
-            ownership_scopes: vec![HashMap::new()],
-            active_loans: Vec::new(),
+            env: TypeEnv::new(),
+            borrow_checker: BorrowChecker::new(),
             frozen_symbols: HashSet::new(),
             domain_ownership: HashMap::new(),
             in_race_free_block: false,
@@ -99,48 +101,26 @@ impl SemanticAnalyzer {
     }
 
     pub(crate) fn push_scope(&mut self) {
-        self.var_scopes.push(HashMap::new());
-        self.ownership_scopes.push(HashMap::new());
+        self.env.push_scope();
     }
 
     pub(crate) fn pop_scope(&mut self) {
-        self.var_scopes.pop();
-        self.ownership_scopes.pop();
+        self.env.pop_scope();
     }
 
     pub(crate) fn declare_var(&mut self, name: &str, ty: Type, line: usize, is_mut: bool) {
-        if let Some(scope) = self.var_scopes.last_mut() {
-            scope.insert(name.to_string(), (ty, line, is_mut));
-        }
-        if let Some(o_scope) = self.ownership_scopes.last_mut() {
-            o_scope.insert(name.to_string(), OwnershipState::Owned);
-        }
+        self.env.declare(name, ty, line, is_mut);
     }
 
     pub(crate) fn lookup_var(&self, name: &str) -> Option<(Type, usize, bool)> {
-        for scope in self.var_scopes.iter().rev() {
-            if let Some(val) = scope.get(name) {
-                return Some(val.clone());
-            }
-        }
-        None
+        self.env.lookup(name).map(|s| (s.var_type.clone(), s.line_def, s.is_mut))
     }
 
     pub(crate) fn get_ownership_state(&self, name: &str) -> Option<OwnershipState> {
-        for scope in self.ownership_scopes.iter().rev() {
-            if let Some(state) = scope.get(name) {
-                return Some(state.clone());
-            }
-        }
-        None
+        self.env.get_ownership(name)
     }
 
     pub(crate) fn set_ownership_state(&mut self, name: &str, new_state: OwnershipState) {
-        for scope in self.ownership_scopes.iter_mut().rev() {
-            if scope.contains_key(name) {
-                scope.insert(name.to_string(), new_state);
-                return;
-            }
-        }
+        self.env.set_ownership(name, new_state);
     }
 }

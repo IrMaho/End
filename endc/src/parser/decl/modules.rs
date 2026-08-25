@@ -6,16 +6,10 @@ impl Parser {
     pub(crate) fn parse_module_def(&mut self, is_pub: bool, _directives: Vec<Directive>) -> Result<ModuleDef, String> {
         let span = self.current_span();
         self.expect(TokenKind::Mod)?;
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
-            other => return Err(format!("Expected module name, found {:?}", other)),
-        };
+        let name = self.parse_identifier_or_keyword()?;
         let mut parent = None;
         if self.match_token(&TokenKind::Derives) {
-            parent = match self.advance().kind {
-                TokenKind::Ident(p) => Some(p),
-                other => return Err(format!("Expected parent module name after derives, found {:?}", other)),
-            };
+            parent = Some(self.parse_identifier_or_keyword()?);
         }
         self.expect(TokenKind::LBrace)?;
         let mut structs = Vec::new();
@@ -300,6 +294,20 @@ impl Parser {
                     } else {
                         is_sealed = true;
                     }
+                    self.match_token(&TokenKind::Comma);
+                    self.match_token(&TokenKind::SemiColon);
+                }
+                TokenKind::Ident(ref s) if s == "sealed" => {
+                    self.advance();
+                    self.match_token(&TokenKind::Colon);
+                    if self.match_token(&TokenKind::True) {
+                        is_sealed = true;
+                    } else if self.match_token(&TokenKind::False) {
+                        is_sealed = false;
+                    } else {
+                        is_sealed = true;
+                    }
+                    self.match_token(&TokenKind::Comma);
                     self.match_token(&TokenKind::SemiColon);
                 }
                 TokenKind::Purity => {
@@ -349,15 +357,26 @@ impl Parser {
                             self.advance();
                             overrides.push(self.parse_function(true, pending_directives)?);
                         }
-                        _ => { self.advance(); }
+                        other => {
+                            let span = self.current_span();
+                            let actual = format!("{:?}", other);
+                            let expected = "enum, struct, trait, val, fn, or override after 'pub'";
+                            let raw = format!("Expected enum, struct, trait, val, fn, or override after 'pub', found {:?}", other);
+                            let formatted = self.emit_e005(&span, expected, &actual, &raw);
+                            return Err(formatted);
+                        }
                     }
                 }
                 TokenKind::SemiColon => { self.advance(); }
                 _ => {
-                    if let Ok(stmt) = self.parse_statement() {
-                        statements.push(stmt);
-                    } else {
-                        self.advance();
+                    match self.parse_statement() {
+                        Ok(stmt) => statements.push(stmt),
+                        Err(_) => {
+                            self.synchronize();
+                            if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                break;
+                            }
+                        }
                     }
                 }
             }

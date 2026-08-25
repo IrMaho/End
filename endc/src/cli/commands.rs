@@ -42,6 +42,8 @@ pub enum Commands {
     /// Manage End Language AI coding skills (.agents/skills/end-language)
         /// Subcommand: init (copy skill into current project) or path (print skill path)
     Skill(SkillArgs),
+    /// Agent Contract System: verify, inspect, submit, and enforce .agents/contract.toml
+    Contract(ContractArgs),
     /// Run an End source file directly (Instant Interpreter VM or JIT Backend)
         /// Path to .end source file
         /// Execution backend: vm, cranelift, llvm

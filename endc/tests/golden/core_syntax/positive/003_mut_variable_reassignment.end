@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// 30
+
+fn main() void {
+    mut count = 10
+    count = count + 5
+    count = count * 2
+    println(count)
+}

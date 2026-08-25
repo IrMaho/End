@@ -1,0 +1,22 @@
+// @test: positive
+// @expect-stdout:
+// 5
+
+st Result {
+    is_ok: bool,
+    value: i64,
+}
+
+fn divide(a: i64, b: i64) Result {
+    if b == 0 {
+        ret Result { is_ok: false, value: 0 }
+    }
+    ret Result { is_ok: true, value: a / b }
+}
+
+fn main() void {
+    val r = divide(10, 2)
+    if r.is_ok {
+        println(r.value)
+    }
+}

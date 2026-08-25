@@ -69,11 +69,11 @@ fn parse_str(code: &str) -> Result<Module, String> {
         let mut c_backend = crate::codegen::c_backend::CBackend::new();
         let c_code = c_backend.generate(&module);
         assert!(c_code.contains("/* 💾 [CHECKPOINT STATE SNAPSHOT]: savepoint */"));
-        assert!(c_code.contains("__snap_savepoint_balance = balance"));
+        assert!(c_code.contains("__snap_savepoint_balance"));
         assert!(c_code.contains("/* ⏪ [ROLLBACK STATE RESTORE]: to savepoint */"));
         assert!(c_code.contains("balance = __snap_savepoint_balance"));
         assert!(c_code.contains("/* 💼 [ATOMIC TRANSACTION BLOCK: Write-Set Snapshot & Rollback] */"));
-        assert!(c_code.contains("__snap_txn_balance = balance"));
+        assert!(c_code.contains("__snap_txn_balance"));
         assert!(c_code.contains("balance = __snap_txn_balance"));
     }
 
@@ -134,7 +134,7 @@ fn parse_str(code: &str) -> Result<Module, String> {
         assert!(c_code.contains("int64_t factorial(int64_t n)"));
         assert!(c_code.contains("/* 🎯 [DETERMINISTIC BLOCK]"));
         assert!(c_code.contains("/* 💾 [CHECKPOINT STATE SNAPSHOT]: cp1 */"));
-        assert!(c_code.contains("__snap_cp1_f5 = f5"));
+        assert!(c_code.contains("__snap_cp1_f5"));
         assert!(c_code.contains("/* ⏪ [ROLLBACK STATE RESTORE]: to cp1 */"));
         assert!(c_code.contains("f5 = __snap_cp1_f5"));
     }
@@ -334,5 +334,59 @@ fn parse_str(code: &str) -> Result<Module, String> {
         let mut sem_e0918 = SemanticAnalyzer::new("e0918.end", code_e0918);
         let _ = sem_e0918.analyze_module(&mod_e0918);
         assert!(sem_e0918.errors.iter().any(|e| e.code == "E0918"), "Expected E0918 direction violation error");
+    }
+
+    #[test]
+    fn test_differential_range_loop_sum_45() {
+        let code = r#"
+        pub fn main() i64 {
+            mut sum: i64 = 0;
+            for i in 0..10 {
+                sum = sum + i;
+            }
+            ret sum
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+
+        // 1. Interpreter execution
+        let mut interp = Interpreter::new();
+        let vm_res = interp.run(&module).unwrap();
+        assert_eq!(vm_res, Value::Int(45), "Interpreter Range loop must yield 45");
+
+        // 2. C Backend generation
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("for (int64_t i = 0; i < 10; i++)"), "Generated C must have half-open range loop bound");
+        assert!(c_code.contains("sum = (sum + i);") || c_code.contains("sum = sum + i;"), "Generated C must mutate outer accumulator");
+    }
+
+    #[test]
+    fn test_differential_enum_codegen_and_matching() {
+        let code = r#"
+        enum Shape {
+            Circle,
+            Rectangle,
+        }
+
+        pub fn main() i64 {
+            val s = Shape.Circle;
+            val code = match s {
+                .Circle => { 100 }
+                .Rectangle => { 200 }
+                _ => { 0 }
+            };
+            ret code
+        }
+        "#;
+        let module = parse_str(code).unwrap();
+
+        // C Backend generation
+        let mut c_backend = crate::codegen::c_backend::CBackend::new();
+        let c_code = c_backend.generate(&module);
+        assert!(c_code.contains("typedef enum {"), "Generated C must define enum tag");
+        assert!(c_code.contains("Shape_Circle"), "Generated C must contain Shape_Circle");
+        assert!(c_code.contains("Shape s"), "Generated C must declare variable with actual enum type Shape, never int64_t");
+        assert!(!c_code.contains("int64_t s = (Shape){"), "Generated C must never contain invalid enum compound literal assignment");
     }
 

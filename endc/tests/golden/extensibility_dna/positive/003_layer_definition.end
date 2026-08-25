@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Layer domain verified
+
+layer domain { forbid depends infrastructure }
+
+fn main() void {
+    println("Layer domain verified")
+}

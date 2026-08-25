@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// 123
+
+fn main() void {
+    val x = 123
+    val ptr: *i64 = &x
+    println(*ptr)
+}

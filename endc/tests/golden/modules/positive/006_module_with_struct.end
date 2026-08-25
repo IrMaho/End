@@ -1,0 +1,19 @@
+// @test: positive
+// @expect-stdout:
+// 20
+
+mod Geometry {
+    fn area(w: i64, h: i64) i64 {
+        ret w * h
+    }
+}
+
+st Box {
+    w: i64,
+    h: i64,
+}
+
+fn main() void {
+    val b = Box { w: 4, h: 5 }
+    println(Geometry.area(b.w, b.h))
+}

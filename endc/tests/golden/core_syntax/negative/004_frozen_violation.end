@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0908
+
+fn main() void {
+    val data = 100
+    frozen data;
+    data = 200
+}

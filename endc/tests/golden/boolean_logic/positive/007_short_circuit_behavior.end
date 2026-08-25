@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// false
+
+fn main() void {
+    mut executed: bool = false
+    if false && true {
+        executed = true
+    }
+    println(executed)
+}

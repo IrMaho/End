@@ -1,0 +1,18 @@
+// @test: positive
+// @expect-stdout:
+// 42
+// 100
+// 1
+
+fn main() void {
+    val a = 42
+    val b: i64 = a + 58
+    val c = true
+    println(a)
+    println(b)
+    if c {
+        println(1)
+    } else {
+        println(0)
+    }
+}

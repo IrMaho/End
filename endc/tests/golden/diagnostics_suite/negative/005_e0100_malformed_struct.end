@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E005
+
+struct {
+    val x: i32;
+}

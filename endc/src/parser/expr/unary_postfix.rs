@@ -85,7 +85,7 @@ impl Parser {
                 let mut args = Vec::new();
                 while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
                     let arg_span = self.current_span();
-                    let checkpoint = self.cursor.clone();
+                    let checkpoint = self.checkpoint();
                     if let Ok(arg_name) = self.parse_identifier_or_keyword() {
                         if self.match_token(&TokenKind::Colon) {
                             let arg_val = self.parse_expression()?;
@@ -98,7 +98,7 @@ impl Parser {
                             continue;
                         }
                     }
-                    self.cursor = checkpoint;
+                    self.restore_checkpoint(checkpoint);
                     args.push(self.parse_expression()?);
                     if !self.match_token(&TokenKind::Comma) {
                         break;
@@ -106,8 +106,12 @@ impl Parser {
                 }
                 self.expect(TokenKind::RParen)?;
                 if self.check(&TokenKind::LBrace) {
-                    let closure = self.parse_closure_or_block()?;
-                    args.push(closure);
+                    let checkpoint = self.checkpoint();
+                    if let Ok(closure) = self.parse_closure_or_block() {
+                        args.push(closure);
+                    } else {
+                        self.restore_checkpoint(checkpoint);
+                    }
                 }
                 expr = Expression::Call {
                     callee: Box::new(expr),
@@ -115,7 +119,7 @@ impl Parser {
                     span,
                 };
             } else if self.check(&TokenKind::LBracket) && !self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::For | TokenKind::If)) {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 let index_res = self.parse_expression();
                 if let Ok(index) = index_res {
@@ -128,7 +132,7 @@ impl Parser {
                         continue;
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 break;
             } else if self.match_token(&TokenKind::Retry) {
                 let count = self.parse_primary()?;

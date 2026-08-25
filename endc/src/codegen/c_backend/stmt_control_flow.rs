@@ -14,6 +14,9 @@ impl CBackend {
                     t.clone()
                 } else if let Some(Expression::StructInit { name: st_name, .. }) = initializer {
                     Type::Custom(st_name.clone())
+                } else if let Some(Expression::EnumInit { enum_name, variant_name, .. }) = initializer {
+                    let en = enum_name.clone().unwrap_or_else(|| self.find_enum_for_variant(variant_name));
+                    Type::Custom(en)
                 } else if let Some(Expression::Alloc { target_type, .. }) = initializer {
                     Type::Pointer(Box::new(target_type.clone()))
                 } else if let Some(Expression::Promote { expr, .. }) = initializer {
@@ -34,28 +37,51 @@ impl CBackend {
                 };
                 self.declare_c_var(name, ty.clone());
 
-                let ty_str = if let Some(t) = var_type {
-                    self.map_type(t)
+                if let Type::Array(inner, size) = &ty {
+                    let inner_ty_str = self.map_type(inner);
+                    if let Some(init) = initializer {
+                        let init_str = self.gen_expression(init);
+                        self.output.push_str(&format!(
+                            "{}{} {}[{}] __attribute__((unused)) = {};\n",
+                            self.indent(),
+                            inner_ty_str,
+                            name,
+                            size,
+                            init_str
+                        ));
+                    } else {
+                        self.output.push_str(&format!(
+                            "{}{} {}[{}] __attribute__((unused));\n",
+                            self.indent(),
+                            inner_ty_str,
+                            name,
+                            size
+                        ));
+                    }
                 } else {
-                    self.map_type(&ty)
-                };
+                    let ty_str = if let Some(t) = var_type {
+                        self.map_type(t)
+                    } else {
+                        self.map_type(&ty)
+                    };
 
-                if let Some(init) = initializer {
-                    let init_str = self.gen_expression(init);
-                    self.output.push_str(&format!(
-                        "{}{} {} = {};\n",
-                        self.indent(),
-                        ty_str,
-                        name,
-                        init_str
-                    ));
-                } else {
-                    self.output.push_str(&format!(
-                        "{}{} {};\n",
-                        self.indent(),
-                        ty_str,
-                        name
-                    ));
+                    if let Some(init) = initializer {
+                        let init_str = self.gen_expression(init);
+                        self.output.push_str(&format!(
+                            "{}{} {} __attribute__((unused)) = {};\n",
+                            self.indent(),
+                            ty_str,
+                            name,
+                            init_str
+                        ));
+                    } else {
+                        self.output.push_str(&format!(
+                            "{}{} {} __attribute__((unused));\n",
+                            self.indent(),
+                            ty_str,
+                            name
+                        ));
+                    }
                 }
                 true
             }
@@ -132,17 +158,32 @@ impl CBackend {
                 body,
                 ..
             } => {
-                let iter_str = self.gen_expression(iterable);
+                let (start_str, end_str, op) = match iterable {
+                    Expression::Range { start, end, inclusive, .. } => {
+                        let s = self.gen_expression(start);
+                        let e = self.gen_expression(end);
+                        let cmp = if *inclusive { "<=" } else { "<" };
+                        (s, e, cmp)
+                    }
+                    _ => {
+                        let e = self.gen_expression(iterable);
+                        ("0".to_string(), e, "<")
+                    }
+                };
                 self.output.push_str(&format!(
-                    "{}#pragma omp parallel for\n",
+                    "{}#ifdef _OPENMP\n{}#pragma omp parallel for\n{}#endif\n",
+                    self.indent(),
+                    self.indent(),
                     self.indent()
                 ));
                 self.output.push_str(&format!(
-                    "{}for (int32_t {} = 0; {} < {}; {}++) {{\n",
+                    "{}for (int64_t {} = {}; {} {} {}; {}++) {{\n",
                     self.indent(),
                     item_name,
+                    start_str,
                     item_name,
-                    iter_str,
+                    op,
+                    end_str,
                     item_name
                 ));
                 self.indent_level += 1;
@@ -157,24 +198,42 @@ impl CBackend {
                 body,
                 ..
             } => {
-                let iter_str = self.gen_expression(iterable);
+                let (start_str, end_str, op) = match iterable {
+                    Expression::Range { start, end, inclusive, .. } => {
+                        let s = self.gen_expression(start);
+                        let e = self.gen_expression(end);
+                        let cmp = if *inclusive { "<=" } else { "<" };
+                        (s, e, cmp)
+                    }
+                    _ => {
+                        let e = self.gen_expression(iterable);
+                        ("0".to_string(), e, "<")
+                    }
+                };
                 self.output.push_str(&format!(
-                    "{}#pragma unroll\n{}#pragma GCC ivdep\n",
+                    "{}#ifdef __GNUC__\n{}#pragma GCC ivdep\n{}#endif\n",
+                    self.indent(),
                     self.indent(),
                     self.indent()
                 ));
                 self.output.push_str(&format!(
-                    "{}for (int64_t {} = 0; {} < {}; {}++) {{\n",
+                    "{}for (int64_t {} = {}; {} {} {}; {}++) {{\n",
                     self.indent(),
                     item_name,
+                    start_str,
                     item_name,
-                    iter_str,
+                    op,
+                    end_str,
                     item_name
                 ));
                 self.indent_level += 1;
                 self.gen_block_statements(&body.statements);
                 self.indent_level -= 1;
                 self.output.push_str(&format!("{}}}\n", self.indent()));
+                true
+            }
+            Statement::InlineC { code, .. } => {
+                self.output.push_str(&format!("{}{}\n", self.indent(), code));
                 true
             }
             Statement::Match { expr, arms, .. } => {

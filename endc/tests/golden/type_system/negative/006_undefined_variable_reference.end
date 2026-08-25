@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E003
+
+fn main() void {
+    val x = undefined_variable_name + 10
+}

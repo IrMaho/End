@@ -1,0 +1,41 @@
+task_id = "task-demo-001"
+intent = "Implement deterministic balance computation and token verification"
+requirements = [
+    "compute_balance returns (initial + credits) - debits",
+    "verify_token validates positive integer token values",
+    "100% deterministic execution with zero side-effects",
+]
+preconditions = [
+    "End compiler toolchain available",
+    "Isolated execution environment initialized",
+]
+postconditions = [
+    "all required tests in test_demo.end pass",
+    "artifact hashes recorded and verified",
+]
+allowed_operations = [
+    "time_read",
+    "crypto_hash",
+]
+required_tests = ["tests/test_demo.end"]
+evidence_requirements = [
+    "test_output",
+    "artifact_hash",
+    "provenance_record",
+]
+security_boundaries = [
+    "no_outbound_network",
+    "no_exec_subprocess",
+    "no_env_access",
+]
+target_files = ["src/main.end"]
+lifecycle = "VERIFIED"
+
+[artifact_hashes]
+"tests/test_demo.end" = "1ded2758851596101b262188fefe5a1ab5c827939591c667276dcc933caadf4f"
+"src/main.end" = "5a340af96c1ea797a2bc979b3b0eb2dcb3d828b72919fa137f5128c491913e86"
+
+[provenance]
+agent = "antigravity-pair-programmer-v2"
+prompt_hash = "f7b1c3d5e9a2468013579bdf"
+model_version = "gemini-3.7-flash"

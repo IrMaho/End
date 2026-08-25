@@ -34,6 +34,7 @@ impl CBackend {
             Type::Operation(_, _) => "EndOperation*".to_string(),
             Type::Event(name) => format!("EndEvent_{}", name),
             Type::OperationResult => "EndOperationResult*".to_string(),
+            Type::Unknown => "void*".to_string(),
         }
     }
 
@@ -44,12 +45,79 @@ impl CBackend {
             Expression::Lit(Literal::Float(_), _) => Type::F64,
             Expression::Lit(Literal::Bool(_), _) => Type::Bool,
             Expression::Ident(name, _) => self.var_types.get(name).cloned().unwrap_or(Type::Void),
-            Expression::Call { .. } => Type::Void,
-            Expression::FieldAccess { .. } => Type::Void,
+            Expression::StructInit { name, .. } => Type::Custom(name.clone()),
+            Expression::EnumInit { enum_name, variant_name, .. } => {
+                let en = enum_name.clone().unwrap_or_else(|| self.find_enum_for_variant(variant_name));
+                Type::Custom(en)
+            }
+            Expression::Call { callee, .. } => {
+                if let Expression::Ident(fn_name, _) = callee.as_ref() {
+                    self.function_return_types.get(fn_name).cloned().unwrap_or(Type::Void)
+                } else {
+                    Type::Void
+                }
+            }
+            Expression::FieldAccess { object, field, .. } => {
+                let parent_ty = self.infer_type(object);
+                if let Type::Custom(struct_name) = parent_ty {
+                    if let Some(fields) = self.struct_fields.get(&struct_name) {
+                        return fields.get(field).cloned().unwrap_or(Type::Void);
+                    }
+                }
+                Type::Void
+            }
+            Expression::Unary { op, expr, .. } => {
+                let inner_ty = self.infer_type(expr);
+                if matches!(op, crate::ast::UnaryOp::AddressOf) {
+                    Type::Pointer(Box::new(inner_ty))
+                } else if matches!(op, crate::ast::UnaryOp::Deref) {
+                    if let Type::Pointer(inner) = inner_ty {
+                        *inner
+                    } else {
+                        Type::Void
+                    }
+                } else {
+                    inner_ty
+                }
+            }
             Expression::Binary { op, left, right: _, .. } => {
                 let l_ty = self.infer_type(left);
                 if matches!(op, BinaryOp::Add) && l_ty == Type::Str { Type::Str } else { l_ty }
             }
+            Expression::Cast { target_type, .. } => target_type.clone(),
+            Expression::Alloc { target_type, .. } => Type::Pointer(Box::new(target_type.clone())),
+            Expression::Conditional { then_branch, else_branch, .. } => {
+                let t_ty = self.infer_type(then_branch);
+                if t_ty != Type::Void {
+                    t_ty
+                } else {
+                    self.infer_type(else_branch)
+                }
+            }
+            Expression::Match { arms, .. } => {
+                for arm in arms {
+                    if let Some(last) = arm.body.statements.last() {
+                        let ty = match last {
+                            crate::ast::Statement::Expression(e) => self.infer_type(e),
+                            crate::ast::Statement::Return { value: Some(e), .. } => self.infer_type(e),
+                            _ => Type::Void,
+                        };
+                        if ty != Type::Void {
+                            return ty;
+                        }
+                    }
+                }
+                Type::Void
+            }
+            Expression::Index { array, .. } => {
+                let arr_ty = self.infer_type(array);
+                match arr_ty {
+                    Type::Array(inner, _) | Type::Slice(inner) | Type::Pointer(inner) => *inner,
+                    _ => Type::Void,
+                }
+            }
+            Expression::Walrus { expr, .. } => self.infer_type(expr),
+            Expression::Catch { expr, .. } | Expression::Await { expr, .. } => self.infer_type(expr),
             _ => Type::Void,
         }
     }

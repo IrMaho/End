@@ -10,7 +10,10 @@ impl Parser {
         } else if self.check(&TokenKind::Use) {
             self.advance();
         } else {
-            return Err(format!("Expected 'use' or 'import', found {:?}", self.peek_kind()));
+            let actual = format!("{:?}", self.peek_kind());
+            let msg = format!("Expected 'use' or 'import', found {:?}", self.peek_kind());
+            let formatted = self.emit_e005(&span, "'use' or 'import'", &actual, &msg);
+            return Err(formatted);
         }
 
         let (kind, path) = match self.peek_kind() {
@@ -20,7 +23,12 @@ impl Parser {
                 self.expect(TokenKind::LParen)?;
                 let p = match self.advance().kind {
                     TokenKind::StringLit(s) => s,
-                    other => return Err(format!("Expected string path in import directive, found {:?}", other)),
+                    other => {
+                        let actual = format!("{:?}", other);
+                        let msg = format!("Expected string path in import directive, found {:?}", other);
+                        let formatted = self.emit_e005(&span, "string path", &actual, &msg);
+                        return Err(formatted);
+                    }
                 };
                 self.expect(TokenKind::RParen)?;
 
@@ -70,14 +78,24 @@ impl Parser {
                 }
                 (ImportKind::Standard, full_path.clone())
             }
-            other => return Err(format!("Invalid import/use syntax: {:?} at line {}", other, span.line)),
+            other => {
+                let actual = format!("{:?}", other);
+                let msg = format!("Invalid import/use syntax: {:?} at line {}", other, span.line);
+                let formatted = self.emit_e005(&span, "import path or module identifier", &actual, &msg);
+                return Err(formatted);
+            }
         };
 
         let mut alias = None;
         if self.match_token(&TokenKind::As) {
             match self.advance().kind {
                 TokenKind::Ident(a) => alias = Some(a),
-                other => return Err(format!("Expected alias identifier after 'as', found {:?}", other)),
+                other => {
+                    let actual = format!("{:?}", other);
+                    let msg = format!("Expected alias identifier after 'as', found {:?}", other);
+                    let formatted = self.emit_e005(&span, "alias identifier", &actual, &msg);
+                    return Err(formatted);
+                }
             }
         }
 

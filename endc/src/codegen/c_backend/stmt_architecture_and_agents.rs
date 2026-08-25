@@ -7,25 +7,29 @@ impl CBackend {
             Statement::AgentContract { name, scope, goal, constraints, body, .. } => {
                 self.output.push_str(&format!("{}/* 🤖 [AGENT CONTRACT '{}']: scope='{}', goal='{}', constraints=[{}] */\n", self.indent(), name, scope, goal, constraints.join(", ")));
                 if let Some(b) = body {
-                    self.output.push_str(&format!("{}{{\n", self.indent()));
-                    self.indent_level += 1;
-                    for s in &b.statements {
-                        self.gen_statement(s);
+                    if self.indent_level > 0 {
+                        self.output.push_str(&format!("{}{{\n", self.indent()));
+                        self.indent_level += 1;
+                        for s in &b.statements {
+                            self.gen_statement(s);
+                        }
+                        self.indent_level -= 1;
+                        self.output.push_str(&format!("{}}}\n", self.indent()));
                     }
-                    self.indent_level -= 1;
-                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
                 true
             }
             Statement::TaskDecl { name, body, .. } => {
                 self.output.push_str(&format!("{}/* 📋 [TASK DECLARATION: {}] */\n", self.indent(), name));
-                self.output.push_str(&format!("{}{{\n", self.indent()));
-                self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
+                if self.indent_level > 0 {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
-                self.indent_level -= 1;
-                self.output.push_str(&format!("{}}}\n", self.indent()));
                 true
             }
             Statement::AcceptBlock { conditions, .. } => {
@@ -52,13 +56,15 @@ impl CBackend {
             Statement::ContextBlock { name, includes, excludes, body, .. } => {
                 self.output.push_str(&format!("{}/* 🌐 [CONTEXT '{}']: include=[{}], exclude=[{}] */\n", self.indent(), name, includes.join(", "), excludes.join(", ")));
                 if let Some(b) = body {
-                    self.output.push_str(&format!("{}{{\n", self.indent()));
-                    self.indent_level += 1;
-                    for s in &b.statements {
-                        self.gen_statement(s);
+                    if self.indent_level > 0 {
+                        self.output.push_str(&format!("{}{{\n", self.indent()));
+                        self.indent_level += 1;
+                        for s in &b.statements {
+                            self.gen_statement(s);
+                        }
+                        self.indent_level -= 1;
+                        self.output.push_str(&format!("{}}}\n", self.indent()));
                     }
-                    self.indent_level -= 1;
-                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
                 true
             }
@@ -68,13 +74,15 @@ impl CBackend {
             }
             Statement::PatchDecl { target, body, .. } => {
                 self.output.push_str(&format!("{}/* 🩹 [PATCH DECLARATION ON '{}'] */\n", self.indent(), target));
-                self.output.push_str(&format!("{}{{\n", self.indent()));
-                self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
+                if self.indent_level > 0 {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
-                self.indent_level -= 1;
-                self.output.push_str(&format!("{}}}\n", self.indent()));
                 true
             }
             Statement::EvolveBlock { target, intent, preserve, budget, allow, reject, verify, accept, body, .. } => {
@@ -82,13 +90,15 @@ impl CBackend {
                 self.output.push_str(&format!("{}/* 🧬 [EVOLVE '{}']: intent='{}', preserve=[{}], budget='{}', allow=[{}], reject=[{}], verify=[{}], accept=[{}] */\n",
                     self.indent(), target, intent, preserve.join(", "), b_str, allow.join(", "), reject.join(", "), verify.join(", "), accept.join(", ")));
                 if let Some(b) = body {
-                    self.output.push_str(&format!("{}{{\n", self.indent()));
-                    self.indent_level += 1;
-                    for s in &b.statements {
-                        self.gen_statement(s);
+                    if self.indent_level > 0 {
+                        self.output.push_str(&format!("{}{{\n", self.indent()));
+                        self.indent_level += 1;
+                        for s in &b.statements {
+                            self.gen_statement(s);
+                        }
+                        self.indent_level -= 1;
+                        self.output.push_str(&format!("{}}}\n", self.indent()));
                     }
-                    self.indent_level -= 1;
-                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
                 true
             }
@@ -166,13 +176,15 @@ impl CBackend {
             }
             Statement::AdapterDecl { name, port, body, .. } => {
                 self.output.push_str(&format!("{}/* 🔌 [ADAPTER '{}' for port '{}'] */\n", self.indent(), name, port));
-                self.output.push_str(&format!("{}{{\n", self.indent()));
-                self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
+                if self.indent_level > 0 {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
-                self.indent_level -= 1;
-                self.output.push_str(&format!("{}}}\n", self.indent()));
                 true
             }
             Statement::FacadeDecl { name, exposes, .. } => {
@@ -189,24 +201,28 @@ impl CBackend {
             }
             Statement::PreserveRefactorDecl { preserves, body, .. } => {
                 self.output.push_str(&format!("{}/* 🛡️ [PRESERVE REFACTOR INVARIANTS: {}] */\n", self.indent(), preserves.join(", ")));
-                self.output.push_str(&format!("{}{{\n", self.indent()));
-                self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
+                if self.indent_level > 0 {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
-                self.indent_level -= 1;
-                self.output.push_str(&format!("{}}}\n", self.indent()));
                 true
             }
             Statement::CompatDecl { module_name, version, body, .. } => {
                 self.output.push_str(&format!("{}/* 🔄 [COMPATIBILITY REGION for '{}': v{}] */\n", self.indent(), module_name, version));
-                self.output.push_str(&format!("{}{{\n", self.indent()));
-                self.indent_level += 1;
-                for s in &body.statements {
-                    self.gen_statement(s);
+                if self.indent_level > 0 {
+                    self.output.push_str(&format!("{}{{\n", self.indent()));
+                    self.indent_level += 1;
+                    for s in &body.statements {
+                        self.gen_statement(s);
+                    }
+                    self.indent_level -= 1;
+                    self.output.push_str(&format!("{}}}\n", self.indent()));
                 }
-                self.indent_level -= 1;
-                self.output.push_str(&format!("{}}}\n", self.indent()));
                 true
             }
             Statement::StableDecl { api_name, .. } => {

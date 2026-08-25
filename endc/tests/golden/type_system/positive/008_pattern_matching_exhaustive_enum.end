@@ -1,0 +1,25 @@
+// @test: positive
+// @expect-stdout:
+// 1
+// 2
+// 3
+
+enum State {
+    Idle,
+    Running,
+    Finished,
+}
+
+fn state_code(s: State) i64 {
+    match s {
+        .Idle => { ret 1 }
+        .Running => { ret 2 }
+        .Finished => { ret 3 }
+    }
+}
+
+fn main() void {
+    println(state_code(.Idle))
+    println(state_code(.Running))
+    println(state_code(.Finished))
+}

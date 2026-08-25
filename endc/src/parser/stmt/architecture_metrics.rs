@@ -36,15 +36,21 @@ impl Parser {
                 self.match_token(&TokenKind::Colon);
                 let scope = if self.match_token(&TokenKind::True) || self.match_token(&TokenKind::False) {
                     "modules".to_string()
+                } else if !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) {
+                    self.parse_identifier_or_keyword()?
                 } else {
-                    self.parse_identifier_or_keyword().unwrap_or_else(|_| "modules".to_string())
+                    "modules".to_string()
                 };
                 self.match_token(&TokenKind::SemiColon);
                 Ok(Statement::CycleFreeDecl { scope, span })
             }
             TokenKind::MaxFanout => {
                 self.advance();
-                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                let module_name = if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) && !matches!(self.peek_kind(), TokenKind::IntLit(_)) {
+                    self.parse_identifier_or_keyword()?
+                } else {
+                    String::new()
+                };
                 self.match_token(&TokenKind::Colon);
                 let mut limit = 5;
                 if let TokenKind::IntLit(i) = self.peek_kind() {
@@ -56,7 +62,11 @@ impl Parser {
             }
             TokenKind::MaxFanin => {
                 self.advance();
-                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                let module_name = if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) && !matches!(self.peek_kind(), TokenKind::IntLit(_)) {
+                    self.parse_identifier_or_keyword()?
+                } else {
+                    String::new()
+                };
                 self.match_token(&TokenKind::Colon);
                 let mut limit = 20;
                 if let TokenKind::IntLit(i) = self.peek_kind() {
@@ -79,7 +89,11 @@ impl Parser {
             }
             TokenKind::Cohesion => {
                 self.advance();
-                let module_name = self.parse_identifier_or_keyword().unwrap_or_default();
+                let module_name = if !self.check(&TokenKind::GreaterEqual) && !self.check(&TokenKind::Equal) && !self.check(&TokenKind::Colon) && !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::EOF) {
+                    self.parse_identifier_or_keyword()?
+                } else {
+                    String::new()
+                };
                 self.match_token(&TokenKind::GreaterEqual);
                 self.match_token(&TokenKind::Equal);
                 self.match_token(&TokenKind::Colon);
@@ -141,7 +155,9 @@ impl Parser {
                         if let TokenKind::IntLit(i) = self.peek_kind() {
                             target_modules = Some(*i as usize);
                             self.advance();
-                            let _ = self.parse_identifier_or_keyword().ok();
+                            if let TokenKind::Ident(_) = self.peek_kind() {
+                                let _ = self.parse_identifier_or_keyword();
+                            }
                         }
                     } else if key == "optimize" {
                         let mut opt = self.parse_string_list()?;

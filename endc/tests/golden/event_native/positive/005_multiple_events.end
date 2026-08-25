@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// Events sequenced
+
+event StartEv {
+    id: i64,
+}
+
+event StopEv {
+    id: i64,
+}
+
+fn main() void {
+    emit StartEv { id: 1 }
+    emit StopEv { id: 1 }
+    println("Events sequenced")
+}

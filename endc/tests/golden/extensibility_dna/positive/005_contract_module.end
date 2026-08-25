@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Contract module established
+
+contract Module payments {
+    accepts: [CardInfo],
+    returns: [Receipt]
+}
+
+fn main() void {
+    println("Contract module established")
+}

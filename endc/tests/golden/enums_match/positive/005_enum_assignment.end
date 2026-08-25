@@ -1,0 +1,21 @@
+// @test: positive
+// @expect-stdout:
+// IS_ON
+
+enum State {
+    Off,
+    On,
+}
+
+fn main() void {
+    mut st_var = .Off
+    st_var = .On
+    match st_var {
+        .On => {
+            println("IS_ON")
+        }
+        _ => {
+            println("IS_OFF")
+        }
+    }
+}

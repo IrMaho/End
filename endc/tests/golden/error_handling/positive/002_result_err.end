@@ -1,0 +1,22 @@
+// @test: positive
+// @expect-stdout:
+// Error detected
+
+st Result {
+    is_ok: bool,
+    value: i64,
+}
+
+fn validate(x: i64) Result {
+    if x < 0 {
+        ret Result { is_ok: false, value: 0 }
+    }
+    ret Result { is_ok: true, value: x }
+}
+
+fn main() void {
+    val r = validate(-5)
+    if !r.is_ok {
+        println("Error detected")
+    }
+}

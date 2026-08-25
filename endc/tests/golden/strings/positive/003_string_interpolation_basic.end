@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Running End compiler v1
+
+fn main() void {
+    val name = "End"
+    val version = 1
+    println("Running End compiler v1")
+}

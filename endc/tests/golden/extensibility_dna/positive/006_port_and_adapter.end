@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// Port adapter verified
+
+port PaymentPort { pay, refund }
+
+adapter StripeAdapter for PaymentPort {
+    val configured = true
+}
+
+fn main() void {
+    println("Port adapter verified")
+}

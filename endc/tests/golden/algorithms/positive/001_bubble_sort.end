@@ -1,0 +1,29 @@
+// @test: positive
+// @expect-stdout:
+// 1
+// 2
+// 5
+// 8
+// 9
+
+fn main() void {
+    mut arr: [5]i64 = [5, 2, 8, 1, 9]
+    mut i = 0
+    while i < 5 {
+        mut j = 0
+        while j < 4 - i {
+            if arr[j] > arr[j + 1] {
+                val temp = arr[j]
+                arr[j] = arr[j + 1]
+                arr[j + 1] = temp
+            }
+            j = j + 1
+        }
+        i = i + 1
+    }
+    mut k = 0
+    while k < 5 {
+        println(arr[k])
+        k = k + 1
+    }
+}

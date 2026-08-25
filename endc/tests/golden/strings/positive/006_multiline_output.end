@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Multi
+// Line
+// Output
+
+fn main() void {
+    println("Multi\nLine\nOutput")
+}

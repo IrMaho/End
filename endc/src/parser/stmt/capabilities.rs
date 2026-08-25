@@ -10,32 +10,32 @@ impl Parser {
     ) -> Result<Option<Statement>, String> {
         match peek_k {
             TokenKind::Use => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance(); // consume 'use'
                 if self.check(&TokenKind::Feature)
                     || self.check(&TokenKind::Syntax)
                     || (if let TokenKind::Directive(d) = self.peek_kind() { d == "@feature" } else { false })
                 {
-                    self.cursor = checkpoint;
+                    self.restore_checkpoint(checkpoint);
                     return Ok(None);
                 }
                 if let Ok(stmt) = self.parse_use_surface_statement(span) {
                     return Ok(Some(stmt));
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Borrow => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance(); // consume 'borrow'
                 let is_mut = self.match_token(&TokenKind::Mut);
                 if self.check(&TokenKind::Val) || self.check(&TokenKind::For) {
-                    self.cursor = checkpoint;
+                    self.restore_checkpoint(checkpoint);
                     return Ok(None);
                 }
                 if let TokenKind::Ident(ref s) = self.peek_kind().clone() {
                     if s == "cpu" || s == "memory" || s == "listen" {
-                        self.cursor = checkpoint;
+                        self.restore_checkpoint(checkpoint);
                         return Ok(None);
                     }
                 }
@@ -55,7 +55,7 @@ impl Parser {
                         }));
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Access => {
@@ -85,7 +85,7 @@ impl Parser {
                 }))
             }
             TokenKind::Deny => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(target) = self.parse_dotted_path() {
                     if self.check(&TokenKind::LBrace) {
@@ -98,7 +98,7 @@ impl Parser {
                         }));
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Expose => {
@@ -118,7 +118,7 @@ impl Parser {
                 }))
             }
             TokenKind::Hide => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(target) = self.parse_dotted_path() {
                     if target.contains('.') {
@@ -135,11 +135,11 @@ impl Parser {
                         }));
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Surface => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(full) = self.parse_dotted_path() {
                     if full.contains('.') || self.check(&TokenKind::When) {
@@ -165,7 +165,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Adopt => {
@@ -238,7 +238,7 @@ impl Parser {
                 }))
             }
             TokenKind::Compose => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(name) = self.parse_identifier_or_keyword() {
                     if name != "module" && name != "mod" && self.check(&TokenKind::LBrace) {
@@ -250,7 +250,7 @@ impl Parser {
                         }));
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Mixin => {

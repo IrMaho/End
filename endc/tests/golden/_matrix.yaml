@@ -1,0 +1,891 @@
+# End Language Comprehensive Feature Regression Matrix
+# Machine-readable golden test mappings across all documented features
+# Conforms to Prompt 06 Compiler Regression Matrix specification
+
+features:
+  - id: "core_immutability"
+    name: "Immutability by Default (val vs mut)"
+    category: "core_syntax"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "core_syntax/positive/001_hello_world.end"
+      - "core_syntax/positive/002_val_immutable_binding.end"
+      - "core_syntax/positive/003_mut_variable_reassignment.end"
+      - "core_syntax/positive/004_multiple_variable_bindings.end"
+      - "core_syntax/positive/005_type_annotations_explicit.end"
+      - "core_syntax/positive/006_scope_shadowing.end"
+      - "core_syntax/positive/007_const_binding.end"
+      - "core_syntax/positive/008_expression_chain.end"
+    negative:
+      - "core_syntax/negative/001_escape_violation.end"
+      - "core_syntax/negative/002_use_after_move.end"
+      - "core_syntax/negative/003_borrow_conflict.end"
+      - "core_syntax/negative/004_frozen_violation.end"
+    edge:
+      - "core_syntax/positive/006_scope_shadowing.end"
+    diagnostic:
+      - "core_syntax/negative/004_frozen_violation.end"
+    interpreter:
+      - "core_syntax/positive/001_hello_world.end"
+      - "core_syntax/positive/002_val_immutable_binding.end"
+    native:
+      - "core_syntax/positive/001_hello_world.end"
+      - "core_syntax/positive/002_val_immutable_binding.end"
+    regression:
+      - "core_syntax/positive/007_const_binding.end"
+
+  - id: "expressions_arithmetic"
+    name: "Numeric Arithmetic & Bitwise Operators"
+    category: "arithmetic"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "arithmetic/positive/001_addition_subtraction.end"
+      - "arithmetic/positive/002_multiplication_division.end"
+      - "arithmetic/positive/003_modulo_operator.end"
+      - "arithmetic/positive/004_operator_precedence.end"
+      - "arithmetic/positive/005_bitwise_and_or.end"
+      - "arithmetic/positive/006_bitwise_shift.end"
+      - "arithmetic/positive/007_unary_negation.end"
+      - "arithmetic/positive/008_compound_math.end"
+    negative:
+      - "arithmetic/negative/001_bad_math_syntax.end"
+      - "arithmetic/negative/002_invalid_operator.end"
+    edge:
+      - "arithmetic/positive/003_modulo_operator.end"
+    diagnostic:
+      - "arithmetic/negative/002_invalid_operator.end"
+    interpreter:
+      - "arithmetic/positive/001_addition_subtraction.end"
+      - "arithmetic/positive/008_compound_math.end"
+    native:
+      - "arithmetic/positive/001_addition_subtraction.end"
+      - "arithmetic/positive/008_compound_math.end"
+    regression:
+      - "arithmetic/positive/004_operator_precedence.end"
+
+  - id: "expressions_boolean_comparison"
+    name: "Boolean Logic & Comparisons"
+    category: "boolean_logic"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "boolean_logic/positive/001_equality_comparisons.end"
+      - "boolean_logic/positive/002_relational_operators.end"
+      - "boolean_logic/positive/003_logical_and_or.end"
+      - "boolean_logic/positive/004_logical_not.end"
+      - "boolean_logic/positive/005_compound_boolean_expression.end"
+      - "boolean_logic/positive/006_comparison_in_condition.end"
+      - "boolean_logic/positive/007_short_circuit_behavior.end"
+      - "boolean_logic/positive/008_boolean_function_returns.end"
+    negative:
+      - "boolean_logic/negative/001_bad_boolean_token.end"
+    edge:
+      - "boolean_logic/positive/007_short_circuit_behavior.end"
+    diagnostic:
+      - "boolean_logic/negative/001_bad_boolean_token.end"
+    interpreter:
+      - "boolean_logic/positive/001_equality_comparisons.end"
+    native:
+      - "boolean_logic/positive/001_equality_comparisons.end"
+    regression:
+      - "boolean_logic/positive/005_compound_boolean_expression.end"
+
+  - id: "string_interpolation"
+    name: "Strings & String Interpolation"
+    category: "strings"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "strings/positive/001_string_literal.end"
+      - "strings/positive/002_string_concatenation.end"
+      - "strings/positive/003_string_interpolation_basic.end"
+      - "strings/positive/004_string_escape_sequences.end"
+      - "strings/positive/005_string_length_check.end"
+      - "strings/positive/006_multiline_output.end"
+      - "strings/positive/007_string_equality.end"
+      - "strings/positive/008_string_in_struct.end"
+    negative:
+      - "strings/negative/001_unclosed_string.end"
+    edge:
+      - "strings/positive/006_multiline_output.end"
+    diagnostic:
+      - "strings/negative/001_unclosed_string.end"
+    interpreter:
+      - "strings/positive/001_string_literal.end"
+      - "strings/positive/002_string_concatenation.end"
+    native:
+      - "strings/positive/001_string_literal.end"
+      - "strings/positive/002_string_concatenation.end"
+    regression:
+      - "strings/positive/004_string_escape_sequences.end"
+
+  - id: "control_flow_if_else"
+    name: "Conditional Branching (if, else if, else)"
+    category: "control_flow"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "control_flow/positive/001_if_simple.end"
+      - "control_flow/positive/002_if_else_branch.end"
+      - "control_flow/positive/003_if_else_ladder.end"
+      - "control_flow/positive/004_nested_if.end"
+    negative:
+      - "diagnostics_suite/negative/011_malformed_if_condition.end"
+      - "diagnostics_suite/negative/012_unclosed_if_block.end"
+    edge:
+      - "control_flow/positive/004_nested_if.end"
+    diagnostic:
+      - "diagnostics_suite/negative/011_malformed_if_condition.end"
+    interpreter:
+      - "control_flow/positive/001_if_simple.end"
+      - "control_flow/positive/002_if_else_branch.end"
+    native:
+      - "control_flow/positive/001_if_simple.end"
+      - "control_flow/positive/002_if_else_branch.end"
+    regression:
+      - "control_flow/positive/003_if_else_ladder.end"
+
+  - id: "control_flow_loops"
+    name: "Iteration Constructs (while, for, break, continue)"
+    category: "control_flow"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "control_flow/positive/005_while_loop_counter.end"
+      - "control_flow/positive/006_while_loop_break.end"
+      - "control_flow/positive/007_while_loop_continue.end"
+      - "control_flow/positive/008_nested_while_loops.end"
+      - "control_flow/positive/009_for_in_loop.end"
+      - "control_flow/positive/010_parallel_for_loop.end"
+      - "control_flow/positive/011_range_sum_45.end"
+    negative:
+      - "control_flow/negative/001_missing_condition.end"
+      - "control_flow/negative/002_unmatched_brace.end"
+    edge:
+      - "control_flow/positive/008_nested_while_loops.end"
+    diagnostic:
+      - "control_flow/negative/001_missing_condition.end"
+    interpreter:
+      - "control_flow/positive/005_while_loop_counter.end"
+      - "control_flow/positive/011_range_sum_45.end"
+    native:
+      - "control_flow/positive/005_while_loop_counter.end"
+      - "control_flow/positive/011_range_sum_45.end"
+    regression:
+      - "control_flow/positive/011_range_sum_45.end"
+
+  - id: "ranges_arithmetic"
+    name: "Range Literals and Iteration Semantics"
+    category: "control_flow"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "ranges/positive/001_sum_0_to_10.end"
+      - "control_flow/positive/011_range_sum_45.end"
+    negative:
+      - "type_system/negative/002_type_mismatch_binary_operands.end"
+    edge:
+      - "ranges/positive/001_sum_0_to_10.end"
+    diagnostic:
+      - "type_system/negative/002_type_mismatch_binary_operands.end"
+    interpreter:
+      - "ranges/positive/001_sum_0_to_10.end"
+    native:
+      - "ranges/positive/001_sum_0_to_10.end"
+    regression:
+      - "ranges/positive/001_sum_0_to_10.end"
+
+  - id: "functions_basic"
+    name: "Function Declarations & Signatures"
+    category: "functions"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "functions/positive/001_basic_function.end"
+      - "functions/positive/002_params_and_return.end"
+      - "functions/positive/003_multiple_params.end"
+      - "functions/positive/004_void_return.end"
+      - "functions/positive/005_pure_function.end"
+      - "functions/positive/006_inline_function.end"
+      - "functions/positive/007_early_return.end"
+    negative:
+      - "functions/negative/001_missing_fn_body.end"
+      - "functions/negative/002_pure_impurity.end"
+    edge:
+      - "functions/positive/007_early_return.end"
+    diagnostic:
+      - "functions/negative/002_pure_impurity.end"
+    interpreter:
+      - "functions/positive/001_basic_function.end"
+      - "functions/positive/002_params_and_return.end"
+    native:
+      - "functions/positive/001_basic_function.end"
+      - "functions/positive/002_params_and_return.end"
+    regression:
+      - "functions/positive/005_pure_function.end"
+
+  - id: "functions_recursion"
+    name: "Recursive Functions & Call Stack"
+    category: "functions"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "functions/positive/008_factorial_recursion.end"
+      - "functions/positive/009_fibonacci_recursion.end"
+      - "functions/positive/010_mutual_recursion.end"
+    negative:
+      - "diagnostics_suite/negative/008_unclosed_fn_body.end"
+    edge:
+      - "functions/positive/010_mutual_recursion.end"
+    diagnostic:
+      - "diagnostics_suite/negative/008_unclosed_fn_body.end"
+    interpreter:
+      - "functions/positive/008_factorial_recursion.end"
+    native:
+      - "functions/positive/008_factorial_recursion.end"
+    regression:
+      - "functions/positive/009_fibonacci_recursion.end"
+
+  - id: "structs_basic"
+    name: "Struct Definitions & Instantiation"
+    category: "structs"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "structs/positive/001_struct_decl_instantiation.end"
+      - "structs/positive/002_struct_field_mutation.end"
+      - "structs/positive/003_struct_multiple_fields.end"
+      - "structs/positive/004_struct_as_function_param.end"
+      - "structs/positive/005_struct_return_from_fn.end"
+      - "structs/positive/006_nested_structs.end"
+      - "structs/positive/007_struct_methods_extension.end"
+      - "structs/positive/008_struct_pointer_deref.end"
+    negative:
+      - "structs/negative/001_missing_field_type.end"
+      - "structs/negative/002_malformed_struct_body.end"
+    edge:
+      - "structs/positive/006_nested_structs.end"
+    diagnostic:
+      - "structs/negative/001_missing_field_type.end"
+    interpreter:
+      - "structs/positive/001_struct_decl_instantiation.end"
+    native:
+      - "structs/positive/001_struct_decl_instantiation.end"
+    regression:
+      - "structs/positive/007_struct_methods_extension.end"
+
+  - id: "enums_variants"
+    name: "Tagged Unions & Enums"
+    category: "enums_match"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "enums/positive/001_basic_enum.end"
+      - "enums_match/positive/001_enum_simple_variants.end"
+      - "enums_match/positive/002_match_all_branches.end"
+      - "enums_match/positive/006_basic_enum.end"
+    negative:
+      - "type_system/negative/009_enum_variant_invalid.end"
+    edge:
+      - "enums_match/positive/006_basic_enum.end"
+    diagnostic:
+      - "type_system/negative/009_enum_variant_invalid.end"
+    interpreter:
+      - "enums/positive/001_basic_enum.end"
+      - "enums_match/positive/006_basic_enum.end"
+    native:
+      - "enums/positive/001_basic_enum.end"
+      - "enums_match/positive/006_basic_enum.end"
+    regression:
+      - "enums/positive/001_basic_enum.end"
+      - "enums_match/positive/006_basic_enum.end"
+
+  - id: "pattern_matching"
+    name: "Pattern Matching Exhaustiveness"
+    category: "enums_match"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "enums_match/positive/003_match_wildcard.end"
+      - "enums_match/positive/004_enum_in_struct.end"
+      - "enums_match/positive/005_enum_assignment.end"
+    negative:
+      - "enums_match/negative/001_unhandled_match.end"
+    edge:
+      - "enums_match/positive/003_match_wildcard.end"
+    diagnostic:
+      - "enums_match/negative/001_unhandled_match.end"
+    interpreter:
+      - "enums_match/positive/003_match_wildcard.end"
+    native:
+      - "enums_match/positive/003_match_wildcard.end"
+    regression:
+      - "enums_match/positive/004_enum_in_struct.end"
+
+  - id: "memory_region_arenas"
+    name: "Deterministic Region Arenas"
+    category: "memory_regions"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/MEMORY_MODEL.md"
+    positive:
+      - "memory_regions/positive/001_region_arena_basic.end"
+      - "memory_regions/positive/002_nested_regions.end"
+      - "memory_regions/positive/004_multiple_allocations_in_region.end"
+      - "memory_regions/positive/005_deterministic_region.end"
+      - "memory_regions/positive/006_checkpoint_rollback.end"
+      - "memory_regions/positive/007_transaction_block.end"
+    negative:
+      - "memory_regions/negative/001_escape_region_alloc.end"
+    edge:
+      - "memory_regions/positive/002_nested_regions.end"
+    diagnostic:
+      - "memory_regions/negative/001_escape_region_alloc.end"
+    interpreter:
+      - "memory_regions/positive/001_region_arena_basic.end"
+    native:
+      - "memory_regions/positive/001_region_arena_basic.end"
+    regression:
+      - "memory_regions/positive/006_checkpoint_rollback.end"
+
+  - id: "memory_ephemeral_leases"
+    name: "Ephemeral Resource Leases"
+    category: "memory_regions"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/MEMORY_MODEL.md"
+    positive:
+      - "memory_regions/positive/003_ephemeral_lease.end"
+      - "memory_regions/positive/008_latency_hedging.end"
+    negative:
+      - "memory_regions/negative/002_lease_escape.end"
+    edge:
+      - "memory_regions/positive/008_latency_hedging.end"
+    diagnostic:
+      - "memory_regions/negative/002_lease_escape.end"
+    interpreter:
+      - "memory_regions/positive/003_ephemeral_lease.end"
+    native:
+      - "memory_regions/positive/003_ephemeral_lease.end"
+    regression:
+      - "memory_regions/positive/003_ephemeral_lease.end"
+
+  - id: "first_class_operations"
+    name: "Operation Values & Pipelines"
+    category: "first_class_operations"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/OPERATION_VALUES_AND_ALGEBRA.md"
+    positive:
+      - "first_class_operations/positive/001_operation_literal.end"
+      - "first_class_operations/positive/002_operation_pipeline_compose.end"
+      - "first_class_operations/positive/003_operation_execution.end"
+      - "first_class_operations/positive/004_operation_repeat.end"
+      - "first_class_operations/positive/005_operation_parallel.end"
+      - "first_class_operations/positive/006_operation_alternative.end"
+      - "first_class_operations/positive/007_operation_telemetry.end"
+      - "first_class_operations/positive/008_operation_memoize.end"
+    negative:
+      - "first_class_operations/negative/001_bad_op_syntax.end"
+    edge:
+      - "first_class_operations/positive/005_operation_parallel.end"
+    diagnostic:
+      - "first_class_operations/negative/001_bad_op_syntax.end"
+    interpreter:
+      - "first_class_operations/positive/001_operation_literal.end"
+      - "first_class_operations/positive/002_operation_pipeline_compose.end"
+    native:
+      - "first_class_operations/positive/001_operation_literal.end"
+      - "first_class_operations/positive/002_operation_pipeline_compose.end"
+    regression:
+      - "first_class_operations/positive/008_operation_memoize.end"
+
+  - id: "event_topologies_hubs"
+    name: "Event-Native Architecture & Hubs"
+    category: "event_native"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/OPERATION_VALUES_AND_ALGEBRA.md"
+    positive:
+      - "event_native/positive/001_event_declaration.end"
+      - "event_native/positive/002_event_hub.end"
+      - "event_native/positive/003_event_handler.end"
+      - "event_native/positive/004_event_emit.end"
+      - "event_native/positive/005_multiple_events.end"
+      - "event_native/positive/006_event_channel.end"
+      - "event_native/positive/007_event_telemetry.end"
+      - "event_native/positive/008_event_topologies.end"
+    negative:
+      - "event_native/negative/001_bad_event_syntax.end"
+    edge:
+      - "event_native/positive/008_event_topologies.end"
+    diagnostic:
+      - "event_native/negative/001_bad_event_syntax.end"
+    interpreter:
+      - "event_native/positive/001_event_declaration.end"
+      - "event_native/positive/004_event_emit.end"
+    native:
+      - "event_native/positive/001_event_declaration.end"
+      - "event_native/positive/004_event_emit.end"
+    regression:
+      - "event_native/positive/006_event_channel.end"
+
+  - id: "ai_agent_contracts"
+    name: "AI Agent Contracts & Tasks"
+    category: "agent_contracts"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/AGENT_CONTRACT_SYSTEM.md"
+    positive:
+      - "agent_contracts/positive/001_agent_declaration.end"
+      - "agent_contracts/positive/002_task_declaration.end"
+      - "agent_contracts/positive/003_skill_contract.end"
+      - "agent_contracts/positive/004_requirement_traceability.end"
+      - "agent_contracts/positive/005_satisfies_contract.end"
+      - "agent_contracts/positive/006_proof_gate.end"
+      - "agent_contracts/positive/007_todo_traceability.end"
+      - "agent_contracts/positive/008_token_budget.end"
+    negative:
+      - "agent_contracts/negative/001_context_firewall.end"
+      - "agent_contracts/negative/002_capability_surface.end"
+    edge:
+      - "agent_contracts/positive/008_token_budget.end"
+    diagnostic:
+      - "agent_contracts/negative/001_context_firewall.end"
+    interpreter:
+      - "agent_contracts/positive/001_agent_declaration.end"
+      - "agent_contracts/positive/002_task_declaration.end"
+    native:
+      - "agent_contracts/positive/001_agent_declaration.end"
+      - "agent_contracts/positive/002_task_declaration.end"
+    regression:
+      - "agent_contracts/positive/006_proof_gate.end"
+
+  - id: "extensibility_dna"
+    name: "Extensibility DNA & Architecture Rules"
+    category: "extensibility_dna"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/END_EXTENSIBILITY_DNA_SPECIFICATION.md"
+    positive:
+      - "extensibility_dna/positive/001_mod_declaration.end"
+      - "extensibility_dna/positive/002_forbid_dependency.end"
+      - "extensibility_dna/positive/003_layer_definition.end"
+      - "extensibility_dna/positive/004_direction_flow.end"
+      - "extensibility_dna/positive/005_contract_module.end"
+      - "extensibility_dna/positive/006_port_and_adapter.end"
+      - "extensibility_dna/positive/007_facade_declaration.end"
+      - "extensibility_dna/positive/008_metric_invariants.end"
+    negative:
+      - "extensibility_dna/negative/001_forbidden_direction.end"
+      - "extensibility_dna/negative/002_cycle_in_architecture.end"
+      - "extensibility_dna/negative/003_architectural_leak.end"
+      - "extensibility_dna/negative/004_fanout_limit.end"
+    edge:
+      - "extensibility_dna/positive/008_metric_invariants.end"
+    diagnostic:
+      - "extensibility_dna/negative/001_forbidden_direction.end"
+    interpreter:
+      - "extensibility_dna/positive/001_mod_declaration.end"
+    native:
+      - "extensibility_dna/positive/001_mod_declaration.end"
+    regression:
+      - "extensibility_dna/positive/006_port_and_adapter.end"
+
+  - id: "inline_c_ffi"
+    name: "Direct Inline C & C ABI Headers"
+    category: "inline_c_ffi"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "inline_c_ffi/positive/001_inline_c_statement.end"
+      - "inline_c_ffi/positive/002_inline_c_expression.end"
+      - "inline_c_ffi/positive/003_c_header_include.end"
+      - "inline_c_ffi/positive/004_c_math_sin.end"
+      - "inline_c_ffi/positive/005_c_string_strlen.end"
+      - "inline_c_ffi/positive/006_c_memory_malloc_free.end"
+      - "inline_c_ffi/positive/007_c_time_timestamp.end"
+      - "inline_c_ffi/positive/008_c_custom_struct_interop.end"
+    negative:
+      - "inline_c_ffi/negative/001_bad_c_import.end"
+    edge:
+      - "inline_c_ffi/positive/008_c_custom_struct_interop.end"
+    diagnostic:
+      - "inline_c_ffi/negative/001_bad_c_import.end"
+    interpreter:
+      - "inline_c_ffi/positive/001_inline_c_statement.end"
+    native:
+      - "inline_c_ffi/positive/001_inline_c_statement.end"
+      - "inline_c_ffi/positive/004_c_math_sin.end"
+    regression:
+      - "inline_c_ffi/positive/006_c_memory_malloc_free.end"
+
+  - id: "concurrency_primitives"
+    name: "Concurrency & Thread Spawning"
+    category: "concurrency"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "concurrency/positive/001_concurrency_spawn_basic.end"
+      - "concurrency/positive/002_atomic_counter.end"
+      - "concurrency/positive/003_channel_send_recv.end"
+      - "concurrency/positive/004_mutex_lock.end"
+      - "concurrency/positive/005_parallel_map.end"
+      - "concurrency/positive/006_thread_pool_dispatch.end"
+      - "concurrency/positive/007_rwlock_shared.end"
+      - "concurrency/positive/008_barrier_sync.end"
+    negative:
+      - "concurrency/negative/001_data_race.end"
+    edge:
+      - "concurrency/positive/008_barrier_sync.end"
+    diagnostic:
+      - "concurrency/negative/001_data_race.end"
+    interpreter:
+      - "concurrency/positive/001_concurrency_spawn_basic.end"
+    native:
+      - "concurrency/positive/001_concurrency_spawn_basic.end"
+    regression:
+      - "concurrency/positive/002_atomic_counter.end"
+
+  - id: "modules_use_namespaces"
+    name: "Modular Architecture & use"
+    category: "modules"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "modules/positive/001_module_definition.end"
+      - "modules/positive/002_module_override.end"
+      - "modules/positive/003_module_inheritance.end"
+      - "modules/positive/004_multiple_modules.end"
+      - "modules/positive/005_use_namespace.end"
+      - "modules/positive/006_module_with_struct.end"
+      - "modules/positive/007_module_purity.end"
+      - "modules/positive/008_module_sealed.end"
+    negative:
+      - "modules/negative/001_bad_mod_syntax.end"
+    edge:
+      - "modules/positive/004_multiple_modules.end"
+    diagnostic:
+      - "modules/negative/001_bad_mod_syntax.end"
+    interpreter:
+      - "modules/positive/001_module_definition.end"
+    native:
+      - "modules/positive/001_module_definition.end"
+    regression:
+      - "modules/positive/008_module_sealed.end"
+
+  - id: "error_handling"
+    name: "Error Handling & Results"
+    category: "error_handling"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "error_handling/positive/001_result_ok.end"
+      - "error_handling/positive/002_result_err.end"
+      - "error_handling/positive/003_try_operator.end"
+      - "error_handling/positive/004_panic_catch.end"
+      - "error_handling/positive/005_custom_error_struct.end"
+      - "error_handling/positive/006_option_type_some.end"
+      - "error_handling/positive/007_option_type_none.end"
+      - "error_handling/positive/008_nested_result_handling.end"
+    negative:
+      - "error_handling/negative/001_bad_error_syntax.end"
+    edge:
+      - "error_handling/positive/008_nested_result_handling.end"
+    diagnostic:
+      - "error_handling/negative/001_bad_error_syntax.end"
+    interpreter:
+      - "error_handling/positive/001_result_ok.end"
+      - "error_handling/positive/002_result_err.end"
+    native:
+      - "error_handling/positive/001_result_ok.end"
+      - "error_handling/positive/002_result_err.end"
+    regression:
+      - "error_handling/positive/003_try_operator.end"
+
+  - id: "algorithms_math"
+    name: "Real-World Algorithms & Computation"
+    category: "algorithms"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "algorithms/positive/001_bubble_sort.end"
+      - "algorithms/positive/002_binary_search.end"
+      - "algorithms/positive/003_matrix_multiply_2x2.end"
+      - "algorithms/positive/004_fibonacci_dynamic_programming.end"
+      - "algorithms/positive/005_prime_sieve.end"
+      - "algorithms/positive/006_array_max_min.end"
+      - "algorithms/positive/007_gcd_euclidean.end"
+      - "algorithms/positive/008_power_exponentiation.end"
+      - "algorithms/positive/009_collatz_conjecture.end"
+      - "algorithms/positive/010_linear_search.end"
+    negative:
+      - "algorithms/negative/001_bad_algorithm_syntax.end"
+    edge:
+      - "algorithms/positive/003_matrix_multiply_2x2.end"
+    diagnostic:
+      - "algorithms/negative/001_bad_algorithm_syntax.end"
+    interpreter:
+      - "algorithms/positive/001_bubble_sort.end"
+      - "algorithms/positive/007_gcd_euclidean.end"
+    native:
+      - "algorithms/positive/001_bubble_sort.end"
+      - "algorithms/positive/007_gcd_euclidean.end"
+    regression:
+      - "algorithms/positive/005_prime_sieve.end"
+
+  - id: "declarative_ui"
+    name: "Declarative UI & Canvas"
+    category: "declarative_ui"
+    status: "IMPLEMENTED"
+    doc_ref: "std/ui"
+    positive:
+      - "declarative_ui/positive/001_widget_text.end"
+      - "declarative_ui/positive/002_widget_column_layout.end"
+      - "declarative_ui/positive/003_widget_button_click.end"
+      - "declarative_ui/positive/004_widget_padding.end"
+      - "declarative_ui/positive/005_canvas_draw_rect.end"
+      - "declarative_ui/positive/006_ui_state_counter.end"
+      - "declarative_ui/positive/007_animation_frame_tick.end"
+      - "declarative_ui/positive/008_ui_tree_walk.end"
+    negative:
+      - "declarative_ui/negative/001_bad_ui_widget.end"
+    edge:
+      - "declarative_ui/positive/008_ui_tree_walk.end"
+    diagnostic:
+      - "declarative_ui/negative/001_bad_ui_widget.end"
+    interpreter:
+      - "declarative_ui/positive/001_widget_text.end"
+    native:
+      - "declarative_ui/positive/001_widget_text.end"
+    regression:
+      - "declarative_ui/positive/006_ui_state_counter.end"
+
+  - id: "types_primitives"
+    name: "Primitive & Composite Types"
+    category: "types_primitives"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "types_primitives/positive/001_integer_types_width.end"
+      - "types_primitives/positive/002_unsigned_types.end"
+      - "types_primitives/positive/003_float_types.end"
+      - "types_primitives/positive/004_array_fixed_size.end"
+      - "types_primitives/positive/005_pointer_reference.end"
+      - "types_primitives/positive/006_bool_type_eval.end"
+      - "types_primitives/positive/007_string_type_return.end"
+      - "types_primitives/positive/008_type_inference_chain.end"
+    negative:
+      - "types_primitives/negative/001_type_mismatch_syntax.end"
+    edge:
+      - "types_primitives/positive/004_array_fixed_size.end"
+    diagnostic:
+      - "types_primitives/negative/001_type_mismatch_syntax.end"
+    interpreter:
+      - "types_primitives/positive/001_integer_types_width.end"
+    native:
+      - "types_primitives/positive/001_integer_types_width.end"
+    regression:
+      - "types_primitives/positive/008_type_inference_chain.end"
+
+  - id: "type_checking_diagnostics"
+    name: "Static Type Checker & Diagnostic Codes"
+    category: "diagnostics_suite"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive: []
+    negative:
+      - "diagnostics_suite/negative/001_e0100_missing_semicolon_or_brace.end"
+      - "diagnostics_suite/negative/002_e0100_unmatched_parenthesis.end"
+      - "diagnostics_suite/negative/003_e0100_invalid_token.end"
+      - "diagnostics_suite/negative/004_e0100_missing_fn_name.end"
+      - "diagnostics_suite/negative/005_e0100_malformed_struct.end"
+      - "diagnostics_suite/negative/006_e0100_malformed_enum.end"
+      - "diagnostics_suite/negative/007_missing_fn_return_arrow.end"
+      - "diagnostics_suite/negative/008_unclosed_fn_body.end"
+      - "diagnostics_suite/negative/009_malformed_let_decl.end"
+      - "diagnostics_suite/negative/010_missing_let_value.end"
+      - "diagnostics_suite/negative/011_malformed_if_condition.end"
+      - "diagnostics_suite/negative/012_unclosed_if_block.end"
+      - "diagnostics_suite/negative/013_malformed_while_loop.end"
+      - "diagnostics_suite/negative/014_malformed_for_loop.end"
+      - "diagnostics_suite/negative/015_malformed_match_expr.end"
+      - "diagnostics_suite/negative/016_unclosed_bracket_list.end"
+      - "diagnostics_suite/negative/017_unclosed_tuple_paren.end"
+      - "diagnostics_suite/negative/018_invalid_unary_op.end"
+      - "diagnostics_suite/negative/019_invalid_binary_rhs.end"
+      - "diagnostics_suite/negative/020_malformed_class_decl.end"
+      - "diagnostics_suite/negative/021_malformed_trait_decl.end"
+      - "diagnostics_suite/negative/022_malformed_impl_block.end"
+      - "diagnostics_suite/negative/023_malformed_import_stmt.end"
+      - "diagnostics_suite/negative/024_malformed_import_as.end"
+      - "diagnostics_suite/negative/025_malformed_contract_decl.end"
+      - "diagnostics_suite/negative/026_malformed_architecture_decl.end"
+      - "diagnostics_suite/negative/027_malformed_feature_decl.end"
+      - "diagnostics_suite/negative/028_malformed_type_annotation.end"
+      - "diagnostics_suite/negative/029_multi_error_recovery.end"
+      - "diagnostics_suite/negative/030_unclosed_string_literal.end"
+      - "diagnostics_suite/negative/031_malformed_cast_expr.end"
+      - "diagnostics_suite/negative/032_malformed_index_expr.end"
+      - "diagnostics_suite/negative/007_e0901_pure_impurity_call.end"
+      - "diagnostics_suite/negative/008_e0902_const_reassignment.end"
+      - "diagnostics_suite/negative/009_e0903_region_escape_pointer.end"
+      - "diagnostics_suite/negative/010_e0904_transitive_impurity.end"
+      - "diagnostics_suite/negative/011_e0906_use_after_move_val.end"
+      - "diagnostics_suite/negative/012_e0907_borrow_mutation_conflict.end"
+      - "diagnostics_suite/negative/013_e0908_data_race_hazard.end"
+      - "diagnostics_suite/negative/014_e0909_domain_borrow_conflict.end"
+      - "diagnostics_suite/negative/015_e0910_lease_escape_during.end"
+      - "diagnostics_suite/negative/016_e0913_sealed_struct_mod.end"
+      - "diagnostics_suite/negative/017_e0914_forbidden_direction.end"
+      - "diagnostics_suite/negative/018_e0915_boundary_violation.end"
+      - "diagnostics_suite/negative/019_e0916_layer_skip.end"
+      - "diagnostics_suite/negative/020_e0917_cycle_in_architecture.end"
+      - "diagnostics_suite/negative/021_e0918_friend_access_fail.end"
+      - "diagnostics_suite/negative/022_e0931_capability_surface_deny.end"
+      - "diagnostics_suite/negative/023_e0934_context_firewall_deny.end"
+      - "diagnostics_suite/negative/024_e0937_unhandled_match_case.end"
+    edge: []
+    diagnostic:
+      - "diagnostics_suite/negative/001_e0100_missing_semicolon_or_brace.end"
+    interpreter: []
+    native: []
+    regression:
+      - "diagnostics_suite/negative/029_multi_error_recovery.end"
+
+  - id: "semantic_type_system"
+    name: "Sound Semantic Type System & Inference"
+    category: "type_system"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/LANGUAGE_SPECIFICATION.md"
+    positive:
+      - "type_system/positive/001_type_inference_primitives.end"
+      - "type_system/positive/002_struct_field_access_types.end"
+      - "type_system/positive/003_nested_struct_instantiation.end"
+      - "type_system/positive/004_function_param_return_types.end"
+      - "type_system/positive/005_lexical_scope_shadowing.end"
+      - "type_system/positive/006_borrow_shared_multiple_readers.end"
+      - "type_system/positive/007_tuple_destructuring_assignment.end"
+      - "type_system/positive/008_pattern_matching_exhaustive_enum.end"
+      - "type_system/positive/009_pointer_dereference_assignment.end"
+      - "type_system/positive/010_ternary_compatible_branches.end"
+      - "type_system/positive/011_arithmetic_widening_inference.end"
+      - "type_system/positive/012_string_concatenation_typing.end"
+    negative:
+      - "type_system/negative/001_type_mismatch_variable_init.end"
+      - "type_system/negative/002_type_mismatch_binary_operands.end"
+      - "type_system/negative/003_type_mismatch_function_arg.end"
+      - "type_system/negative/004_type_mismatch_function_return.end"
+      - "type_system/negative/005_type_mismatch_non_bool_condition.end"
+      - "type_system/negative/006_undefined_variable_reference.end"
+      - "type_system/negative/007_undefined_function_call.end"
+      - "type_system/negative/008_struct_field_not_found.end"
+      - "type_system/negative/009_enum_variant_invalid.end"
+      - "type_system/negative/010_pattern_matching_unhandled_variant.end"
+      - "type_system/negative/011_immutable_variable_reassignment.end"
+      - "type_system/negative/012_borrow_conflict_use_after_move.end"
+    edge:
+      - "type_system/positive/010_ternary_compatible_branches.end"
+    diagnostic:
+      - "type_system/negative/001_type_mismatch_variable_init.end"
+      - "type_system/negative/002_type_mismatch_binary_operands.end"
+    interpreter:
+      - "type_system/positive/001_type_inference_primitives.end"
+      - "type_system/positive/002_struct_field_access_types.end"
+    native:
+      - "type_system/positive/001_type_inference_primitives.end"
+      - "type_system/positive/002_struct_field_access_types.end"
+    regression:
+      - "type_system/positive/005_lexical_scope_shadowing.end"
+
+  # Planned and Missing Features explicitly declared per Prompt 06 Rule 1 & Rule 2
+  - id: "backend_llvm"
+    name: "Direct LLVM IR Code Generation Backend"
+    category: "compiler_backend"
+    status: "IMPLEMENTED"
+    doc_ref: "docs/ARCHITECTURE.md"
+    positive:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/002_control_flow_if_while.end"
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+      - "backend_llvm/positive/005_struct_fields.end"
+      - "backend_llvm/positive/006_string_literals.end"
+      - "backend_llvm/positive/007_bitwise_operations.end"
+      - "backend_llvm/positive/008_float_arithmetic.end"
+      - "backend_llvm/positive/009_nested_calls.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    negative:
+      - "backend_llvm/negative/001_type_mismatch_return.end"
+      - "backend_llvm/negative/002_undefined_variable.end"
+    edge:
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    diagnostic:
+      - "backend_llvm/negative/001_type_mismatch_return.end"
+      - "backend_llvm/negative/002_undefined_variable.end"
+    interpreter:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+    native:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/002_control_flow_if_while.end"
+      - "backend_llvm/positive/003_for_in_loop.end"
+      - "backend_llvm/positive/004_functions_and_recursion.end"
+      - "backend_llvm/positive/005_struct_fields.end"
+      - "backend_llvm/positive/006_string_literals.end"
+      - "backend_llvm/positive/007_bitwise_operations.end"
+      - "backend_llvm/positive/008_float_arithmetic.end"
+      - "backend_llvm/positive/009_nested_calls.end"
+      - "backend_llvm/positive/010_fibonacci_recursion.end"
+    regression:
+      - "backend_llvm/positive/001_arithmetic_ops.end"
+      - "backend_llvm/positive/005_struct_fields.end"
+
+  - id: "target_wasm"
+    name: "WebAssembly Standalone Backend Target"
+    category: "compiler_backend"
+    status: "MISSING_FEATURE"
+    doc_ref: "docs/ROADMAP.md"
+    positive: []
+    negative: []
+    edge: []
+    diagnostic: []
+    interpreter: []
+    native: []
+    regression: []
+
+  - id: "target_mobile"
+    name: "Mobile NDK & iOS Target Toolchain"
+    category: "compiler_backend"
+    status: "MISSING_FEATURE"
+    doc_ref: "docs/ROADMAP.md"
+    positive: []
+    negative: []
+    edge: []
+    diagnostic: []
+    interpreter: []
+    native: []
+    regression: []
+
+  - id: "ecosystem_package_registry"
+    name: "Global Decentralized Package Registry"
+    category: "ecosystem"
+    status: "MISSING_FEATURE"
+    doc_ref: "docs/PACKAGES.md"
+    positive: []
+    negative: []
+    edge: []
+    diagnostic: []
+    interpreter: []
+    native: []
+    regression: []
+
+  - id: "compute_borrowed_gpu"
+    name: "Borrowed Processor & GPU Resources"
+    category: "compute_model"
+    status: "MISSING_FEATURE"
+    doc_ref: "docs/MEMORY_MODEL.md"
+    positive: []
+    negative: []
+    edge: []
+    diagnostic: []
+    interpreter: []
+    native: []
+    regression: []

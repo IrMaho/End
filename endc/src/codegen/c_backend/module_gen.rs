@@ -1,7 +1,7 @@
 use super::runtime::emit_all_runtime_headers;
 use super::state::CBackend;
 use crate::ast::*;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 impl CBackend {
     pub fn generate(&mut self, module: &Module) -> String {
@@ -14,6 +14,19 @@ impl CBackend {
         self.header_output.clear();
         self.is_lib = is_lib;
         self.enums = module.enums.clone();
+        self.function_return_types.clear();
+        self.struct_fields.clear();
+
+        for f in &module.functions {
+            self.function_return_types.insert(f.name.clone(), f.return_type.clone());
+        }
+        for s in &module.structs {
+            let mut fields = HashMap::new();
+            for fld in &s.fields {
+                fields.insert(fld.name.clone(), fld.field_type.clone());
+            }
+            self.struct_fields.insert(s.name.clone(), fields);
+        }
 
         emit_all_runtime_headers(&mut self.output);
 
@@ -80,6 +93,21 @@ impl CBackend {
             self.output.push_str("};\n\n");
         }
 
+        // Event Definitions
+        for stmt in &module.statements {
+            if let Statement::EventDecl(ev) = stmt {
+                self.output.push_str(&format!("typedef struct {} {{\n", ev.name));
+                for f in &ev.fields {
+                    let c_type = self.map_type(&f.field_type);
+                    self.output.push_str(&format!("    {} {};\n", c_type, f.name));
+                }
+                if ev.fields.is_empty() {
+                    self.output.push_str("    int _dummy;\n");
+                }
+                self.output.push_str(&format!("}} {};\n\n", ev.name));
+            }
+        }
+
         // Header generation if in Library Mode
         if is_lib {
             self.header_output.push_str("/* End Language Generated C Header File */\n");
@@ -121,7 +149,7 @@ impl CBackend {
                 self.map_type(&f.return_type)
             };
             let mut params_str = Vec::new();
-            if f.name == "main" && !f.params.is_empty() {
+            if f.name == "main" {
                 params_str.push("int argc".to_string());
                 params_str.push("char** argv".to_string());
             } else {
@@ -201,6 +229,21 @@ impl CBackend {
                 }
                 if params_str.is_empty() { params_str.push("void".to_string()); }
                 self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+            }
+            if let Some(parent_name) = &m.parent {
+                if let Some(parent_mod) = module.modules.iter().find(|pm| pm.name == *parent_name) {
+                    for pf in &parent_mod.functions {
+                        self.module_methods.entry(m.name.clone()).or_default().insert(pf.name.clone());
+                        let mangled_name = format!("{}_{}", m.name, pf.name);
+                        let ret_type = self.map_type(&pf.return_type);
+                        let mut params_str = Vec::new();
+                        for p in &pf.params {
+                            params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                        }
+                        if params_str.is_empty() { params_str.push("void".to_string()); }
+                        self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+                    }
+                }
             }
         }
         self.output.push('\n');
@@ -286,7 +329,7 @@ impl CBackend {
         };
 
         let mut params_str = Vec::new();
-        if func.name == "main" && !func.params.is_empty() {
+        if func.name == "main" {
             params_str.push("int argc".to_string());
             params_str.push("char** argv".to_string());
         } else {
@@ -341,6 +384,9 @@ impl CBackend {
         self.indent_level += 1;
         self.scope_vars = vec![HashSet::new()];
         self.var_types.clear();
+        if func.name == "main" {
+            self.output.push_str(&format!("{}(void)argc; (void)argv;\n", self.indent()));
+        }
         for p in &func.params {
             self.declare_c_var(&p.name, p.param_type.clone());
         }
@@ -361,6 +407,20 @@ impl CBackend {
         }
         if func.name == "main" {
             self.output.push_str(&format!("{}return 0;\n", self.indent()));
+        } else if func.return_type != Type::Void {
+            if let Type::Custom(name) = &func.return_type {
+                self.output.push_str(&format!("{}return ({}){{0}};\n", self.indent(), name));
+            } else if matches!(func.return_type, Type::F32 | Type::F64) {
+                self.output.push_str(&format!("{}return 0.0;\n", self.indent()));
+            } else if matches!(func.return_type, Type::Bool) {
+                self.output.push_str(&format!("{}return false;\n", self.indent()));
+            } else if matches!(func.return_type, Type::Str) {
+                self.output.push_str(&format!("{}return \"\";\n", self.indent()));
+            } else if matches!(func.return_type, Type::Pointer(_)) {
+                self.output.push_str(&format!("{}return NULL;\n", self.indent()));
+            } else {
+                self.output.push_str(&format!("{}return 0;\n", self.indent()));
+            }
         }
         self.indent_level -= 1;
         self.output.push_str("}\n\n");

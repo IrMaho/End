@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Hello, World!
+
+fn main() void {
+    println("Hello, World!")
+}

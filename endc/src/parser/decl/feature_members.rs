@@ -136,10 +136,16 @@ impl Parser {
                                 fns.push(self.parse_function(true, vec![])?);
                             } else if self.check(&TokenKind::Struct) {
                                 sts.push(self.parse_struct(false, vec![])?);
-                            } else if let Ok(stmt) = self.parse_statement() {
-                                stmts.push(stmt);
                             } else {
-                                self.advance();
+                                match self.parse_statement() {
+                                    Ok(stmt) => stmts.push(stmt),
+                                    Err(_) => {
+                                        self.synchronize();
+                                        if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                         }
                         self.expect(TokenKind::RBrace)?;

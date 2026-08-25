@@ -124,7 +124,7 @@ impl Parser {
                         let mut s = self.parse_struct(false, pending_directives)?;
                         s.is_sealed = true;
                         structs.push(s);
-                    } else if self.check(&TokenKind::Boundary) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "boundary" } else { false }) {
+                    } else if self.check(&TokenKind::Boundary) || (if let TokenKind::Ident(s) = self.peek_kind() { s.eq_ignore_ascii_case("boundary") } else { false }) {
                         self.advance();
                         let name = self.parse_identifier_or_keyword()?;
                         self.match_token(&TokenKind::SemiColon);
@@ -209,14 +209,14 @@ impl Parser {
                     extensions.push(self.parse_extension_block()?);
                 }
                 TokenKind::Use => {
-                    let checkpoint = self.cursor;
+                    let checkpoint = self.checkpoint();
                     self.advance();
                     if self.check(&TokenKind::Syntax) || self.check(&TokenKind::Feature) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "syntax" || s == "feature" } else { false }) {
-                        self.cursor = checkpoint;
+                        self.restore_checkpoint(checkpoint);
                         let stmt = self.parse_statement()?;
                         statements.push(stmt);
                     } else {
-                        self.cursor = checkpoint;
+                        self.restore_checkpoint(checkpoint);
                         imports.push(self.parse_import()?);
                     }
                 }
@@ -236,13 +236,32 @@ impl Parser {
                     impls.push(self.parse_impl()?);
                 }
                 TokenKind::Fn => {
-                    functions.push(self.parse_function(false, pending_directives)?);
+                    match self.parse_function(false, pending_directives) {
+                        Ok(f) => functions.push(f),
+                        Err(e) => {
+                            if !self.diagnostics.has_errors() {
+                                let span = self.current_span();
+                                self.emit_e005(&span, "valid function definition", &format!("{:?}", self.peek_kind()), &e);
+                            }
+                            self.synchronize();
+                        }
+                    }
                 }
                 TokenKind::Extern => {
                     self.advance();
-                    let mut f = self.parse_function(false, pending_directives)?;
-                    f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
-                    functions.push(f);
+                    match self.parse_function(false, pending_directives) {
+                        Ok(mut f) => {
+                            f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
+                            functions.push(f);
+                        }
+                        Err(e) => {
+                            if !self.diagnostics.has_errors() {
+                                let span = self.current_span();
+                                self.emit_e005(&span, "valid function definition", &format!("{:?}", self.peek_kind()), &e);
+                            }
+                            self.synchronize();
+                        }
+                    }
                 }
                 TokenKind::Val => {
                     self.advance();
@@ -395,7 +414,16 @@ impl Parser {
                             traits.push(self.parse_trait(true)?);
                         }
                         TokenKind::Fn => {
-                            functions.push(self.parse_function(true, pending_directives)?);
+                            match self.parse_function(true, pending_directives) {
+                                Ok(f) => functions.push(f),
+                                Err(e) => {
+                                    if !self.diagnostics.has_errors() {
+                                        let span = self.current_span();
+                                        self.emit_e005(&span, "valid function definition", &format!("{:?}", self.peek_kind()), &e);
+                                    }
+                                    self.synchronize();
+                                }
+                            }
                         }
                         TokenKind::Feature => {
                             let feat = self.parse_feature_def(true, pending_directives)?;
@@ -409,9 +437,19 @@ impl Parser {
                         }
                         TokenKind::Extern => {
                             self.advance();
-                            let mut f = self.parse_function(true, pending_directives)?;
-                            f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
-                            functions.push(f);
+                            match self.parse_function(true, pending_directives) {
+                                Ok(mut f) => {
+                                    f.directives.push(Directive { name: "@extern".to_string(), args: vec![], span: f.span.clone() });
+                                    functions.push(f);
+                                }
+                                Err(e) => {
+                                    if !self.diagnostics.has_errors() {
+                                        let span = self.current_span();
+                                        self.emit_e005(&span, "valid function definition", &format!("{:?}", self.peek_kind()), &e);
+                                    }
+                                    self.synchronize();
+                                }
+                            }
                         }
                         TokenKind::Val => {
                             self.advance();
@@ -440,41 +478,65 @@ impl Parser {
                             statements.push(Statement::EventHubDecl(self.parse_event_hub(true)?));
                         }
                         other => {
-                            return Err(format!(
+                            let span = self.current_span();
+                            let actual = format!("{:?}", other);
+                            let expected = "enum, struct, trait, val, class, event, operation or fn after 'pub'";
+                            let raw_msg = format!(
                                 "Expected enum, struct, trait, val or fn after 'pub', found {:?} at line {}",
                                 other,
-                                self.current_span().line
-                            ))
+                                span.line
+                            );
+                            let formatted = self.emit_e005(&span, expected, &actual, &raw_msg);
+                            return Err(formatted);
                         }
                     }
                 }
-                TokenKind::SemiColon => {
+                TokenKind::SemiColon | TokenKind::RBrace => {
                     self.advance();
                 }
                 TokenKind::EOF => break,
                 _ => {
-                    let stmt = self.parse_statement()?;
-                    match &stmt {
-                        Statement::FeatureStatement(f) => {
-                            features.push(f.clone());
+                    match self.parse_statement() {
+                        Ok(stmt) => {
+                            match &stmt {
+                                Statement::FeatureStatement(f) => {
+                                    features.push(f.clone());
+                                }
+                                Statement::ContractDefinition(c) => {
+                                    contracts.push(c.clone());
+                                }
+                                Statement::ArchitectureTemplate(a) => {
+                                    architecture_templates.push(a.clone());
+                                }
+                                Statement::ArchitectureRuleStatement(r) => {
+                                    architecture_rules.push(r.clone());
+                                }
+                                Statement::FeatureMigrationStatement(m) => {
+                                    feature_migrations.push(m.clone());
+                                }
+                                _ => {}
+                            }
+                            statements.push(stmt);
                         }
-                        Statement::ContractDefinition(c) => {
-                            contracts.push(c.clone());
+                        Err(e) => {
+                            if !self.diagnostics.has_errors() {
+                                let span = self.current_span();
+                                self.emit_e005(&span, "valid statement", &format!("{:?}", self.peek_kind()), &e);
+                            }
+                            self.synchronize();
                         }
-                        Statement::ArchitectureTemplate(a) => {
-                            architecture_templates.push(a.clone());
-                        }
-                        Statement::ArchitectureRuleStatement(r) => {
-                            architecture_rules.push(r.clone());
-                        }
-                        Statement::FeatureMigrationStatement(m) => {
-                            feature_migrations.push(m.clone());
-                        }
-                        _ => {}
                     }
-                    statements.push(stmt);
                 }
             }
+        }
+
+        if self.diagnostics.has_errors() {
+            let error_msgs: Vec<String> = self.diagnostics.diagnostics()
+                .iter()
+                .filter(|d| matches!(d.severity, crate::diagnostics::Severity::Error))
+                .map(|d| d.message.clone())
+                .collect();
+            return Err(error_msgs.join("\n"));
         }
 
         Ok(Module {

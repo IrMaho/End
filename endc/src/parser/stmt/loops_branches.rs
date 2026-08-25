@@ -124,10 +124,10 @@ impl Parser {
                     return Ok(Statement::ParallelChoose { branches, span });
                 }
                 self.expect(TokenKind::For)?;
-                let item_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected item name after 'parallel for', found {:?}", other)),
-                };
+                let item_name = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
                 self.match_token(&TokenKind::Colon);
@@ -141,10 +141,10 @@ impl Parser {
             }
             TokenKind::For => {
                 self.advance();
-                let item_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected item name after 'for', found {:?}", other)),
-                };
+                let item_name = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
                 self.match_token(&TokenKind::Colon);
@@ -171,10 +171,7 @@ impl Parser {
             }
             TokenKind::Region => {
                 self.advance();
-                let reg_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected region name, found {:?}", other)),
-                };
+                let reg_name = self.parse_identifier_or_keyword()?;
                 let body = self.parse_block()?;
                 Ok(Statement::RegionBlock {
                     name: reg_name,
@@ -205,10 +202,7 @@ impl Parser {
             }
             TokenKind::Asm => {
                 self.advance();
-                let arch = match self.advance().kind {
-                    TokenKind::Ident(n) | TokenKind::StringLit(n) => n,
-                    other => return Err(format!("Expected target architecture for asm, found {:?}", other)),
-                };
+                let arch = self.parse_identifier_or_string()?;
                 self.expect(TokenKind::LBrace)?;
                 let mut asm_code = String::new();
                 while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
@@ -234,10 +228,7 @@ impl Parser {
             }
             TokenKind::Target => {
                 self.advance();
-                let target_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected target name after 'target', found {:?}", other)),
-                };
+                let target_name = self.parse_identifier_or_keyword()?;
                 let body = self.parse_block()?;
                 Ok(Statement::TargetBlock {
                     target: target_name,

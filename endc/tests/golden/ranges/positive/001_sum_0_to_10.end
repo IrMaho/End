@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 45
+
+fn main() void {
+    mut sum = 0
+    for i in 0..10 {
+        sum += i
+    }
+    println(sum)
+}

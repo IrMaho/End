@@ -1,0 +1,11 @@
+fn first_broken() {
+    let x = 1 + ;
+}
+
+fn second_broken() {
+    let y = 2 + ;
+}
+
+fn valid_fn() {
+    let z = 42;
+}

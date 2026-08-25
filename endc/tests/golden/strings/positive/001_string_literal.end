@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// End Language Native C Codegen
+
+fn main() void {
+    println("End Language Native C Codegen")
+}

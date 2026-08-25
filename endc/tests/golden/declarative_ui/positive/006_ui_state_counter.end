@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 1
+
+st UIState {
+    clicks: i64,
+}
+
+fn main() void {
+    mut st_ui = UIState { clicks: 0 }
+    st_ui.clicks = st_ui.clicks + 1
+    println(st_ui.clicks)
+}

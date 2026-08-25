@@ -64,11 +64,12 @@ impl Parser {
                 }
                 let mut body = None;
                 if self.check(&TokenKind::LBrace) {
-                    let checkpoint = self.cursor;
-                    if let Ok(blk) = self.parse_block() {
-                        body = Some(blk);
+                    let is_schema = if let Some(TokenKind::Ident(_)) = self.peek_ahead(1) {
+                        self.peek_ahead(2) == Some(&TokenKind::Colon) && self.peek_ahead(3) != Some(&TokenKind::Colon)
                     } else {
-                        self.cursor = checkpoint;
+                        false
+                    };
+                    if is_schema {
                         self.expect(TokenKind::LBrace)?;
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                             let f_span = self.current_span();
@@ -80,6 +81,9 @@ impl Parser {
                             self.match_token(&TokenKind::SemiColon);
                         }
                         self.expect(TokenKind::RBrace)?;
+                    } else {
+                        let blk = self.parse_block()?;
+                        body = Some(blk);
                     }
                 } else {
                     self.match_token(&TokenKind::SemiColon);
@@ -156,7 +160,7 @@ impl Parser {
                 self.expect(TokenKind::RBrace)?;
                 Ok(Statement::ParallelChoose { branches, span })
             }
-            TokenKind::Project | TokenKind::Ident(_) => {
+            _ if *peek_k == TokenKind::Project || matches!(peek_k, TokenKind::Ident(s) if s == "project") => {
                 self.advance();
                 self.expect(TokenKind::LBrace)?;
                 let mut profile = std::collections::HashMap::new();
@@ -201,10 +205,14 @@ impl Parser {
                         mod_def.is_partial = true;
                         self.expect(TokenKind::LBrace)?;
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                            if let Ok(stmt) = self.parse_statement() {
-                                mod_def.statements.push(stmt);
-                            } else {
-                                self.advance();
+                            match self.parse_statement() {
+                                Ok(stmt) => mod_def.statements.push(stmt),
+                                Err(_) => {
+                                    self.synchronize();
+                                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                        break;
+                                    }
+                                }
                             }
                         }
                         self.expect(TokenKind::RBrace)?;
@@ -329,96 +337,6 @@ impl Parser {
                 Ok(Statement::OpenClosedTypeDecl { is_open: false, name, span })
             }
 
-            // Layer 4: Syntax Extensibility
-            TokenKind::Syntax => {
-                self.advance();
-                let mut full_name = self.parse_identifier_or_string()?;
-                if self.check(&TokenKind::Colon) {
-                    self.advance();
-                    if self.match_token(&TokenKind::Colon) {
-                        let sub = self.parse_identifier_or_string()?;
-                        full_name = format!("{}::{}", full_name, sub);
-                    }
-                }
-                let (namespace, name) = if full_name.contains("::") {
-                    let parts: Vec<&str> = full_name.split("::").collect();
-                    (Some(parts[0].to_string()), parts[1].to_string())
-                } else {
-                    (None, full_name)
-                };
-                let mut params = Vec::new();
-                if self.match_token(&TokenKind::LParen) {
-                    while !self.check(&TokenKind::RParen) && !self.check(&TokenKind::EOF) {
-                        let is_mut = self.match_token(&TokenKind::Mut);
-                        let p_name = self.parse_identifier_or_keyword()?;
-                        self.match_token(&TokenKind::Colon);
-                        let param_type = self.parse_type().unwrap_or(Type::Void);
-                        params.push(FunctionParam { name: p_name, param_type, is_mut, span: self.current_span() });
-                        if !self.match_token(&TokenKind::Comma) { break; }
-                    }
-                    self.expect(TokenKind::RParen)?;
-                }
-                let mut return_type = None;
-                if self.match_token(&TokenKind::Arrow) {
-                    return_type = Some(self.parse_type()?);
-                }
-                let body = if self.check(&TokenKind::LBrace) {
-                    Some(self.parse_block()?)
-                } else {
-                    self.match_token(&TokenKind::SemiColon);
-                    None
-                };
-                Ok(Statement::SyntaxDecl {
-                    namespace,
-                    name,
-                    pattern: None,
-                    version: None,
-                    params,
-                    return_type,
-                    body,
-                    span,
-                })
-            }
-            TokenKind::Use => {
-                self.advance();
-                let kw = self.parse_identifier_or_string()?;
-                if kw == "syntax" {
-                    let raw_spec = self.parse_identifier_or_string()?;
-                    let (spec, mut ver) = if raw_spec.contains('@') {
-                        let parts: Vec<&str> = raw_spec.split('@').collect();
-                        (parts[0].to_string(), parts[1].parse::<usize>().ok())
-                    } else {
-                        (raw_spec, None)
-                    };
-                    if let TokenKind::Directive(d) = self.peek_kind() {
-                        if let Ok(num) = d.trim_start_matches('@').parse::<usize>() {
-                            ver = Some(num);
-                            self.advance();
-                        }
-                    } else if self.match_token(&TokenKind::At) {
-                        if let TokenKind::IntLit(i) = self.peek_kind() {
-                            ver = Some(*i as usize);
-                            self.advance();
-                        }
-                    }
-                    self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::UseSyntaxDecl { namespace: spec, version: ver, span })
-                } else if kw == "feature" && self.match_token(&TokenKind::LParen) {
-                    let feat = self.parse_identifier_or_string()?;
-                    self.expect(TokenKind::RParen)?;
-                    self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::SemanticImportDecl { feature_intent: feat, alias: None, span })
-                } else {
-                    let mut implementation = None;
-                    if self.match_token(&TokenKind::Equal) {
-                        implementation = Some(self.parse_identifier_or_keyword()?);
-                    }
-                    self.match_token(&TokenKind::SemiColon);
-                    Ok(Statement::UseFeature { feature: kw, implementation, span })
-                }
-            }
-
-            // Layer 5: Compile-time Extensibility
             _ => unreachable!(),
         }
     }

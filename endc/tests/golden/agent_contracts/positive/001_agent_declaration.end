@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Agent contract active
+
+agent Optimizer {
+    scope: "codegen",
+    goal: "optimize loops",
+}
+
+fn main() void {
+    println("Agent contract active")
+}

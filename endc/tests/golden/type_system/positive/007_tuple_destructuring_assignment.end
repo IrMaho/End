@@ -1,0 +1,22 @@
+// @test: positive
+// @expect-stdout:
+// 10
+// 20
+// 30
+
+st Coords {
+    x: i64,
+    y: i64,
+    z: i64,
+}
+
+fn get_coords() Coords {
+    ret Coords { x: 10, y: 20, z: 30 }
+}
+
+fn main() void {
+    val c = get_coords()
+    println(c.x)
+    println(c.y)
+    println(c.z)
+}

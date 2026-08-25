@@ -263,8 +263,8 @@ impl Parser {
                         risks = self.parse_string_list()?;
                     } else if key == "migration" || key == "proof" {
                         migration = Some(self.parse_identifier_or_string()?);
-                    } else {
-                        let _ = self.parse_identifier_or_string().ok();
+                    } else if !self.check(&TokenKind::SemiColon) && !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
+                        self.advance();
                     }
                     self.match_token(&TokenKind::Comma);
                     self.match_token(&TokenKind::SemiColon);

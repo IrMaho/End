@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// Parallel loop executed
+
+fn main() void {
+    parallel for i in 0..4 {
+        val res = i * 10
+    }
+    println("Parallel loop executed")
+}

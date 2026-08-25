@@ -83,3 +83,13 @@ cargo build --release
 ```
 The compiled binary will be in `endc/target/release/endc`.
 
+---
+
+## 6. LLVM Native Backend Prerequisites
+
+To use the opt-in native LLVM backend (`endc build --backend=llvm`):
+- **LLVM Toolchain**: LLVM 15+ or LLVM 22 (with `clang` and `LLVM-C` development libraries).
+- **Linker**: `clang` or MinGW `gcc` available on system `PATH`.
+- **Environment**: Ensure the LLVM `bin` directory (e.g. `C:\Program Files\LLVM\bin` on Windows or `/usr/lib/llvm/bin` on Linux) is included in your `PATH`.
+
+

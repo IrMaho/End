@@ -30,6 +30,21 @@ impl Interpreter {
                             }
                         }
                     }
+                    Expression::Index { array, index, .. } => {
+                        if let Expression::Ident(arr_name, _) = array.as_ref() {
+                            let idx_val = self.eval_expression(index)?;
+                            let idx = match idx_val {
+                                Value::Int(i) => i as usize,
+                                _ => 0,
+                            };
+                            if let Some(Value::Array(mut items)) = self.get_var(arr_name) {
+                                if idx < items.len() {
+                                    items[idx] = val;
+                                    self.update_var(arr_name, Value::Array(items))?;
+                                }
+                            }
+                        }
+                    }
                     _ => {}
                 }
                 Ok(Some(None))
@@ -44,6 +59,9 @@ impl Interpreter {
             }
             Statement::Expression(expr) => {
                 let v = self.eval_expression(expr)?;
+                if matches!(v, Value::Break | Value::Continue) {
+                    return Ok(Some(Some(v)));
+                }
                 if matches!(expr, Expression::Match { .. }) && !matches!(v, Value::Void) {
                     return Ok(Some(Some(v)));
                 }
@@ -63,17 +81,23 @@ impl Interpreter {
                 };
 
                 if is_true {
+                    self.push_scope();
                     for s in &then_block.statements {
                         if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
                             return Ok(Some(Some(ret)));
                         }
                     }
+                    self.pop_scope();
                 } else if let Some(eb) = else_block {
+                    self.push_scope();
                     for s in &eb.statements {
                         if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
                             return Ok(Some(Some(ret)));
                         }
                     }
+                    self.pop_scope();
                 }
                 Ok(Some(None))
             }
@@ -96,11 +120,14 @@ impl Interpreter {
                     _ => false,
                 };
                 if !is_true {
+                    self.push_scope();
                     for s in &else_block.statements {
                         if let Some(ret) = self.eval_statement(s)? {
+                            self.pop_scope();
                             return Ok(Some(Some(ret)));
                         }
                     }
+                    self.pop_scope();
                 }
                 Ok(Some(None))
             }
@@ -115,10 +142,21 @@ impl Interpreter {
                     if !is_true {
                         break;
                     }
+                    let mut should_break = false;
                     for s in &body.statements {
                         if let Some(ret) = self.eval_statement(s)? {
+                            if matches!(ret, Value::Break) {
+                                should_break = true;
+                                break;
+                            }
+                            if matches!(ret, Value::Continue) {
+                                break;
+                            }
                             return Ok(Some(Some(ret)));
                         }
+                    }
+                    if should_break {
+                        break;
                     }
                 }
                 Ok(Some(None))
@@ -134,18 +172,46 @@ impl Interpreter {
                 body,
                 ..
             } => {
-                let count = match self.eval_expression(iterable)? {
-                    Value::Int(n) => n,
-                    _ => 0,
+                let (start_val, end_val, is_inclusive) = match iterable {
+                    crate::ast::Expression::Range { start, end, inclusive, .. } => {
+                        let s = match self.eval_expression(start)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        let e = match self.eval_expression(end)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        (s, e, *inclusive)
+                    }
+                    _ => {
+                        let count = match self.eval_expression(iterable)? {
+                            Value::Int(n) => n,
+                            _ => 0,
+                        };
+                        (0, count, false)
+                    }
                 };
                 self.push_scope();
-                for i in 0..count {
+                let limit = if is_inclusive { end_val + 1 } else { end_val };
+                for i in start_val..limit {
                     self.set_var(item_name, Value::Int(i));
+                    let mut should_break = false;
                     for s in &body.statements {
                         if let Some(ret) = self.eval_statement(s)? {
+                            if matches!(ret, Value::Break) {
+                                should_break = true;
+                                break;
+                            }
+                            if matches!(ret, Value::Continue) {
+                                break;
+                            }
                             self.pop_scope();
                             return Ok(Some(Some(ret)));
                         }
+                    }
+                    if should_break {
+                        break;
                     }
                 }
                 self.pop_scope();

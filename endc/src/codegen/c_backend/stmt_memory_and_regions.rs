@@ -143,7 +143,7 @@ impl CBackend {
             }
             Statement::Spawn { call, .. } => {
                 let call_str = self.gen_expression(call);
-                self.output.push_str(&format!("{}/* Spawn async task */ {};\n", self.indent(), call_str));
+                self.output.push_str(&format!("{}/* Spawn async task */ (void)({});\n", self.indent(), call_str));
                 true
             }
             Statement::QuantumUnwrap { name, expr, fallback, .. } => {
@@ -231,7 +231,7 @@ impl CBackend {
                 self.output.push_str(&format!("{}jmp_buf __checkpoint_{};\n", self.indent(), state_name));
                 for (var_name, ty) in &active_vars {
                     let ty_str = self.map_type(ty);
-                    self.output.push_str(&format!("{}{} __snap_{}_{} = {};\n", self.indent(), ty_str, state_name, var_name, var_name));
+                    self.output.push_str(&format!("{}{} __snap_{}_{} __attribute__((unused)) = {};\n", self.indent(), ty_str, state_name, var_name, var_name));
                 }
                 let clean_file = span.file.replace('\\', "/");
                 self.output.push_str(&format!("{}#line {} \"{}\"\n", self.indent(), span.line, clean_file));
@@ -298,7 +298,7 @@ impl CBackend {
                 self.output.push_str(&format!("{}jmp_buf __txn_env;\n", self.indent()));
                 for (var_name, ty) in &active_vars {
                     let ty_str = self.map_type(ty);
-                    self.output.push_str(&format!("{}{} __snap_txn_{} = {};\n", self.indent(), ty_str, var_name, var_name));
+                    self.output.push_str(&format!("{}{} __snap_txn_{} __attribute__((unused)) = {};\n", self.indent(), ty_str, var_name, var_name));
                 }
                 self.output.push_str(&format!("{}if (setjmp(__txn_env) == 0) {{\n", self.indent()));
                 self.indent_level += 1;

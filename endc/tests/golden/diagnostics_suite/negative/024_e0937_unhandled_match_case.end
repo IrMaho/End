@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0937
+
+feature UnboundedEvolvable {
+    evolvable;
+}
+fn main() void {}

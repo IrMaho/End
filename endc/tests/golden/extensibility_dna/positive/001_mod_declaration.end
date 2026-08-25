@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// Module DNA active
+
+mod payments {
+    responsibility: "processes card transactions"
+}
+
+fn main() void {
+    println("Module DNA active")
+}

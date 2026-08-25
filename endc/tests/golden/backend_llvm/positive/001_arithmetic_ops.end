@@ -1,0 +1,21 @@
+// @test: positive
+// @expect-stdout:
+// 42
+// 100
+// 7
+
+fn main() -> i32 {
+    val a: i64 = 40
+    val b: i64 = 2
+    val sum = a + b
+    println(sum)
+
+    val x: i64 = 25
+    val y: i64 = 4
+    val prod = x * y
+    println(prod)
+
+    val rem = 17 % 10
+    println(rem)
+    return 0
+}

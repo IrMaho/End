@@ -25,6 +25,10 @@ impl Parser {
                 self.expect(TokenKind::RBracket)?;
                 let inner = self.parse_type()?;
                 return Ok(Type::Array(Box::new(inner), size));
+            } else {
+                let inner = self.parse_type()?;
+                self.expect(TokenKind::RBracket)?;
+                return Ok(Type::Slice(Box::new(inner)));
             }
         }
 
@@ -37,7 +41,7 @@ impl Parser {
                 }
             }
             self.expect(TokenKind::RParen)?;
-            return Ok(Type::Custom(format!("tuple_{}", tuple_types.len())));
+            return Ok(Type::Tuple(tuple_types));
         }
 
         match self.peek_kind() {
@@ -153,10 +157,7 @@ impl Parser {
                     }
                     "region" => {
                         if self.match_token(&TokenKind::Less) {
-                            let reg_name = match self.advance().kind {
-                                TokenKind::Ident(s) => s,
-                                other => return Err(format!("Expected region name, found {:?}", other)),
-                            };
+                            let reg_name = self.parse_identifier_or_keyword()?;
                             self.expect(TokenKind::Greater)?;
                             Type::Region(reg_name)
                         } else {

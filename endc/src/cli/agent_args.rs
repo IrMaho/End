@@ -55,6 +55,19 @@ pub struct SkillArgs {
         pub action: String,
 }
 
+    /// Agent Contract System: verify, inspect, submit, and enforce .agents/contract.toml
+#[derive(Args, Debug, Clone)]
+pub struct ContractArgs {
+    #[arg(default_value = "verify")]
+    pub action: String,
+    #[arg(long)]
+    pub file: Option<PathBuf>,
+    #[arg(long)]
+    pub evidence: Option<PathBuf>,
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
+}
+
     /// Mine Project DNA, architectural signals, naming conventions, and generate AI prompt guidelines
         /// Path to .end file or project directory
         /// Generate system prompt for AI Pair Programmers

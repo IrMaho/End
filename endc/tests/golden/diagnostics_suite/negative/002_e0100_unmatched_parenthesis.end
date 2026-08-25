@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E005
+
+fn bad_paren() void {
+    val x = (1 + 2;
+}

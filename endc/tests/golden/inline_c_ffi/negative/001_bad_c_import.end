@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0100
+
+use c < ;
+
+fn main() void {}

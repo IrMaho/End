@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// Line 1
+// Line 2	Tabbed
+
+fn main() void {
+    println("Line 1\nLine 2\tTabbed")
+}

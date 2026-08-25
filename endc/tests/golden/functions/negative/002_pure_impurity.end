@@ -1,0 +1,15 @@
+// @test: negative
+// @expect-error: E0904
+
+fn impure_log() void {
+    println("log")
+}
+
+@pure
+fn pure_math(x: i64) i64 {
+    impure_log()
+    @$$$
+    ret x * 2
+}
+
+fn main() void {}

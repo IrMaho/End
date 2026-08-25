@@ -1,0 +1,28 @@
+// @test: positive
+// @expect-stdout:
+// 19
+// 22
+// 43
+// 50
+
+fn main() void {
+    val a00 = 1
+    val a01 = 2
+    val a10 = 3
+    val a11 = 4
+
+    val b00 = 5
+    val b01 = 6
+    val b10 = 7
+    val b11 = 8
+
+    val c00 = a00 * b00 + a01 * b10
+    val c01 = a00 * b01 + a01 * b11
+    val c10 = a10 * b00 + a11 * b10
+    val c11 = a10 * b01 + a11 * b11
+
+    println(c00)
+    println(c01)
+    println(c10)
+    println(c11)
+}

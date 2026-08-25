@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 5000
+
+st RectShape {
+    w: i64,
+    h: i64,
+}
+
+fn main() void {
+    val r = RectShape { w: 100, h: 50 }
+    println(r.w * r.h)
+}

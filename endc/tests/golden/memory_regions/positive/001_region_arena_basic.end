@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 1024
+// Arena reset completed
+
+st Buffer {
+    size: i64,
+}
+
+fn main() void {
+    region arena {
+        val b = Buffer { size: 1024 }
+        println(b.size)
+    }
+    println("Arena reset completed")
+}

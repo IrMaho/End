@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 60
+
+st Item {
+    val_num: i64,
+}
+
+fn main() void {
+    region pool {
+        val i1 = Item { val_num: 10 }
+        val i2 = Item { val_num: 20 }
+        val i3 = Item { val_num: 30 }
+        println(i1.val_num + i2.val_num + i3.val_num)
+    }
+}

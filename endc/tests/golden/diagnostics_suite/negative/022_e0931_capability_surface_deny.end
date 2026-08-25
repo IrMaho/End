@@ -1,0 +1,11 @@
+// @test: negative
+// @expect-error: E0931
+
+feature IsolatedCore {
+    isolated;
+}
+feature Leaker {
+    imports: [IsolatedCore];
+}
+@$$$
+fn main() void {}

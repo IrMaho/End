@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// Equal to 10
+
+fn main() void {
+    val x = 10
+    if x == 10 {
+        println("Equal to 10")
+    }
+}

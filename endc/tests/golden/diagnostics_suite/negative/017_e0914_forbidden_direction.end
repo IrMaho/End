@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0914
+
+mod modA { depends: [modB] }
+mod modB { depends: [modC] }
+mod modC { depends: [modA] }
+cycle_free = true

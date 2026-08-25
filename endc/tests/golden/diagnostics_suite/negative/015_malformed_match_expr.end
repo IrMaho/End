@@ -1,0 +1,9 @@
+// @test: negative
+// @expect-error: E005
+
+fn foo() void {
+    match x {
+        1 => ,
+        2 => 3
+    };
+}

@@ -67,7 +67,117 @@ pub fn handle_build(args: BuildArgs) {
             dump_cranelift_clif,
             backend: backend_choice,
             tree_shake,
-            sanitize, } = args;
+            sanitize,
+            release, } = args;
+
+    // Contract Build Gate: Check for .agents/contract.toml
+    if let Some(contract_file) = crate::agent::AgentContract::find_contract_file(&file)
+        .or_else(|| crate::agent::AgentContract::find_contract_file(Path::new(".")))
+    {
+        let project_root = contract_file
+            .parent()
+            .and_then(|p| {
+                if p.file_name().and_then(|s| s.to_str()) == Some(".agents") {
+                    p.parent()
+                } else {
+                    Some(p)
+                }
+            })
+            .unwrap_or_else(|| Path::new("."));
+
+        let mut contract = match crate::agent::AgentContract::from_file(&contract_file) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{} [BUILD PROHIBITED - INVALID CONTRACT] {}", "✖".red().bold(), e);
+                std::process::exit(1);
+            }
+        };
+
+        match contract.lifecycle {
+            crate::agent::LifecycleState::Draft => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' is in DRAFT state.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Run `endc contract verify` to verify the contract before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Submitted | crate::agent::LifecycleState::Verifying => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' is in {} state.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold(),
+                    contract.lifecycle.to_string().yellow().bold()
+                );
+                eprintln!("  Run `endc contract verify` to complete verification before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Rejected => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT REJECTED] Task '{}' contract verification failed.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Repair the code or tests and run `endc contract verify` before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Stale => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT STALE] Task '{}' contract is STALE.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Source files have changed. Run `endc contract verify` to re-verify.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Verified => {
+                // Check if any tracked artifact hash has changed on disk
+                let stale_check = crate::agent::check_stale_against_disk(project_root, &contract.artifact_hashes);
+                match stale_check {
+                    crate::agent::StaleCheckResult::Fresh => {
+                        println!(
+                            "{} [CONTRACT VERIFIED] Task '{}' verified - Proceeding with build",
+                            "✔".green().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                    }
+                    crate::agent::StaleCheckResult::Stale { modified_files, missing_files, details } => {
+                        let _ = contract.lifecycle.transition(crate::agent::LifecycleState::Stale);
+                        contract.lifecycle = crate::agent::LifecycleState::Stale;
+                        let _ = contract.save_to_file(&contract_file);
+
+                        eprintln!(
+                            "{} [BUILD PROHIBITED - CONTRACT STALE] Task '{}' contract has become STALE.",
+                            "✖".red().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                        for m in modified_files {
+                            eprintln!("  ⚠ Modified: {}", m.yellow());
+                        }
+                        for miss in missing_files {
+                            eprintln!("  ✖ Missing:  {}", miss.red());
+                        }
+                        for d in details {
+                            eprintln!("    └─ {}", d);
+                        }
+                        eprintln!("  Run `endc contract verify` to re-verify before building.");
+                        std::process::exit(1);
+                    }
+                    crate::agent::StaleCheckResult::Unrecorded => {
+                        eprintln!(
+                            "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' has no recorded artifact hashes.",
+                            "✖".red().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                        eprintln!("  Run `endc contract verify` before building.");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        }
+    }
+
             let is_library_mode = dll || lib;
             let (raw_module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
@@ -99,12 +209,46 @@ pub fn handle_build(args: BuildArgs) {
                         }
                     }
                     Err(e) => {
-                        eprintln!("{} Cranelift IR Generation Error: {}", "Error:".red().bold(), e);
+                        eprintln!("{} Failed to generate Cranelift CLIF IR: {:?}", "Error:".red().bold(), e);
                     }
                 }
             }
 
-            if emit_llvm || dump_llvm_ir || backend_choice == "llvm" {
+            if dump_llvm_ir {
+                let mut llvm_be = LlvmBackend::new(target.as_deref());
+                match llvm_be.generate_llvm_ir(&module) {
+                    Ok(llvm_ir) => {
+                        let ll_file_path = file.with_extension("ll");
+                        if let Err(e) = fs::write(&ll_file_path, &llvm_ir) {
+                            eprintln!("{} Failed to write LLVM IR: {}", "Error:".red().bold(), e);
+                        } else {
+                            println!("{} Dumped LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} Failed to generate LLVM IR: {:?}", "Error:".red().bold(), e);
+                    }
+                }
+            }
+
+            if dump_wasm_wat {
+                let mut wasm_be = WasmBackend::new(target.as_deref());
+                match wasm_be.generate_wat(&module) {
+                    Ok(wat_content) => {
+                        let wat_file_path = file.with_extension("wat");
+                        if let Err(e) = fs::write(&wat_file_path, &wat_content) {
+                            eprintln!("{} Failed to write WebAssembly WAT: {}", "Error:".red().bold(), e);
+                        } else {
+                            println!("{} Dumped WebAssembly WAT at {:?}", "✔".green().bold(), wat_file_path);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("{} Failed to generate WebAssembly WAT: {:?}", "Error:".red().bold(), e);
+                    }
+                }
+            }
+
+            if emit_llvm {
                 let mut llvm_be = LlvmBackend::new(target.as_deref());
                 llvm_be.set_debug_info(debug_info);
                 match llvm_be.generate_llvm_ir(&module) {
@@ -114,19 +258,50 @@ pub fn handle_build(args: BuildArgs) {
                             eprintln!("{} Failed to write LLVM IR: {}", "Error:".red().bold(), e);
                             std::process::exit(1);
                         }
-                        println!("{} Generated direct LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
-                        if emit_llvm || dump_llvm_ir {
-                            return;
-                        }
+                        println!("{} Generated LLVM IR at {:?}", "✔".green().bold(), ll_file_path);
+                        return;
                     }
                     Err(e) => {
-                        eprintln!("{} LLVM Codegen Error: {}", "Error:".red().bold(), e);
+                        eprintln!("{} LLVM Codegen Error: {:?}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }
             }
 
-            if emit_wasm || dump_wasm_wat || backend_choice == "wasm" {
+            if backend_choice == "llvm" {
+                #[cfg(target_os = "windows")]
+                let default_ext = if is_library_mode { "dll" } else { "exe" };
+                #[cfg(not(target_os = "windows"))]
+                let default_ext = if is_library_mode { "so" } else { "" };
+
+                let bin_path = output.clone().unwrap_or_else(|| {
+                    if default_ext.is_empty() {
+                        file.with_extension("")
+                    } else {
+                        file.with_extension(default_ext)
+                    }
+                });
+
+                let mut llvm_be = LlvmBackend::new(target.as_deref());
+                llvm_be.set_debug_info(debug_info);
+                llvm_be.set_opt_level(if release { "-O3" } else { "-O0" });
+                match llvm_be.compile_to_executable(&module, &bin_path) {
+                    Ok(artifacts) => {
+                        println!("{} Generated native binary via LLVM at {:?}", "✔".green().bold(), artifacts.executable_path);
+                        println!("  ├─ Toolchain: {}", artifacts.llvm_version);
+                        println!("  ├─ LLVM IR: {:?} (sha256: {})", artifacts.ir_path, artifacts.ir_sha256);
+                        println!("  ├─ Object: {:?} (sha256: {})", artifacts.object_path, artifacts.object_sha256);
+                        println!("  └─ Executable: (sha256: {})", artifacts.executable_sha256);
+                        return;
+                    }
+                    Err(e) => {
+                        eprintln!("{} LLVM compilation failed: {:?}", "Error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+
+            if emit_wasm || backend_choice == "wasm" {
                 let mut wasm_be = WasmBackend::new(target.as_deref());
                 match wasm_be.generate_wat(&module) {
                     Ok(wat_content) => {
@@ -135,16 +310,13 @@ pub fn handle_build(args: BuildArgs) {
                             eprintln!("{} Failed to write WebAssembly WAT: {}", "Error:".red().bold(), e);
                             std::process::exit(1);
                         }
-                        let js_glue = wasm_be.generate_js_glue(&module);
-                        let js_file_path = file.with_extension("js");
-                        let _ = fs::write(&js_file_path, &js_glue);
-                        println!("{} Generated WebAssembly WAT at {:?} (and JS runtime glue)", "✔".green().bold(), wat_file_path);
-                        if emit_wasm || dump_wasm_wat {
+                        println!("{} Generated WebAssembly WAT at {:?}", "✔".green().bold(), wat_file_path);
+                        if emit_wasm {
                             return;
                         }
                     }
                     Err(e) => {
-                        eprintln!("{} WebAssembly Error: {}", "Error:".red().bold(), e);
+                        eprintln!("{} WebAssembly Codegen Error: {:?}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }
@@ -166,6 +338,14 @@ pub fn handle_build(args: BuildArgs) {
 
             let mut backend = CBackend::new();
             let (c_code, header_code) = backend.generate_with_options(&module, is_library_mode);
+
+            if backend.has_errors() {
+                let source = fs::read_to_string(&file).unwrap_or_default();
+                for diag in backend.diagnostics().diagnostics() {
+                    eprintln!("{}", diag.render(&source));
+                }
+                std::process::exit(1);
+            }
 
             let c_file_path = file.with_extension("c");
             if let Err(e) = fs::write(&c_file_path, &c_code) {
@@ -223,31 +403,46 @@ pub fn handle_build(args: BuildArgs) {
             });
 
             // Build compiler args
-            let mut zig_args: Vec<String> = vec![
-                "cc".to_string(),
-                #[cfg(windows)]
-                "-target".to_string(),
-                #[cfg(windows)]
-                "x86_64-windows-gnu".to_string(),
-                c_file_path.to_str().unwrap().to_string(),
-                "-O3".to_string(),
-                "-march=native".to_string(),
-                "-funroll-loops".to_string(),
-                "-fomit-frame-pointer".to_string(),
-                "-finline-functions".to_string(),
-                "-fno-math-errno".to_string(),
-                "-fno-trapping-math".to_string(),
-                "-ffp-contract=fast".to_string(),
-                "-freciprocal-math".to_string(),
-                "-fwrapv".to_string(),
-            ];
+            let opt_level = if release { "-O3" } else { "-O0" };
+            let opt_label = if release { "Release -O3" } else { "Debug -O0" };
+
+            let mut zig_args = if release {
+                vec![
+                    "cc".to_string(),
+                    #[cfg(windows)]
+                    "-target".to_string(),
+                    #[cfg(windows)]
+                    "x86_64-windows-gnu".to_string(),
+                    c_file_path.to_str().unwrap().to_string(),
+                    "-O3".to_string(),
+                    "-flto".to_string(),
+                    "-funroll-loops".to_string(),
+                    "-fomit-frame-pointer".to_string(),
+                    "-ffast-math".to_string(),
+                    "-fno-math-errno".to_string(),
+                    "-ffp-contract=fast".to_string(),
+                    "-freciprocal-math".to_string(),
+                    "-fwrapv".to_string(),
+                ]
+            } else {
+                vec![
+                    "cc".to_string(),
+                    #[cfg(windows)]
+                    "-target".to_string(),
+                    #[cfg(windows)]
+                    "x86_64-windows-gnu".to_string(),
+                    c_file_path.to_str().unwrap().to_string(),
+                    "-O0".to_string(),
+                    "-g".to_string(),
+                ]
+            };
 
             if is_library_mode {
                 zig_args.push("-shared".to_string());
                 zig_args.push("-fPIC".to_string());
             }
 
-            if strip {
+            if strip && release {
                 zig_args.push("-s".to_string());
                 zig_args.push("-ffunction-sections".to_string());
                 zig_args.push("-fdata-sections".to_string());
@@ -274,7 +469,9 @@ pub fn handle_build(args: BuildArgs) {
                 }
                 #[cfg(not(windows))]
                 {
-                    zig_args.push("-march=native".to_string());
+                    if release {
+                        zig_args.push("-march=native".to_string());
+                    }
                 }
             }
 
@@ -285,23 +482,32 @@ pub fn handle_build(args: BuildArgs) {
 
             // 1. Try native GCC with whole-program LTO for peak bare-metal performance
             if target.is_none() {
-                let mut gcc_args = vec![
-                    "-O3".to_string(),
-                    "-march=native".to_string(),
-                    "-flto".to_string(),
-                    "-funroll-loops".to_string(),
-                    "-fomit-frame-pointer".to_string(),
-                    "-finline-functions".to_string(),
-                    "-Wno-incompatible-pointer-types".to_string(),
-                    "-fno-math-errno".to_string(),
-                    "-ffast-math".to_string(),
-                    c_file_path.to_str().unwrap().to_string(),
-                ];
+                let mut gcc_args = if release {
+                    vec![
+                        "-O3".to_string(),
+                        "-march=native".to_string(),
+                        "-flto".to_string(),
+                        "-funroll-loops".to_string(),
+                        "-fomit-frame-pointer".to_string(),
+                        "-finline-functions".to_string(),
+                        "-Wno-incompatible-pointer-types".to_string(),
+                        "-fno-math-errno".to_string(),
+                        "-ffast-math".to_string(),
+                        c_file_path.to_str().unwrap().to_string(),
+                    ]
+                } else {
+                    vec![
+                        "-O0".to_string(),
+                        "-g".to_string(),
+                        "-Wno-incompatible-pointer-types".to_string(),
+                        c_file_path.to_str().unwrap().to_string(),
+                    ]
+                };
                 if is_library_mode {
                     gcc_args.push("-shared".to_string());
                     gcc_args.push("-fPIC".to_string());
                 }
-                if strip {
+                if strip && release {
                     gcc_args.push("-s".to_string());
                 }
                 #[cfg(windows)]
@@ -317,7 +523,7 @@ pub fn handle_build(args: BuildArgs) {
                 if let Ok(status) = Command::new("gcc").args(&gcc_refs).status() {
                     if status.success() {
                         compiled = true;
-                        let target_name = "Host Native (GCC LTO)";
+                        let target_name = format!("Host Native (GCC {})", opt_label);
                         if is_library_mode {
                             println!(
                                 "{} Shared Library / DLL compiled for [{}] at {:?}",
@@ -327,7 +533,7 @@ pub fn handle_build(args: BuildArgs) {
                             );
                         } else {
                             println!(
-                                "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
+                                "{} Native Binary compiled for [{}] at {:?}",
                                 "👑".green().bold(),
                                 target_name.cyan().bold(),
                                 bin_path
@@ -343,7 +549,7 @@ pub fn handle_build(args: BuildArgs) {
                 if let Ok(status) = Command::new("zig").args(&zig_args_refs).status() {
                     if status.success() {
                         compiled = true;
-                        let target_name = target.as_deref().unwrap_or("Host Native");
+                        let target_name = format!("{} ({})", target.as_deref().unwrap_or("Host Native"), opt_label);
                         if is_library_mode {
                             println!(
                                 "{} Shared Library / DLL compiled for [{}] at {:?}",
@@ -353,7 +559,7 @@ pub fn handle_build(args: BuildArgs) {
                             );
                         } else {
                             println!(
-                                "{} Native Binary compiled for [{}] (Ultra-Optimized) at {:?}",
+                                "{} Native Binary compiled for [{}] at {:?}",
                                 "👑".green().bold(),
                                 target_name.cyan().bold(),
                                 bin_path
@@ -365,16 +571,25 @@ pub fn handle_build(args: BuildArgs) {
 
             // Fallback to Clang if Zig CC was not found
             if !compiled {
-                let mut clang_args = vec![
-                    c_file_path.to_str().unwrap().to_string(),
-                    "-O3".to_string(),
-                    "-funroll-loops".to_string(),
-                    "-fomit-frame-pointer".to_string(),
-                ];
+                let mut clang_args = if release {
+                    vec![
+                        c_file_path.to_str().unwrap().to_string(),
+                        "-O3".to_string(),
+                        "-funroll-loops".to_string(),
+                        "-fomit-frame-pointer".to_string(),
+                        "-ffast-math".to_string(),
+                    ]
+                } else {
+                    vec![
+                        c_file_path.to_str().unwrap().to_string(),
+                        "-O0".to_string(),
+                        "-g".to_string(),
+                    ]
+                };
                 if is_library_mode {
                     clang_args.push("-shared".to_string());
                 }
-                if strip {
+                if strip && release {
                     clang_args.push("-s".to_string());
                     clang_args.push("-flto".to_string());
                 }
@@ -388,28 +603,37 @@ pub fn handle_build(args: BuildArgs) {
                 if let Ok(status) = Command::new("clang").args(&clang_refs).status() {
                     if status.success() {
                         compiled = true;
-                        println!("{} Compiled via Clang at {:?}", "✔".green().bold(), bin_path);
+                        println!("{} Compiled via Clang ({}) at {:?}", "✔".green().bold(), opt_label, bin_path);
                     }
                 }
             }
 
             // Fallback to GCC if Clang / Zig CC failed
             if !compiled {
-                let mut gcc_args = vec![
-                    "-O3".to_string(),
-                    "-march=native".to_string(),
-                    "-flto".to_string(),
-                    "-funroll-loops".to_string(),
-                    "-fomit-frame-pointer".to_string(),
-                    "-finline-functions".to_string(),
-                    "-fno-math-errno".to_string(),
-                    "-Wno-incompatible-pointer-types".to_string(),
-                    c_file_path.to_str().unwrap().to_string(),
-                ];
+                let mut gcc_args = if release {
+                    vec![
+                        "-O3".to_string(),
+                        "-march=native".to_string(),
+                        "-flto".to_string(),
+                        "-funroll-loops".to_string(),
+                        "-fomit-frame-pointer".to_string(),
+                        "-finline-functions".to_string(),
+                        "-fno-math-errno".to_string(),
+                        "-Wno-incompatible-pointer-types".to_string(),
+                        c_file_path.to_str().unwrap().to_string(),
+                    ]
+                } else {
+                    vec![
+                        "-O0".to_string(),
+                        "-g".to_string(),
+                        "-Wno-incompatible-pointer-types".to_string(),
+                        c_file_path.to_str().unwrap().to_string(),
+                    ]
+                };
                 if is_library_mode {
                     gcc_args.push("-shared".to_string());
                 }
-                if strip {
+                if strip && release {
                     gcc_args.push("-s".to_string());
                 }
                 #[cfg(windows)]
@@ -425,16 +649,17 @@ pub fn handle_build(args: BuildArgs) {
                 if let Ok(status) = Command::new("gcc").args(&gcc_refs).status() {
                     if status.success() {
                         compiled = true;
-                        println!("{} Native Binary compiled via GCC (Ultra-Optimized) at {:?}", "👑".green().bold(), bin_path);
+                        println!("{} Native Binary compiled via GCC ({}) at {:?}", "👑".green().bold(), opt_label, bin_path);
                     }
                 }
             }
 
             if !compiled {
                 println!(
-                    "{} C code is ready at {:?}. To compile natively, run: `gcc -O3 {:?} -o {:?}`",
+                    "{} C code is ready at {:?}. To compile natively, run: `gcc {} {:?} -o {:?}`",
                     "ℹ".cyan().bold(),
                     c_file_path,
+                    opt_level,
                     c_file_path,
                     bin_path
                 );
