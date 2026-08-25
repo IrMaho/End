@@ -104,10 +104,7 @@ impl Parser {
         }
 
         if self.match_token(&TokenKind::Dot) {
-            let vname = match self.advance().kind {
-                TokenKind::Ident(n) => n,
-                other => return Err(format!("Expected variant name after '.', found {:?}", other)),
-            };
+            let vname = self.parse_identifier_or_keyword()?;
 
             let mut payload = None;
             if self.match_token(&TokenKind::LParen) {
@@ -323,10 +320,7 @@ impl Parser {
                     if id == "promote" && self.match_token(&TokenKind::LParen) {
                         let expr = self.parse_expression()?;
                         self.expect(TokenKind::Comma)?;
-                        let target_region = match self.advance().kind {
-                            TokenKind::Ident(r) => r,
-                            other => return Err(format!("Expected target region name in promote, found {:?}", other)),
-                        };
+                        let target_region = self.parse_identifier_or_keyword()?;
                         self.expect(TokenKind::RParen)?;
                         return Ok(Expression::Promote {
                             expr: Box::new(expr),
@@ -378,10 +372,7 @@ impl Parser {
                     };
 
                     if is_enum_access {
-                        let vname = match self.advance().kind {
-                            TokenKind::Ident(n) => n,
-                            other => return Err(format!("Expected enum variant name, found {:?}", other)),
-                        };
+                        let vname = self.parse_identifier_or_keyword()?;
                         let mut payload = None;
                         if self.match_token(&TokenKind::LParen) {
                             payload = Some(Box::new(self.parse_expression()?));

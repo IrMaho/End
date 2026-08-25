@@ -35,10 +35,7 @@ impl Parser {
             }
             TokenKind::ValBang => {
                 self.advance();
-                let name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected variable name after val!, found {:?}", other)),
-                };
+                let name = self.parse_identifier_or_keyword()?;
                 let mut var_type = None;
                 if self.match_token(&TokenKind::Colon) {
                     var_type = Some(self.parse_type()?);

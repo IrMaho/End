@@ -1,6 +1,6 @@
 // @test: negative
 // @expect-error: E005
 
-fn bad_syntax() void {
-    val x = 
+fn foo() void {
+    val x = 10 + ;
 }

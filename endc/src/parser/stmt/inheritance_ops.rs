@@ -175,7 +175,18 @@ impl Parser {
             kind = InheritKind::Lifecycle;
         }
 
-        let mut parent = self.parse_identifier_or_keyword().unwrap_or_else(|_| target.clone());
+        let parent = if !self.check(&TokenKind::SemiColon)
+            && !self.check(&TokenKind::As)
+            && !self.check(&TokenKind::Only)
+            && !self.check(&TokenKind::Except)
+            && !self.check(&TokenKind::Without)
+            && !self.check(&TokenKind::Over)
+            && !self.check(&TokenKind::EOF)
+        {
+            self.parse_identifier_or_keyword()?
+        } else {
+            target.clone()
+        };
         if self.match_token(&TokenKind::Dot) {
             let member = self.parse_identifier_or_keyword()?;
             if member == "surface" {

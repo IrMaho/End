@@ -6,16 +6,10 @@ impl Parser {
     pub(crate) fn parse_module_def(&mut self, is_pub: bool, _directives: Vec<Directive>) -> Result<ModuleDef, String> {
         let span = self.current_span();
         self.expect(TokenKind::Mod)?;
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
-            other => return Err(format!("Expected module name, found {:?}", other)),
-        };
+        let name = self.parse_identifier_or_keyword()?;
         let mut parent = None;
         if self.match_token(&TokenKind::Derives) {
-            parent = match self.advance().kind {
-                TokenKind::Ident(p) => Some(p),
-                other => return Err(format!("Expected parent module name after derives, found {:?}", other)),
-            };
+            parent = Some(self.parse_identifier_or_keyword()?);
         }
         self.expect(TokenKind::LBrace)?;
         let mut structs = Vec::new();

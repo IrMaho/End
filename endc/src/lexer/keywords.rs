@@ -14,8 +14,6 @@ pub fn match_macro_call(ident: &str) -> TokenKind {
                     "fields_of" => TokenKind::FieldsOf,
                     "sql_expr" => TokenKind::SqlExpr,
                     _ => TokenKind::Ident(format!("{}!", ident)),
-
-        _ => TokenKind::Ident(format!("{}!", ident)),
     }
 }
 
@@ -296,7 +294,6 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "test" => TokenKind::Test,
                     "begin" => TokenKind::Begin,
                     "commit" => TokenKind::Commit,
-                    "not" => TokenKind::Not,
                     "access" => TokenKind::Access,
                     "grant" => TokenKind::Grant,
                     "adopt" => TokenKind::Adopt,
@@ -370,7 +367,6 @@ pub fn match_keyword_or_ident(ident: &str) -> TokenKind {
                     "over" => TokenKind::Over,
                     "without" => TokenKind::Without,
                     "inspect" => TokenKind::Inspect,
-                    "lock" => TokenKind::Lock,
                     "transform" => TokenKind::Transform,
                     "map" => TokenKind::Map,
                     "behavior" => TokenKind::Behavior,

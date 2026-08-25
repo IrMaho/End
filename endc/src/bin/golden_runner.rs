@@ -1047,6 +1047,11 @@ fn execute_negative_pipeline(test: &TestCase, _sandbox_dir: &Path, start_time: I
                 collected_errors.push(format!("Parser error: {}", e));
                 collected_codes.insert("E0100".to_string());
                 collected_codes.insert("E005".to_string());
+                for diag in parser.diagnostics.diagnostics() {
+                    let code_str = diag.code.as_code_str().to_uppercase();
+                    collected_codes.insert(code_str);
+                    collected_codes.insert(diag.code.to_string().to_uppercase());
+                }
             }
         }
     }

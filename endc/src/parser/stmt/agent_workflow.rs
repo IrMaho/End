@@ -359,6 +359,10 @@ impl Parser {
                             allow.push(val);
                         } else if key == "remove" {
                             reject.push(val);
+                        } else if key == "preserve" {
+                            preserve.push(val);
+                        } else if key == "optimize" {
+                            optimize.push(val);
                         }
                     }
                     self.expect(TokenKind::RBrace)?;

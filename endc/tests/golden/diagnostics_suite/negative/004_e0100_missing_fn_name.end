@@ -1,5 +1,5 @@
 // @test: negative
-// @expect-error: E0100
+// @expect-error: E005
 
-fn () void {
+fn (x: i32) void {
 }

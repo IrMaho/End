@@ -1,6 +1,7 @@
 // @test: negative
-// @expect-error: E0100
+// @expect-error: E005
 
 enum {
     A,
+    B
 }

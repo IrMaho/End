@@ -216,7 +216,10 @@ impl Parser {
                 } else if self.match_token(&TokenKind::Equal) {
                     let _init = self.parse_expression()?;
                 } else if !is_val && !is_mut {
-                    return Err(format!("Expected ':' or '=' after field name '{}' in class at line {}", f_name, member_span.line));
+                    let actual = format!("{:?}", self.peek_kind());
+                    let msg = format!("Expected ':' or '=' after field name '{}' in class at line {}", f_name, member_span.line);
+                    let formatted = self.emit_e005(&member_span, "':' or '='", &actual, &msg);
+                    return Err(formatted);
                 }
                 self.match_token(&TokenKind::SemiColon);
                 self.match_token(&TokenKind::Comma);

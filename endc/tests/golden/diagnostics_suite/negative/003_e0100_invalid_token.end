@@ -1,6 +1,6 @@
 // @test: negative
-// @expect-error: E0100
+// @expect-error: E005
 
-fn bad_token() void {
-    @$$$ invalid
+fn bad_tok() void {
+    val x = @@@;
 }

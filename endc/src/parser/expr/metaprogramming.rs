@@ -47,10 +47,7 @@ impl Parser {
             TokenKind::DocOf => {
                 self.advance();
                 self.expect(TokenKind::LParen)?;
-                let target = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected identifier in docof!, found {:?}", other)),
-                };
+                let target = self.parse_identifier_or_keyword()?;
                 self.expect(TokenKind::RParen)?;
                 Ok(Some(Expression::DocOf { target, span }))
             }
@@ -79,19 +76,13 @@ impl Parser {
             TokenKind::Translate => {
                 self.advance();
                 self.expect(TokenKind::LParen)?;
-                let key = match self.advance().kind {
-                    TokenKind::StringLit(s) => s,
-                    other => return Err(format!("Expected string key in t!, found {:?}", other)),
-                };
+                let key = self.parse_identifier_or_string()?;
                 let mut args = Vec::new();
                 while self.match_token(&TokenKind::Comma) {
                     if self.check(&TokenKind::RParen) {
                         break;
                     }
-                    let arg_name = match self.advance().kind {
-                        TokenKind::Ident(n) => n,
-                        other => return Err(format!("Expected argument name in t!, found {:?}", other)),
-                    };
+                    let arg_name = self.parse_identifier_or_keyword()?;
                     self.expect(TokenKind::Equal)?;
                     let arg_val = self.parse_expression()?;
                     args.push((arg_name, arg_val));
@@ -102,10 +93,7 @@ impl Parser {
             TokenKind::FieldsOf => {
                 self.advance();
                 self.expect(TokenKind::LParen)?;
-                let target = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected struct identifier in fields_of!, found {:?}", other)),
-                };
+                let target = self.parse_identifier_or_keyword()?;
                 self.expect(TokenKind::RParen)?;
                 Ok(Some(Expression::FieldsOf { target, span }))
             }

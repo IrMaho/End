@@ -1,0 +1,9 @@
+// @test: negative
+// @expect-error: E005
+
+fn foo() void {
+    val a = ;
+    val b = 2;
+    val c = +;
+    val d = 4;
+}

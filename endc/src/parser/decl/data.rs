@@ -7,10 +7,7 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Enum)?;
 
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
-            other => return Err(format!("Expected enum name, found {:?} at line {}", other, span.line)),
-        };
+        let name = self.parse_identifier_or_keyword()?;
         self.enum_names.insert(name.clone());
 
         let mut generic_params = Vec::new();
@@ -79,10 +76,7 @@ impl Parser {
         let span = self.current_span();
         self.expect(TokenKind::Struct)?;
 
-        let name = match self.advance().kind {
-            TokenKind::Ident(n) => n,
-            other => return Err(format!("Expected struct name, found {:?} at line {}", other, span.line)),
-        };
+        let name = self.parse_identifier_or_keyword()?;
 
         let mut generic_params = Vec::new();
         if self.match_token(&TokenKind::Less) {

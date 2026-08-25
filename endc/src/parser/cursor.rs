@@ -155,6 +155,13 @@ impl Parser {
     }
 
     pub(crate) fn synchronize(&mut self) {
+        if !self.diagnostics.has_errors() {
+            let span = self.current_span();
+            let actual = format!("{:?}", self.peek_kind());
+            let raw = format!("Syntax error near {:?} at line {}, col {}", self.peek_kind(), span.line, span.col);
+            self.emit_e005(&span, "valid statement or declaration", &actual, &raw);
+        }
+
         if self.cursor < self.tokens.len() {
             self.advance();
         }

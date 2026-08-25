@@ -1,6 +1,6 @@
 // @test: negative
-// @expect-error: E0100
+// @expect-error: E005
 
-st {
-    x: i64
+struct {
+    val x: i32;
 }
