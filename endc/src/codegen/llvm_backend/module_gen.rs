@@ -85,9 +85,17 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
         let strcmp_type = i32_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
         self.module.add_function("strcmp", strcmp_type, None);
 
-        // declare ptr @end_str_concat(ptr, ptr)
-        let str_concat_type = ptr_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
-        self.module.add_function("end_str_concat", str_concat_type, None);
+        // declare i64 @strlen(ptr)
+        let strlen_type = i64_ty.fn_type(&[ptr_ty.into()], false);
+        self.module.add_function("strlen", strlen_type, None);
+
+        // declare ptr @strcpy(ptr, ptr)
+        let strcpy_type = ptr_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
+        self.module.add_function("strcpy", strcpy_type, None);
+
+        // declare ptr @strcat(ptr, ptr)
+        let strcat_type = ptr_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
+        self.module.add_function("strcat", strcat_type, None);
 
         // Runtime helpers
         let arena_create_type = ptr_ty.fn_type(&[i64_ty.into()], false);
@@ -97,8 +105,56 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
         self.module.add_function("end_arena_destroy", arena_destroy_type, None);
     }
 
+    pub fn define_runtime_helpers(&mut self) -> Result<(), BackendError> {
+        let ptr_ty = self.context.ptr_type(AddressSpace::default());
+        let i64_ty = self.context.i64_type();
+
+        let str_concat_type = ptr_ty.fn_type(&[ptr_ty.into(), ptr_ty.into()], false);
+        let concat_fn = self.module.add_function("end_str_concat", str_concat_type, None);
+
+        let strlen_fn = self.module.get_function("strlen").unwrap();
+        let malloc_fn = self.module.get_function("malloc").unwrap();
+        let strcpy_fn = self.module.get_function("strcpy").unwrap();
+        let strcat_fn = self.module.get_function("strcat").unwrap();
+
+        let entry = self.context.append_basic_block(concat_fn, "entry");
+        self.builder.position_at_end(entry);
+
+        let arg_a = concat_fn.get_nth_param(0).unwrap().into_pointer_value();
+        let arg_b = concat_fn.get_nth_param(1).unwrap().into_pointer_value();
+
+        let call_len_a = self.builder.build_call(strlen_fn, &[arg_a.into()], "len_a")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+        let len_a = self.extract_call_val(call_len_a).unwrap().into_int_value();
+
+        let call_len_b = self.builder.build_call(strlen_fn, &[arg_b.into()], "len_b")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+        let len_b = self.extract_call_val(call_len_b).unwrap().into_int_value();
+
+        let total_len = self.builder.build_int_add(len_a, len_b, "total_len")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+        let one = i64_ty.const_int(1, false);
+        let total_size = self.builder.build_int_add(total_len, one, "total_size")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+
+        let call_malloc = self.builder.build_call(malloc_fn, &[total_size.into()], "buf")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+        let buf = self.extract_call_val(call_malloc).unwrap().into_pointer_value();
+
+        self.builder.build_call(strcpy_fn, &[buf.into(), arg_a.into()], "call_strcpy")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+        self.builder.build_call(strcat_fn, &[buf.into(), arg_b.into()], "call_strcat")
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+
+        self.builder.build_return(Some(&buf))
+            .map_err(|e| BackendError::CodegenFailed(e.to_string()))?;
+
+        Ok(())
+    }
+
     pub fn lower_module(&mut self, ast_module: &crate::ast::Module) -> Result<(), BackendError> {
         self.declare_builtins();
+        self.define_runtime_helpers()?;
 
         // 1. Declare and define all struct types
         for st in &ast_module.structs {

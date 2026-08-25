@@ -18,11 +18,24 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
 
         match stmt {
             Statement::VarDecl { name, var_type, initializer, .. } => {
+                let is_struct_init = matches!(initializer, Some(Expression::StructInit { .. }));
                 let init_val = if let Some(init) = initializer {
                     Some(self.lower_expression(init)?)
                 } else {
                     None
                 };
+
+                if is_struct_init {
+                    if let Some(val) = init_val {
+                        let st_ty = if let Some(t) = var_type {
+                            self.map_basic_type(t)
+                        } else {
+                            val.get_type()
+                        };
+                        self.variables.insert(name.clone(), (val.into_pointer_value(), st_ty));
+                        return Ok(());
+                    }
+                }
 
                 let ty = if let Some(t) = var_type {
                     self.map_basic_type(t)
@@ -37,7 +50,37 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                 })?;
 
                 if let Some(val) = init_val {
-                    self.builder.build_store(alloca, val).map_err(|e| {
+                    let coerced_val = if val.is_int_value() && ty.is_int_type() {
+                        let iv = val.into_int_value();
+                        let target_ity = ty.into_int_type();
+                        if iv.get_type().get_bit_width() != target_ity.get_bit_width() {
+                            self.builder.build_int_cast_sign_flag(iv, target_ity, true, "init_cast").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed init cast: {}", e))
+                            })?.into()
+                        } else {
+                            val
+                        }
+                    } else if val.is_int_value() && ty.is_float_type() {
+                        let iv = val.into_int_value();
+                        let target_fty = ty.into_float_type();
+                        self.builder.build_signed_int_to_float(iv, target_fty, "init_flt_cast").map_err(|e| {
+                            BackendError::CodegenFailed(format!("Failed init flt cast: {}", e))
+                        })?.into()
+                    } else if val.is_float_value() && ty.is_float_type() {
+                        let fv = val.into_float_value();
+                        let target_fty = ty.into_float_type();
+                        if fv.get_type() != target_fty {
+                            self.builder.build_float_cast(fv, target_fty, "init_flt_cast").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed init flt cast: {}", e))
+                            })?.into()
+                        } else {
+                            val
+                        }
+                    } else {
+                        val
+                    };
+
+                    self.builder.build_store(alloca, coerced_val).map_err(|e| {
                         BackendError::CodegenFailed(format!("Failed to store init value to {}: {}", name, e))
                     })?;
                 }
@@ -48,8 +91,38 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                 let val = self.lower_expression(value)?;
                 match target {
                     Expression::Ident(name, _) => {
-                        if let Some((ptr, _)) = self.variables.get(name).cloned() {
-                            self.builder.build_store(ptr, val).map_err(|e| {
+                        if let Some((ptr, ty)) = self.variables.get(name).cloned() {
+                            let coerced_val = if val.is_int_value() && ty.is_int_type() {
+                                let iv = val.into_int_value();
+                                let target_ity = ty.into_int_type();
+                                if iv.get_type().get_bit_width() != target_ity.get_bit_width() {
+                                    self.builder.build_int_cast_sign_flag(iv, target_ity, true, "assign_cast").map_err(|e| {
+                                        BackendError::CodegenFailed(format!("Failed assign cast: {}", e))
+                                    })?.into()
+                                } else {
+                                    val
+                                }
+                            } else if val.is_int_value() && ty.is_float_type() {
+                                let iv = val.into_int_value();
+                                let target_fty = ty.into_float_type();
+                                self.builder.build_signed_int_to_float(iv, target_fty, "assign_flt_cast").map_err(|e| {
+                                    BackendError::CodegenFailed(format!("Failed assign flt cast: {}", e))
+                                })?.into()
+                            } else if val.is_float_value() && ty.is_float_type() {
+                                let fv = val.into_float_value();
+                                let target_fty = ty.into_float_type();
+                                if fv.get_type() != target_fty {
+                                    self.builder.build_float_cast(fv, target_fty, "assign_flt_cast").map_err(|e| {
+                                        BackendError::CodegenFailed(format!("Failed assign flt cast: {}", e))
+                                    })?.into()
+                                } else {
+                                    val
+                                }
+                            } else {
+                                val
+                            };
+
+                            self.builder.build_store(ptr, coerced_val).map_err(|e| {
                                 BackendError::CodegenFailed(format!("Failed to store to {}: {}", name, e))
                             })?;
                         } else {
@@ -60,9 +133,6 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                         }
                     }
                     Expression::FieldAccess { object, field, .. } => {
-                        let obj_val = self.lower_expression(object)?;
-                        let obj_ptr = obj_val.into_pointer_value();
-
                         let struct_name = if let Expression::Ident(n, _) = object.as_ref() {
                             n.clone()
                         } else {
@@ -71,6 +141,18 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
 
                         let (field_idx, _) = self.find_field_info(&struct_name, field)?;
                         let struct_ty = self.find_struct_type(&struct_name)?;
+
+                        let obj_ptr = if let Expression::Ident(n, _) = object.as_ref() {
+                            if let Some((ptr, _)) = self.variables.get(n).cloned() {
+                                ptr
+                            } else {
+                                let obj_val = self.lower_expression(object)?;
+                                obj_val.into_pointer_value()
+                            }
+                        } else {
+                            let obj_val = self.lower_expression(object)?;
+                            obj_val.into_pointer_value()
+                        };
 
                         let field_gep = self.builder.build_struct_gep(struct_ty, obj_ptr, field_idx as u32, "field_gep").map_err(|e| {
                             BackendError::CodegenFailed(format!("Failed GEP on field {}: {}", field, e))

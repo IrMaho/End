@@ -183,12 +183,34 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                         let arg_val = self.lower_expression(first_arg)?;
                         let is_newline = callee_name == "println";
 
-                        let fmt_str = if arg_val.is_pointer_value() {
-                            if is_newline { "%s\n" } else { "%s" }
+                        let (fmt_str, val_to_print) = if arg_val.is_pointer_value() {
+                            (if is_newline { "%s\n" } else { "%s" }, arg_val)
                         } else if arg_val.is_float_value() {
-                            if is_newline { "%f\n" } else { "%f" }
+                            (if is_newline { "%f\n" } else { "%f" }, arg_val)
+                        } else if arg_val.is_int_value() && arg_val.into_int_value().get_type().get_bit_width() == 1 {
+                            let iv = arg_val.into_int_value();
+                            let str_true = self.builder.build_global_string_ptr("true", "str_true").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed str_true: {}", e))
+                            })?.as_basic_value_enum();
+                            let str_false = self.builder.build_global_string_ptr("false", "str_false").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed str_false: {}", e))
+                            })?.as_basic_value_enum();
+                            let sel = self.builder.build_select(iv, str_true, str_false, "bool_str").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Failed select bool: {}", e))
+                            })?;
+                            (if is_newline { "%s\n" } else { "%s" }, sel)
+                        } else if arg_val.is_int_value() {
+                            let iv = arg_val.into_int_value();
+                            let i64_val = if iv.get_type().get_bit_width() != 64 {
+                                self.builder.build_int_cast_sign_flag(iv, self.context.i64_type(), true, "cast_i64").map_err(|e| {
+                                    BackendError::CodegenFailed(format!("Failed cast int: {}", e))
+                                })?.into()
+                            } else {
+                                iv.into()
+                            };
+                            (if is_newline { "%lld\n" } else { "%lld" }, i64_val)
                         } else {
-                            if is_newline { "%lld\n" } else { "%lld" }
+                            (if is_newline { "%lld\n" } else { "%lld" }, self.context.i64_type().const_int(0, false).into())
                         };
 
                         let fmt_ptr = self.builder.build_global_string_ptr(fmt_str, "printf_fmt").map_err(|e| {
@@ -197,7 +219,7 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
 
                         let call = self.builder.build_call(
                             printf_fn,
-                            &[fmt_ptr.as_basic_value_enum().into(), arg_val.into()],
+                            &[fmt_ptr.as_basic_value_enum().into(), val_to_print.into()],
                             "printf_call",
                         ).map_err(|e| BackendError::CodegenFailed(format!("Failed printf call: {}", e)))?;
 
@@ -222,9 +244,36 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                     BackendError::CodegenFailed(format!("Function not found: {}", callee_name))
                 })?;
 
+                let param_types = func_val.get_type().get_param_types();
                 let mut lowered_args: Vec<BasicMetadataValueEnum<'ctx>> = Vec::new();
-                for a in args {
-                    let v = self.lower_expression(a)?;
+                for (i, a) in args.iter().enumerate() {
+                    let mut v = self.lower_expression(a)?;
+                    if let Some(target_meta_ty) = param_types.get(i) {
+                        let target_ty = *target_meta_ty;
+                        if v.is_int_value() && target_ty.is_int_type() {
+                            let arg_iv = v.into_int_value();
+                            let tgt_ity = target_ty.into_int_type();
+                            if arg_iv.get_type().get_bit_width() != tgt_ity.get_bit_width() {
+                                v = self.builder.build_int_cast_sign_flag(arg_iv, tgt_ity, true, "arg_cast").map_err(|e| {
+                                    BackendError::CodegenFailed(format!("Arg cast failed: {}", e))
+                                })?.into();
+                            }
+                        } else if v.is_int_value() && target_ty.is_float_type() {
+                            let arg_iv = v.into_int_value();
+                            let tgt_fty = target_ty.into_float_type();
+                            v = self.builder.build_signed_int_to_float(arg_iv, tgt_fty, "arg_flt_cast").map_err(|e| {
+                                BackendError::CodegenFailed(format!("Arg float cast failed: {}", e))
+                            })?.into();
+                        } else if v.is_float_value() && target_ty.is_float_type() {
+                            let arg_fv = v.into_float_value();
+                            let tgt_fty = target_ty.into_float_type();
+                            if arg_fv.get_type() != tgt_fty {
+                                v = self.builder.build_float_cast(arg_fv, tgt_fty, "arg_flt_cast").map_err(|e| {
+                                    BackendError::CodegenFailed(format!("Arg float cast failed: {}", e))
+                                })?.into();
+                            }
+                        }
+                    }
                     lowered_args.push(v.into());
                 }
 
@@ -265,9 +314,6 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                 Ok(alloca.into())
             }
             Expression::FieldAccess { object, field, .. } => {
-                let obj_val = self.lower_expression(object)?;
-                let obj_ptr = obj_val.into_pointer_value();
-
                 let struct_name = if let Expression::Ident(n, _) = object.as_ref() {
                     n.clone()
                 } else {
@@ -278,20 +324,54 @@ impl<'a, 'ctx> LlvmLoweringContext<'a, 'ctx> {
                 let struct_ty = self.find_struct_type(&struct_name)?;
                 let llvm_field_type = self.map_basic_type(&field_type);
 
-                let field_gep = self.builder.build_struct_gep(
-                    struct_ty,
-                    obj_ptr,
-                    field_idx as u32,
-                    &format!("gep_{}", field),
-                ).map_err(|e| BackendError::CodegenFailed(format!("Failed field access GEP: {}", e)))?;
+                // If object is an ident, check if variable alloca pointer is available
+                if let Expression::Ident(var_name, _) = object.as_ref() {
+                    if let Some((ptr, _)) = self.variables.get(var_name).cloned() {
+                        let field_gep = self.builder.build_struct_gep(
+                            struct_ty,
+                            ptr,
+                            field_idx as u32,
+                            &format!("gep_{}", field),
+                        ).map_err(|e| BackendError::CodegenFailed(format!("Failed field access GEP: {}", e)))?;
 
-                let loaded = self.builder.build_load(
-                    llvm_field_type,
-                    field_gep,
-                    &format!("val_{}", field),
-                ).map_err(|e| BackendError::CodegenFailed(format!("Failed field load: {}", e)))?;
+                        let loaded = self.builder.build_load(
+                            llvm_field_type,
+                            field_gep,
+                            &format!("val_{}", field),
+                        ).map_err(|e| BackendError::CodegenFailed(format!("Failed field load: {}", e)))?;
 
-                Ok(loaded)
+                        return Ok(loaded);
+                    }
+                }
+
+                let obj_val = self.lower_expression(object)?;
+                if obj_val.is_pointer_value() {
+                    let obj_ptr = obj_val.into_pointer_value();
+                    let field_gep = self.builder.build_struct_gep(
+                        struct_ty,
+                        obj_ptr,
+                        field_idx as u32,
+                        &format!("gep_{}", field),
+                    ).map_err(|e| BackendError::CodegenFailed(format!("Failed field access GEP: {}", e)))?;
+
+                    let loaded = self.builder.build_load(
+                        llvm_field_type,
+                        field_gep,
+                        &format!("val_{}", field),
+                    ).map_err(|e| BackendError::CodegenFailed(format!("Failed field load: {}", e)))?;
+
+                    Ok(loaded)
+                } else if obj_val.is_struct_value() {
+                    let st_val = obj_val.into_struct_value();
+                    let extracted = self.builder.build_extract_value(
+                        st_val,
+                        field_idx as u32,
+                        &format!("val_{}", field),
+                    ).map_err(|e| BackendError::CodegenFailed(format!("Failed field extract: {}", e)))?;
+                    Ok(extracted)
+                } else {
+                    Ok(obj_val)
+                }
             }
             Expression::Index { array, index, .. } => {
                 let arr_val = self.lower_expression(array)?;
