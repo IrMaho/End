@@ -1,0 +1,17 @@
+// Agent Demo Core Implementation
+// Task: task-demo-001
+// Implements deterministic user balance computation and token verification
+
+fn compute_balance(initial: i64, credits: i64, debits: i64) -> i64 {
+    return (initial + credits) - debits;
+}
+
+fn verify_token(token_val: i64) -> bool {
+    return token_val > 0;
+}
+
+fn main() -> i64 {
+    let bal = compute_balance(1000, 250, 50);
+    println("Balance calculated successfully");
+    return 0;
+}

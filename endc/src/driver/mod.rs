@@ -65,6 +65,7 @@ pub fn dispatch_command(command: Commands, global_release: bool) {
         Commands::Ui(args) => agent_ops::handle_ui(args),
         Commands::Agent(args) => agent_ops::handle_agent(args),
         Commands::Skill(args) => agent_ops::handle_skill(args),
+        Commands::Contract(args) => crate::agent::handle_contract_cli(args),
         Commands::Dna(args) => agent_ops::handle_dna(args),
         Commands::Context(args) => agent_ops::handle_context(args),
         Commands::Precheck(args) => agent_ops::handle_precheck(args),

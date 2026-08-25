@@ -8,6 +8,7 @@ pub mod ui;
 pub mod security;
 
 pub mod agent_api;
+pub mod agent;
 pub mod architecture;
 pub mod ast;
 pub mod bindgen;

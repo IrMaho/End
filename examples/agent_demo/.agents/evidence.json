@@ -1,0 +1,69 @@
+{
+  "contract_id": "task-demo-001",
+  "intent": "Implement deterministic balance computation and token verification",
+  "lifecycle_state": "VERIFIED",
+  "verified": true,
+  "tests_executed": [
+    {
+      "test_name": "tests/test_demo.end",
+      "path": "tests/test_demo.end",
+      "passed": true,
+      "duration_ms": 1,
+      "exit_code": 0,
+      "stdout": "Test 'tests/test_demo.end' passed in 1 ms",
+      "stderr": "",
+      "error_message": null
+    }
+  ],
+  "total_tests": 1,
+  "passed_tests": 1,
+  "failed_tests": 0,
+  "total_duration_ms": 1,
+  "artifact_hashes": {
+    "tests/test_demo.end": "1ded2758851596101b262188fefe5a1ab5c827939591c667276dcc933caadf4f",
+    "src/main.end": "5a340af96c1ea797a2bc979b3b0eb2dcb3d828b72919fa137f5128c491913e86"
+  },
+  "provenance": {
+    "agent": "antigravity-pair-programmer-v2",
+    "prompt_hash": "f7b1c3d5e9a2468013579bdf",
+    "model_version": "gemini-3.7-flash",
+    "timestamp": null
+  },
+  "security_boundary_checks": [
+    {
+      "boundary": "no_outbound_network",
+      "satisfied": true,
+      "detected_operations": [],
+      "violating_locations": [],
+      "diagnostic": "Security Boundary 'no_outbound_network' verified."
+    },
+    {
+      "boundary": "no_exec_subprocess",
+      "satisfied": true,
+      "detected_operations": [],
+      "violating_locations": [],
+      "diagnostic": "Security Boundary 'no_exec_subprocess' verified."
+    },
+    {
+      "boundary": "no_env_access",
+      "satisfied": true,
+      "detected_operations": [],
+      "violating_locations": [],
+      "diagnostic": "Security Boundary 'no_env_access' verified."
+    }
+  ],
+  "postcondition_checks": [
+    {
+      "description": "all required tests in test_demo.end pass",
+      "satisfied": true,
+      "details": "Postcondition 'all required tests in test_demo.end pass' satisfied by passing verification suite"
+    },
+    {
+      "description": "artifact hashes recorded and verified",
+      "satisfied": true,
+      "details": "Postcondition 'artifact hashes recorded and verified' satisfied by passing verification suite"
+    }
+  ],
+  "collection_timestamp": "1787681100.491Z",
+  "failure_reasons": []
+}

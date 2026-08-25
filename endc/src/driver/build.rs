@@ -69,6 +69,115 @@ pub fn handle_build(args: BuildArgs) {
             tree_shake,
             sanitize,
             release, } = args;
+
+    // Contract Build Gate: Check for .agents/contract.toml
+    if let Some(contract_file) = crate::agent::AgentContract::find_contract_file(&file)
+        .or_else(|| crate::agent::AgentContract::find_contract_file(Path::new(".")))
+    {
+        let project_root = contract_file
+            .parent()
+            .and_then(|p| {
+                if p.file_name().and_then(|s| s.to_str()) == Some(".agents") {
+                    p.parent()
+                } else {
+                    Some(p)
+                }
+            })
+            .unwrap_or_else(|| Path::new("."));
+
+        let mut contract = match crate::agent::AgentContract::from_file(&contract_file) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{} [BUILD PROHIBITED - INVALID CONTRACT] {}", "✖".red().bold(), e);
+                std::process::exit(1);
+            }
+        };
+
+        match contract.lifecycle {
+            crate::agent::LifecycleState::Draft => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' is in DRAFT state.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Run `endc contract verify` to verify the contract before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Submitted | crate::agent::LifecycleState::Verifying => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' is in {} state.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold(),
+                    contract.lifecycle.to_string().yellow().bold()
+                );
+                eprintln!("  Run `endc contract verify` to complete verification before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Rejected => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT REJECTED] Task '{}' contract verification failed.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Repair the code or tests and run `endc contract verify` before building.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Stale => {
+                eprintln!(
+                    "{} [BUILD PROHIBITED - CONTRACT STALE] Task '{}' contract is STALE.",
+                    "✖".red().bold(),
+                    contract.task_id.cyan().bold()
+                );
+                eprintln!("  Source files have changed. Run `endc contract verify` to re-verify.");
+                std::process::exit(1);
+            }
+            crate::agent::LifecycleState::Verified => {
+                // Check if any tracked artifact hash has changed on disk
+                let stale_check = crate::agent::check_stale_against_disk(project_root, &contract.artifact_hashes);
+                match stale_check {
+                    crate::agent::StaleCheckResult::Fresh => {
+                        println!(
+                            "{} [CONTRACT VERIFIED] Task '{}' verified - Proceeding with build",
+                            "✔".green().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                    }
+                    crate::agent::StaleCheckResult::Stale { modified_files, missing_files, details } => {
+                        let _ = contract.lifecycle.transition(crate::agent::LifecycleState::Stale);
+                        contract.lifecycle = crate::agent::LifecycleState::Stale;
+                        let _ = contract.save_to_file(&contract_file);
+
+                        eprintln!(
+                            "{} [BUILD PROHIBITED - CONTRACT STALE] Task '{}' contract has become STALE.",
+                            "✖".red().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                        for m in modified_files {
+                            eprintln!("  ⚠ Modified: {}", m.yellow());
+                        }
+                        for miss in missing_files {
+                            eprintln!("  ✖ Missing:  {}", miss.red());
+                        }
+                        for d in details {
+                            eprintln!("    └─ {}", d);
+                        }
+                        eprintln!("  Run `endc contract verify` to re-verify before building.");
+                        std::process::exit(1);
+                    }
+                    crate::agent::StaleCheckResult::Unrecorded => {
+                        eprintln!(
+                            "{} [BUILD PROHIBITED - CONTRACT UNVERIFIED] Task '{}' has no recorded artifact hashes.",
+                            "✖".red().bold(),
+                            contract.task_id.cyan().bold()
+                        );
+                        eprintln!("  Run `endc contract verify` before building.");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        }
+    }
+
             let is_library_mode = dll || lib;
             let (raw_module, _) = match load_and_analyze(&file) {
                 Ok(res) => res,
