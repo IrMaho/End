@@ -508,6 +508,10 @@ impl DiagnosticAccumulator {
         self.diagnostics.clear();
     }
 
+    pub fn truncate(&mut self, len: usize) {
+        self.diagnostics.truncate(len);
+    }
+
     pub fn emit_all(&self, source_map: Option<&std::collections::HashMap<String, String>>) {
         for diag in &self.diagnostics {
             let empty = String::new();

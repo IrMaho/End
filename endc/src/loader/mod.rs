@@ -154,8 +154,14 @@ pub fn load_module_recursive(
     let module = match parser.parse_module("main") {
         Ok(m) => m,
         Err(e) => {
-            let diag = Diagnostic::error("E0100", &e, &file_str, parser.current_span().line, parser.current_span().col);
-            eprintln!("{}", diag.render(&source));
+            if parser.diagnostics.has_errors() {
+                for diag in parser.diagnostics.diagnostics() {
+                    eprintln!("{}", diag.render(&source));
+                }
+            } else {
+                let diag = Diagnostic::error("E005", &e, &file_str, parser.current_span().line, parser.current_span().col);
+                eprintln!("{}", diag.render(&source));
+            }
             return Err(format!("Parsing failed for '{}'", file_str));
         }
     };

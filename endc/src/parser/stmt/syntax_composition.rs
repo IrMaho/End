@@ -64,11 +64,12 @@ impl Parser {
                 }
                 let mut body = None;
                 if self.check(&TokenKind::LBrace) {
-                    let checkpoint = self.cursor;
-                    if let Ok(blk) = self.parse_block() {
-                        body = Some(blk);
+                    let is_schema = if let Some(TokenKind::Ident(_)) = self.peek_ahead(1) {
+                        self.peek_ahead(2) == Some(&TokenKind::Colon) && self.peek_ahead(3) != Some(&TokenKind::Colon)
                     } else {
-                        self.cursor = checkpoint;
+                        false
+                    };
+                    if is_schema {
                         self.expect(TokenKind::LBrace)?;
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
                             let f_span = self.current_span();
@@ -80,6 +81,9 @@ impl Parser {
                             self.match_token(&TokenKind::SemiColon);
                         }
                         self.expect(TokenKind::RBrace)?;
+                    } else {
+                        let blk = self.parse_block()?;
+                        body = Some(blk);
                     }
                 } else {
                     self.match_token(&TokenKind::SemiColon);
@@ -201,10 +205,14 @@ impl Parser {
                         mod_def.is_partial = true;
                         self.expect(TokenKind::LBrace)?;
                         while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-                            if let Ok(stmt) = self.parse_statement() {
-                                mod_def.statements.push(stmt);
-                            } else {
-                                self.advance();
+                            match self.parse_statement() {
+                                Ok(stmt) => mod_def.statements.push(stmt),
+                                Err(_) => {
+                                    self.synchronize();
+                                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                        break;
+                                    }
+                                }
                             }
                         }
                         self.expect(TokenKind::RBrace)?;

@@ -14,7 +14,7 @@ impl Parser {
             let prev_line = self.previous().map(|t| t.span.line).unwrap_or(0);
             let current_line = self.peek().span.line;
             if current_line == prev_line {
-                let checkpoint = self.cursor.clone();
+                let checkpoint = self.checkpoint();
                 self.advance();
                 let span = self.current_span();
                 if let Ok(cond) = self.parse_pipe_expr() {
@@ -29,7 +29,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
             }
         }
         Ok(expr)

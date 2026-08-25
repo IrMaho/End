@@ -29,11 +29,26 @@ impl Parser {
                 continue;
             }
             if self.check(&TokenKind::Fn) || (if let TokenKind::Ident(s) = self.peek_kind() { s == "fn" } else { false }) {
-                let f = self.parse_function(false, vec![])?;
-                statements.push(Statement::LocalFunction(f));
+                match self.parse_function(false, vec![]) {
+                    Ok(f) => statements.push(Statement::LocalFunction(f)),
+                    Err(_) => {
+                        self.synchronize();
+                        if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                            break;
+                        }
+                    }
+                }
                 continue;
             }
-            statements.push(self.parse_statement()?);
+            match self.parse_statement() {
+                Ok(stmt) => statements.push(stmt),
+                Err(_) => {
+                    self.synchronize();
+                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                        break;
+                    }
+                }
+            }
         }
 
         self.expect(TokenKind::RBrace)?;

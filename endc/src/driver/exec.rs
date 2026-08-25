@@ -125,12 +125,34 @@ pub fn handle_check(args: CheckArgs) {
                 Ok(m) => m,
                 Err(e) => {
                     if json {
-                        println!("{}", serde_json::json!({
-                            "status": "parse_error",
-                            "message": e
-                        }));
+                        if parser.diagnostics.has_errors() {
+                            let errors: Vec<serde_json::Value> = parser.diagnostics.diagnostics()
+                                .iter()
+                                .map(|d| serde_json::json!({
+                                    "code": d.code.as_code_str(),
+                                    "message": d.message,
+                                    "location": d.location
+                                }))
+                                .collect();
+                            println!("{}", serde_json::json!({
+                                "status": "parse_error",
+                                "errors": errors
+                            }));
+                        } else {
+                            println!("{}", serde_json::json!({
+                                "status": "parse_error",
+                                "message": e
+                            }));
+                        }
                     } else {
-                        eprintln!("{} {}", "Parse Error:".red().bold(), e);
+                        if parser.diagnostics.has_errors() {
+                            for diag in parser.diagnostics.diagnostics() {
+                                eprintln!("{}", diag.render(&source));
+                            }
+                        } else {
+                            let diag = Diagnostic::error("E005", &e, &file_str, parser.current_span().line, parser.current_span().col);
+                            eprintln!("{}", diag.render(&source));
+                        }
                     }
                     std::process::exit(1);
                 }

@@ -155,8 +155,15 @@ impl Parser {
                         let is_spec = self.check(&TokenKind::Ident("owner".to_string()))
                             || self.check(&TokenKind::Ident("status".to_string()))
                             || self.check(&TokenKind::Requirement)
+                            || self.check(&TokenKind::Ident("requirement".to_string()))
+                            || self.check(&TokenKind::Ident("requirements".to_string()))
                             || self.check(&TokenKind::Ident("implementation".to_string()))
+                            || self.check(&TokenKind::Implementation)
                             || self.check(&TokenKind::Skills)
+                            || self.check(&TokenKind::Ident("skills".to_string()))
+                            || self.check(&TokenKind::Ident("skill".to_string()))
+                            || self.check(&TokenKind::Ident("input".to_string()))
+                            || self.check(&TokenKind::Ident("output".to_string()))
                             || self.check(&TokenKind::Ident("change_budget".to_string()));
 
                         if is_spec {
@@ -172,16 +179,26 @@ impl Parser {
                                 implementation = Some(self.parse_identifier_or_string()?);
                             } else if key == "skills" || key == "skill" {
                                 skills = self.parse_string_list()?;
+                            } else if key == "input" {
+                                let val = self.parse_identifier_or_string()?;
+                                requirement = Some(format!("input: {}", val));
+                            } else if key == "output" {
+                                let val = self.parse_identifier_or_string()?;
+                                implementation = Some(format!("output: {}", val));
                             } else if key == "change_budget" {
                                 change_budget = self.parse_string_list()?;
                             }
                             self.match_token(&TokenKind::Comma);
                             self.match_token(&TokenKind::SemiColon);
                         } else {
-                            if let Ok(stmt) = self.parse_statement() {
-                                body_stmts.push(stmt);
-                            } else {
-                                self.advance();
+                            match self.parse_statement() {
+                                Ok(stmt) => body_stmts.push(stmt),
+                                Err(_) => {
+                                    self.synchronize();
+                                    if self.check(&TokenKind::RBrace) || self.check(&TokenKind::EOF) {
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }

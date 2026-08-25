@@ -10,7 +10,7 @@ impl Parser {
     ) -> Result<Option<Statement>, String> {
         match peek_k {
             TokenKind::View => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(entity) = self.parse_dotted_path() {
                     if self.match_token(&TokenKind::As) {
@@ -23,11 +23,11 @@ impl Parser {
                         }));
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Project => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if !self.check(&TokenKind::LBrace) {
                     if let Ok(entity) = self.parse_dotted_path() {
@@ -43,7 +43,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Delegate => {
@@ -77,7 +77,7 @@ impl Parser {
                 }))
             }
             TokenKind::Decorate => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(full) = self.parse_dotted_path() {
                     if self.match_token(&TokenKind::With) {
@@ -106,7 +106,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Intercept => {
@@ -169,7 +169,7 @@ impl Parser {
                 }))
             }
             TokenKind::Scope => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(name) = self.parse_identifier_or_keyword() {
                     if self.check(&TokenKind::LBrace) && self.peek_ahead(2) != Some(&TokenKind::Colon) {
@@ -182,11 +182,11 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Context => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(environment) = self.parse_identifier_or_keyword() {
                     if self.check(&TokenKind::LBrace) && self.peek_ahead(2) != Some(&TokenKind::Colon) {
@@ -199,7 +199,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::FeatureSwitch => {
@@ -219,7 +219,7 @@ impl Parser {
                 }))
             }
             TokenKind::Augment => {
-                let checkpoint = self.cursor;
+                let checkpoint = self.checkpoint();
                 self.advance();
                 if let Ok(target) = self.parse_dotted_path() {
                     if self.match_token(&TokenKind::LBrace) {
@@ -246,7 +246,7 @@ impl Parser {
                         }
                     }
                 }
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
             TokenKind::Traitify => {

@@ -14,7 +14,7 @@ impl Parser {
         }
 
         // Try standard list comprehension: `[expr for var in iterable if condition]`
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
         let first_expr_res = self.parse_expression();
         if let Ok(first_expr) = first_expr_res {
             if self.match_token(&TokenKind::For) {
@@ -38,7 +38,7 @@ impl Parser {
                 });
             }
         }
-        self.cursor = checkpoint;
+        self.restore_checkpoint(checkpoint);
 
         let mut elements = Vec::new();
         while !self.check(&TokenKind::RBracket) && !self.check(&TokenKind::EOF) {
@@ -101,7 +101,7 @@ impl Parser {
     /// Parses Dict/Set comprehensions and Map/Dict literals from brace blocks `{...}`.
     pub(crate) fn try_parse_comprehension_brace(&mut self) -> Result<Option<Expression>, String> {
         let span = self.current_span();
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
 
         if !self.match_token(&TokenKind::LBrace) {
             return Ok(None);
@@ -197,7 +197,7 @@ impl Parser {
         match parse_inner(self) {
             Ok(Some(comp)) => Ok(Some(comp)),
             _ => {
-                self.cursor = checkpoint;
+                self.restore_checkpoint(checkpoint);
                 Ok(None)
             }
         }
@@ -254,7 +254,7 @@ impl Parser {
     pub(crate) fn parse_closure_or_block(&mut self) -> Result<Expression, String> {
         let span = self.current_span();
         self.expect(TokenKind::LBrace)?;
-        let checkpoint = self.cursor.clone();
+        let checkpoint = self.checkpoint();
 
         let mut params = Vec::new();
         if self.match_token(&TokenKind::Pipe) {
@@ -309,7 +309,7 @@ impl Parser {
             }
         }
 
-        self.cursor = checkpoint;
+        self.restore_checkpoint(checkpoint);
         Err("Not a closure block".to_string())
     }
 }
