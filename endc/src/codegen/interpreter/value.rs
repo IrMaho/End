@@ -41,6 +41,8 @@ pub enum Value {
         name: String,
         data: HashMap<String, Value>,
     },
+    Break,
+    Continue,
 }
 
 impl std::fmt::Display for Value {
@@ -48,9 +50,11 @@ impl std::fmt::Display for Value {
         match self {
             Value::Void => write!(f, "void"),
             Value::Int(n) => write!(f, "{}", n),
-            Value::Float(n) => write!(f, "{}", n),
+            Value::Float(n) => write!(f, "{:.6}", n),
             Value::String(s) => write!(f, "{}", s),
             Value::Bool(b) => write!(f, "{}", b),
+            Value::Break => write!(f, "break"),
+            Value::Continue => write!(f, "continue"),
             Value::Struct(name, fields) => {
                 write!(f, "{} {{ ", name)?;
                 for (k, v) in fields {

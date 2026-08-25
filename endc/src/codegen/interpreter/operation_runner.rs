@@ -11,7 +11,11 @@ impl Interpreter {
         }
         
         if func.directives.iter().any(|d| d.name == "@telemetry") {
-            println!("[TELEMETRY] Executing {}", func.name);
+            let msg = format!("[TELEMETRY] Executing {}\n", func.name);
+            self.emit_stdout(&msg);
+            if !self.capture_stdout {
+                print!("{}", msg);
+            }
         }
 
         let mut ret_val = Value::Void;

@@ -14,7 +14,11 @@ impl Interpreter {
                 Literal::Null => Ok(Value::Pointer(0)),
             },
             Expression::Ident(name, _) => {
-                if let Some(v) = self.get_var(name) {
+                if name == "break" {
+                    Ok(Value::Break)
+                } else if name == "continue" {
+                    Ok(Value::Continue)
+                } else if let Some(v) = self.get_var(name) {
                     Ok(v)
                 } else if let Some(op) = self.operations.get(name) {
                     Ok(op.clone())
@@ -39,6 +43,11 @@ impl Interpreter {
                         }
                     }
                     (Value::Int(a), BinaryOp::Mod, Value::Int(b)) => Ok(Value::Int(if *b != 0 { *a % *b } else { 0 })),
+                    (Value::Int(a), BinaryOp::BitAnd, Value::Int(b)) => Ok(Value::Int(*a & *b)),
+                    (Value::Int(a), BinaryOp::BitOr, Value::Int(b)) => Ok(Value::Int(*a | *b)),
+                    (Value::Int(a), BinaryOp::BitXor, Value::Int(b)) => Ok(Value::Int(*a ^ *b)),
+                    (Value::Int(a), BinaryOp::Shl, Value::Int(b)) => Ok(Value::Int(*a << *b)),
+                    (Value::Int(a), BinaryOp::Shr, Value::Int(b)) => Ok(Value::Int(*a >> *b)),
                     // Int comparisons
                     (Value::Int(a), BinaryOp::Equal, Value::Int(b)) => Ok(Value::Bool(*a == *b)),
                     (Value::Int(a), BinaryOp::NotEqual, Value::Int(b)) => Ok(Value::Bool(*a != *b)),
@@ -121,9 +130,15 @@ impl Interpreter {
                             .collect::<Vec<_>>()
                             .join(" ");
                         if name == "println" {
-                            println!("{}", msg);
+                            self.emit_stdout(&format!("{}\n", msg));
+                            if !self.capture_stdout {
+                                println!("{}", msg);
+                            }
                         } else {
-                            print!("{}", msg);
+                            self.emit_stdout(&msg);
+                            if !self.capture_stdout {
+                                print!("{}", msg);
+                            }
                         }
                         return Ok(Value::Void);
                     }
@@ -220,6 +235,14 @@ impl Interpreter {
                 }
 
                 if let Expression::FieldAccess { object, field, .. } = callee.as_ref() {
+                    if let Expression::Ident(mod_name, _) = object.as_ref() {
+                        let fn_key1 = format!("{}_{}", mod_name, field);
+                        let fn_key2 = format!("{}.{}", mod_name, field);
+                        let fn_key3 = format!("{}::{}", mod_name, field);
+                        if let Some(target_fn) = self.functions.get(&fn_key1).or_else(|| self.functions.get(&fn_key2)).or_else(|| self.functions.get(&fn_key3)).cloned() {
+                            return self.eval_function(&target_fn, eval_args);
+                        }
+                    }
                     let obj = self.eval_expression(object)?;
                     if let Some(func) = self.functions.get(field).cloned() {
                         let mut call_args = vec![obj];
@@ -454,6 +477,43 @@ impl Interpreter {
             Expression::Memoize { op, .. } => {
                 let op_val = self.eval_expression(op)?;
                 Ok(op_val)
+            }
+            Expression::ListLiteral(elements, _) => {
+                let mut items = Vec::new();
+                for elem in elements {
+                    match elem {
+                        crate::ast::expr::collections::CollectionElement::Expr(e) => {
+                            items.push(self.eval_expression(e)?);
+                        }
+                        crate::ast::expr::collections::CollectionElement::Spread { expr, .. } => {
+                            if let Value::Array(sub) = self.eval_expression(expr)? {
+                                items.extend(sub);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                Ok(Value::Array(items))
+            }
+            Expression::Tuple(elements, _) => {
+                let mut items = Vec::new();
+                for e in elements {
+                    items.push(self.eval_expression(e)?);
+                }
+                Ok(Value::Array(items))
+            }
+            Expression::Conditional { condition, then_branch, else_branch, .. } => {
+                let cond_val = self.eval_expression(condition)?;
+                let is_true = match cond_val {
+                    Value::Bool(b) => b,
+                    Value::Int(n) => n != 0,
+                    _ => false,
+                };
+                if is_true {
+                    self.eval_expression(then_branch)
+                } else {
+                    self.eval_expression(else_branch)
+                }
             }
             _ => Ok(Value::Int(1)),
         }
