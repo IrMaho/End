@@ -1,0 +1,77 @@
+// ============================================================================
+// End DevOps & AI Workspace — State: Global Application State
+// Location: examples/app/state/app_state.end
+// Demonstrates: Centralized Reactive App State & Navigation State
+// ============================================================================
+
+enum ActivePage {
+    Dashboard,
+    Projects,
+    ProjectDetails,
+    TasksKanban,
+    CodeWorkspace,
+    EventMonitor,
+    ArchitectureGraph,
+    Analytics,
+    Team,
+    Notifications,
+    Settings,
+    SystemMonitor,
+    AiAgent,
+    FeatureExplorer,
+    DependencyGraph
+}
+
+fn page_to_string(p: ActivePage) -> String {
+    match p {
+        ActivePage.Dashboard => { return "Dashboard"; }
+        ActivePage.Projects => { return "Projects"; }
+        ActivePage.ProjectDetails => { return "Project Details"; }
+        ActivePage.TasksKanban => { return "Tasks / Kanban"; }
+        ActivePage.CodeWorkspace => { return "Code Workspace (IDE)"; }
+        ActivePage.EventMonitor => { return "Event Monitor"; }
+        ActivePage.ArchitectureGraph => { return "Architecture Graph"; }
+        ActivePage.Analytics => { return "Analytics & Telemetry"; }
+        ActivePage.Team => { return "Team & Users"; }
+        ActivePage.Notifications => { return "Notifications & Activity"; }
+        ActivePage.Settings => { return "Settings & Policies"; }
+        ActivePage.SystemMonitor => { return "System & Performance"; }
+        ActivePage.AiAgent => { return "AI Agent Workspace"; }
+        ActivePage.FeatureExplorer => { return "Feature Explorer"; }
+        ActivePage.DependencyGraph => { return "Dependency Graph"; }
+    }
+}
+
+class AppStateStore {
+    current_page: ActivePage;
+    current_user_email: String;
+    is_dark_theme: bool;
+    notification_badge_count: i64;
+    navigation_history_count: i64;
+
+    fn navigate_to(target: ActivePage) -> bool {
+        self.current_page = target;
+        self.navigation_history_count = self.navigation_history_count + 1;
+        return true;
+    }
+
+    fn toggle_theme() -> bool {
+        self.is_dark_theme = !self.is_dark_theme;
+        return self.is_dark_theme;
+    }
+
+    fn clear_notifications() -> bool {
+        self.notification_badge_count = 0;
+        return true;
+    }
+}
+
+fn create_app_state_store() -> AppStateStore {
+    return AppStateStore {
+        current_page: ActivePage.Dashboard,
+        current_user_email: "lead_architect@end-lang.org",
+        is_dark_theme: true,
+        notification_badge_count: 5,
+        navigation_history_count: 1
+    };
+}

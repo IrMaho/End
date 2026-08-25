@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Inline C executed
+
+fn main() void {
+    inline_c { // reason: "C FFI"
+        "printf(\"Inline C executed\\n\");"
+    }
+}

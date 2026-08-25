@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// 404
+// NotFound
+
+st CustomError {
+    code: i64,
+    message: str,
+}
+
+fn main() void {
+    val err = CustomError { code: 404, message: "NotFound" }
+    println(err.code)
+    println(err.message)
+}

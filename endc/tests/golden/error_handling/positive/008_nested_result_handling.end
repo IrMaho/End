@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 40
+
+fn step1(x: i64) i64 {
+    ret x * 2
+}
+
+fn step2(x: i64) i64 {
+    ret x + 10
+}
+
+fn main() void {
+    val res = step2(step1(15))
+    println(res)
+}

@@ -1,0 +1,34 @@
+// @test: positive
+// @expect-stdout:
+// 2
+// 3
+// 5
+// 7
+// 11
+// 13
+// 17
+// 19
+
+fn is_prime(n: i64) -> bool {
+    if n <= 1 {
+        return false;
+    }
+    mut d = 2;
+    while d * d <= n {
+        if n % d == 0 {
+            return false;
+        }
+        d = d + 1;
+    }
+    return true;
+}
+
+fn main() void {
+    mut num = 2;
+    while num <= 20 {
+        if is_prime(num) {
+            println(num);
+        }
+        num = num + 1;
+    }
+}

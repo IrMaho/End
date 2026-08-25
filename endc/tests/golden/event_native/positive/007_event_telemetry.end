@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Event telemetry hooked
+
+fn main() void {
+    println("Event telemetry hooked")
+}

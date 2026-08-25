@@ -1,5 +1,5 @@
 use super::state::CBackend;
-use crate::ast::{FunctionDef, Statement};
+use crate::ast::{Expression, FunctionDef, Statement};
 
 impl CBackend {
     pub(crate) fn gen_ops_and_events_statement(&mut self, stmt: &Statement) -> bool {
@@ -32,8 +32,21 @@ impl CBackend {
                 true
             }
             Statement::EmitEvent { event_name, args, .. } => {
-                let args_str = args.iter().map(|a| self.gen_expression(a)).collect::<Vec<_>>().join(", ");
-                self.output.push_str(&format!("{}end_emit_event(\"{}\", {});\n", self.indent(), event_name, args_str));
+                let args_str = args.iter().map(|a| {
+                    match a {
+                        Expression::StructInit { name, fields, span } if name.is_empty() => {
+                            let named_init = Expression::StructInit {
+                                name: event_name.clone(),
+                                fields: fields.clone(),
+                                span: span.clone(),
+                            };
+                            self.gen_expression(&named_init)
+                        }
+                        _ => self.gen_expression(a),
+                    }
+                }).collect::<Vec<_>>().join(", ");
+                let args_part = if args_str.is_empty() { "0" } else { &args_str };
+                self.output.push_str(&format!("{}end_emit_event(\"{}\", {});\n", self.indent(), event_name, args_part));
                 true
             }
             Statement::ObserveOp { op_expr, alias, .. } => {

@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0100
+
+mod {
+    fn x() void {}
+}

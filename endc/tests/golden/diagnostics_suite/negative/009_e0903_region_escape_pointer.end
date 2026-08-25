@@ -1,0 +1,11 @@
+// @test: negative
+// @expect-error: E0903
+
+st Buf { id: i64, }
+fn escape_ptr() *Buf {
+    region a {
+        val b: *Buf = alloc [1]Buf
+        ret b
+    }
+}
+fn main() void { escape_ptr(); }

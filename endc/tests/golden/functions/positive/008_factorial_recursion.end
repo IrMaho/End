@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 120
+
+fn fact(n: i64) i64 {
+    if n <= 1 {
+        ret 1
+    }
+    ret n * fact(n - 1)
+}
+
+fn main() void {
+    println(fact(5))
+}

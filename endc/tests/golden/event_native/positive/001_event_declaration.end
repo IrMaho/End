@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Event declared
+
+event OrderPlaced {
+    order_id: i64,
+    total: i64,
+}
+
+fn main() void {
+    println("Event declared")
+}

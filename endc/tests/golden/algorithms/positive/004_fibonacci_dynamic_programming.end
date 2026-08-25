@@ -1,0 +1,27 @@
+// @test: positive
+// @expect-stdout:
+// 55
+
+fn fib_dp(n: i64) i64 {
+    if n <= 0 {
+        ret 0
+    }
+    if n == 1 {
+        ret 1
+    }
+    mut prev2 = 0
+    mut prev1 = 1
+    mut current = 0
+    mut i = 2
+    while i <= n {
+        current = prev1 + prev2
+        prev2 = prev1
+        prev1 = current
+        i = i + 1
+    }
+    ret current
+}
+
+fn main() void {
+    println(fib_dp(10))
+}

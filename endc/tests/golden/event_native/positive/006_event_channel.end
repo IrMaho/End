@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// Channel initialized
+
+fn main() void {
+    val ch = end_channel_create(16)
+    println("Channel initialized")
+}

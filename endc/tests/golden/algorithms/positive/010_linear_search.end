@@ -1,0 +1,21 @@
+// @test: positive
+// @expect-stdout:
+// 3
+// -1
+
+fn find_index(target: i64) i64 {
+    val arr: [5]i64 = [3, 7, 2, 9, 5]
+    mut i = 0
+    while i < 5 {
+        if arr[i] == target {
+            ret i
+        }
+        i = i + 1
+    }
+    ret -1
+}
+
+fn main() void {
+    println(find_index(9))
+    println(find_index(100))
+}

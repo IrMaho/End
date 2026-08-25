@@ -1,0 +1,4 @@
+// @test: negative
+// @expect-error: E0915
+
+leak check payments forbid PaymentRepository leaking through CheckoutResult

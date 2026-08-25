@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// 24
+
+fn main() void {
+    val a = 1 << 4
+    val b = 32 >> 2
+    println(a + b)
+}

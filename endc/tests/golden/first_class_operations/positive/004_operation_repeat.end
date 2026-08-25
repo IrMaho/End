@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// Repeat defined
+
+operation Inc(input: i64) -> i64 {
+    return input + 1;
+}
+
+fn main() void {
+    println("Repeat defined");
+}

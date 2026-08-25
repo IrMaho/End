@@ -1,0 +1,22 @@
+// @test: positive
+// @expect-stdout:
+// Value is None
+
+st Option {
+    has_value: bool,
+    value: i64,
+}
+
+fn find_odd(x: i64) Option {
+    if x % 2 != 0 {
+        ret Option { has_value: true, value: x }
+    }
+    ret Option { has_value: false, value: 0 }
+}
+
+fn main() void {
+    val opt = find_odd(4)
+    if !opt.has_value {
+        println("Value is None")
+    }
+}

@@ -124,10 +124,10 @@ impl Parser {
                     return Ok(Statement::ParallelChoose { branches, span });
                 }
                 self.expect(TokenKind::For)?;
-                let item_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected item name after 'parallel for', found {:?}", other)),
-                };
+                let item_name = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
                 self.match_token(&TokenKind::Colon);
@@ -141,10 +141,10 @@ impl Parser {
             }
             TokenKind::For => {
                 self.advance();
-                let item_name = match self.advance().kind {
-                    TokenKind::Ident(n) => n,
-                    other => return Err(format!("Expected item name after 'for', found {:?}", other)),
-                };
+                let item_name = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_expression()?;
                 self.match_token(&TokenKind::Colon);

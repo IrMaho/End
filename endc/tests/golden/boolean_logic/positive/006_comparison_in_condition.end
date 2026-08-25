@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 100 is greater
+
+fn main() void {
+    if 100 > 50 {
+        println("100 is greater")
+    } else {
+        println("not greater")
+    }
+}

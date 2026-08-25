@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+fn main() void {
+    val ch = end_channel_create(16)
+    end_channel_send(ch, "42")
+    val v: str = end_channel_recv(ch)
+    println(v)
+}

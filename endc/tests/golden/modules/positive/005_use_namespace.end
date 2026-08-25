@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 64
+
+mod Helpers {
+    fn square(x: i64) i64 {
+        ret x * x
+    }
+}
+
+fn main() void {
+    println(Helpers.square(8))
+}

@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0907
+
+fn main() void {
+    mut x = 10
+    val ref_x = &x
+    x = 20
+}

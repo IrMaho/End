@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// Anti-spaghetti rules verified
+
+cycle_free = true
+max_dependency_depth: 4
+
+fn main() void {
+    println("Anti-spaghetti rules verified")
+}

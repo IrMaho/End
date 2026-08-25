@@ -1,7 +1,7 @@
 use super::runtime::emit_all_runtime_headers;
 use super::state::CBackend;
 use crate::ast::*;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 impl CBackend {
     pub fn generate(&mut self, module: &Module) -> String {
@@ -14,6 +14,19 @@ impl CBackend {
         self.header_output.clear();
         self.is_lib = is_lib;
         self.enums = module.enums.clone();
+        self.function_return_types.clear();
+        self.struct_fields.clear();
+
+        for f in &module.functions {
+            self.function_return_types.insert(f.name.clone(), f.return_type.clone());
+        }
+        for s in &module.structs {
+            let mut fields = HashMap::new();
+            for fld in &s.fields {
+                fields.insert(fld.name.clone(), fld.field_type.clone());
+            }
+            self.struct_fields.insert(s.name.clone(), fields);
+        }
 
         emit_all_runtime_headers(&mut self.output);
 
@@ -78,6 +91,21 @@ impl CBackend {
                 self.output.push_str(&format!("    {} {};\n", c_type, f.name));
             }
             self.output.push_str("};\n\n");
+        }
+
+        // Event Definitions
+        for stmt in &module.statements {
+            if let Statement::EventDecl(ev) = stmt {
+                self.output.push_str(&format!("typedef struct {} {{\n", ev.name));
+                for f in &ev.fields {
+                    let c_type = self.map_type(&f.field_type);
+                    self.output.push_str(&format!("    {} {};\n", c_type, f.name));
+                }
+                if ev.fields.is_empty() {
+                    self.output.push_str("    int _dummy;\n");
+                }
+                self.output.push_str(&format!("}} {};\n\n", ev.name));
+            }
         }
 
         // Header generation if in Library Mode
@@ -201,6 +229,21 @@ impl CBackend {
                 }
                 if params_str.is_empty() { params_str.push("void".to_string()); }
                 self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+            }
+            if let Some(parent_name) = &m.parent {
+                if let Some(parent_mod) = module.modules.iter().find(|pm| pm.name == *parent_name) {
+                    for pf in &parent_mod.functions {
+                        self.module_methods.entry(m.name.clone()).or_default().insert(pf.name.clone());
+                        let mangled_name = format!("{}_{}", m.name, pf.name);
+                        let ret_type = self.map_type(&pf.return_type);
+                        let mut params_str = Vec::new();
+                        for p in &pf.params {
+                            params_str.push(format!("{} {}", self.map_type(&p.param_type), p.name));
+                        }
+                        if params_str.is_empty() { params_str.push("void".to_string()); }
+                        self.output.push_str(&format!("static inline {} {}({});\n", ret_type, mangled_name, params_str.join(", ")));
+                    }
+                }
             }
         }
         self.output.push('\n');

@@ -1,0 +1,9 @@
+// @test: negative
+// @expect-error: E0910
+
+fn main() void {
+    mut shared = 0
+    race_free {
+        shared = 42
+    }
+}

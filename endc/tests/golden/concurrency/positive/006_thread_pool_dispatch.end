@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Thread pool dispatched
+
+fn main() void {
+    println("Thread pool dispatched")
+}

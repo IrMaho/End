@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0918
+
+mod domain {
+    depends: [infrastructure]
+}
+direction infrastructure -> domain

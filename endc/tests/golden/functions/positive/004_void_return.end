@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+fn log_val(x: i64) void {
+    println(x * 2)
+}
+
+fn main() void {
+    log_val(21)
+}

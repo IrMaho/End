@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Lock acquired
+
+fn main() void {
+    println("Lock acquired")
+}

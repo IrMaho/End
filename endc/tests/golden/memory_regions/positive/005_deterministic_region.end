@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+fn main() void {
+    deterministic {
+        val x = 42
+        println(x)
+    }
+}

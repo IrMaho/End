@@ -1,0 +1,18 @@
+// @test: positive
+// @expect-stdout:
+// 52
+
+st Inner {
+    val_inner: i64,
+}
+
+st Outer {
+    inner: Inner,
+    extra: i64,
+}
+
+fn main() void {
+    val in_obj = Inner { val_inner: 42 }
+    val out_obj = Outer { inner: in_obj, extra: 10 }
+    println(out_obj.inner.val_inner + out_obj.extra)
+}

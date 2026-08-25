@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// 9
+
+use c <string.h>;
+
+fn main() void {
+    val len = inline_c_expr("(int64_t)strlen(\"EndNative\")") // reason: "C FFI"
+    println(len)
+}

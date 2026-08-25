@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 11
+// 22
+// 33
+
+fn main() void {
+    val arr: [3]i64 = [11, 22, 33]
+    println(arr[0])
+    println(arr[1])
+    println(arr[2])
+}

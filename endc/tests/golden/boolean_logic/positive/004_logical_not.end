@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// true
+// false
+
+fn main() void {
+    val not1: bool = !false
+    val not2: bool = !true
+    println(not1)
+    println(not2)
+}

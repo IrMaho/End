@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// Hello from function
+
+fn greet() void {
+    println("Hello from function")
+}
+
+fn main() void {
+    greet()
+}

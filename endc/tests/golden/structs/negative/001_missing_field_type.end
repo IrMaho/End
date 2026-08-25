@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0100
+
+st BadStruct {
+    @$$$
+}
+
+fn main() void {}

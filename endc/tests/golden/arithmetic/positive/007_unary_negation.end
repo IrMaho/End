@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// -42
+
+fn main() void {
+    val x = 42
+    val neg_x = -x
+    println(neg_x)
+}

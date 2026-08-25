@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// Choice op defined
+
+operation Primary(input: i64) -> i64 {
+    return input + 1;
+}
+
+operation Fallback(input: i64) -> i64 {
+    return input + 2;
+}
+
+fn main() void {
+    println("Choice op defined");
+}

@@ -1,0 +1,22 @@
+// @test: positive
+// @expect-stdout:
+// 99
+// 8
+
+fn main() void {
+    val arr: [5]i64 = [42, 17, 99, 8, 55]
+    mut max_val = arr[0]
+    mut min_val = arr[0]
+    mut i = 1
+    while i < 5 {
+        if arr[i] > max_val {
+            max_val = arr[i]
+        }
+        if arr[i] < min_val {
+            min_val = arr[i]
+        }
+        i = i + 1
+    }
+    println(max_val)
+    println(min_val)
+}

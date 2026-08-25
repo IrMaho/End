@@ -44,8 +44,41 @@ impl CBackend {
             Expression::Lit(Literal::Float(_), _) => Type::F64,
             Expression::Lit(Literal::Bool(_), _) => Type::Bool,
             Expression::Ident(name, _) => self.var_types.get(name).cloned().unwrap_or(Type::Void),
-            Expression::Call { .. } => Type::Void,
-            Expression::FieldAccess { .. } => Type::Void,
+            Expression::StructInit { name, .. } => Type::Custom(name.clone()),
+            Expression::EnumInit { enum_name, variant_name, .. } => {
+                let en = enum_name.clone().unwrap_or_else(|| self.find_enum_for_variant(variant_name));
+                Type::Custom(en)
+            }
+            Expression::Call { callee, .. } => {
+                if let Expression::Ident(fn_name, _) = callee.as_ref() {
+                    self.function_return_types.get(fn_name).cloned().unwrap_or(Type::Void)
+                } else {
+                    Type::Void
+                }
+            }
+            Expression::FieldAccess { object, field, .. } => {
+                let parent_ty = self.infer_type(object);
+                if let Type::Custom(struct_name) = parent_ty {
+                    if let Some(fields) = self.struct_fields.get(&struct_name) {
+                        return fields.get(field).cloned().unwrap_or(Type::Void);
+                    }
+                }
+                Type::Void
+            }
+            Expression::Unary { op, expr, .. } => {
+                let inner_ty = self.infer_type(expr);
+                if matches!(op, crate::ast::UnaryOp::AddressOf) {
+                    Type::Pointer(Box::new(inner_ty))
+                } else if matches!(op, crate::ast::UnaryOp::Deref) {
+                    if let Type::Pointer(inner) = inner_ty {
+                        *inner
+                    } else {
+                        Type::Void
+                    }
+                } else {
+                    inner_ty
+                }
+            }
             Expression::Binary { op, left, right: _, .. } => {
                 let l_ty = self.infer_type(left);
                 if matches!(op, BinaryOp::Add) && l_ty == Type::Str { Type::Str } else { l_ty }

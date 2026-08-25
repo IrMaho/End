@@ -309,12 +309,17 @@ impl Parser {
                 let is_enum_access = if self.enum_names.contains(&id) {
                     if self.match_token(&TokenKind::Dot) {
                         true
-                    } else if self.check(&TokenKind::Colon) {
+                    } else if self.check(&TokenKind::Colon) && self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::Colon)) {
                         self.advance();
-                        self.match_token(&TokenKind::Colon)
+                        self.advance();
+                        true
                     } else {
                         false
                     }
+                } else if self.check(&TokenKind::Colon) && self.peek_next_kind().map_or(false, |k| matches!(k, TokenKind::Colon)) {
+                    self.advance();
+                    self.advance();
+                    true
                 } else {
                     false
                 };

@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 3.141590
+
+fn main() void {
+    val f: f64 = 3.14159
+    println(f)
+}

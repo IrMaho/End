@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// equal
+
+fn main() void {
+    val a = "test"
+    val b = "test"
+    if a == b {
+        println("equal")
+    }
+}

@@ -1,0 +1,25 @@
+// @test: positive
+// @expect-stdout:
+// true
+// false
+
+fn is_even(n: i64) bool {
+    if n == 0 {
+        ret true
+    }
+    ret is_odd(n - 1)
+}
+
+fn is_odd(n: i64) bool {
+    if n == 0 {
+        ret false
+    }
+    ret is_even(n - 1)
+}
+
+fn main() void {
+    val e: bool = is_even(4)
+    val o: bool = is_odd(4)
+    println(e)
+    println(o)
+}

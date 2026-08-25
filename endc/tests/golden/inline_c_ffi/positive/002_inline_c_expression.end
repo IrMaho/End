@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 300
+
+fn main() void {
+    val x = inline_c_expr("100 + 200") // reason: "C FFI"
+    println(x)
+}

@@ -75,7 +75,7 @@ impl CBackend {
                     BinaryOp::Or => format!("({} || {})", l, r),
                     BinaryOp::Shl => format!("(((uint64_t)({})) << ({}) )", l, r),
                     BinaryOp::Shr => {
-                        if is_op_l {
+                        if is_op_l && is_op_r {
                             format!("end_compose_ops({}, {})", l, r)
                         } else {
                             format!("(((uint64_t)({})) >> ({}) )", l, r)
@@ -114,6 +114,13 @@ impl CBackend {
                     if let Some(first_arg) = args.first() {
                         let arg_str = self.gen_expression(first_arg);
                         return format!("end_println({})", arg_str);
+                    }
+                }
+                if callee_str == "inline_c_expr" {
+                    if let Some(first_arg) = args.first() {
+                        if let Expression::Lit(Literal::String(s), _) = first_arg {
+                            return s.clone();
+                        }
                     }
                 }
 
@@ -340,8 +347,14 @@ impl CBackend {
                 format!("end_create_operation(\"{}\")", name.as_deref().unwrap_or("anon"))
             }
             Expression::Compose { ops, .. } => {
-                let ops_str = ops.iter().map(|o| self.gen_expression(o)).collect::<Vec<_>>().join(", ");
-                format!("end_compose_ops({})", ops_str)
+                if ops.len() == 2 {
+                    let l = self.gen_expression(&ops[0]);
+                    let r = self.gen_expression(&ops[1]);
+                    format!("(((uint64_t)({})) >> ({}))", l, r)
+                } else {
+                    let ops_str = ops.iter().map(|o| self.gen_expression(o)).collect::<Vec<_>>().join(", ");
+                    format!("end_compose_ops({})", ops_str)
+                }
             }
             Expression::Repeat { op, count, is_retry, .. } => {
                 let o = self.gen_expression(op);
@@ -371,7 +384,59 @@ impl CBackend {
                 let o = self.gen_expression(op);
                 format!("end_memoize_op({})", o)
             }
-            _ => format!("/* expressive_expr */ 0"),
+            // Modern Expressive Syntax Expressions
+            Expression::Tuple(elements, _) => {
+                let elems: Vec<String> = elements.iter().map(|e| self.gen_expression(e)).collect();
+                format!("{{ {} }}", elems.join(", "))
+            }
+            Expression::ListLiteral(items, _) => {
+                let items_str = items.iter().map(|it| match it {
+                    crate::ast::CollectionElement::Expr(e) => self.gen_expression(e),
+                    _ => "0".to_string(),
+                }).collect::<Vec<_>>().join(", ");
+                format!("{{ {} }}", items_str)
+            }
+            Expression::ListComprehension { span, .. } => self.unsupported_expr("ListComprehension", span),
+            Expression::DictComprehension { span, .. } => self.unsupported_expr("DictComprehension", span),
+            Expression::SetComprehension { span, .. } => self.unsupported_expr("SetComprehension", span),
+            Expression::Cascade { span, .. } => self.unsupported_expr("Cascade", span),
+            Expression::Spread { span, .. } => self.unsupported_expr("Spread", span),
+            Expression::Range { start, end, .. } => {
+                let s = self.gen_expression(start);
+                let e = self.gen_expression(end);
+                format!("{}:{}", s, e)
+            }
+            Expression::Walrus { name, expr, .. } => {
+                let e = self.gen_expression(expr);
+                format!("({} = {})", name, e)
+            }
+            Expression::Conditional { condition, then_branch, else_branch, .. } => {
+                let c = self.gen_expression(condition);
+                let t = self.gen_expression(then_branch);
+                let e = self.gen_expression(else_branch);
+                format!("(({}) ? ({}) : ({}))", c, t, e)
+            }
+            Expression::Lambda { span, .. } => self.unsupported_expr("Lambda", span),
+            Expression::NamedArg { value, .. } => self.gen_expression(value),
+            Expression::CopyExpr { span, .. } => self.unsupported_expr("CopyExpr", span),
+            Expression::ResultBuilder { span, .. } => self.unsupported_expr("ResultBuilder", span),
+            Expression::IsPattern { span, .. } => self.unsupported_expr("IsPattern", span),
+            Expression::InterpolatedString { span, .. } => self.unsupported_expr("InterpolatedString", span),
         }
+    }
+
+    pub(crate) fn unsupported_expr(&self, kind: &str, span: &crate::ast::span::Span) -> String {
+        self.add_diagnostic(crate::diagnostics::Diagnostic {
+            code: crate::diagnostics::DiagCode::E001_UNSUPPORTED_EXPRESSION,
+            severity: crate::diagnostics::Severity::Error,
+            location: crate::diagnostics::SourceSpan::from(span),
+            message: format!("unsupported expression: {}", kind),
+            context: vec!["this expression variant is not supported by the C code generator".to_string()],
+            expected: Some("supported expression or explicit implementation".to_string()),
+            actual: Some(kind.to_string()),
+            suggestion: None,
+            related: Vec::new(),
+        });
+        format!("/* ERROR: unsupported expression '{}' at {}:{}:{} */", kind, span.file, span.line, span.col)
     }
 }

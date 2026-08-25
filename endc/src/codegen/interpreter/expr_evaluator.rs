@@ -411,7 +411,11 @@ impl Interpreter {
                 let mut current = self.eval_expression(&ops[0])?;
                 for next_expr in &ops[1..] {
                     let next_val = self.eval_expression(next_expr)?;
-                    current = Value::ComposedOp(Box::new(current), Box::new(next_val));
+                    if let (Value::Int(a), Value::Int(b)) = (&current, &next_val) {
+                        current = Value::Int((*a as u64 >> *b) as i64);
+                    } else {
+                        current = Value::ComposedOp(Box::new(current), Box::new(next_val));
+                    }
                 }
                 Ok(current)
             }

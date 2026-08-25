@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// C struct interop OK
+
+fn main() void {
+    inline_c { // reason: "C FFI"
+        "struct Interop { int id; }; struct Interop i = { .id = 42 }; (void)i;"
+    }
+    println("C struct interop OK")
+}

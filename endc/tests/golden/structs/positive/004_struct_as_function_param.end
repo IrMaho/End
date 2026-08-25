@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 50
+
+st Rect {
+    w: i64,
+    h: i64,
+}
+
+fn area(r: Rect) i64 {
+    ret r.w * r.h
+}
+
+fn main() void {
+    val r = Rect { w: 10, h: 5 }
+    println(area(r))
+}

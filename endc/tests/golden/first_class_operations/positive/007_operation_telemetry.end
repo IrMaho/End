@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Telemetry trace active
+
+fn main() void {
+    println("Telemetry trace active")
+}

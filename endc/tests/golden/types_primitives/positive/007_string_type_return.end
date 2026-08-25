@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// End-Native-Host
+
+fn get_platform() str {
+    ret "End-Native-Host"
+}
+
+fn main() void {
+    println(get_platform())
+}

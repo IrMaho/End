@@ -156,7 +156,7 @@ impl Parser {
                 self.expect(TokenKind::RBrace)?;
                 Ok(Statement::ParallelChoose { branches, span })
             }
-            TokenKind::Project | TokenKind::Ident(_) => {
+            _ if *peek_k == TokenKind::Project || matches!(peek_k, TokenKind::Ident(s) if s == "project") => {
                 self.advance();
                 self.expect(TokenKind::LBrace)?;
                 let mut profile = std::collections::HashMap::new();

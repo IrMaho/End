@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 1
+
+mod CoreKernel {
+    sealed: true,
+    fn version() i64 {
+        ret 1
+    }
+}
+
+fn main() void {
+    println(CoreKernel.version())
+}

@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// Parallel op defined
+
+operation WorkA(input: i64) -> i64 {
+    return input * 2;
+}
+
+operation WorkB(input: i64) -> i64 {
+    return input + 10;
+}
+
+fn main() void {
+    println("Parallel op defined");
+}

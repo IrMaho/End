@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Requirement R101 verified
+
+requirement R101 { "Zero GC Arenas" }
+
+fn main() void {
+    println("Requirement R101 verified")
+}

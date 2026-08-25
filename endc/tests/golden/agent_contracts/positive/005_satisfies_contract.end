@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Contract verified
+
+satisfies StorageService ["persistent", "zero_leak"];
+
+fn main() void {
+    println("Contract verified")
+}

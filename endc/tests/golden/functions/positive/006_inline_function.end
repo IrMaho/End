@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+@inline
+fn multiply(a: i64, b: i64) i64 {
+    ret a * b
+}
+
+fn main() void {
+    println(multiply(6, 7))
+}

@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0907
+
+fn main() void { mut mem = 100;
+ val r = &mem;
+ mem = 200;
+}

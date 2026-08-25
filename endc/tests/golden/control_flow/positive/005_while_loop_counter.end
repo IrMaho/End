@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// 0
+// 1
+// 2
+// 3
+// 4
+
+fn main() void {
+    mut i = 0
+    while i < 5 {
+        println(i)
+        i = i + 1
+    }
+}

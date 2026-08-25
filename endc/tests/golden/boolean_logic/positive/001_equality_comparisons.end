@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// true
+// false
+// true
+
+fn main() void {
+    val eq1: bool = (10 == 10)
+    val eq2: bool = (10 == 20)
+    val neq: bool = (10 != 20)
+    println(eq1)
+    println(eq2)
+    println(neq)
+}

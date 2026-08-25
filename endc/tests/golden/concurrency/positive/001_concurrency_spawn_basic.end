@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// Spawn scheduled
+
+fn main() void {
+    spawn {
+        val w = 100
+    }
+    println("Spawn scheduled")
+}

@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// true
+// true
+// false
+// true
+
+fn main() void {
+    val lt: bool = (5 < 10)
+    val gt: bool = (20 > 10)
+    val lte: bool = (10 <= 5)
+    val gte: bool = (15 >= 15)
+    println(lt)
+    println(gt)
+    println(lte)
+    println(gte)
+}

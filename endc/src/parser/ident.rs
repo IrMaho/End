@@ -246,6 +246,7 @@ impl Parser {
             TokenKind::Rename => Ok("rename".to_string()),
             TokenKind::Use => Ok("use".to_string()),
             TokenKind::Snapshot => Ok("snapshot".to_string()),
+            TokenKind::Operation => Ok("op".to_string()),
             TokenKind::Begin => Ok("begin".to_string()),
             TokenKind::Commit => Ok("commit".to_string()),
             TokenKind::ReplaceWith => Ok("replace_with".to_string()),

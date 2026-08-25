@@ -1,0 +1,15 @@
+// @test: positive
+// @expect-stdout:
+// Alice
+// 101
+
+st User {
+    name: str,
+    id: i64,
+}
+
+fn main() void {
+    val u = User { name: "Alice", id: 101 }
+    println(u.name)
+    println(u.id)
+}

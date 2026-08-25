@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// 40
+
+st Vec2 {
+    x: i64,
+    y: i64,
+}
+
+fn create_vec(x: i64, y: i64) Vec2 {
+    ret Vec2 { x: x, y: y }
+}
+
+fn main() void {
+    val v = create_vec(15, 25)
+    println(v.x + v.y)
+}

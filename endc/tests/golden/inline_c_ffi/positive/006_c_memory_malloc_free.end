@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// C heap allocation OK
+
+use c <stdlib.h>;
+
+fn main() void {
+    inline_c { // reason: "C FFI"
+        "void* p = malloc(64); free(p);"
+    }
+    println("C heap allocation OK")
+}

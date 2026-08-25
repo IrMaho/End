@@ -1,0 +1,10 @@
+// @test: positive
+// @expect-stdout:
+// 30
+
+fn main() void {
+    val a = 5
+    val b = a + 10
+    val c = b * 2
+    println(c)
+}

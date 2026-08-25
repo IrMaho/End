@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// true
+// false
+// true
+// false
+
+fn main() void {
+    val and1: bool = (true && true)
+    val and2: bool = (true && false)
+    val or1: bool = (true || false)
+    val or2: bool = (false || false)
+    println(and1)
+    println(and2)
+    println(or1)
+    println(or2)
+}

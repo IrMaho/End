@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 5
+
+st Counter {
+    count: i64,
+}
+
+fn main() void {
+    mut c = Counter { count: 0 }
+    c.count = c.count + 5
+    println(c.count)
+}

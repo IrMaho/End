@@ -1,0 +1,19 @@
+// @test: positive
+// @expect-stdout:
+// 200
+
+mod BaseMod {
+    fn compute() i64 {
+        ret 100
+    }
+}
+
+mod SubMod {
+    override fn compute() i64 {
+        ret 200
+    }
+}
+
+fn main() void {
+    println(SubMod.compute())
+}

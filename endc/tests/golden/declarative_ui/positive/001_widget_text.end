@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Hello UI
+
+st TextWidget {
+    text: str,
+}
+
+fn main() void {
+    val w = TextWidget { text: "Hello UI" }
+    println(w.text)
+}

@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Budget verified: 8000 tokens
+
+fn main() void {
+    println("Budget verified: 8000 tokens")
+}

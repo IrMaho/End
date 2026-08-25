@@ -106,8 +106,12 @@ impl Parser {
                 }
                 self.expect(TokenKind::RParen)?;
                 if self.check(&TokenKind::LBrace) {
-                    let closure = self.parse_closure_or_block()?;
-                    args.push(closure);
+                    let checkpoint = self.cursor.clone();
+                    if let Ok(closure) = self.parse_closure_or_block() {
+                        args.push(closure);
+                    } else {
+                        self.cursor = checkpoint;
+                    }
                 }
                 expr = Expression::Call {
                     callee: Box::new(expr),

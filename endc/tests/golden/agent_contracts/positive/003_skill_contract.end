@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Skill contract ready
+
+fn main() void {
+    println("Skill contract ready")
+}

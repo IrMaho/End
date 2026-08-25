@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0100
+
+fn main() void {
+    val x: i64 = ;
+}

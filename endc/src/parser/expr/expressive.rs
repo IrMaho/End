@@ -19,6 +19,9 @@ impl Parser {
         if let Ok(first_expr) = first_expr_res {
             if self.match_token(&TokenKind::For) {
                 let var = self.parse_identifier_or_keyword()?;
+                if self.match_token(&TokenKind::Comma) {
+                    let _ = self.parse_identifier_or_keyword()?;
+                }
                 self.expect(TokenKind::In)?;
                 let iterable = self.parse_pipe_expr()?;
                 let mut condition = None;
@@ -78,6 +81,9 @@ impl Parser {
         }
         if self.match_token(&TokenKind::For) {
             let item = self.parse_identifier_or_keyword()?;
+            if self.match_token(&TokenKind::Comma) {
+                let _ = self.parse_identifier_or_keyword()?;
+            }
             self.expect(TokenKind::In)?;
             let iterable = self.parse_pipe_expr()?;
             let element = self.parse_collection_element()?;
@@ -167,6 +173,9 @@ impl Parser {
             } else if parser.match_token(&TokenKind::For) {
                 // Set Comprehension: `{x.id for x in users if cond}`
                 let var = parser.parse_identifier_or_keyword()?;
+                if parser.match_token(&TokenKind::Comma) {
+                    let _ = parser.parse_identifier_or_keyword()?;
+                }
                 parser.expect(TokenKind::In)?;
                 let iterable = parser.parse_pipe_expr()?;
                 let mut condition = None;
@@ -301,16 +310,6 @@ impl Parser {
         }
 
         self.cursor = checkpoint;
-        let mut statements = Vec::new();
-        while !self.check(&TokenKind::RBrace) && !self.check(&TokenKind::EOF) {
-            if self.check(&TokenKind::Fn) {
-                let f = self.parse_function(false, vec![])?;
-                statements.push(Statement::LocalFunction(f));
-                continue;
-            }
-            statements.push(self.parse_statement()?);
-        }
-        self.expect(TokenKind::RBrace)?;
-        Ok(Expression::Block(Block { statements, span }))
+        Err("Not a closure block".to_string())
     }
 }

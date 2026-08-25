@@ -1,0 +1,18 @@
+// @test: positive
+// @expect-stdout:
+// 6
+
+fn gcd(a: i64, b: i64) i64 {
+    mut x = a
+    mut y = b
+    while y != 0 {
+        val temp = y
+        y = x % y
+        x = temp
+    }
+    ret x
+}
+
+fn main() void {
+    println(gcd(48, 18))
+}

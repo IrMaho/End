@@ -58,6 +58,14 @@ impl Parser {
         }
     }
 
+    pub(crate) fn previous(&self) -> Option<&Token> {
+        if self.cursor > 0 && self.cursor - 1 < self.tokens.len() {
+            Some(&self.tokens[self.cursor - 1])
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn check(&self, kind: &TokenKind) -> bool {
         self.peek_kind() == kind
     }

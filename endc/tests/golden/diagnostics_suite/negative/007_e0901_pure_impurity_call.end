@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0904
+
+fn impure_fn() void { println("Impure"); }
+@pure
+fn pure_fn() void { impure_fn(); @$$$ }
+fn main() void { pure_fn(); }

@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0100
+
+operation BadOp(input: i64) -> {
+    return input;
+}
+
+fn main() void {}

@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0908
+
+fn main() void { val immutable_var = 100;
+ frozen immutable_var;
+ immutable_var = 200;
+}

@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// Direction flow established
+
+direction api -> domain
+
+fn main() void {
+    println("Direction flow established")
+}

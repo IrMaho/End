@@ -1,0 +1,27 @@
+// @test: positive
+// @expect-stdout:
+// GREEN
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn test_color(c: Color) void {
+    match c {
+        .Red => {
+            println("RED")
+        }
+        .Green => {
+            println("GREEN")
+        }
+        .Blue => {
+            println("BLUE")
+        }
+    }
+}
+
+fn main() void {
+    test_color(.Green)
+}

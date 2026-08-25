@@ -1,0 +1,24 @@
+// @test: positive
+// @expect-stdout:
+// NORMAL
+
+enum Level {
+    Low,
+    Med,
+    High,
+}
+
+fn eval_level(l: Level) void {
+    match l {
+        .High => {
+            println("MAX")
+        }
+        _ => {
+            println("NORMAL")
+        }
+    }
+}
+
+fn main() void {
+    eval_level(.Low)
+}

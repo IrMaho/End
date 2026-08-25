@@ -1,0 +1,14 @@
+// @test: positive
+// @expect-stdout:
+// 64
+
+mod PureMath {
+    @pure
+    fn cube(x: i64) i64 {
+        ret x * x * x
+    }
+}
+
+fn main() void {
+    println(PureMath.cube(4))
+}

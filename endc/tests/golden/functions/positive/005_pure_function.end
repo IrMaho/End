@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 81
+
+@pure
+fn square(x: i64) i64 {
+    ret x * x
+}
+
+fn main() void {
+    println(square(9))
+}

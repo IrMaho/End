@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// Facade active
+
+facade CheckoutFacade {
+    exposes: [checkout]
+}
+
+fn main() void {
+    println("Facade active")
+}

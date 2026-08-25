@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Task scheduled
+
+task CompileModule {
+    input: "main.end",
+    output: "main.c",
+}
+
+fn main() void {
+    println("Task scheduled")
+}

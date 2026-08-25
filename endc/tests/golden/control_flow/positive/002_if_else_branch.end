@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// Not greater
+
+fn main() void {
+    val x = 5
+    if x > 10 {
+        println("Greater")
+    } else {
+        println("Not greater")
+    }
+}

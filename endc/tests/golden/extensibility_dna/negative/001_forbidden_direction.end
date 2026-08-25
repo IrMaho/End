@@ -1,0 +1,8 @@
+// @test: negative
+// @expect-error: E0913
+
+mod billing {
+    depends: [ui]
+}
+
+forbid billing -> ui

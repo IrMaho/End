@@ -1,0 +1,9 @@
+// @test: positive
+// @expect-stdout:
+// stdio.h included
+
+use c <stdio.h>;
+
+fn main() void {
+    println("stdio.h included")
+}

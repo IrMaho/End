@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Barrier synchronization OK
+
+fn main() void {
+    println("Barrier synchronization OK")
+}

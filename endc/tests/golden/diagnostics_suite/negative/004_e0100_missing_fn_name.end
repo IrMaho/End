@@ -1,0 +1,5 @@
+// @test: negative
+// @expect-error: E0100
+
+fn () void {
+}

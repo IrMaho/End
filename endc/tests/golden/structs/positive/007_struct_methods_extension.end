@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 75
+
+st Circle {
+    radius: i64,
+}
+
+fn area_approx(c: Circle) i64 {
+    ret c.radius * c.radius * 3
+}
+
+fn main() void {
+    val c = Circle { radius: 5 }
+    println(area_approx(c))
+}

@@ -1,0 +1,16 @@
+// @test: positive
+// @expect-stdout:
+// 0
+// 50
+
+fn check_positive(n: i64) i64 {
+    if n <= 0 {
+        ret 0
+    }
+    ret n * 10
+}
+
+fn main() void {
+    println(check_positive(-5))
+    println(check_positive(5))
+}

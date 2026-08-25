@@ -1,0 +1,7 @@
+// @test: positive
+// @expect-stdout:
+// Event topology validated
+
+fn main() void {
+    println("Event topology validated")
+}

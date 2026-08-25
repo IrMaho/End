@@ -1,0 +1,372 @@
+# End Language Feature Coverage Matrix
+# Machine-readable golden test mappings across all documented features
+
+features:
+  - id: "core_immutability"
+    name: "Immutability by Default (val vs mut)"
+    category: "core_syntax"
+    positive:
+      - "core_syntax/positive/001_hello_world.end"
+      - "core_syntax/positive/002_val_immutable_binding.end"
+      - "core_syntax/positive/003_mut_variable_reassignment.end"
+      - "core_syntax/positive/004_multiple_variable_bindings.end"
+      - "core_syntax/positive/005_type_annotations_explicit.end"
+      - "core_syntax/positive/006_scope_shadowing.end"
+      - "core_syntax/positive/007_const_binding.end"
+      - "core_syntax/positive/008_expression_chain.end"
+    negative:
+      - "core_syntax/negative/001_escape_violation.end"
+      - "core_syntax/negative/002_use_after_move.end"
+      - "core_syntax/negative/003_borrow_conflict.end"
+      - "core_syntax/negative/004_frozen_violation.end"
+
+  - id: "expressions_arithmetic"
+    name: "Numeric Arithmetic & Bitwise Operators"
+    category: "arithmetic"
+    positive:
+      - "arithmetic/positive/001_addition_subtraction.end"
+      - "arithmetic/positive/002_multiplication_division.end"
+      - "arithmetic/positive/003_modulo_operator.end"
+      - "arithmetic/positive/004_operator_precedence.end"
+      - "arithmetic/positive/005_bitwise_and_or.end"
+      - "arithmetic/positive/006_bitwise_shift.end"
+      - "arithmetic/positive/007_unary_negation.end"
+      - "arithmetic/positive/008_compound_math.end"
+    negative:
+      - "arithmetic/negative/001_bad_math_syntax.end"
+      - "arithmetic/negative/002_invalid_operator.end"
+
+  - id: "expressions_boolean_comparison"
+    name: "Boolean Logic & Comparisons"
+    category: "boolean_logic"
+    positive:
+      - "boolean_logic/positive/001_equality_comparisons.end"
+      - "boolean_logic/positive/002_relational_operators.end"
+      - "boolean_logic/positive/003_logical_and_or.end"
+      - "boolean_logic/positive/004_logical_not.end"
+      - "boolean_logic/positive/005_compound_boolean_expression.end"
+      - "boolean_logic/positive/006_comparison_in_condition.end"
+      - "boolean_logic/positive/007_short_circuit_behavior.end"
+      - "boolean_logic/positive/008_boolean_function_returns.end"
+    negative:
+      - "boolean_logic/negative/001_bad_boolean_token.end"
+
+  - id: "string_interpolation"
+    name: "Strings & String Interpolation"
+    category: "strings"
+    positive:
+      - "strings/positive/001_string_literal.end"
+      - "strings/positive/002_string_concatenation.end"
+      - "strings/positive/003_string_interpolation_basic.end"
+      - "strings/positive/004_string_escape_sequences.end"
+      - "strings/positive/005_string_length_check.end"
+      - "strings/positive/006_multiline_output.end"
+      - "strings/positive/007_string_equality.end"
+      - "strings/positive/008_string_in_struct.end"
+    negative:
+      - "strings/negative/001_unclosed_string.end"
+
+  - id: "control_flow_if_else"
+    name: "Conditional Branching (if, else if, else)"
+    category: "control_flow"
+    positive:
+      - "control_flow/positive/001_if_simple.end"
+      - "control_flow/positive/002_if_else_branch.end"
+      - "control_flow/positive/003_if_else_ladder.end"
+      - "control_flow/positive/004_nested_if.end"
+    negative:
+
+  - id: "control_flow_loops"
+    name: "Iteration Constructs (while, for, break, continue)"
+    category: "control_flow"
+    positive:
+      - "control_flow/positive/005_while_loop_counter.end"
+      - "control_flow/positive/006_while_loop_break.end"
+      - "control_flow/positive/007_while_loop_continue.end"
+      - "control_flow/positive/008_nested_while_loops.end"
+      - "control_flow/positive/009_for_in_loop.end"
+      - "control_flow/positive/010_parallel_for_loop.end"
+    negative:
+      - "control_flow/negative/001_missing_condition.end"
+      - "control_flow/negative/002_unmatched_brace.end"
+
+  - id: "functions_basic"
+    name: "Function Declarations & Signatures"
+    category: "functions"
+    positive:
+      - "functions/positive/001_basic_function.end"
+      - "functions/positive/002_params_and_return.end"
+      - "functions/positive/003_multiple_params.end"
+      - "functions/positive/004_void_return.end"
+      - "functions/positive/005_pure_function.end"
+      - "functions/positive/006_inline_function.end"
+      - "functions/positive/007_early_return.end"
+    negative:
+      - "functions/negative/001_missing_fn_body.end"
+      - "functions/negative/002_pure_impurity.end"
+
+  - id: "functions_recursion"
+    name: "Recursive Functions & Call Stack"
+    category: "functions"
+    positive:
+      - "functions/positive/008_factorial_recursion.end"
+      - "functions/positive/009_fibonacci_recursion.end"
+      - "functions/positive/010_mutual_recursion.end"
+    negative:
+
+  - id: "structs_basic"
+    name: "Struct Definitions & Instantiation"
+    category: "structs"
+    positive:
+      - "structs/positive/001_struct_decl_instantiation.end"
+      - "structs/positive/002_struct_field_mutation.end"
+      - "structs/positive/003_struct_multiple_fields.end"
+      - "structs/positive/004_struct_as_function_param.end"
+      - "structs/positive/005_struct_return_from_fn.end"
+      - "structs/positive/006_nested_structs.end"
+      - "structs/positive/007_struct_methods_extension.end"
+      - "structs/positive/008_struct_pointer_deref.end"
+    negative:
+      - "structs/negative/001_missing_field_type.end"
+      - "structs/negative/002_malformed_struct_body.end"
+
+  - id: "enums_variants"
+    name: "Tagged Unions & Enums"
+    category: "enums_match"
+    positive:
+      - "enums_match/positive/001_enum_simple_variants.end"
+      - "enums_match/positive/002_match_all_branches.end"
+    negative:
+
+  - id: "pattern_matching"
+    name: "Pattern Matching Exhaustiveness"
+    category: "enums_match"
+    positive:
+      - "enums_match/positive/003_match_wildcard.end"
+      - "enums_match/positive/004_enum_in_struct.end"
+      - "enums_match/positive/005_enum_assignment.end"
+    negative:
+      - "enums_match/negative/001_unhandled_match.end"
+
+  - id: "memory_region_arenas"
+    name: "Deterministic Region Arenas"
+    category: "memory_regions"
+    positive:
+      - "memory_regions/positive/001_region_arena_basic.end"
+      - "memory_regions/positive/002_nested_regions.end"
+      - "memory_regions/positive/004_multiple_allocations_in_region.end"
+      - "memory_regions/positive/005_deterministic_region.end"
+      - "memory_regions/positive/006_checkpoint_rollback.end"
+      - "memory_regions/positive/007_transaction_block.end"
+    negative:
+      - "memory_regions/negative/001_escape_region_alloc.end"
+
+  - id: "memory_ephemeral_leases"
+    name: "Ephemeral Resource Leases"
+    category: "memory_regions"
+    positive:
+      - "memory_regions/positive/003_ephemeral_lease.end"
+      - "memory_regions/positive/008_latency_hedging.end"
+    negative:
+      - "memory_regions/negative/002_lease_escape.end"
+
+  - id: "first_class_operations"
+    name: "Operation Values & Pipelines"
+    category: "first_class_operations"
+    positive:
+      - "first_class_operations/positive/001_operation_literal.end"
+      - "first_class_operations/positive/002_operation_pipeline_compose.end"
+      - "first_class_operations/positive/003_operation_execution.end"
+      - "first_class_operations/positive/004_operation_repeat.end"
+      - "first_class_operations/positive/005_operation_parallel.end"
+      - "first_class_operations/positive/006_operation_alternative.end"
+      - "first_class_operations/positive/007_operation_telemetry.end"
+      - "first_class_operations/positive/008_operation_memoize.end"
+    negative:
+      - "first_class_operations/negative/001_bad_op_syntax.end"
+
+  - id: "event_topologies_hubs"
+    name: "Event-Native Architecture & Hubs"
+    category: "event_native"
+    positive:
+      - "event_native/positive/001_event_declaration.end"
+      - "event_native/positive/002_event_hub.end"
+      - "event_native/positive/003_event_handler.end"
+      - "event_native/positive/004_event_emit.end"
+      - "event_native/positive/005_multiple_events.end"
+      - "event_native/positive/006_event_channel.end"
+      - "event_native/positive/007_event_telemetry.end"
+      - "event_native/positive/008_event_topologies.end"
+    negative:
+      - "event_native/negative/001_bad_event_syntax.end"
+
+  - id: "ai_agent_contracts"
+    name: "AI Agent Contracts & Tasks"
+    category: "agent_contracts"
+    positive:
+      - "agent_contracts/positive/001_agent_declaration.end"
+      - "agent_contracts/positive/002_task_declaration.end"
+      - "agent_contracts/positive/003_skill_contract.end"
+      - "agent_contracts/positive/004_requirement_traceability.end"
+      - "agent_contracts/positive/005_satisfies_contract.end"
+      - "agent_contracts/positive/006_proof_gate.end"
+      - "agent_contracts/positive/007_todo_traceability.end"
+      - "agent_contracts/positive/008_token_budget.end"
+    negative:
+      - "agent_contracts/negative/001_context_firewall.end"
+      - "agent_contracts/negative/002_capability_surface.end"
+
+  - id: "extensibility_dna"
+    name: "Extensibility DNA & Architecture Rules"
+    category: "extensibility_dna"
+    positive:
+      - "extensibility_dna/positive/001_mod_declaration.end"
+      - "extensibility_dna/positive/002_forbid_dependency.end"
+      - "extensibility_dna/positive/003_layer_definition.end"
+      - "extensibility_dna/positive/004_direction_flow.end"
+      - "extensibility_dna/positive/005_contract_module.end"
+      - "extensibility_dna/positive/006_port_and_adapter.end"
+      - "extensibility_dna/positive/007_facade_declaration.end"
+      - "extensibility_dna/positive/008_metric_invariants.end"
+    negative:
+      - "extensibility_dna/negative/001_forbidden_direction.end"
+      - "extensibility_dna/negative/002_cycle_in_architecture.end"
+      - "extensibility_dna/negative/003_architectural_leak.end"
+      - "extensibility_dna/negative/004_fanout_limit.end"
+
+  - id: "inline_c_ffi"
+    name: "Direct Inline C & C ABI Headers"
+    category: "inline_c_ffi"
+    positive:
+      - "inline_c_ffi/positive/001_inline_c_statement.end"
+      - "inline_c_ffi/positive/002_inline_c_expression.end"
+      - "inline_c_ffi/positive/003_c_header_include.end"
+      - "inline_c_ffi/positive/004_c_math_sin.end"
+      - "inline_c_ffi/positive/005_c_string_strlen.end"
+      - "inline_c_ffi/positive/006_c_memory_malloc_free.end"
+      - "inline_c_ffi/positive/007_c_time_timestamp.end"
+      - "inline_c_ffi/positive/008_c_custom_struct_interop.end"
+    negative:
+      - "inline_c_ffi/negative/001_bad_c_import.end"
+
+  - id: "concurrency_primitives"
+    name: "Concurrency & Thread Spawning"
+    category: "concurrency"
+    positive:
+      - "concurrency/positive/001_concurrency_spawn_basic.end"
+      - "concurrency/positive/002_atomic_counter.end"
+      - "concurrency/positive/003_channel_send_recv.end"
+      - "concurrency/positive/004_mutex_lock.end"
+      - "concurrency/positive/005_parallel_map.end"
+      - "concurrency/positive/006_thread_pool_dispatch.end"
+      - "concurrency/positive/007_rwlock_shared.end"
+      - "concurrency/positive/008_barrier_sync.end"
+    negative:
+      - "concurrency/negative/001_data_race.end"
+
+  - id: "modules_use_namespaces"
+    name: "Modular Architecture & use"
+    category: "modules"
+    positive:
+      - "modules/positive/001_module_definition.end"
+      - "modules/positive/002_module_override.end"
+      - "modules/positive/003_module_inheritance.end"
+      - "modules/positive/004_multiple_modules.end"
+      - "modules/positive/005_use_namespace.end"
+      - "modules/positive/006_module_with_struct.end"
+      - "modules/positive/007_module_purity.end"
+      - "modules/positive/008_module_sealed.end"
+    negative:
+      - "modules/negative/001_bad_mod_syntax.end"
+
+  - id: "error_handling"
+    name: "Error Handling & Results"
+    category: "error_handling"
+    positive:
+      - "error_handling/positive/001_result_ok.end"
+      - "error_handling/positive/002_result_err.end"
+      - "error_handling/positive/003_try_operator.end"
+      - "error_handling/positive/004_panic_catch.end"
+      - "error_handling/positive/005_custom_error_struct.end"
+      - "error_handling/positive/006_option_type_some.end"
+      - "error_handling/positive/007_option_type_none.end"
+      - "error_handling/positive/008_nested_result_handling.end"
+    negative:
+      - "error_handling/negative/001_bad_error_syntax.end"
+
+  - id: "algorithms_math"
+    name: "Real-World Algorithms & Computation"
+    category: "algorithms"
+    positive:
+      - "algorithms/positive/001_bubble_sort.end"
+      - "algorithms/positive/002_binary_search.end"
+      - "algorithms/positive/003_matrix_multiply_2x2.end"
+      - "algorithms/positive/004_fibonacci_dynamic_programming.end"
+      - "algorithms/positive/005_prime_sieve.end"
+      - "algorithms/positive/006_array_max_min.end"
+      - "algorithms/positive/007_gcd_euclidean.end"
+      - "algorithms/positive/008_power_exponentiation.end"
+      - "algorithms/positive/009_collatz_conjecture.end"
+      - "algorithms/positive/010_linear_search.end"
+    negative:
+      - "algorithms/negative/001_bad_algorithm_syntax.end"
+
+  - id: "declarative_ui"
+    name: "Declarative UI & Canvas"
+    category: "declarative_ui"
+    positive:
+      - "declarative_ui/positive/001_widget_text.end"
+      - "declarative_ui/positive/002_widget_column_layout.end"
+      - "declarative_ui/positive/003_widget_button_click.end"
+      - "declarative_ui/positive/004_widget_padding.end"
+      - "declarative_ui/positive/005_canvas_draw_rect.end"
+      - "declarative_ui/positive/006_ui_state_counter.end"
+      - "declarative_ui/positive/007_animation_frame_tick.end"
+      - "declarative_ui/positive/008_ui_tree_walk.end"
+    negative:
+      - "declarative_ui/negative/001_bad_ui_widget.end"
+
+  - id: "types_primitives"
+    name: "Primitive & Composite Types"
+    category: "types_primitives"
+    positive:
+      - "types_primitives/positive/001_integer_types_width.end"
+      - "types_primitives/positive/002_unsigned_types.end"
+      - "types_primitives/positive/003_float_types.end"
+      - "types_primitives/positive/004_array_fixed_size.end"
+      - "types_primitives/positive/005_pointer_reference.end"
+      - "types_primitives/positive/006_bool_type_eval.end"
+      - "types_primitives/positive/007_string_type_return.end"
+      - "types_primitives/positive/008_type_inference_chain.end"
+    negative:
+      - "types_primitives/negative/001_type_mismatch_syntax.end"
+
+  - id: "type_checking_diagnostics"
+    name: "Static Type Checker & Diagnostic Codes"
+    category: "diagnostics_suite"
+    positive:
+    negative:
+      - "diagnostics_suite/negative/001_e0100_missing_semicolon_or_brace.end"
+      - "diagnostics_suite/negative/002_e0100_unmatched_parenthesis.end"
+      - "diagnostics_suite/negative/003_e0100_invalid_token.end"
+      - "diagnostics_suite/negative/004_e0100_missing_fn_name.end"
+      - "diagnostics_suite/negative/005_e0100_malformed_struct.end"
+      - "diagnostics_suite/negative/006_e0100_malformed_enum.end"
+      - "diagnostics_suite/negative/007_e0901_pure_impurity_call.end"
+      - "diagnostics_suite/negative/008_e0902_const_reassignment.end"
+      - "diagnostics_suite/negative/009_e0903_region_escape_pointer.end"
+      - "diagnostics_suite/negative/010_e0904_transitive_impurity.end"
+      - "diagnostics_suite/negative/011_e0906_use_after_move_val.end"
+      - "diagnostics_suite/negative/012_e0907_borrow_mutation_conflict.end"
+      - "diagnostics_suite/negative/013_e0908_data_race_hazard.end"
+      - "diagnostics_suite/negative/014_e0909_domain_borrow_conflict.end"
+      - "diagnostics_suite/negative/015_e0910_lease_escape_during.end"
+      - "diagnostics_suite/negative/016_e0913_sealed_struct_mod.end"
+      - "diagnostics_suite/negative/017_e0914_forbidden_direction.end"
+      - "diagnostics_suite/negative/018_e0915_boundary_violation.end"
+      - "diagnostics_suite/negative/019_e0916_layer_skip.end"
+      - "diagnostics_suite/negative/020_e0917_cycle_in_architecture.end"
+      - "diagnostics_suite/negative/021_e0918_friend_access_fail.end"
+      - "diagnostics_suite/negative/022_e0931_capability_surface_deny.end"
+      - "diagnostics_suite/negative/023_e0934_context_firewall_deny.end"
+      - "diagnostics_suite/negative/024_e0937_unhandled_match_case.end"

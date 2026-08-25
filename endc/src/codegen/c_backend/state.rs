@@ -1,4 +1,6 @@
 use crate::ast::{EnumDef, Type};
+use crate::diagnostics::{Diagnostic, DiagnosticAccumulator};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 pub struct CBackend {
@@ -8,10 +10,13 @@ pub struct CBackend {
     pub(crate) enums: Vec<EnumDef>,
     pub(crate) is_lib: bool,
     pub var_types: HashMap<String, Type>,
+    pub function_return_types: HashMap<String, Type>,
+    pub struct_fields: HashMap<String, HashMap<String, Type>>,
     pub active_regions: Vec<String>,
     pub struct_methods: HashMap<String, HashSet<String>>,
     pub module_methods: HashMap<String, HashSet<String>>,
     pub scope_vars: Vec<HashSet<String>>,
+    pub diagnostics: RefCell<DiagnosticAccumulator>,
 }
 
 pub fn escape_c_string(s: &str) -> String {
@@ -39,11 +44,26 @@ impl CBackend {
             enums: Vec::new(),
             is_lib: false,
             var_types: HashMap::new(),
+            function_return_types: HashMap::new(),
+            struct_fields: HashMap::new(),
             active_regions: Vec::new(),
             struct_methods: HashMap::new(),
             module_methods: HashMap::new(),
             scope_vars: vec![HashSet::new()],
+            diagnostics: RefCell::new(DiagnosticAccumulator::new()),
         }
+    }
+
+    pub fn add_diagnostic(&self, diag: Diagnostic) {
+        self.diagnostics.borrow_mut().add(diag);
+    }
+
+    pub fn has_errors(&self) -> bool {
+        self.diagnostics.borrow().has_errors()
+    }
+
+    pub fn diagnostics(&self) -> std::cell::Ref<'_, DiagnosticAccumulator> {
+        self.diagnostics.borrow()
     }
 
     pub(crate) fn push_c_scope(&mut self) {

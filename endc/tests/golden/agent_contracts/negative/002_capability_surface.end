@@ -1,0 +1,12 @@
+// @test: negative
+// @expect-error: E0934
+
+feature FeatA {
+    needs: [FeatB];
+}
+
+feature FeatB {
+    needs: [FeatA];
+}
+
+fn main() void {}

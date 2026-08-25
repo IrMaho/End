@@ -1,0 +1,8 @@
+// @test: positive
+// @expect-stdout:
+// 1
+
+fn main() void {
+    val res = 29 % 7
+    println(res)
+}

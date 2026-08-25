@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E0100
+
+fn main() void {
+    while i < 10 {
+        println(i)
+}

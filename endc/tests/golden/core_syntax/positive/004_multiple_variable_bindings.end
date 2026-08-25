@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// 60
+
+fn main() void {
+    val x = 10
+    val y = 20
+    val z = 30
+    val sum = x + y + z
+    println(sum)
+}

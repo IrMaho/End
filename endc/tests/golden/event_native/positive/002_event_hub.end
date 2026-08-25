@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// EventHub active
+
+hub PaymentHub {
+    owns: ["PaymentProcessed"]
+}
+
+fn main() void {
+    println("EventHub active")
+}

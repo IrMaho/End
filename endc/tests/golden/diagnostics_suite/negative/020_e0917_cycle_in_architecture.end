@@ -1,0 +1,6 @@
+// @test: negative
+// @expect-error: E0917
+
+mod messy_mod {
+    cohesion: 0.30
+}

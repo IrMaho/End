@@ -1,0 +1,17 @@
+// @test: positive
+// @expect-stdout:
+// Handler registered
+
+event SensorTick {
+    reading: i64,
+}
+
+hub SensorHub {
+    on SensorTick {
+        println("Handling SensorTick")
+    }
+}
+
+fn main() void {
+    println("Handler registered")
+}

@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// 0
+// 1
+// 2
+// 3
+
+fn main() void {
+    for i in 0..3 {
+        println(i)
+    }
+}

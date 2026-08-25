@@ -61,6 +61,8 @@ pub struct BuildArgs {
         pub tree_shake: bool,
         #[arg(long, default_value_t = false)]
         pub sanitize: bool,
+        #[arg(long, default_value_t = false)]
+        pub release: bool,
 }
 
     /// Perform fast semantic check and return machine-readable diagnostics

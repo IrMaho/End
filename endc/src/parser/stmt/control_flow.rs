@@ -197,6 +197,9 @@ impl Parser {
                         self.expect(TokenKind::RParen)?;
                         self.expect(TokenKind::For)?;
                         let item_name = self.parse_identifier_or_keyword()?;
+                        if self.match_token(&TokenKind::Comma) {
+                            let _ = self.parse_identifier_or_keyword()?;
+                        }
                         self.expect(TokenKind::In)?;
                         let iterable = self.parse_expression()?;
                         let body = self.parse_block()?;
@@ -214,6 +217,9 @@ impl Parser {
                 if self.check(&TokenKind::For) {
                     self.advance(); // consume "for"
                     let item_name = self.parse_identifier_or_keyword()?;
+                    if self.match_token(&TokenKind::Comma) {
+                        let _ = self.parse_identifier_or_keyword()?;
+                    }
                     self.expect(TokenKind::In)?;
                     let iterable = self.parse_expression()?;
                     let body = self.parse_block()?;

@@ -1,0 +1,12 @@
+// @test: positive
+// @expect-stdout:
+// C time function OK
+
+use c <time.h>;
+
+fn main() void {
+    inline_c { // reason: "C FFI"
+        "time_t t = time(NULL); (void)t;"
+    }
+    println("C time function OK")
+}

@@ -1,0 +1,11 @@
+// @test: positive
+// @expect-stdout:
+// Operation declared
+
+operation AddTen(input: i64) -> i64 {
+    return input + 10;
+}
+
+fn main() void {
+    println("Operation declared");
+}
