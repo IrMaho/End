@@ -87,35 +87,32 @@ impl NativeAtomicI64 {
 /// Thread-safe Native Mutex Primitive with Contention Tracking
 #[derive(Debug)]
 pub struct NativeMutex {
-    inner: Mutex<i64>,
-    is_locked: AtomicBool,
+    owner: AtomicI64,
     acquisitions: AtomicI64,
 }
 
 impl NativeMutex {
     pub fn new() -> Self {
         Self {
-            inner: Mutex::new(0),
-            is_locked: AtomicBool::new(false),
+            owner: AtomicI64::new(0),
             acquisitions: AtomicI64::new(0),
         }
     }
 
     pub fn lock(&self, thread_id: i64) -> bool {
-        if let Ok(mut guard) = self.inner.lock() {
-            *guard = thread_id;
-            self.is_locked.store(true, Ordering::SeqCst);
-            self.acquisitions.fetch_add(1, Ordering::SeqCst);
-            true
-        } else {
-            false
+        let tid = if thread_id <= 0 { 1 } else { thread_id };
+        loop {
+            if self.owner.compare_exchange_weak(0, tid, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+                self.acquisitions.fetch_add(1, Ordering::SeqCst);
+                return true;
+            }
+            std::thread::yield_now();
         }
     }
 
     pub fn try_lock(&self, thread_id: i64) -> bool {
-        if let Ok(mut guard) = self.inner.try_lock() {
-            *guard = thread_id;
-            self.is_locked.store(true, Ordering::SeqCst);
+        let tid = if thread_id <= 0 { 1 } else { thread_id };
+        if self.owner.compare_exchange(0, tid, Ordering::Acquire, Ordering::Relaxed).is_ok() {
             self.acquisitions.fetch_add(1, Ordering::SeqCst);
             true
         } else {
@@ -125,8 +122,9 @@ impl NativeMutex {
 
     pub fn try_lock_timeout(&self, thread_id: i64, timeout: Duration) -> bool {
         let start = Instant::now();
+        let tid = if thread_id <= 0 { 1 } else { thread_id };
         while start.elapsed() < timeout {
-            if self.try_lock(thread_id) {
+            if self.try_lock(tid) {
                 return true;
             }
             std::thread::yield_now();
@@ -135,14 +133,11 @@ impl NativeMutex {
     }
 
     pub fn unlock(&self) {
-        if let Ok(mut guard) = self.inner.try_lock() {
-            *guard = 0;
-        }
-        self.is_locked.store(false, Ordering::SeqCst);
+        self.owner.store(0, Ordering::Release);
     }
 
     pub fn is_locked(&self) -> bool {
-        self.is_locked.load(Ordering::SeqCst)
+        self.owner.load(Ordering::SeqCst) != 0
     }
 
     pub fn total_acquisitions(&self) -> i64 {

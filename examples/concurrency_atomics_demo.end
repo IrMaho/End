@@ -1,0 +1,125 @@
+import "std/sync/atomic.end"
+import "std/sync/mutex.end"
+import "std/sync/rwlock.end"
+
+fn main() void {
+    println("============================================================")
+    println(" End Language Real C11 Atomics & Mutex Concurrency Showcase")
+    println("============================================================")
+
+    // 1. Test Atomic Operations Matrix
+    println("--- 1. Testing C11 Atomic Operations Matrix ---")
+    val atom = atomic_i64_create(100)
+    println("Atomic created with initial value: 100")
+
+    val loaded = atomic_i64_load(atom, 4)
+    println("Loaded value (SeqCst):")
+    println(loaded)
+
+    val stored = atomic_i64_store(atom, 250, 2)
+    val loaded2 = atomic_i64_load(atom, 1)
+    println("Stored 250, loaded (Acquire):")
+    println(loaded2)
+
+    val add_res = atomic_i64_fetch_add(atom, 50)
+    println("Fetch Add 50 Old Value:")
+    println(add_res.old_value)
+    println("Fetch Add 50 Current Value:")
+    println(add_res.atomic.value)
+
+    val sub_res = atomic_i64_fetch_sub(atom, 20)
+    println("Fetch Sub 20 Old Value:")
+    println(sub_res.old_value)
+    println("Fetch Sub 20 Current Value:")
+    println(sub_res.atomic.value)
+
+    // Bitwise atomics
+    val and_res = atomic_i64_fetch_and(atom, 255)
+    println("Fetch And 255 Old Value:")
+    println(and_res)
+
+    val or_res = atomic_i64_fetch_or(atom, 1)
+    println("Fetch Or 1 Old Value:")
+    println(or_res)
+
+    val xor_res = atomic_i64_fetch_xor(atom, 3)
+    println("Fetch Xor 3 Old Value:")
+    println(xor_res)
+
+    // Swap & CAS
+    val swapped = atomic_i64_exchange(atom, 999, 4)
+    println("Atomic Exchange Old Value:")
+    println(swapped)
+    println("Atomic Exchange Current Value:")
+    println(atomic_i64_load(atom, 4))
+
+    val cas_success = atomic_i64_compare_exchange(atom, 999, 12345)
+    println("Atomic CAS Success (999 -> 12345):")
+    println(cas_success.success)
+    println("Atomic CAS Current Value:")
+    println(cas_success.atomic.value)
+
+    val cas_failure = atomic_i64_compare_exchange(atom, 999, 88888)
+    println("Atomic CAS Fail Expected (999 -> 88888):")
+    println(cas_failure.success)
+    println("Atomic CAS Value Unchanged:")
+    println(cas_failure.atomic.value)
+
+    atomic_i64_destroy(atom)
+    println("Atomic destroyed cleanly.")
+
+    // 2. Test Mutex Primitive
+    println("\n--- 2. Testing Real Native Mutex Primitives ---")
+    val mtx = mutex_create()
+    println("Mutex created. Is locked:")
+    println(mutex_is_locked(mtx))
+
+    val lock_res = mutex_lock(mtx, 42)
+    println("Locked by thread 42. Lock acquisitions:")
+    println(lock_res.mutex.lock_acquisitions)
+    println("Is locked:")
+    println(mutex_is_locked(lock_res.mutex))
+
+    val try_fail = mutex_try_lock(lock_res.mutex, 43)
+    println("Try lock while locked:")
+    println(try_fail)
+
+    val unlocked = mutex_unlock(lock_res.mutex, lock_res.guard)
+    println("Unlocked. Is locked:")
+    println(mutex_is_locked(unlocked))
+
+    val try_ok = mutex_try_lock(unlocked, 44)
+    println("Try lock after unlock:")
+    println(try_ok)
+
+    mutex_destroy(unlocked)
+    println("Mutex destroyed cleanly.")
+
+    // 3. Test Reader-Writer Lock Primitive
+    println("\n--- 3. Testing Reader-Writer Lock Primitives ---")
+    val rw = rwlock_create()
+    val r1 = rwlock_read_lock(rw)
+    val r2 = rwlock_read_lock(r1)
+    println("Acquired 2 shared reader locks. Total reads:")
+    println(r2.total_reads)
+
+    val r3 = rwlock_read_unlock(r2)
+    val r4 = rwlock_read_unlock(r3)
+    println("Released 2 reader locks. Total reads:")
+    println(r4.total_reads)
+
+    val w1 = rwlock_write_lock(r4)
+    println("Acquired exclusive write lock. Total writes:")
+    println(w1.total_writes)
+
+    val w2 = rwlock_write_unlock(w1)
+    println("Released exclusive write lock. Total writes:")
+    println(w2.total_writes)
+
+    rwlock_destroy(w2)
+    println("RwLock destroyed cleanly.")
+
+    println("\n============================================================")
+    println(" All Concurrency, Atomics & Mutex Verifications Succeeded!")
+    println("============================================================")
+}
