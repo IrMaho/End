@@ -755,6 +755,7 @@ dependencies = [
  "argon2",
  "bytemuck",
  "byteorder",
+ "bytes",
  "candle-core",
  "candle-transformers",
  "clap",

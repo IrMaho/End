@@ -355,6 +355,24 @@ impl Interpreter {
                         return Ok(Value::Int(-1));
                     }
 
+                    if name == "end_pg_execute_params" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let params_str = if let Some(Value::String(p)) = eval_args.get(2) { p.clone() } else { "[]".to_string() };
+                        let params: Vec<serde_json::Value> = serde_json::from_str(&params_str).unwrap_or_default();
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.execute_params(&sql, &params) {
+                                Ok(rows_aff) => return Ok(Value::Int(rows_aff as i64)),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL execute_params error: {}", e);
+                                    return Ok(Value::Int(-1));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(-1));
+                    }
+
                     if name == "end_pg_query" {
                         let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
                         let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
@@ -364,6 +382,24 @@ impl Interpreter {
                                 Ok(val) => return Ok(Value::String(val.to_string())),
                                 Err(e) => {
                                     eprintln!("PostgreSQL query error: {}", e);
+                                    return Ok(Value::String("[]".to_string()));
+                                }
+                            }
+                        }
+                        return Ok(Value::String("[]".to_string()));
+                    }
+
+                    if name == "end_pg_query_params" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let params_str = if let Some(Value::String(p)) = eval_args.get(2) { p.clone() } else { "[]".to_string() };
+                        let params: Vec<serde_json::Value> = serde_json::from_str(&params_str).unwrap_or_default();
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.query_json_params(&sql, &params) {
+                                Ok(val) => return Ok(Value::String(val.to_string())),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL query_params error: {}", e);
                                     return Ok(Value::String("[]".to_string()));
                                 }
                             }

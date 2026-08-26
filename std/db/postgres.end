@@ -106,11 +106,51 @@ pub fn pg_query(client: PgClient, sql_query: str) PgQueryResult {
     }
 }
 
+pub fn pg_query_params(client: PgClient, sql_query: str, params_json: str) PgQueryResult {
+    if !client.is_connected {
+        ret PgQueryResult {
+            client: client,
+            row: PgRow {
+                column_count: 0,
+                rows_affected: 0,
+                data: "[]",
+            },
+            raw_response: "[]",
+        }
+    }
+
+    val json_resp = end_pg_query_params(client.handle, sql_query, params_json)
+    val new_client = PgClient {
+        config: client.config,
+        is_connected: client.is_connected,
+        active_transaction: client.active_transaction,
+        queries_executed: client.queries_executed + 1,
+        handle: client.handle,
+    }
+    val row = PgRow {
+        column_count: 1,
+        rows_affected: 1,
+        data: json_resp,
+    }
+    ret PgQueryResult {
+        client: new_client,
+        row: row,
+        raw_response: json_resp,
+    }
+}
+
 pub fn pg_execute(client: PgClient, sql_query: str) i64 {
     if !client.is_connected {
         ret -1
     }
     ret end_pg_execute(client.handle, sql_query)
+}
+
+pub fn pg_execute_params(client: PgClient, sql_query: str, params_json: str) i64 {
+    if !client.is_connected {
+        ret -1
+    }
+    ret end_pg_execute_params(client.handle, sql_query, params_json)
 }
 
 pub fn pg_begin(client: PgClient) PgClient {

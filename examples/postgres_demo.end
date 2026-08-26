@@ -44,6 +44,11 @@ pub fn main() void {
     val filtered_res = pg_query(client, "SELECT name, role, age FROM demo_users WHERE age >= 40 ORDER BY age ASC;")
     println(filtered_res.raw_response)
 
+    // 5b. Parameterized Query Execution (Preventing SQL Injection)
+    println("--- 5b. Executing Parameterized Query ($1, $2) ---")
+    val param_query_res = pg_query_params(client, "SELECT name, role FROM demo_users WHERE age < $1 AND role LIKE $2;", "[30, \"%Architect%\"]")
+    println(param_query_res.raw_response)
+
     // 6. Real Atomic Transactions & ROLLBACK
     println("--- 6. Testing Atomic Transaction ROLLBACK ---")
     val tx_client = pg_begin(client)

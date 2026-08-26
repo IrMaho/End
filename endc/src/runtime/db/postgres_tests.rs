@@ -242,19 +242,97 @@ pub mod tests {
     }
 
     #[test]
-    fn test_pg_psql_interoperability() {
+    fn test_pg_connection_failures() {
+        // 1. Connection to closed/invalid port must return Err(ConnectionFailed)
+        let invalid_port_url = "host=127.0.0.1 port=54399 user=postgres dbname=postgres connect_timeout=1";
+        let res_port = PgEngine::connect(invalid_port_url);
+        assert!(res_port.is_err(), "Connection to unavailable port must fail");
+
+        // 2. Connection to non-existent database on live server must return Err(ConnectionFailed)
+        if is_postgres_running() {
+            let invalid_db_url = "host=127.0.0.1 port=5432 user=postgres dbname=non_existent_db_xyz_987";
+            let res_db = PgEngine::connect(invalid_db_url);
+            assert!(res_db.is_err(), "Connection to non-existent database must fail");
+        }
+    }
+
+    #[test]
+    fn test_pg_prepared_statements() {
         if !is_postgres_running() {
             return;
         }
         let mut eng = PgEngine::connect(TEST_PG_URL).expect("connect");
 
-        eng.execute("DROP TABLE IF EXISTS test_psql_interop;", &[]).unwrap();
-        eng.execute("CREATE TABLE test_psql_interop (id INT PRIMARY KEY, hero_name TEXT, title TEXT);", &[]).unwrap();
+        eng.execute("DROP TABLE IF EXISTS test_prepared CASCADE;", &[]).unwrap();
+        eng.execute("CREATE TABLE test_prepared (id INT PRIMARY KEY, name TEXT, category TEXT, price FLOAT8);", &[]).unwrap();
 
-        eng.execute("INSERT INTO test_psql_interop (id, hero_name, title) VALUES (1, 'Grace Hopper', 'Rear Admiral');", &[]).unwrap();
-        eng.execute("INSERT INTO test_psql_interop (id, hero_name, title) VALUES (2, 'Claude Shannon', 'Father of Information Theory');", &[]).unwrap();
+        eng.execute("INSERT INTO test_prepared (id, name, category, price) VALUES (1, 'Laptop', 'electronics', 1200.0), (2, 'Mouse', 'electronics', 25.0), (3, 'Compiler Book', 'books', 45.0), (4, 'Math Book', 'books', 80.0);", &[]).unwrap();
 
-        // Check if psql is available in pgsql/bin/psql.exe or ../pgsql/bin/psql.exe
+        let prep_sql = "SELECT name, price FROM test_prepared WHERE category = $1 AND price <= $2 ORDER BY price ASC;";
+        let param_sets = vec![
+            vec![serde_json::json!("electronics"), serde_json::json!(100.0)],
+            vec![serde_json::json!("books"), serde_json::json!(50.0)],
+        ];
+
+        let results = eng.prepare_and_query(prep_sql, &param_sets).expect("prepare_and_query");
+        assert_eq!(results.len(), 2);
+
+        // Result set 1: electronics <= 100.0 -> Mouse
+        assert_eq!(results[0].as_array().unwrap().len(), 1);
+        assert_eq!(results[0][0]["name"], "Mouse");
+        assert_eq!(results[0][0]["price"], 25.0);
+
+        // Result set 2: books <= 50.0 -> Compiler Book
+        assert_eq!(results[1].as_array().unwrap().len(), 1);
+        assert_eq!(results[1][0]["name"], "Compiler Book");
+        assert_eq!(results[1][0]["price"], 45.0);
+
+        eng.execute("DROP TABLE test_prepared;", &[]).unwrap();
+    }
+
+    #[test]
+    fn test_pg_special_characters_and_unicode() {
+        if !is_postgres_running() {
+            return;
+        }
+        let mut eng = PgEngine::connect(TEST_PG_URL).expect("connect");
+
+        eng.execute("DROP TABLE IF EXISTS test_pg_special CASCADE;", &[]).unwrap();
+        eng.execute("CREATE TABLE test_pg_special (id INT PRIMARY KEY, text_val TEXT);", &[]).unwrap();
+
+        let special_payloads = [
+            "O'Reilly & Sons",
+            "\"Double Quotes\" and 'Single Quotes'",
+            "Semi;colon and -- SQL injection attempt ' OR '1'='1",
+            "Multi\nLine\r\nString\tWith Tabs",
+            "سلام دنیا — موتور زبان اند ☕ ⚡ 🦀 🐘",
+        ];
+
+        for (idx, payload) in special_payloads.iter().enumerate() {
+            eng.execute_params("INSERT INTO test_pg_special (id, text_val) VALUES ($1, $2);", &[serde_json::json!(idx as i64), serde_json::json!(payload)]).expect("insert special");
+        }
+
+        for (idx, expected) in special_payloads.iter().enumerate() {
+            let res = eng.query_json_params("SELECT text_val FROM test_pg_special WHERE id = $1;", &[serde_json::json!(idx as i64)]).expect("query special");
+            assert_eq!(res[0]["text_val"], *expected, "Special character payload at index {} must match exactly", idx);
+        }
+
+        eng.execute("DROP TABLE test_pg_special;", &[]).unwrap();
+    }
+
+    #[test]
+    fn test_pg_bidirectional_psql_interoperability() {
+        if !is_postgres_running() {
+            return;
+        }
+        let mut eng = PgEngine::connect(TEST_PG_URL).expect("connect");
+
+        eng.execute("DROP TABLE IF EXISTS test_psql_bidirectional CASCADE;", &[]).unwrap();
+        eng.execute("CREATE TABLE test_psql_bidirectional (id INT PRIMARY KEY, source_client TEXT, message TEXT);", &[]).unwrap();
+
+        // Direction 1: End inserts data -> psql selects and verifies
+        eng.execute("INSERT INTO test_psql_bidirectional (id, source_client, message) VALUES (1, 'EndEngine', 'Created via End PgEngine');", &[]).unwrap();
+
         let psql_candidates = ["pgsql\\bin\\psql.exe", "..\\pgsql\\bin\\psql.exe", "psql.exe", "psql"];
         let mut psql_found = None;
         for cand in &psql_candidates {
@@ -265,18 +343,30 @@ pub mod tests {
         }
 
         if let Some(psql_bin) = psql_found {
-            let output = Command::new(psql_bin)
-                .args(&["-h", "127.0.0.1", "-p", "5432", "-U", "postgres", "-d", "postgres", "-c", "SELECT hero_name, title FROM test_psql_interop ORDER BY id ASC;"])
-                .output();
+            // Verify Direction 1 with psql
+            let output1 = Command::new(psql_bin)
+                .args(&["-h", "127.0.0.1", "-p", "5432", "-U", "postgres", "-d", "postgres", "-c", "SELECT source_client, message FROM test_psql_bidirectional WHERE id = 1;"])
+                .output()
+                .expect("execute psql");
 
-            if let Ok(out) = output {
-                let stdout = String::from_utf8_lossy(&out.stdout);
-                println!("psql output:\n{}", stdout);
-                assert!(stdout.contains("Grace Hopper"), "psql must observe data inserted by End PgEngine");
-                assert!(stdout.contains("Claude Shannon"), "psql must observe data inserted by End PgEngine");
-            }
+            let stdout1 = String::from_utf8_lossy(&output1.stdout);
+            assert!(stdout1.contains("EndEngine"), "psql must observe data inserted by End");
+            assert!(stdout1.contains("Created via End PgEngine"), "psql must observe message from End");
+
+            // Direction 2: psql inserts data -> End selects and verifies
+            let insert_sql = "INSERT INTO test_psql_bidirectional (id, source_client, message) VALUES (2, 'PsqlCLI', 'Created via External psql CLI');";
+            let output2 = Command::new(psql_bin)
+                .args(&["-h", "127.0.0.1", "-p", "5432", "-U", "postgres", "-d", "postgres", "-c", insert_sql])
+                .output()
+                .expect("insert via psql");
+            assert!(output2.status.success(), "psql insert must succeed");
+
+            // End queries data inserted by psql
+            let end_query_res = eng.query_json("SELECT source_client, message FROM test_psql_bidirectional WHERE id = 2;", &[]).expect("End query");
+            assert_eq!(end_query_res[0]["source_client"], "PsqlCLI", "End must observe row inserted by psql CLI");
+            assert_eq!(end_query_res[0]["message"], "Created via External psql CLI", "End must observe message inserted by psql CLI");
         }
 
-        eng.execute("DROP TABLE test_psql_interop;", &[]).unwrap();
+        eng.execute("DROP TABLE test_psql_bidirectional;", &[]).unwrap();
     }
 }

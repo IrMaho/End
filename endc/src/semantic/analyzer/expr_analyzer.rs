@@ -1225,7 +1225,9 @@ fn is_known_builtin(name: &str) -> bool {
             | "end_sqlite_close"
             | "end_pg_connect"
             | "end_pg_execute"
+            | "end_pg_execute_params"
             | "end_pg_query"
+            | "end_pg_query_params"
             | "end_pg_begin"
             | "end_pg_commit"
             | "end_pg_rollback"
@@ -1243,11 +1245,11 @@ fn is_known_builtin(name: &str) -> bool {
 
 fn get_builtin_return_type(name: &str) -> Type {
     match name {
-        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" | "end_sqlite_open" | "end_sqlite_execute" | "end_sqlite_begin" | "end_sqlite_commit" | "end_sqlite_rollback" | "end_pg_connect" | "end_pg_execute" | "end_pg_begin" | "end_pg_commit" | "end_pg_rollback" | "end_net_tcp_listen" | "end_net_tcp_accept" | "end_net_set_nonblocking" | "end_net_tcp_connect" | "end_net_tcp_send" => Type::I64,
+        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" | "end_sqlite_open" | "end_sqlite_execute" | "end_sqlite_begin" | "end_sqlite_commit" | "end_sqlite_rollback" | "end_pg_connect" | "end_pg_execute" | "end_pg_execute_params" | "end_pg_begin" | "end_pg_commit" | "end_pg_rollback" | "end_net_tcp_listen" | "end_net_tcp_accept" | "end_net_set_nonblocking" | "end_net_tcp_connect" | "end_net_tcp_send" => Type::I64,
         "sin" | "cos" | "sqrt" | "tan" | "fabs" | "pow" => Type::F64,
         "malloc" => Type::Pointer(Box::new(Type::Void)),
         "atomic_add" | "atomic_sub" | "atomic_load" => Type::I64,
-        "end_channel_recv" | "end_sqlite_query" | "end_pg_query" | "end_net_tcp_recv" => Type::Str,
+        "end_channel_recv" | "end_sqlite_query" | "end_pg_query" | "end_pg_query_params" | "end_net_tcp_recv" => Type::Str,
         "end_gpu_destroy_buffer" | "end_ui_canvas_clear" | "end_ui_canvas_draw_rect" | "end_ui_canvas_draw_circle" | "end_ui_canvas_destroy" | "end_sqlite_close" | "end_pg_close" | "end_net_tcp_close" => Type::Void,
         s if s.starts_with(|c: char| c.is_uppercase()) => Type::Custom(s.to_string()),
         _ => Type::Unknown,

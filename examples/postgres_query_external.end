@@ -1,0 +1,17 @@
+// End Language: Verifying Data Inserted Externally by psql CLI
+import "std/db/postgres.end"
+
+pub fn main() void {
+    println("--- End Querying Data Inserted Externally by psql ---")
+    val cfg = PgConnectionConfig {
+        host: "127.0.0.1",
+        port: 5432,
+        database: "postgres",
+        user: "postgres",
+        ssl_mode: false,
+    }
+    val client = pg_connect(cfg)
+    val res = pg_query(client, "SELECT name, role, age FROM demo_users WHERE email = 'turing@bletchley.uk';")
+    println(res.raw_response)
+    pg_close(client)
+}

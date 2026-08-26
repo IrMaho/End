@@ -89,6 +89,65 @@ impl PgEngine {
         }).map_err(|e| PgError::ExecutionFailed(format!("Failed to execute batch SQL: {}", e)))
     }
 
+    /// Helper to decode a column value from a row into a serde_json::Value preserving NULLs
+    fn decode_column_value(row: &tokio_postgres::Row, idx: usize, col_type: &Type) -> Value {
+        if col_type == &Type::BOOL {
+            match row.get::<_, Option<bool>>(idx) {
+                Some(b) => json!(b),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::INT2 {
+            match row.get::<_, Option<i16>>(idx) {
+                Some(i) => json!(i),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::INT4 {
+            match row.get::<_, Option<i32>>(idx) {
+                Some(i) => json!(i),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::INT8 {
+            match row.get::<_, Option<i64>>(idx) {
+                Some(i) => json!(i),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::FLOAT4 {
+            match row.get::<_, Option<f32>>(idx) {
+                Some(f) => json!(f),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::FLOAT8 {
+            match row.get::<_, Option<f64>>(idx) {
+                Some(f) => json!(f),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::TEXT || col_type == &Type::VARCHAR || col_type == &Type::BPCHAR || col_type == &Type::NAME {
+            match row.get::<_, Option<String>>(idx) {
+                Some(s) => json!(s),
+                None => Value::Null,
+            }
+        } else if col_type == &Type::JSON || col_type == &Type::JSONB {
+            match row.get::<_, Option<Value>>(idx) {
+                Some(v) => v,
+                None => Value::Null,
+            }
+        } else if col_type == &Type::BYTEA {
+            match row.get::<_, Option<Vec<u8>>>(idx) {
+                Some(bytes) => {
+                    let hex = bytes.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+                    json!(hex)
+                }
+                None => Value::Null,
+            }
+        } else {
+            match row.try_get::<_, Option<String>>(idx) {
+                Ok(Some(s)) => json!(s),
+                Ok(None) => Value::Null,
+                Err(_) => Value::Null,
+            }
+        }
+    }
+
     /// Execute a SELECT query and return rows as JSON Value (Array of Objects), properly preserving NULL
     pub fn query_json(&mut self, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<Value, PgError> {
         let rows = self.runtime.block_on(async {
@@ -102,69 +161,57 @@ impl PgEngine {
             for (idx, col) in columns.iter().enumerate() {
                 let col_name = col.name().to_string();
                 let col_type = col.type_();
-
-                let val = if col_type == &Type::BOOL {
-                    match row.get::<_, Option<bool>>(idx) {
-                        Some(b) => json!(b),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::INT2 {
-                    match row.get::<_, Option<i16>>(idx) {
-                        Some(i) => json!(i),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::INT4 {
-                    match row.get::<_, Option<i32>>(idx) {
-                        Some(i) => json!(i),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::INT8 {
-                    match row.get::<_, Option<i64>>(idx) {
-                        Some(i) => json!(i),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::FLOAT4 {
-                    match row.get::<_, Option<f32>>(idx) {
-                        Some(f) => json!(f),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::FLOAT8 {
-                    match row.get::<_, Option<f64>>(idx) {
-                        Some(f) => json!(f),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::TEXT || col_type == &Type::VARCHAR || col_type == &Type::BPCHAR || col_type == &Type::NAME {
-                    match row.get::<_, Option<String>>(idx) {
-                        Some(s) => json!(s),
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::JSON || col_type == &Type::JSONB {
-                    match row.get::<_, Option<Value>>(idx) {
-                        Some(v) => v,
-                        None => Value::Null,
-                    }
-                } else if col_type == &Type::BYTEA {
-                    match row.get::<_, Option<Vec<u8>>>(idx) {
-                        Some(bytes) => {
-                            let hex = bytes.iter().map(|b| format!("{:02x}", b)).collect::<String>();
-                            json!(hex)
-                        }
-                        None => Value::Null,
-                    }
-                } else {
-                    match row.try_get::<_, Option<String>>(idx) {
-                        Ok(Some(s)) => json!(s),
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
-                    }
-                };
-
+                let val = Self::decode_column_value(&row, idx, col_type);
                 obj.insert(col_name, val);
             }
             results.push(Value::Object(obj));
         }
 
         Ok(Value::Array(results))
+    }
+
+    /// Execute a query using dynamic JSON values as bound parameters
+    pub fn query_json_params(&mut self, sql: &str, params: &[Value]) -> Result<Value, PgError> {
+        let dyn_params: Vec<DynamicPgParam> = params.iter().map(DynamicPgParam::from_json).collect();
+        let param_refs: Vec<&(dyn ToSql + Sync)> = dyn_params.iter().map(|p| p as &(dyn ToSql + Sync)).collect();
+        self.query_json(sql, &param_refs)
+    }
+
+    /// Execute a statement using dynamic JSON values as bound parameters
+    pub fn execute_params(&mut self, sql: &str, params: &[Value]) -> Result<u64, PgError> {
+        let dyn_params: Vec<DynamicPgParam> = params.iter().map(DynamicPgParam::from_json).collect();
+        let param_refs: Vec<&(dyn ToSql + Sync)> = dyn_params.iter().map(|p| p as &(dyn ToSql + Sync)).collect();
+        self.execute(sql, &param_refs)
+    }
+
+    /// Prepare a statement and execute multiple times with different parameter sets
+    pub fn prepare_and_query(&mut self, sql: &str, params_list: &[Vec<Value>]) -> Result<Vec<Value>, PgError> {
+        self.runtime.block_on(async {
+            let stmt = self.client.prepare(sql).await
+                .map_err(|e| PgError::ExecutionFailed(format!("Failed to prepare statement '{}': {}", sql, e)))?;
+
+            let mut results = Vec::new();
+            for param_set in params_list {
+                let dyn_params: Vec<DynamicPgParam> = param_set.iter().map(DynamicPgParam::from_json).collect();
+                let param_refs: Vec<&(dyn ToSql + Sync)> = dyn_params.iter().map(|p| p as &(dyn ToSql + Sync)).collect();
+                let rows = self.client.query(&stmt, &param_refs).await
+                    .map_err(|e| PgError::QueryFailed(format!("Failed to execute prepared statement: {}", e)))?;
+
+                let mut set_rows = Vec::new();
+                for row in rows {
+                    let mut obj = Map::new();
+                    for (idx, col) in row.columns().iter().enumerate() {
+                        let col_name = col.name().to_string();
+                        let col_type = col.type_();
+                        let val = Self::decode_column_value(&row, idx, col_type);
+                        obj.insert(col_name, val);
+                    }
+                    set_rows.push(Value::Object(obj));
+                }
+                results.push(Value::Array(set_rows));
+            }
+            Ok(results)
+        })
     }
 
     /// Begin an explicit PostgreSQL transaction
@@ -189,4 +236,66 @@ impl PgEngine {
     pub fn close(&mut self) {
         self.is_connected = false;
     }
+}
+
+/// Dynamic parameter wrapper for ToSql trait
+#[derive(Debug)]
+pub enum DynamicPgParam {
+    Null,
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    String(String),
+}
+
+impl DynamicPgParam {
+    pub fn from_json(val: &Value) -> Self {
+        match val {
+            Value::Null => DynamicPgParam::Null,
+            Value::Bool(b) => DynamicPgParam::Bool(*b),
+            Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    DynamicPgParam::Int(i)
+                } else if let Some(f) = n.as_f64() {
+                    DynamicPgParam::Float(f)
+                } else {
+                    DynamicPgParam::String(n.to_string())
+                }
+            }
+            Value::String(s) => DynamicPgParam::String(s.clone()),
+            _ => DynamicPgParam::String(val.to_string()),
+        }
+    }
+}
+
+impl ToSql for DynamicPgParam {
+    fn to_sql(&self, ty: &Type, out: &mut bytes::BytesMut) -> Result<tokio_postgres::types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+        match self {
+            DynamicPgParam::Null => Ok(tokio_postgres::types::IsNull::Yes),
+            DynamicPgParam::Bool(b) => b.to_sql(ty, out),
+            DynamicPgParam::Int(i) => {
+                if ty == &Type::INT2 {
+                    (*i as i16).to_sql(ty, out)
+                } else if ty == &Type::INT4 {
+                    (*i as i32).to_sql(ty, out)
+                } else {
+                    i.to_sql(ty, out)
+                }
+            }
+            DynamicPgParam::Float(f) => {
+                if ty == &Type::FLOAT4 {
+                    (*f as f32).to_sql(ty, out)
+                } else {
+                    f.to_sql(ty, out)
+                }
+            }
+            DynamicPgParam::String(s) => s.to_sql(ty, out),
+        }
+    }
+
+    fn accepts(_ty: &Type) -> bool {
+        true
+    }
+
+    tokio_postgres::types::to_sql_checked!();
 }
