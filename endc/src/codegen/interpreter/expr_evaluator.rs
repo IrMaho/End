@@ -1095,6 +1095,50 @@ impl Interpreter {
                         return Ok(Value::Void);
                     }
 
+                    if name == "cpu_sleep_ms" || name == "time_sleep" || name == "sleep_ms" || name == "end_sleep_ms" {
+                        let ms = if let Some(Value::Int(v)) = eval_args.get(0) { *v as u64 } else { 0 };
+                        let prof_opt = self.profiler_session.clone();
+                        if let Some(prof_arc) = &prof_opt {
+                            if let Ok(mut prof) = prof_arc.lock() {
+                                prof.enter_function(name);
+                            }
+                        }
+                        let start_sleep = std::time::Instant::now();
+                        if ms > 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(ms));
+                        }
+                        let elapsed = start_sleep.elapsed().as_micros() as u64;
+                        if let Some(prof_arc) = &prof_opt {
+                            if let Ok(mut prof) = prof_arc.lock() {
+                                prof.exit_function(name, elapsed, elapsed, 0);
+                            }
+                        }
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_profiler_start" {
+                        let session = std::sync::Arc::new(std::sync::Mutex::new(crate::profiler::ProfilerSession::new("interactive_session")));
+                        self.profiler_session = Some(session);
+                        return Ok(Value::Int(1));
+                    }
+
+                    if name == "end_profiler_stop" {
+                        if let Some(session_arc) = self.profiler_session.take() {
+                            let report = session_arc.lock().unwrap().finish();
+                            let json = serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string());
+                            return Ok(Value::String(json));
+                        }
+                        return Ok(Value::String("{}".to_string()));
+                    }
+
+                    if name == "end_profiler_flamegraph" {
+                        if let Some(session_arc) = &self.profiler_session {
+                            let report = session_arc.lock().unwrap().finish();
+                            return Ok(Value::String(report.flamegraph_svg));
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

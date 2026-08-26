@@ -260,6 +260,10 @@ pub fn emit_concurrency_crypto_runtime(out: &mut String) {
     out.push_str("static inline int64_t end_raft_cluster_partition_node(int64_t h, int64_t node_id) { (void)h; (void)node_id; return 1; }\n");
     out.push_str("static inline int64_t end_raft_cluster_heal_partition(int64_t h) { (void)h; return 1; }\n");
     out.push_str("static inline void end_raft_cluster_stop(int64_t h) { (void)h; }\n\n");
+    out.push_str("/* End Real Native Execution Profiler C Runtime Stubs */\n");
+    out.push_str("static inline int64_t end_profiler_start(void) { return 1; }\n");
+    out.push_str("static inline const char* end_profiler_stop(void) { return \"{\\\"status\\\":\\\"ok\\\"}\"; }\n");
+    out.push_str("static inline const char* end_profiler_flamegraph(void) { return \"<svg></svg>\"; }\n\n");
 
     // Embedded Database Engine Primitives (Real SQLite Engine C Bindings)
     out.push_str("/* End Real Embedded SQLite-Compatible Database Engine Primitives */\n");

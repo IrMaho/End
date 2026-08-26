@@ -310,15 +310,25 @@ pub fn handle_fuzz(args: FuzzArgs) {
 
 pub fn handle_profile(args: ProfileArgs) {
     let ProfileArgs { target, flamegraph } = args;
-            let report = profiler::EndProfiler::profile_execution(&target);
-            println!("⚡ {} Execution Profile for `{}`", "Profiler:".cyan().bold(), report.target);
-            println!("  ├─ Total Runtime: {:.2} ms", report.total_runtime_ms);
-            println!("  ├─ Memory Usage:  {} KB", report.total_memory_kb);
-            println!("  └─ Functions:     {} calls", report.samples.len());
-            if flamegraph {
-                let svg_path = PathBuf::from("flamegraph.svg");
-                let _ = fs::write(&svg_path, report.flamegraph_svg);
-                println!("🔥 {} Saved interactive flamegraph SVG to {:?}", "Profiler:".green().bold(), svg_path);
-            }
+    let report = profiler::EndProfiler::profile_execution(&target);
+    println!("⚡ {} Execution Profile for `{}`", "Profiler:".cyan().bold(), report.target);
+    println!("  ├─ Total Runtime: {:.2} ms", report.total_runtime_ms);
+    println!("  ├─ Memory Usage:  {} KB", report.total_memory_kb);
+    println!("  ├─ Total Samples: {}", report.total_samples);
+    println!("  └─ Functions (Top Callers & Hotspots):");
+    for (i, sample) in report.samples.iter().take(10).enumerate() {
+        let is_last = i == report.samples.len().min(10) - 1;
+        let prefix = if is_last { "     └─" } else { "     ├─" };
+        println!(
+            "{} {:<24} {:>6} calls  {:>8} µs  ({:>5.1}%)",
+            prefix, sample.function_name, sample.call_count, sample.total_duration_us, sample.percent
+        );
+    }
+    if flamegraph {
+        let svg_path = PathBuf::from("flamegraph.svg");
+        let _ = fs::write(&svg_path, report.flamegraph_svg);
+        println!("🔥 {} Saved interactive flamegraph SVG to {:?}", "Profiler:".green().bold(), svg_path);
+    }
 }
+
 

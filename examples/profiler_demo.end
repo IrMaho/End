@@ -1,0 +1,25 @@
+// 👑 End Language: Profiler Real Measurement Demo
+
+fn compute_fibonacci(n: i64) i64 {
+    if n <= 1 {
+        ret n
+    }
+    ret compute_fibonacci(n - 1) + compute_fibonacci(n - 2)
+}
+
+fn simulate_network_io() void {
+    cpu_sleep_ms(25)
+}
+
+fn process_pipeline() void {
+    val fib_result = compute_fibonacci(14)
+    println("Fibonacci 14 =")
+    println(fib_result)
+    simulate_network_io()
+}
+
+fn main() void {
+    println("Starting Profiler Demo...")
+    process_pipeline()
+    println("Demo Completed.")
+}

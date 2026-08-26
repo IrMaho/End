@@ -4,6 +4,14 @@ use crate::ast::FunctionDef;
 
 impl Interpreter {
     pub(crate) fn eval_function(&mut self, func: &FunctionDef, args: Vec<Value>) -> Result<Value, String> {
+        let prof_opt = self.profiler_session.clone();
+        if let Some(prof_arc) = &prof_opt {
+            if let Ok(mut prof) = prof_arc.lock() {
+                prof.enter_function(&func.name);
+            }
+        }
+
+        let start_time = std::time::Instant::now();
         self.push_scope();
 
         for (param, arg) in func.params.iter().zip(args.into_iter()) {
@@ -30,6 +38,14 @@ impl Interpreter {
         }
 
         self.pop_scope();
+        let elapsed_us = start_time.elapsed().as_micros() as u64;
+
+        if let Some(prof_arc) = &prof_opt {
+            if let Ok(mut prof) = prof_arc.lock() {
+                prof.exit_function(&func.name, elapsed_us, elapsed_us, 64);
+            }
+        }
+
         Ok(ret_val)
     }
 

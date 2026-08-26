@@ -45,6 +45,7 @@ pub struct Interpreter {
     pub next_rwlock_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
     pub raft_clusters: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::Mutex<crate::runtime::raft::RaftCluster>>>>>,
     pub next_raft_cluster_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub profiler_session: Option<std::sync::Arc<std::sync::Mutex<crate::profiler::ProfilerSession>>>,
 }
 
 impl Interpreter {
@@ -91,6 +92,7 @@ impl Interpreter {
             next_rwlock_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(3000)),
             raft_clusters: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_raft_cluster_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(4000)),
+            profiler_session: None,
         }
     }
 
