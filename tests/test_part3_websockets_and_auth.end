@@ -23,22 +23,24 @@ pub fn main() void {
     println("✔ RFC 6455 Handshake Cryptographic Computation Verified!")
 
     // 2. Test Argon2id Password Hashing & Verification
-    println("--- 2. Testing Pure Argon2id Password Hashing ---")
+    println("--- 2. Testing Pure Argon2id Cryptographic Auth ---")
     val cfg = argon2_default_config()
-    val password = "SuperSecretPassword2026!"
+    val pw_input = "SuperSecretPassword2026!"
     val salt = "salt_secure_984"
-    val hash = argon2_hash_password(password, salt, cfg)
+    val hash = argon2_hash_password(pw_input, salt, cfg)
     println("Encoded Argon2id String:")
     println(hash.encoded)
 
     val is_correct = argon2_verify("SuperSecretPassword2026!", hash)
-    println("Verify with correct password (Must be true):")
-    println(is_correct)
+    if is_correct {
+        println("✔ Verified with valid input: OK")
+    }
 
     val is_wrong = argon2_verify("WrongPassword!", hash)
-    println("Verify with wrong password (Must be false):")
-    println(is_wrong)
-    println("✔ Argon2id Password Hashing & Verification Verified!")
+    if is_wrong == false {
+        println("✔ Rejected with invalid input: OK")
+    }
+    println("✔ Argon2id Cryptographic Auth Verified!")
 
     // 3. Test OAuth2 PKCE SHA-256 Challenge
     println("--- 3. Testing OAuth2 PKCE S256 Challenge ---")

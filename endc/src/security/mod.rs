@@ -2,6 +2,9 @@ pub mod adversarial;
 pub mod attestation;
 pub mod capability_engine;
 pub mod contract_verifier;
+pub mod crypto;
+#[cfg(test)]
+pub mod crypto_tests;
 pub mod taint_analyzer;
 pub mod taint_ast_visitor;
 pub mod tls;
