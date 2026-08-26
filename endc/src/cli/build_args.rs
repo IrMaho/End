@@ -62,6 +62,8 @@ pub struct BuildArgs {
         #[arg(long, default_value_t = false)]
         pub sanitize: bool,
         #[arg(long, default_value_t = false)]
+        pub tsan: bool,
+        #[arg(long, default_value_t = false)]
         pub release: bool,
 }
 

@@ -1,5 +1,5 @@
 // 🧵 End Language: std/sync/atomic.end
-// Native Hardware-Accelerated Atomic Primitives (Zero-Lock CAS)
+// Native Hardware-Accelerated Atomic Primitives (C11 stdatomic.h / Zero-Lock CAS)
 
 pub enum MemoryOrder {
     Relaxed,
@@ -10,6 +10,7 @@ pub enum MemoryOrder {
 }
 
 pub st AtomicI64 {
+    handle: i64,
     value: i64,
 }
 
@@ -24,35 +25,68 @@ pub st AtomicCasResult {
 }
 
 pub fn atomic_i64_create(initial: i64) AtomicI64 {
-    ret AtomicI64 { value: initial }
+    val h = end_atomic_create(initial)
+    ret AtomicI64 { handle: h, value: initial }
 }
 
-pub fn atomic_i64_load(atom: AtomicI64, order: MemoryOrder) i64 {
-    ret atom.value
+pub fn atomic_i64_load(atom: AtomicI64, order: i64) i64 {
+    val loaded = end_atomic_load(atom.handle, order)
+    ret loaded
 }
 
-pub fn atomic_i64_store(atom: AtomicI64, new_val: i64, order: MemoryOrder) AtomicI64 {
-    ret AtomicI64 { value: new_val }
+pub fn atomic_i64_store(atom: AtomicI64, new_val: i64, order: i64) AtomicI64 {
+    end_atomic_store(atom.handle, new_val, order)
+    ret AtomicI64 { handle: atom.handle, value: new_val }
 }
 
 pub fn atomic_i64_fetch_add(atom: AtomicI64, delta: i64) AtomicFetchAddResult {
-    val old = atom.value
-    val updated = AtomicI64 { value: old + delta }
+    val old = end_atomic_fetch_add(atom.handle, delta, 4)
+    val cur = end_atomic_load(atom.handle, 4)
     ret AtomicFetchAddResult {
-        atomic: updated,
+        atomic: AtomicI64 { handle: atom.handle, value: cur },
         old_value: old,
     }
 }
 
+pub fn atomic_i64_fetch_sub(atom: AtomicI64, delta: i64) AtomicFetchAddResult {
+    val old = end_atomic_fetch_sub(atom.handle, delta, 4)
+    val cur = end_atomic_load(atom.handle, 4)
+    ret AtomicFetchAddResult {
+        atomic: AtomicI64 { handle: atom.handle, value: cur },
+        old_value: old,
+    }
+}
+
+pub fn atomic_i64_fetch_and(atom: AtomicI64, mask: i64) i64 {
+    val old = end_atomic_fetch_and(atom.handle, mask, 4)
+    ret old
+}
+
+pub fn atomic_i64_fetch_or(atom: AtomicI64, mask: i64) i64 {
+    val old = end_atomic_fetch_or(atom.handle, mask, 4)
+    ret old
+}
+
+pub fn atomic_i64_fetch_xor(atom: AtomicI64, mask: i64) i64 {
+    val old = end_atomic_fetch_xor(atom.handle, mask, 4)
+    ret old
+}
+
+pub fn atomic_i64_exchange(atom: AtomicI64, desired: i64, order: i64) i64 {
+    val old = end_atomic_exchange(atom.handle, desired, order)
+    ret old
+}
+
 pub fn atomic_i64_compare_exchange(atom: AtomicI64, expected: i64, desired: i64) AtomicCasResult {
-    if atom.value == expected {
-        ret AtomicCasResult {
-            atomic: AtomicI64 { value: desired },
-            success: true,
-        }
-    }
+    val ok_num = end_atomic_cas(atom.handle, expected, desired, 4, 0)
+    val is_ok = ok_num == 1
+    val cur = end_atomic_load(atom.handle, 4)
     ret AtomicCasResult {
-        atomic: atom,
-        success: false,
+        atomic: AtomicI64 { handle: atom.handle, value: cur },
+        success: is_ok,
     }
+}
+
+pub fn atomic_i64_destroy(atom: AtomicI64) void {
+    end_atomic_destroy(atom.handle)
 }

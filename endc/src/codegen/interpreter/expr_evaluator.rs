@@ -633,6 +633,307 @@ impl Interpreter {
                         }
                     }
 
+                    if name == "end_atomic_create" {
+                        let init_val = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let h = self.next_atomic_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        let mut map = self.atomics.lock().unwrap();
+                        map.insert(h, std::sync::Arc::new(std::sync::atomic::AtomicI64::new(init_val)));
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_atomic_load" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            2 => std::sync::atomic::Ordering::SeqCst,
+                            3 => std::sync::atomic::Ordering::Acquire,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.load(order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_store" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let val = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            2 => std::sync::atomic::Ordering::Release,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            atom.store(val, order);
+                        }
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_atomic_fetch_add" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let delta = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            2 => std::sync::atomic::Ordering::Release,
+                            3 => std::sync::atomic::Ordering::AcqRel,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.fetch_add(delta, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_fetch_sub" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let delta = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            2 => std::sync::atomic::Ordering::Release,
+                            3 => std::sync::atomic::Ordering::AcqRel,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.fetch_sub(delta, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_fetch_and" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.fetch_and(mask, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_fetch_or" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.fetch_or(mask, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_fetch_xor" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.fetch_xor(mask, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_exchange" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let desired = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order_val = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let order = match order_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            2 => std::sync::atomic::Ordering::Release,
+                            3 => std::sync::atomic::Ordering::AcqRel,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            return Ok(Value::Int(atom.swap(desired, order)));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_cas" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let exp = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let des = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 0 };
+                        let succ_val = if let Some(Value::Int(v)) = eval_args.get(3) { *v } else { 4 };
+                        let fail_val = if let Some(Value::Int(v)) = eval_args.get(4) { *v } else { 0 };
+                        let succ = match succ_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            2 => std::sync::atomic::Ordering::Release,
+                            3 => std::sync::atomic::Ordering::AcqRel,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let fail = match fail_val {
+                            0 => std::sync::atomic::Ordering::Relaxed,
+                            1 => std::sync::atomic::Ordering::Acquire,
+                            _ => std::sync::atomic::Ordering::SeqCst,
+                        };
+                        let map = self.atomics.lock().unwrap();
+                        if let Some(atom) = map.get(&h) {
+                            let res = atom.compare_exchange(exp, des, succ, fail);
+                            return Ok(Value::Int(if res.is_ok() { 1 } else { 0 }));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_atomic_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mut map = self.atomics.lock().unwrap();
+                        map.remove(&h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_mutex_create" {
+                        let h = self.next_mutex_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        let mut map = self.mutexes.lock().unwrap();
+                        map.insert(h, std::sync::Arc::new(std::sync::Mutex::new(0)));
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_mutex_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let tid = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 1 };
+                        let mtx_arc = {
+                            let map = self.mutexes.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(m) = mtx_arc {
+                            let mut guard = m.lock().unwrap();
+                            *guard = tid;
+                            return Ok(Value::Int(1));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_mutex_try_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let tid = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 1 };
+                        let mtx_arc = {
+                            let map = self.mutexes.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(m) = mtx_arc {
+                            if let Ok(mut guard) = m.try_lock() {
+                                *guard = tid;
+                                return Ok(Value::Int(1));
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_mutex_unlock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mtx_arc = {
+                            let map = self.mutexes.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(m) = mtx_arc {
+                            if let Ok(mut guard) = m.try_lock() {
+                                *guard = 0;
+                            }
+                        }
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_mutex_is_locked" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mtx_arc = {
+                            let map = self.mutexes.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(m) = mtx_arc {
+                            if let Ok(guard) = m.try_lock() {
+                                return Ok(Value::Int(if *guard != 0 { 1 } else { 0 }));
+                            }
+                            return Ok(Value::Int(1));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_mutex_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mut map = self.mutexes.lock().unwrap();
+                        map.remove(&h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_create" {
+                        let h = self.next_rwlock_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        let mut map = self.rwlocks.lock().unwrap();
+                        map.insert(h, std::sync::Arc::new(std::sync::RwLock::new(0)));
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_rwlock_read_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let lock_arc = {
+                            let map = self.rwlocks.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(l) = lock_arc {
+                            drop(l.read().unwrap());
+                        }
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_read_unlock" {
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_write_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let lock_arc = {
+                            let map = self.rwlocks.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(l) = lock_arc {
+                            drop(l.write().unwrap());
+                        }
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_write_unlock" {
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mut map = self.rwlocks.lock().unwrap();
+                        map.remove(&h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_thread_create" {
+                        return Ok(Value::Int(1));
+                    }
+
+                    if name == "end_thread_join" {
+                        return Ok(Value::Void);
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

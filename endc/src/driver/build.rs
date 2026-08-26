@@ -68,6 +68,7 @@ pub fn handle_build(args: BuildArgs) {
             backend: backend_choice,
             tree_shake,
             sanitize,
+            tsan,
             release, } = args;
 
     // Contract Build Gate: Check for .agents/contract.toml
@@ -504,9 +505,19 @@ pub fn handle_build(args: BuildArgs) {
                     gcc_args.push("-shared".to_string());
                     gcc_args.push("-fPIC".to_string());
                 }
-                if strip && release {
+                if tsan {
+                    gcc_args.push("-fsanitize=thread".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                } else if sanitize {
+                    gcc_args.push("-fsanitize=address,undefined".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                }
+                if strip && release && !tsan && !sanitize {
                     gcc_args.push("-s".to_string());
                 }
+                gcc_args.push("-pthread".to_string());
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());
@@ -637,9 +648,19 @@ pub fn handle_build(args: BuildArgs) {
                 if is_library_mode {
                     gcc_args.push("-shared".to_string());
                 }
-                if strip && release {
+                if tsan {
+                    gcc_args.push("-fsanitize=thread".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                } else if sanitize {
+                    gcc_args.push("-fsanitize=address,undefined".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                }
+                if strip && release && !tsan && !sanitize {
                     gcc_args.push("-s".to_string());
                 }
+                gcc_args.push("-pthread".to_string());
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());

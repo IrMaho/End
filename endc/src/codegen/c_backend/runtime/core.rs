@@ -11,6 +11,7 @@ pub fn emit_core_runtime(out: &mut String) {
     out.push_str("#include <math.h>\n");
     out.push_str("#include <time.h>\n");
     out.push_str("#include <setjmp.h>\n");
+    out.push_str("#include <stdatomic.h>\n");
     out.push_str("static inline char* _end_str_concat(const char* a, const char* b) {\n");
     out.push_str("    if (!a) a = \"\";\n");
     out.push_str("    if (!b) b = \"\";\n");

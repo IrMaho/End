@@ -37,6 +37,12 @@ pub struct Interpreter {
     pub next_http2_server_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
     pub http2_clients: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::net::Http2Client>>>,
     pub next_http2_client_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub atomics: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::atomic::AtomicI64>>>>,
+    pub next_atomic_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub mutexes: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::Mutex<i64>>>>>,
+    pub next_mutex_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub rwlocks: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::RwLock<i64>>>>>,
+    pub next_rwlock_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Interpreter {
@@ -75,6 +81,12 @@ impl Interpreter {
             next_http2_server_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(800)),
             http2_clients: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_http2_client_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(900)),
+            atomics: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_atomic_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(1000)),
+            mutexes: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_mutex_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(2000)),
+            rwlocks: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_rwlock_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(3000)),
         }
     }
 

@@ -1,52 +1,69 @@
 // 🧵 End Language: std/sync/mutex.end
-// High-Performance Nanosecond Spin-Mutex & OS Futex Lock
+// High-Performance Native OS Futex / Mutex Lock (pthread_mutex / CriticalSection)
 
-pub st Mutex<T> {
+pub st Mutex {
+    handle: i64,
     is_locked: bool,
     owner_thread_id: i64,
     lock_acquisitions: i64,
 }
 
-pub st MutexGuard<T> {
+pub st MutexGuard {
     is_valid: bool,
 }
 
-pub st MutexLockResult<T> {
-    mutex: Mutex<T>,
-    guard: MutexGuard<T>,
+pub st MutexLockResult {
+    mutex: Mutex,
+    guard: MutexGuard,
 }
 
-pub fn mutex_create<T>() Mutex<T> {
-    ret Mutex<T> {
+pub fn mutex_create() Mutex {
+    val h = end_mutex_create()
+    ret Mutex {
+        handle: h,
         is_locked: false,
         owner_thread_id: 0,
         lock_acquisitions: 0,
     }
 }
 
-pub fn mutex_lock<T>(mtx: Mutex<T>, thread_id: i64) MutexLockResult<T> {
-    val new_mtx = Mutex<T> {
+pub fn mutex_lock(mtx: Mutex, thread_id: i64) MutexLockResult {
+    val ok = end_mutex_lock(mtx.handle, thread_id)
+    val new_mtx = Mutex {
+        handle: mtx.handle,
         is_locked: true,
         owner_thread_id: thread_id,
         lock_acquisitions: mtx.lock_acquisitions + 1,
     }
-    val guard = MutexGuard<T> {
-        is_valid: true,
+    val guard = MutexGuard {
+        is_valid: ok == 1,
     }
-    ret MutexLockResult<T> {
+    ret MutexLockResult {
         mutex: new_mtx,
         guard: guard,
     }
 }
 
-pub fn mutex_unlock<T>(mtx: Mutex<T>, guard: MutexGuard<T>) Mutex<T> {
-    ret Mutex<T> {
+pub fn mutex_try_lock(mtx: Mutex, thread_id: i64) bool {
+    val ok = end_mutex_try_lock(mtx.handle, thread_id)
+    ret ok == 1
+}
+
+pub fn mutex_unlock(mtx: Mutex, guard: MutexGuard) Mutex {
+    end_mutex_unlock(mtx.handle)
+    ret Mutex {
+        handle: mtx.handle,
         is_locked: false,
         owner_thread_id: 0,
         lock_acquisitions: mtx.lock_acquisitions,
     }
 }
 
-pub fn mutex_is_locked<T>(mtx: Mutex<T>) bool {
-    ret mtx.is_locked
+pub fn mutex_is_locked(mtx: Mutex) bool {
+    val status = end_mutex_is_locked(mtx.handle)
+    ret status == 1
+}
+
+pub fn mutex_destroy(mtx: Mutex) void {
+    end_mutex_destroy(mtx.handle)
 }
