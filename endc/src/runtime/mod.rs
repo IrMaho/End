@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod db;
 pub mod gpu;
 
 use serde::{Deserialize, Serialize};

@@ -28,6 +28,7 @@ byteorder = "1.5"
 wgpu = "24"
 pollster = "0.4"
 bytemuck = { version = "1.19", features = ["derive"] }
+rusqlite = { version = "0.33", features = ["bundled"] }
 
 [profile.release]
 opt-level = 2

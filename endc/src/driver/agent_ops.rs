@@ -519,4 +519,82 @@ pub fn handle_gpu(args: crate::cli::gpu_args::GpuArgs) {
     }
 }
 
+pub fn handle_db(args: crate::cli::db_args::DbArgs) {
+    use crate::cli::db_args::DbAction;
+    use crate::runtime::db::SqliteEngine;
+
+    match args.action {
+        DbAction::Exec { path, sql } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.execute(&sql, &[]) {
+                Ok(affected) => {
+                    println!("✔ {} ({} rows affected)", "SQLite Statement Executed Successfully".green().bold(), affected);
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Execution Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        DbAction::Query { path, sql, json } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.query_json(&sql, &[]) {
+                Ok(val) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&val).unwrap_or_default());
+                    } else {
+                        println!("📊 {}", "SQLite Query Results:".green().bold());
+                        println!("{}", serde_json::to_string_pretty(&val).unwrap_or_default());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Query Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        DbAction::Tables { path } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.query_json("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC;", &[]) {
+                Ok(val) => {
+                    println!("🗄️ {}", format!("Tables in SQLite database '{}':", path).cyan().bold());
+                    if let Some(arr) = val.as_array() {
+                        if arr.is_empty() {
+                            println!("  (No user tables found)");
+                        } else {
+                            for item in arr {
+                                if let Some(tname) = item["name"].as_str() {
+                                    println!("  ├─ {}", tname.yellow());
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Tables Query Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+}
+
 

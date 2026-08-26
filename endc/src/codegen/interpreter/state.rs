@@ -29,6 +29,8 @@ pub struct Interpreter {
     pub project_profile: HashMap<String, String>,
     pub stdout: String,
     pub capture_stdout: bool,
+    pub db_engines: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::db::SqliteEngine>>>,
+    pub next_db_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Interpreter {
@@ -59,6 +61,8 @@ impl Interpreter {
             project_profile: HashMap::new(),
             stdout: String::new(),
             capture_stdout: false,
+            db_engines: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_db_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(100)),
         }
     }
 

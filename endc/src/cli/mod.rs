@@ -2,6 +2,7 @@ pub mod agent_args;
 pub mod ai_args;
 pub mod build_args;
 pub mod commands;
+pub mod db_args;
 pub mod dev_args;
 pub mod gpu_args;
 pub mod package_args;

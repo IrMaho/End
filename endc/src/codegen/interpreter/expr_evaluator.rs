@@ -185,6 +185,145 @@ impl Interpreter {
                         return Ok(Value::String(String::new()));
                     }
 
+                    // --- Real SQLite Engine Builtins ---
+                    if name == "end_db_open" || name == "end_sqlite_open" {
+                        let path_str = if let Some(Value::String(p)) = eval_args.first() {
+                            p.clone()
+                        } else {
+                            ":memory:".to_string()
+                        };
+                        match crate::runtime::db::SqliteEngine::open(&path_str) {
+                            Ok(eng) => {
+                                let h = self.next_db_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                                let mut map = self.db_engines.lock().unwrap();
+                                map.insert(h, eng);
+                                return Ok(Value::Int(h));
+                            }
+                            Err(e) => {
+                                eprintln!("SQLite Open Error: {}", e);
+                                return Ok(Value::Int(0));
+                            }
+                        }
+                    }
+
+                    if name == "end_db_execute" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let key = if let Some(Value::String(k)) = eval_args.get(1) { k.clone() } else { String::new() };
+                        let val = if let Some(Value::String(v)) = eval_args.get(2) { v.clone() } else { String::new() };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.kv_set(&key, &val) {
+                                Ok(affected) => return Ok(Value::Int(affected as i64)),
+                                Err(e) => {
+                                    eprintln!("SQLite DB execute error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_db_query" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let key = if let Some(Value::String(k)) = eval_args.get(1) { k.clone() } else { String::new() };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.kv_get(&key) {
+                                Ok(Some(v)) => return Ok(Value::String(v)),
+                                Ok(None) => return Ok(Value::String(String::new())),
+                                Err(e) => {
+                                    eprintln!("SQLite DB query error: {}", e);
+                                    return Ok(Value::String(String::new()));
+                                }
+                            }
+                        }
+                        return Ok(Value::String(String::new()));
+                    }
+
+                    if name == "end_db_close" || name == "end_sqlite_close" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.db_engines.lock().unwrap();
+                        map.remove(&h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_sqlite_execute" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.execute(&sql, &[]) {
+                                Ok(affected) => return Ok(Value::Int(affected as i64)),
+                                Err(e) => {
+                                    eprintln!("SQLite execute error: {}", e);
+                                    return Ok(Value::Int(-1));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(-1));
+                    }
+
+                    if name == "end_sqlite_query" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.query_json(&sql, &[]) {
+                                Ok(val) => return Ok(Value::String(val.to_string())),
+                                Err(e) => {
+                                    eprintln!("SQLite query error: {}", e);
+                                    return Ok(Value::String("[]".to_string()));
+                                }
+                            }
+                        }
+                        return Ok(Value::String("[]".to_string()));
+                    }
+
+                    if name == "end_sqlite_begin" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_begin() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("SQLite transaction begin error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_sqlite_commit" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_commit() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("SQLite transaction commit error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_sqlite_rollback" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.db_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_rollback() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("SQLite transaction rollback error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

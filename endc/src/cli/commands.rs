@@ -2,6 +2,7 @@ use clap::Subcommand;
 use super::agent_args::*;
 use super::ai_args::*;
 use super::build_args::*;
+use super::db_args::*;
 use super::dev_args::*;
 use super::gpu_args::*;
 use super::package_args::*;
@@ -12,6 +13,8 @@ use super::security_args::*;
 pub enum Commands {
     /// Print End language version and toolchain info
     Version,
+    /// Real Embedded SQLite Database Engine Subcommands (exec, query, tables)
+    Db(DbArgs),
     /// Generate comprehensive OpenAPI 3.1, AI Agent Passport, Struct Memory Layout, and Interactive Swagger Dashboard
     /// Compile and run EndUI reactive declarative applications with AI Agent DevMode Canvas
         /// Path to .end entrypoint file

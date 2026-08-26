@@ -85,5 +85,6 @@ pub fn dispatch_command(command: Commands, global_release: bool) {
         Commands::Feature(args) => security_verify::handle_feature(args),
         Commands::Ai(args) => agent_ops::handle_ai(args),
         Commands::Gpu(args) => agent_ops::handle_gpu(args),
+        Commands::Db(args) => agent_ops::handle_db(args),
     }
 }

@@ -1,0 +1,73 @@
+// End Language: Real Embedded SQLite Database Engine Demonstration
+import "std/db/sqlite.end"
+
+pub fn main() void {
+    println("================================================================================")
+    println("⚡ End Language Real Embedded SQLite Engine Demonstration")
+    println("================================================================================")
+
+    val db_path = "test_sqlite_demo.db"
+
+    // 1. Open / Create Real SQLite Database
+    println("--- 1. Opening Real SQLite Database ---")
+    val conn = sqlite_open(db_path)
+    println("Database Connected:")
+    println(conn.is_connected)
+
+    // 2. Execute DDL: CREATE TABLE
+    println("--- 2. Creating Database Schema (CREATE TABLE) ---")
+    val create_users = "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE, role TEXT NOT NULL, age INTEGER);"
+    val res_create = sqlite_execute(conn, create_users)
+    println("Create Table Schema Success:")
+    println(res_create.success)
+
+    // Clean old rows if any
+    sqlite_execute(conn, "DELETE FROM users;")
+
+    // 3. Execute DML: INSERT
+    println("--- 3. Inserting Real Records (INSERT) ---")
+    val insert1 = "INSERT INTO users (name, email, role, age) VALUES ('Sina Maho', 'maho@end-lang.org', 'Lead Architect', 29);"
+    val insert2 = "INSERT INTO users (name, email, role, age) VALUES ('Ada Lovelace', 'ada@analytical.org', 'Chief Mathematician', 36);"
+    val insert3 = "INSERT INTO users (name, email, role, age) VALUES ('Alan Turing', 'alan@bletchley.org', 'Cryptanalysis Director', 41);"
+
+    sqlite_execute(conn, insert1)
+    sqlite_execute(conn, insert2)
+    sqlite_execute(conn, insert3)
+    println("✔ 3 Users Inserted Successfully!")
+
+    // 4. Execute Real SELECT Query
+    println("--- 4. Querying All Users (SELECT * FROM users) ---")
+    val all_users_json = sqlite_query(conn, "SELECT id, name, role, age FROM users ORDER BY id ASC;")
+    println(all_users_json)
+
+    // 5. Execute Filtered SELECT Query
+    println("--- 5. Querying Filtered Users (SELECT WHERE age >= 35) ---")
+    val seniors_json = sqlite_query(conn, "SELECT name, role, age FROM users WHERE age >= 35 ORDER BY age ASC;")
+    println(seniors_json)
+
+    // 6. Test Atomic Transactions (ROLLBACK)
+    println("--- 6. Testing Atomic Transaction ROLLBACK ---")
+    val started = sqlite_begin(conn)
+    println("Transaction Started:")
+    println(started)
+
+    val uncommitted = "INSERT INTO users (name, email, role, age) VALUES ('Temporary User', 'temp@ghost.org', 'Shadow', 99);"
+    sqlite_execute(conn, uncommitted)
+
+    val during_tx_json = sqlite_query(conn, "SELECT name FROM users WHERE email = 'temp@ghost.org';")
+    println("During Transaction (Must exist):")
+    println(during_tx_json)
+
+    val rolled_back = sqlite_rollback(conn)
+    println("Transaction Rolled Back:")
+    println(rolled_back)
+
+    val after_rollback_json = sqlite_query(conn, "SELECT name FROM users WHERE email = 'temp@ghost.org';")
+    println("After Rollback (Must be empty array []):")
+    println(after_rollback_json)
+
+    // 7. Close Database
+    sqlite_close(conn)
+    println("✔ SQLite Database Connection Closed Successfully!")
+    println("================================================================================")
+}
