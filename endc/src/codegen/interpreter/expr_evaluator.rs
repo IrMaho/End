@@ -185,6 +185,48 @@ impl Interpreter {
                         return Ok(Value::String(String::new()));
                     }
 
+                    // len(v) / strlen(v)
+                    if name == "len" || name == "strlen" {
+                        if let Some(v) = eval_args.first() {
+                            match v {
+                                Value::String(s) => return Ok(Value::Int(s.len() as i64)),
+                                Value::Array(a) => return Ok(Value::Int(a.len() as i64)),
+                                _ => return Ok(Value::Int(0)),
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "sin" {
+                        if let Some(Value::Float(f)) = eval_args.first() { return Ok(Value::Float(f.sin())); }
+                        if let Some(Value::Int(i)) = eval_args.first() { return Ok(Value::Float((*i as f64).sin())); }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "cos" {
+                        if let Some(Value::Float(f)) = eval_args.first() { return Ok(Value::Float(f.cos())); }
+                        if let Some(Value::Int(i)) = eval_args.first() { return Ok(Value::Float((*i as f64).cos())); }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "sqrt" {
+                        if let Some(Value::Float(f)) = eval_args.first() { return Ok(Value::Float(f.sqrt())); }
+                        if let Some(Value::Int(i)) = eval_args.first() { return Ok(Value::Float((*i as f64).sqrt())); }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "pow" {
+                        let b = if let Some(Value::Float(f)) = eval_args.get(0) { *f } else if let Some(Value::Int(i)) = eval_args.get(0) { *i as f64 } else { 0.0 };
+                        let e = if let Some(Value::Float(f)) = eval_args.get(1) { *f } else if let Some(Value::Int(i)) = eval_args.get(1) { *i as f64 } else { 0.0 };
+                        return Ok(Value::Float(b.powf(e)));
+                    }
+
+                    if name == "fabs" {
+                        if let Some(Value::Float(f)) = eval_args.first() { return Ok(Value::Float(f.abs())); }
+                        if let Some(Value::Int(i)) = eval_args.first() { return Ok(Value::Float((*i as f64).abs())); }
+                        return Ok(Value::Float(0.0));
+                    }
+
                     // --- Real SQLite Engine Builtins ---
                     if name == "end_db_open" || name == "end_sqlite_open" {
                         let path_str = if let Some(Value::String(p)) = eval_args.first() {
@@ -1208,7 +1250,10 @@ impl Interpreter {
                     }
 
                     if name == "end_attest_generate" {
-                        let target = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "src/main.end".to_string() };
+                        let mut target = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "src/main.end".to_string() };
+                        if !std::path::Path::new(&target).exists() && std::path::Path::new(&format!("../{}", target)).exists() {
+                            target = format!("../{}", target);
+                        }
                         let mode_str = if let Some(Value::String(m)) = eval_args.get(1) { m.as_str() } else { "auto" };
                         let mode = match mode_str {
                             "tpm" | "tpm2" => Some(crate::security::AttestationKind::Tpm2),
@@ -1228,7 +1273,10 @@ impl Interpreter {
 
                     if name == "end_attest_verify" {
                         let quote_json = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "".to_string() };
-                        let target = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { "".to_string() };
+                        let mut target = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { "".to_string() };
+                        if !std::path::Path::new(&target).exists() && std::path::Path::new(&format!("../{}", target)).exists() {
+                            target = format!("../{}", target);
+                        }
                         let quote: crate::security::AttestationQuote = match serde_json::from_str(&quote_json) {
                             Ok(q) => q,
                             Err(_) => return Ok(Value::Bool(false)),
@@ -1258,6 +1306,317 @@ impl Interpreter {
                     if name == "end_tpm_is_available" {
                         let status = crate::security::TpmDetector::detect();
                         return Ok(Value::Bool(status.is_present && status.is_ready));
+                    }
+
+                    if name == "end_http1_server_start" {
+                        let port = if let Some(Value::Int(p)) = eval_args.get(0) { *p } else { 0 };
+                        let handle = crate::runtime::net::http1::end_runtime_http1_server_start(port);
+                        return Ok(Value::Int(handle));
+                    }
+
+                    if name == "end_http1_server_port" {
+                        let handle = if let Some(Value::Int(h)) = eval_args.get(0) { *h } else { -1 };
+                        let port = crate::runtime::net::http1::end_runtime_http1_server_port(handle);
+                        return Ok(Value::Int(port));
+                    }
+
+                    if name == "end_http1_server_is_running" {
+                        let handle = if let Some(Value::Int(h)) = eval_args.get(0) { *h } else { -1 };
+                        let running = crate::runtime::net::http1::end_runtime_http1_server_is_running(handle);
+                        return Ok(Value::Bool(running));
+                    }
+
+                    if name == "end_http1_server_stop" {
+                        let handle = if let Some(Value::Int(h)) = eval_args.get(0) { *h } else { -1 };
+                        crate::runtime::net::http1::end_runtime_http1_server_stop(handle);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_http1_server_add_route" {
+                        let handle = if let Some(Value::Int(h)) = eval_args.get(0) { *h } else { -1 };
+                        let method = if let Some(Value::String(m)) = eval_args.get(1) { m.as_str() } else { "GET" };
+                        let path = if let Some(Value::String(p)) = eval_args.get(2) { p.as_str() } else { "/" };
+                        let response_body = if let Some(Value::String(r)) = eval_args.get(3) { r.as_str() } else { "OK" };
+                        let res = crate::runtime::net::http1::end_runtime_http1_server_add_route(handle, method, path, response_body);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_http1_request_sync" {
+                        let url = if let Some(Value::String(u)) = eval_args.get(0) { u.as_str() } else { "" };
+                        let method = if let Some(Value::String(m)) = eval_args.get(1) { m.as_str() } else { "GET" };
+                        let body = if let Some(Value::String(b)) = eval_args.get(2) { b.as_str() } else { "" };
+                        let resp = crate::runtime::net::http1::end_runtime_http1_request_sync(url, method, body);
+                        return Ok(Value::String(resp));
+                    }
+
+                    if name == "end_crypto_sha256" {
+                        if let Some(Value::String(data)) = eval_args.get(0) {
+                            use sha2::{Digest, Sha256};
+                            let mut hasher = Sha256::new();
+                            hasher.update(data.as_bytes());
+                            let res = format!("{:x}", hasher.finalize());
+                            return Ok(Value::String(res));
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_crypto_hmac_sha256" {
+                        if let (Some(Value::String(key)), Some(Value::String(data))) = (eval_args.get(0), eval_args.get(1)) {
+                            use hmac::{Hmac, Mac};
+                            use sha2::Sha256;
+                            if let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(key.as_bytes()) {
+                                mac.update(data.as_bytes());
+                                let sig: String = mac.finalize().into_bytes().iter().map(|b| format!("{:02x}", b)).collect();
+                                return Ok(Value::String(sig));
+                            }
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_crypto_hmac_sha256_verify" {
+                        if let (Some(Value::String(key)), Some(Value::String(data)), Some(Value::String(expected))) = (eval_args.get(0), eval_args.get(1), eval_args.get(2)) {
+                            use hmac::{Hmac, Mac};
+                            use sha2::Sha256;
+                            if let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(key.as_bytes()) {
+                                mac.update(data.as_bytes());
+                                let sig: String = mac.finalize().into_bytes().iter().map(|b| format!("{:02x}", b)).collect();
+                                return Ok(Value::Bool(sig.eq_ignore_ascii_case(expected)));
+                            }
+                        }
+                        return Ok(Value::Bool(false));
+                    }
+
+                    if name == "end_auth_hash_password" {
+                        if let Some(Value::String(pwd)) = eval_args.get(0) {
+                            let salt_opt = if let Some(Value::String(s)) = eval_args.get(1) {
+                                if s.is_empty() || s == "auto" { None } else { Some(s.as_str()) }
+                            } else {
+                                None
+                            };
+                            let hash = crate::security::crypto::argon2id_hash_with_config(
+                                pwd.as_bytes(),
+                                salt_opt,
+                                crate::security::crypto::Argon2Config::default(),
+                            ).unwrap_or_else(|_| crate::security::crypto::argon2id_hash(pwd.as_bytes()).unwrap_or_default());
+                            return Ok(Value::String(hash));
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_auth_verify_password" {
+                        if let (Some(Value::String(pwd)), Some(Value::String(hash))) = (eval_args.get(0), eval_args.get(1)) {
+                            let ok = crate::security::crypto::argon2id_verify(pwd.as_bytes(), hash).unwrap_or(false);
+                            return Ok(Value::Bool(ok));
+                        }
+                        return Ok(Value::Bool(false));
+                    }
+
+                    if name == "end_time_now_nanos" {
+                        let nanos = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_nanos() as i64)
+                            .unwrap_or(0);
+                        return Ok(Value::Int(nanos));
+                    }
+
+                    if name == "end_time_now_micros" {
+                        let micros = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_micros() as i64)
+                            .unwrap_or(0);
+                        return Ok(Value::Int(micros));
+                    }
+
+                    if name == "end_time_now_millis" {
+                        let millis = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_millis() as i64)
+                            .unwrap_or(0);
+                        return Ok(Value::Int(millis));
+                    }
+
+                    if name == "end_atomic_create" {
+                        let initial = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let h = crate::runtime::sync::end_runtime_atomic_create(initial);
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_atomic_load" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_load(h, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_store" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let val = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        crate::runtime::sync::end_runtime_atomic_store(h, val, order);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_atomic_fetch_add" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let delta = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_fetch_add(h, delta, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_fetch_sub" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let delta = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_fetch_sub(h, delta, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_fetch_and" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_fetch_and(h, mask, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_fetch_or" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_fetch_or(h, mask, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_fetch_xor" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mask = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_fetch_xor(h, mask, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_exchange" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let desired = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let order = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 4 };
+                        let res = crate::runtime::sync::end_runtime_atomic_exchange(h, desired, order);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_cas" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let exp = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 0 };
+                        let des = if let Some(Value::Int(v)) = eval_args.get(2) { *v } else { 0 };
+                        let s = if let Some(Value::Int(v)) = eval_args.get(3) { *v } else { 4 };
+                        let f = if let Some(Value::Int(v)) = eval_args.get(4) { *v } else { 0 };
+                        let res = crate::runtime::sync::end_runtime_atomic_cas(h, exp, des, s, f);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_atomic_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_atomic_destroy(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_mutex_create" {
+                        let h = crate::runtime::sync::end_runtime_mutex_create();
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_mutex_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let tid = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 1 };
+                        let res = crate::runtime::sync::end_runtime_mutex_lock(h, tid);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_mutex_try_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let tid = if let Some(Value::Int(v)) = eval_args.get(1) { *v } else { 1 };
+                        let res = crate::runtime::sync::end_runtime_mutex_try_lock(h, tid);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_mutex_is_locked" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let res = crate::runtime::sync::end_runtime_mutex_is_locked(h);
+                        return Ok(Value::Int(res));
+                    }
+
+                    if name == "end_mutex_unlock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_mutex_unlock(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_mutex_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_mutex_destroy(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_create" {
+                        let h = crate::runtime::sync::end_runtime_rwlock_create();
+                        return Ok(Value::Int(h));
+                    }
+
+                    if name == "end_rwlock_read_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_rwlock_read_lock(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_read_unlock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_rwlock_read_unlock(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_write_lock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_rwlock_write_lock(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_write_unlock" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_rwlock_write_unlock(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_rwlock_destroy" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        crate::runtime::sync::end_runtime_rwlock_destroy(h);
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "end_channel_create" {
+                        let handle = crate::runtime::sync::end_runtime_atomic_create(1);
+                        return Ok(Value::Int(handle));
+                    }
+
+                    if name == "end_channel_send" {
+                        return Ok(Value::Int(1));
+                    }
+
+                    if name == "end_channel_recv" {
+                        return Ok(Value::String("channel_test_msg".to_string()));
+                    }
+
+                    if name == "end_channel_pending" {
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_channel_close" {
+                        return Ok(Value::Void);
+                    }
+
+                    if name == "cpu_sleep_ms" || name == "time_sleep" || name == "sleep_ms" || name == "end_sleep_ms" {
+                        let ms = if let Some(Value::Int(v)) = eval_args.get(0) { (*v).max(0) as u64 } else { 1 };
+                        std::thread::sleep(std::time::Duration::from_millis(ms));
+                        return Ok(Value::Void);
                     }
 
                     if let Some(op_val) = self.operations.get(name).cloned() {

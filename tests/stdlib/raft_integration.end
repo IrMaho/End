@@ -1,0 +1,13 @@
+// Integration Test: std/cluster/raft.end
+import "std/cluster/raft.end"
+
+fn main() i64 {
+    val node = raft_node_create(1, 3)
+    val candidate = raft_start_election(node)
+    val quorum = raft_calculate_quorum(3)
+
+    if candidate.current_term == 2 && quorum == 2 {
+        ret 0
+    }
+    ret 1
+}

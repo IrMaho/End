@@ -1,0 +1,12 @@
+// Integration Test: std/sync/rwlock.end
+import "std/sync/rwlock.end"
+
+fn main() i64 {
+    val rw = rwlock_create()
+    val r1 = rwlock_read_lock(rw)
+    val r2 = rwlock_read_unlock(r1)
+    val w1 = rwlock_write_lock(r2)
+    val w2 = rwlock_write_unlock(w1)
+    rwlock_destroy(w2)
+    ret 0
+}

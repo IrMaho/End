@@ -1,6 +1,12 @@
 // End Standard Library: Cryptographic Attestation & Security Boundary (std/attest)
 // Provides real measurement, quote generation (TPM 2.0 & Software), and independent verification.
 
+pub extern fn end_attest_generate(target_path: str, mode: str) str
+pub extern fn end_attest_verify(quote_json: str, target_path: str) bool
+pub extern fn end_attest_quote_kind(quote_json: str) str
+pub extern fn end_attest_quote_digest(quote_json: str) str
+pub extern fn end_tpm_is_available() bool
+
 pub struct AttestationQuote {
     pub kind: str,
     pub binary_sha256: str,
@@ -17,37 +23,37 @@ pub struct AttestationResult {
 }
 
 /// Generates a real cryptographic quote for the given target file (auto-detecting TPM 2.0).
-pub fn attest(target_path: str) -> str {
+pub fn attest(target_path: str) str {
     ret end_attest_generate(target_path, "auto")
 }
 
 /// Generates an explicit software-attestation quote using Ed25519 digital signatures.
-pub fn attest_software(target_path: str) -> str {
+pub fn attest_software(target_path: str) str {
     ret end_attest_generate(target_path, "software")
 }
 
 /// Generates a hardware-attestation quote backed by TPM 2.0 PCR measurements.
-pub fn attest_tpm(target_path: str) -> str {
+pub fn attest_tpm(target_path: str) str {
     ret end_attest_generate(target_path, "tpm2")
 }
 
 /// Independently verifies a cryptographic quote against the target file on disk.
 /// Returns true if signatures and measurements match; false if tampered or invalid.
-pub fn verify(quote_json: str, target_path: str) -> bool {
+pub fn verify(quote_json: str, target_path: str) bool {
     ret end_attest_verify(quote_json, target_path)
 }
 
 /// Extracts the attestation kind ("tpm2" or "software") from a quote JSON string.
-pub fn quote_kind(quote_json: str) -> str {
+pub fn quote_kind(quote_json: str) str {
     ret end_attest_quote_kind(quote_json)
 }
 
 /// Extracts the measured binary SHA-256 digest from a quote JSON string.
-pub fn quote_digest(quote_json: str) -> str {
+pub fn quote_digest(quote_json: str) str {
     ret end_attest_quote_digest(quote_json)
 }
 
 /// Returns true if a genuine TPM 2.0 device is present and ready for hardware attestation.
-pub fn is_tpm_ready() -> bool {
+pub fn is_tpm_ready() bool {
     ret end_tpm_is_available()
 }

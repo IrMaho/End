@@ -1,15 +1,15 @@
-// End Standard Library: std.math
-// Math utilities and vector helpers
+// End Standard Library: std/math.end
+// Native High-Precision Mathematical Library
 
 pub st Vec2 {
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 }
 
 pub st Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 }
 
 pub fn vec2_add(a: Vec2, b: Vec2) Vec2 {
@@ -19,9 +19,29 @@ pub fn vec2_add(a: Vec2, b: Vec2) Vec2 {
     }
 }
 
-pub fn vec2_scale(v: Vec2, s: f32) Vec2 {
+pub fn vec2_scale(v: Vec2, s: f64) Vec2 {
     ret Vec2 {
         x: v.x * s,
         y: v.y * s,
     }
+}
+
+pub fn math_sin(x: f64) f64 {
+    ret sin(x)
+}
+
+pub fn math_cos(x: f64) f64 {
+    ret cos(x)
+}
+
+pub fn math_sqrt(x: f64) f64 {
+    ret sqrt(x)
+}
+
+pub fn math_pow(b: f64, e: f64) f64 {
+    ret pow(b, e)
+}
+
+pub fn math_abs(x: f64) f64 {
+    ret fabs(x)
 }

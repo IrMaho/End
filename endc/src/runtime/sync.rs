@@ -203,6 +203,247 @@ impl NativeRwLock {
     }
 }
 
+// ============================================================================
+// Global Handle Registries for Atomics, Mutexes, and RwLocks
+// ============================================================================
+
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
+static NEXT_SYNC_HANDLE: AtomicI64 = AtomicI64::new(100);
+
+static ATOMICS_REGISTRY: OnceLock<Mutex<HashMap<i64, Arc<NativeAtomicI64>>>> = OnceLock::new();
+static MUTEXES_REGISTRY: OnceLock<Mutex<HashMap<i64, Arc<NativeMutex>>>> = OnceLock::new();
+static RWLOCKS_REGISTRY: OnceLock<Mutex<HashMap<i64, Arc<NativeRwLock>>>> = OnceLock::new();
+
+fn get_atomics() -> &'static Mutex<HashMap<i64, Arc<NativeAtomicI64>>> {
+    ATOMICS_REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn get_mutexes() -> &'static Mutex<HashMap<i64, Arc<NativeMutex>>> {
+    MUTEXES_REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn get_rwlocks() -> &'static Mutex<HashMap<i64, Arc<NativeRwLock>>> {
+    RWLOCKS_REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+pub fn end_runtime_atomic_create(initial: i64) -> i64 {
+    let handle = NEXT_SYNC_HANDLE.fetch_add(1, Ordering::SeqCst);
+    get_atomics().lock().unwrap().insert(handle, Arc::new(NativeAtomicI64::new(initial)));
+    handle
+}
+
+pub fn end_runtime_atomic_load(handle: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.load(order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_store(handle: i64, val: i64, order: i64) {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        a.store(val, order_enum);
+    }
+}
+
+pub fn end_runtime_atomic_fetch_add(handle: i64, delta: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.fetch_add(delta, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_fetch_sub(handle: i64, delta: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.fetch_sub(delta, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_fetch_and(handle: i64, mask: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.fetch_and(mask, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_fetch_or(handle: i64, mask: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.fetch_or(mask, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_fetch_xor(handle: i64, mask: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.fetch_xor(mask, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_exchange(handle: i64, desired: i64, order: i64) -> i64 {
+    let order_enum = match order {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return a.swap(desired, order_enum);
+    }
+    0
+}
+
+pub fn end_runtime_atomic_cas(handle: i64, expected: i64, desired: i64, success: i64, failure: i64) -> i64 {
+    let succ_enum = match success {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    let fail_enum = match failure {
+        0 => MemoryOrder::Relaxed,
+        1 => MemoryOrder::Acquire,
+        2 => MemoryOrder::Release,
+        3 => MemoryOrder::AcqRel,
+        _ => MemoryOrder::SeqCst,
+    };
+    if let Some(a) = get_atomics().lock().unwrap().get(&handle) {
+        return match a.compare_exchange(expected, desired, succ_enum, fail_enum) {
+            Ok(_) => 1,
+            Err(_) => 0,
+        };
+    }
+    0
+}
+
+pub fn end_runtime_atomic_destroy(handle: i64) {
+    get_atomics().lock().unwrap().remove(&handle);
+}
+
+pub fn end_runtime_mutex_create() -> i64 {
+    let handle = NEXT_SYNC_HANDLE.fetch_add(1, Ordering::SeqCst);
+    get_mutexes().lock().unwrap().insert(handle, Arc::new(NativeMutex::new()));
+    handle
+}
+
+pub fn end_runtime_mutex_lock(handle: i64, thread_id: i64) -> i64 {
+    if let Some(m) = get_mutexes().lock().unwrap().get(&handle) {
+        return if m.lock(thread_id) { 1 } else { 0 };
+    }
+    0
+}
+
+pub fn end_runtime_mutex_try_lock(handle: i64, thread_id: i64) -> i64 {
+    if let Some(m) = get_mutexes().lock().unwrap().get(&handle) {
+        return if m.try_lock(thread_id) { 1 } else { 0 };
+    }
+    0
+}
+
+pub fn end_runtime_mutex_is_locked(handle: i64) -> i64 {
+    if let Some(m) = get_mutexes().lock().unwrap().get(&handle) {
+        return if m.is_locked() { 1 } else { 0 };
+    }
+    0
+}
+
+pub fn end_runtime_mutex_unlock(handle: i64) {
+    if let Some(m) = get_mutexes().lock().unwrap().get(&handle) {
+        m.unlock();
+    }
+}
+
+pub fn end_runtime_mutex_destroy(handle: i64) {
+    get_mutexes().lock().unwrap().remove(&handle);
+}
+
+pub fn end_runtime_rwlock_create() -> i64 {
+    let handle = NEXT_SYNC_HANDLE.fetch_add(1, Ordering::SeqCst);
+    get_rwlocks().lock().unwrap().insert(handle, Arc::new(NativeRwLock::new()));
+    handle
+}
+
+pub fn end_runtime_rwlock_read_lock(handle: i64) {
+    if let Some(rw) = get_rwlocks().lock().unwrap().get(&handle) {
+        rw.read_lock();
+    }
+}
+
+pub fn end_runtime_rwlock_read_unlock(handle: i64) {
+    if let Some(rw) = get_rwlocks().lock().unwrap().get(&handle) {
+        rw.read_unlock();
+    }
+}
+
+pub fn end_runtime_rwlock_write_lock(handle: i64) {
+    if let Some(rw) = get_rwlocks().lock().unwrap().get(&handle) {
+        rw.write_lock();
+    }
+}
+
+pub fn end_runtime_rwlock_write_unlock(handle: i64) {
+    if let Some(rw) = get_rwlocks().lock().unwrap().get(&handle) {
+        rw.write_unlock();
+    }
+}
+
+pub fn end_runtime_rwlock_destroy(handle: i64) {
+    get_rwlocks().lock().unwrap().remove(&handle);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

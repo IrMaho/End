@@ -1,0 +1,14 @@
+// Integration Test: std/test/assert.end
+import "std/test/assert.end"
+
+fn main() i64 {
+    val t = assert_true(true)
+    val f = assert_false(false)
+    val eq_i = assert_eq_i64(42, 42)
+    val eq_s = assert_eq_str("end", "end")
+
+    if t && f && eq_i && eq_s {
+        ret 0
+    }
+    ret 1
+}

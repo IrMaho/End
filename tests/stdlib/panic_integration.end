@@ -1,0 +1,12 @@
+// Integration Test: std/runtime/panic.end
+import "std/runtime/panic.end"
+
+fn main() i64 {
+    val rep = panic_report_create("test failure")
+    val formatted = panic_format_stack_trace(rep)
+
+    if rep.frames_count == 1 && len(formatted) > 0 {
+        ret 0
+    }
+    ret 1
+}

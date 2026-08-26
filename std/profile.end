@@ -1,6 +1,10 @@
 // 👑 End Language: std/profile.end
 // Native High-Precision Execution Profiler & Flame Graph Generator
 
+pub extern fn end_profiler_start() i64
+pub extern fn end_profiler_stop() str
+pub extern fn end_profiler_flamegraph() str
+
 pub st ProfileSample {
     function_name: str,
     call_count: i64,

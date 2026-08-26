@@ -1,0 +1,22 @@
+// Integration Test: std/core/option.end and std/core/result.end
+import "std/core/option.end"
+import "std/core/result.end"
+
+fn main() i64 {
+    val opt_s = option_some_i64(42)
+    val is_s = option_is_some(opt_s)
+
+    val opt_n = option_none_i64()
+    val is_n = option_is_none(opt_n)
+
+    val res_o = result_ok_i64(100)
+    val is_ok = result_is_ok(res_o)
+
+    val res_e = result_err_i64("error message")
+    val is_err = result_is_err(res_e)
+
+    if is_s && is_n && is_ok && is_err {
+        ret 0
+    }
+    ret 1
+}

@@ -1,0 +1,14 @@
+// Integration Test: std/crypto/hmac.end
+import "std/crypto/hmac.end"
+
+fn main() i64 {
+    val key = "secret_key"
+    val msg = "critical_message_payload"
+    val sig = hmac_sha256(key, msg)
+    val verified = hmac_sha256_verify(key, msg, sig)
+
+    if verified && len(sig) == 64 {
+        ret 0
+    }
+    ret 1
+}

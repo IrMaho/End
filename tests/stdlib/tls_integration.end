@@ -1,0 +1,12 @@
+// Integration Test: std/crypto/tls.end
+import "std/crypto/tls.end"
+
+fn main() i64 {
+    val dummy_stream = TcpStream { handle: -1, peer_addr: "127.0.0.1", is_connected: false }
+    val session = tls_connect(dummy_stream, "localhost")
+
+    if session.handle == -1 && !session.is_connected {
+        ret 0
+    }
+    ret 1
+}
