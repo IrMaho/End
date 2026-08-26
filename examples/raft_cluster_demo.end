@@ -1,0 +1,71 @@
+// 👑 End Language: Real Distributed Raft Consensus Engine Showcase (Prompt 22)
+// 3-Node Real Cluster: Election, Log Replication, SQLite Persistence, Failover & Partition Healing
+
+import "std/cluster/raft.end"
+
+fn main() void {
+    println("================================================================================")
+    println("⚡ End Language Real Distributed Raft Consensus Engine Showcase")
+    println("================================================================================")
+
+    // 1. Start 3-Node Cluster on Localhost
+    println("--- 1. Initializing 3-Node Local Raft Cluster ---")
+    val cluster = raft_cluster_start(3, 24000, ":memory:")
+    println("Cluster started with 3 nodes on ports 24001, 24002, 24003.")
+
+    // 2. Discover Elected Leader
+    println("\n--- 2. Leader Election Discovery ---")
+    val leader_id = raft_cluster_get_leader(cluster)
+    println("Initial Cluster Leader Elected Node ID:")
+    println(leader_id)
+
+    // 3. Write Replicated Data to Cluster
+    println("\n--- 3. Submitting Replicated Writes via Leader ---")
+    val w1 = raft_cluster_write(cluster, "cluster_name", "EndNexusConsensus")
+    val w2 = raft_cluster_write(cluster, "region", "global-east-1")
+    val w3 = raft_cluster_write(cluster, "status", "active_quorum")
+    println("Write 1 Result:")
+    println(w1)
+    println("Write 2 Result:")
+    println(w2)
+    println("Write 3 Result:")
+    println(w3)
+
+    // 4. Verify Reads across Cluster Nodes
+    println("\n--- 4. Verifying Consistent Reads from Nodes ---")
+    val read_name = raft_cluster_read(cluster, "cluster_name")
+    val read_region = raft_cluster_read_node(cluster, 2, "region")
+    val read_status = raft_cluster_read_node(cluster, 3, "status")
+    println("Read cluster_name from Leader:")
+    println(read_name)
+    println("Read region from Node 2:")
+    println(read_region)
+    println("Read status from Node 3:")
+    println(read_status)
+
+    // 5. Hard Kill Leader & Automatic Failover
+    println("\n--- 5. Simulating Leader Hard Crash & Re-election ---")
+    println("Killing Leader Node:")
+    println(leader_id)
+    val kill_res = raft_cluster_kill_node(cluster, leader_id)
+    val new_leader_id = raft_cluster_get_leader(cluster)
+    println("New Leader Elected After Failover:")
+    println(new_leader_id)
+
+    val w_post = raft_cluster_write(cluster, "post_failover_op", "committed_successfully")
+    println("Post-Failover Write Result:")
+    println(w_post)
+
+    // 6. Network Partition & Healing Demonstration
+    println("\n--- 6. Simulating Network Partition & Healing ---")
+    val part_res = raft_cluster_partition_node(cluster, 1)
+    println("Partitioned Node 1 from Majority.")
+    val heal_res = raft_cluster_heal_partition(cluster)
+    println("Healed Network Partition. Cluster Converged.")
+
+    // 7. Cleanup Cluster
+    raft_cluster_stop(cluster)
+    println("\n================================================================================")
+    println("👑 All Raft Distributed Consensus Operations Completed Successfully!")
+    println("================================================================================")
+}

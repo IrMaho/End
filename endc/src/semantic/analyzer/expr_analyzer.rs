@@ -1276,18 +1276,30 @@ fn is_known_builtin(name: &str) -> bool {
             | "end_rwlock_destroy"
             | "end_thread_create"
             | "end_thread_join"
+            | "end_raft_cluster_create"
+            | "end_raft_cluster_start"
+            | "end_raft_cluster_get_leader"
+            | "end_raft_cluster_write"
+            | "end_raft_cluster_read"
+            | "end_raft_cluster_read_node"
+            | "end_raft_cluster_node_status"
+            | "end_raft_cluster_kill_node"
+            | "end_raft_cluster_restart_node"
+            | "end_raft_cluster_partition_node"
+            | "end_raft_cluster_heal_partition"
+            | "end_raft_cluster_stop"
             | "_"
     )
 }
 
 fn get_builtin_return_type(name: &str) -> Type {
     match name {
-        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" | "end_sqlite_open" | "end_sqlite_execute" | "end_sqlite_begin" | "end_sqlite_commit" | "end_sqlite_rollback" | "end_pg_connect" | "end_pg_execute" | "end_pg_execute_params" | "end_pg_begin" | "end_pg_commit" | "end_pg_rollback" | "end_net_tcp_listen" | "end_net_tcp_accept" | "end_net_set_nonblocking" | "end_net_tcp_connect" | "end_net_tcp_send" | "end_http2_server_start" | "end_http2_server_port" | "end_http2_server_is_running" | "end_http2_client_connect" | "end_http2_client_close" | "end_http2_mux_create" | "end_atomic_create" | "end_atomic_load" | "end_atomic_fetch_add" | "end_atomic_fetch_sub" | "end_atomic_fetch_and" | "end_atomic_fetch_or" | "end_atomic_fetch_xor" | "end_atomic_exchange" | "end_atomic_cas" | "end_mutex_create" | "end_mutex_lock" | "end_mutex_try_lock" | "end_mutex_is_locked" | "end_rwlock_create" | "end_thread_create" => Type::I64,
+        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" | "end_sqlite_open" | "end_sqlite_execute" | "end_sqlite_begin" | "end_sqlite_commit" | "end_sqlite_rollback" | "end_pg_connect" | "end_pg_execute" | "end_pg_execute_params" | "end_pg_begin" | "end_pg_commit" | "end_pg_rollback" | "end_net_tcp_listen" | "end_net_tcp_accept" | "end_net_set_nonblocking" | "end_net_tcp_connect" | "end_net_tcp_send" | "end_http2_server_start" | "end_http2_server_port" | "end_http2_server_is_running" | "end_http2_client_connect" | "end_http2_client_close" | "end_http2_mux_create" | "end_atomic_create" | "end_atomic_load" | "end_atomic_fetch_add" | "end_atomic_fetch_sub" | "end_atomic_fetch_and" | "end_atomic_fetch_or" | "end_atomic_fetch_xor" | "end_atomic_exchange" | "end_atomic_cas" | "end_mutex_create" | "end_mutex_lock" | "end_mutex_try_lock" | "end_mutex_is_locked" | "end_rwlock_create" | "end_thread_create" | "end_raft_cluster_create" | "end_raft_cluster_start" | "end_raft_cluster_get_leader" | "end_raft_cluster_kill_node" | "end_raft_cluster_restart_node" | "end_raft_cluster_partition_node" | "end_raft_cluster_heal_partition" => Type::I64,
         "sin" | "cos" | "sqrt" | "tan" | "fabs" | "pow" => Type::F64,
         "malloc" => Type::Pointer(Box::new(Type::Void)),
         "atomic_add" | "atomic_sub" | "atomic_load" => Type::I64,
-        "end_channel_recv" | "end_sqlite_query" | "end_pg_query" | "end_pg_query_params" | "end_net_tcp_recv" | "end_http2_client_request" | "end_http2_mux_open_stream" | "end_http2_hpack_encode" | "end_http2_hpack_decode" | "end_http2_server_url" => Type::Str,
-        "end_gpu_destroy_buffer" | "end_ui_canvas_clear" | "end_ui_canvas_draw_rect" | "end_ui_canvas_draw_circle" | "end_ui_canvas_destroy" | "end_sqlite_close" | "end_pg_close" | "end_net_tcp_close" | "end_http2_server_stop" | "end_atomic_store" | "end_atomic_destroy" | "end_mutex_unlock" | "end_mutex_destroy" | "end_rwlock_read_lock" | "end_rwlock_read_unlock" | "end_rwlock_write_lock" | "end_rwlock_write_unlock" | "end_rwlock_destroy" | "end_thread_join" => Type::Void,
+        "end_channel_recv" | "end_sqlite_query" | "end_pg_query" | "end_pg_query_params" | "end_net_tcp_recv" | "end_http2_client_request" | "end_http2_mux_open_stream" | "end_http2_hpack_encode" | "end_http2_hpack_decode" | "end_http2_server_url" | "end_raft_cluster_write" | "end_raft_cluster_read" | "end_raft_cluster_read_node" | "end_raft_cluster_node_status" => Type::Str,
+        "end_gpu_destroy_buffer" | "end_ui_canvas_clear" | "end_ui_canvas_draw_rect" | "end_ui_canvas_draw_circle" | "end_ui_canvas_destroy" | "end_sqlite_close" | "end_pg_close" | "end_net_tcp_close" | "end_http2_server_stop" | "end_atomic_store" | "end_atomic_destroy" | "end_mutex_unlock" | "end_mutex_destroy" | "end_rwlock_read_lock" | "end_rwlock_read_unlock" | "end_rwlock_write_lock" | "end_rwlock_write_unlock" | "end_rwlock_destroy" | "end_thread_join" | "end_raft_cluster_stop" => Type::Void,
         s if s.starts_with(|c: char| c.is_uppercase()) => Type::Custom(s.to_string()),
         _ => Type::Unknown,
     }

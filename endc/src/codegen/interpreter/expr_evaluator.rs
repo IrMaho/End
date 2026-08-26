@@ -934,6 +934,167 @@ impl Interpreter {
                         return Ok(Value::Void);
                     }
 
+                    if name == "end_raft_cluster_create" {
+                        let node_count = if let Some(Value::Int(v)) = eval_args.get(0) { *v as usize } else { 3 };
+                        let base_port = if let Some(Value::Int(v)) = eval_args.get(1) { *v as u16 } else { 23000 };
+                        let base_db_path = if let Some(Value::String(s)) = eval_args.get(2) { s.clone() } else { ":memory:".to_string() };
+
+                        match crate::runtime::raft::RaftCluster::start_sync(node_count, base_port, &base_db_path) {
+                            Ok(cluster) => {
+                                let h = self.next_raft_cluster_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                                self.raft_clusters.lock().unwrap().insert(h, std::sync::Arc::new(std::sync::Mutex::new(cluster)));
+                                return Ok(Value::Int(h));
+                            }
+                            Err(e) => {
+                                eprintln!("Error starting Raft cluster: {}", e);
+                                return Ok(Value::Int(-1));
+                            }
+                        }
+                    }
+
+                    if name == "end_raft_cluster_get_leader" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            if let Ok(leader_id) = cluster.wait_for_leader_sync(std::time::Duration::from_secs(4)) {
+                                return Ok(Value::Int(leader_id as i64));
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_raft_cluster_write" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let key = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { "".to_string() };
+                        let val = if let Some(Value::String(s)) = eval_args.get(2) { s.clone() } else { "".to_string() };
+                        let payload = format!("key={}&value={}", key, val);
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            match cluster.write_sync("SET", &payload) {
+                                Ok(idx) => return Ok(Value::String(format!("OK:{}", idx))),
+                                Err(e) => return Ok(Value::String(format!("ERR:{}", e))),
+                            }
+                        }
+                        return Ok(Value::String("ERR:ClusterNotFound".to_string()));
+                    }
+
+                    if name == "end_raft_cluster_read" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let key = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { "".to_string() };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            if let Ok(Some(val)) = cluster.read(&key) {
+                                return Ok(Value::String(val));
+                            }
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_raft_cluster_read_node" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let node_id = if let Some(Value::Int(v)) = eval_args.get(1) { *v as u64 } else { 1 };
+                        let key = if let Some(Value::String(s)) = eval_args.get(2) { s.clone() } else { "".to_string() };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            if let Ok(Some(val)) = cluster.read_from_node(node_id, &key) {
+                                return Ok(Value::String(val));
+                            }
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_raft_cluster_kill_node" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let node_id = if let Some(Value::Int(v)) = eval_args.get(1) { *v as u64 } else { 1 };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let mut cluster = cluster_mtx.lock().unwrap();
+                            let _ = cluster.kill_node(node_id);
+                            return Ok(Value::Int(1));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_raft_cluster_restart_node" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let node_id = if let Some(Value::Int(v)) = eval_args.get(1) { *v as u64 } else { 1 };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let mut cluster = cluster_mtx.lock().unwrap();
+                            let res = cluster.restart_node_sync(node_id);
+                            return Ok(Value::Int(if res.is_ok() { 1 } else { 0 }));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_raft_cluster_partition_node" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let node_id = if let Some(Value::Int(v)) = eval_args.get(1) { *v as u64 } else { 1 };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            cluster.partition_node(node_id);
+                            return Ok(Value::Int(1));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_raft_cluster_heal_partition" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+
+                        let cluster_arc = {
+                            let map = self.raft_clusters.lock().unwrap();
+                            map.get(&h).cloned()
+                        };
+                        if let Some(cluster_mtx) = cluster_arc {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            cluster.heal_partition();
+                            return Ok(Value::Int(1));
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_raft_cluster_stop" {
+                        let h = if let Some(Value::Int(v)) = eval_args.get(0) { *v } else { 0 };
+                        let mut map = self.raft_clusters.lock().unwrap();
+                        if let Some(cluster_mtx) = map.remove(&h) {
+                            let cluster = cluster_mtx.lock().unwrap();
+                            cluster.stop_all();
+                        }
+                        return Ok(Value::Void);
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

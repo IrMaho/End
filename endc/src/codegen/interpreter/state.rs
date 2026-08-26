@@ -43,6 +43,8 @@ pub struct Interpreter {
     pub next_mutex_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
     pub rwlocks: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::RwLock<i64>>>>>,
     pub next_rwlock_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub raft_clusters: std::sync::Arc<std::sync::Mutex<HashMap<i64, std::sync::Arc<std::sync::Mutex<crate::runtime::raft::RaftCluster>>>>>,
+    pub next_raft_cluster_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Interpreter {
@@ -87,6 +89,8 @@ impl Interpreter {
             next_mutex_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(2000)),
             rwlocks: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_rwlock_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(3000)),
+            raft_clusters: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_raft_cluster_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(4000)),
         }
     }
 
