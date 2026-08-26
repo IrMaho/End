@@ -510,8 +510,15 @@ pub fn handle_build(args: BuildArgs) {
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-lsecur32".to_string());
+                    gcc_args.push("-lcrypt32".to_string());
                     gcc_args.push("-lgdi32".to_string());
                     gcc_args.push("-luser32".to_string());
+                }
+                #[cfg(not(windows))]
+                {
+                    gcc_args.push("-lssl".to_string());
+                    gcc_args.push("-lcrypto".to_string());
                 }
                 gcc_args.push("-o".to_string());
                 gcc_args.push(bin_path.to_str().unwrap().to_string());
@@ -636,8 +643,15 @@ pub fn handle_build(args: BuildArgs) {
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-lsecur32".to_string());
+                    gcc_args.push("-lcrypt32".to_string());
                     gcc_args.push("-luser32".to_string());
                     gcc_args.push("-lgdi32".to_string());
+                }
+                #[cfg(not(windows))]
+                {
+                    gcc_args.push("-lssl".to_string());
+                    gcc_args.push("-lcrypto".to_string());
                 }
                 gcc_args.push("-o".to_string());
                 gcc_args.push(bin_path.to_str().unwrap().to_string());

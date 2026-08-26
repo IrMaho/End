@@ -4,6 +4,9 @@ pub mod capability_engine;
 pub mod contract_verifier;
 pub mod taint_analyzer;
 pub mod taint_ast_visitor;
+pub mod tls;
+#[cfg(test)]
+pub mod tls_tests;
 pub mod types;
 
 pub use adversarial::{AdversarialCompilationReport, AdversarialSecurityEngine};

@@ -12,6 +12,11 @@ toml = "0.8"
 sha2 = "0.10"
 z3 = "0.20.2"
 inkwell = { version = "0.10.0", default-features = false, features = ["llvm22-1-no-llvm-linking", "target-x86"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-pki-types = "1.10"
+rustls-pemfile = "2.2"
+webpki-roots = "0.26"
+rcgen = { version = "0.13", features = ["pem", "ring"] }
 
 [profile.release]
 opt-level = 2
