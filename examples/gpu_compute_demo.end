@@ -1,0 +1,31 @@
+// End Language Real GPU Compute Demonstration
+import "std/gpu/webgpu.end"
+
+pub fn main() void {
+    println("================================================================================")
+    println("⚡ End Language Native GPU Hardware Acceleration Pipeline")
+    println("================================================================================")
+
+    // 1. Create a 64 MB Device Storage Buffer
+    val size_bytes = 67108864 // 64 MB
+    val buffer = gpu_create_buffer(size_bytes)
+    println("GPU Storage Buffer Allocated (Bytes):")
+    println(buffer.size_bytes)
+
+    // 2. Create Compute Pipeline with Entrypoint and Workgroup Dimensions
+    val pipeline = gpu_create_pipeline("vector_add_main", 64)
+    println("Compute Pipeline Shader Entrypoint:")
+    println(pipeline.entry_point)
+    println("Workgroup Size (Threads per Group):")
+    println(pipeline.workgroup_size_x)
+
+    // 3. Dispatch GPU Compute Grid (1024 Workgroups = 65,536 Parallel Thread Executions)
+    val dispatched_workgroups = gpu_dispatch_compute(pipeline, 1024, 1, 1)
+    println("Total GPU Workgroups Dispatched:")
+    println(dispatched_workgroups)
+
+    // 4. Release Buffer
+    gpu_destroy_buffer(buffer)
+    println("✔ GPU Hardware Buffer Cleaned Up!")
+    println("================================================================================")
+}

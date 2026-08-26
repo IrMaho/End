@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod gpu;
 
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;

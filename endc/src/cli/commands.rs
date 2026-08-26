@@ -3,6 +3,7 @@ use super::agent_args::*;
 use super::ai_args::*;
 use super::build_args::*;
 use super::dev_args::*;
+use super::gpu_args::*;
 use super::package_args::*;
 use super::query_args::*;
 use super::security_args::*;
@@ -301,4 +302,6 @@ pub enum Commands {
     Feature(FeatureArgs),
     /// Local AI Runtime & GGUF Quantized Inference Engine
     Ai(AiArgs),
+    /// Real GPU Compute Engine & Hardware Acceleration
+    Gpu(GpuArgs),
 }

@@ -3,6 +3,7 @@ pub mod ai_args;
 pub mod build_args;
 pub mod commands;
 pub mod dev_args;
+pub mod gpu_args;
 pub mod package_args;
 pub mod query_args;
 pub mod security_args;

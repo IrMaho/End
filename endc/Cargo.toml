@@ -25,6 +25,9 @@ candle-core = { version = "0.8", default-features = false }
 candle-transformers = { version = "0.8", default-features = false }
 tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
 byteorder = "1.5"
+wgpu = "24"
+pollster = "0.4"
+bytemuck = { version = "1.19", features = ["derive"] }
 
 [profile.release]
 opt-level = 2

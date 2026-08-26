@@ -1203,22 +1203,31 @@ fn is_known_builtin(name: &str) -> bool {
             | "output"
             | "break"
             | "continue"
-            | "inline_c_expr"
             | "end_channel_create"
             | "end_channel_send"
             | "end_channel_recv"
             | "end_channel_close"
+            | "end_gpu_create_buffer"
+            | "end_gpu_dispatch"
+            | "end_gpu_destroy_buffer"
+            | "end_ui_canvas_create"
+            | "end_ui_canvas_clear"
+            | "end_ui_canvas_draw_rect"
+            | "end_ui_canvas_draw_circle"
+            | "end_ui_canvas_get_pixel"
+            | "end_ui_canvas_destroy"
             | "_"
     )
 }
 
 fn get_builtin_return_type(name: &str) -> Type {
     match name {
-        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" => Type::I64,
+        "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" => Type::I64,
         "sin" | "cos" | "sqrt" | "tan" | "fabs" | "pow" => Type::F64,
         "malloc" => Type::Pointer(Box::new(Type::Void)),
         "atomic_add" | "atomic_sub" | "atomic_load" => Type::I64,
         "end_channel_recv" => Type::Str,
+        "end_gpu_destroy_buffer" | "end_ui_canvas_clear" | "end_ui_canvas_draw_rect" | "end_ui_canvas_draw_circle" | "end_ui_canvas_destroy" => Type::Void,
         s if s.starts_with(|c: char| c.is_uppercase()) => Type::Custom(s.to_string()),
         _ => Type::Unknown,
     }
