@@ -324,6 +324,107 @@ impl Interpreter {
                         return Ok(Value::Int(0));
                     }
 
+                    if name == "end_pg_connect" {
+                        let conn_str = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { String::new() };
+                        match crate::runtime::db::PgEngine::connect(&conn_str) {
+                            Ok(eng) => {
+                                let h = self.next_pg_handle.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                                self.pg_engines.lock().unwrap().insert(h, eng);
+                                return Ok(Value::Int(h));
+                            }
+                            Err(e) => {
+                                eprintln!("PostgreSQL connection error: {}", e);
+                                return Ok(Value::Int(-1));
+                            }
+                        }
+                    }
+
+                    if name == "end_pg_execute" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.execute(&sql, &[]) {
+                                Ok(rows_aff) => return Ok(Value::Int(rows_aff as i64)),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL execute error: {}", e);
+                                    return Ok(Value::Int(-1));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(-1));
+                    }
+
+                    if name == "end_pg_query" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let sql = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { String::new() };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.query_json(&sql, &[]) {
+                                Ok(val) => return Ok(Value::String(val.to_string())),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL query error: {}", e);
+                                    return Ok(Value::String("[]".to_string()));
+                                }
+                            }
+                        }
+                        return Ok(Value::String("[]".to_string()));
+                    }
+
+                    if name == "end_pg_begin" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_begin() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL transaction begin error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_pg_commit" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_commit() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL transaction commit error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_pg_rollback" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(eng) = map.get_mut(&h) {
+                            match eng.transaction_rollback() {
+                                Ok(_) => return Ok(Value::Int(1)),
+                                Err(e) => {
+                                    eprintln!("PostgreSQL transaction rollback error: {}", e);
+                                    return Ok(Value::Int(0));
+                                }
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_pg_close" {
+                        let h = if let Some(Value::Int(handle)) = eval_args.get(0) { *handle } else { 0 };
+                        let mut map = self.pg_engines.lock().unwrap();
+                        if let Some(mut eng) = map.remove(&h) {
+                            eng.close();
+                        }
+                        return Ok(Value::Int(1));
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

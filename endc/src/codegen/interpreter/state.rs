@@ -31,6 +31,8 @@ pub struct Interpreter {
     pub capture_stdout: bool,
     pub db_engines: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::db::SqliteEngine>>>,
     pub next_db_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub pg_engines: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::db::PgEngine>>>,
+    pub next_pg_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Interpreter {
@@ -63,6 +65,8 @@ impl Interpreter {
             capture_stdout: false,
             db_engines: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_db_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(100)),
+            pg_engines: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_pg_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(500)),
         }
     }
 
