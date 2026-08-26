@@ -1,4 +1,5 @@
 pub mod agent_args;
+pub mod ai_args;
 pub mod build_args;
 pub mod commands;
 pub mod dev_args;

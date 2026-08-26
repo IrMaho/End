@@ -1,5 +1,6 @@
 use clap::Subcommand;
 use super::agent_args::*;
+use super::ai_args::*;
 use super::build_args::*;
 use super::dev_args::*;
 use super::package_args::*;
@@ -298,4 +299,6 @@ pub enum Commands {
         /// Architecture template or preset
         /// Format output as JSON
     Feature(FeatureArgs),
+    /// Local AI Runtime & GGUF Quantized Inference Engine
+    Ai(AiArgs),
 }

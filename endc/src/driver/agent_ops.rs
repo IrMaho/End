@@ -294,3 +294,93 @@ pub fn handle_precheck(args: PrecheckArgs) {
             }
 }
 
+pub fn handle_ai(args: crate::cli::ai_args::AiArgs) {
+    use crate::runtime::ai::{execute_inference, validate_gguf_file, InferenceConfig, LlmModel, LlmTokenizer};
+    use candle_core::Device;
+    use colored::*;
+    use std::path::Path;
+
+    let model_path = Path::new(&args.model);
+    if !model_path.exists() {
+        eprintln!("{} Model file not found: '{}'", "Error:".red().bold(), args.model);
+        std::process::exit(1);
+    }
+
+    match args.action.as_str() {
+        "inspect" | "validate" => {
+            match validate_gguf_file(model_path) {
+                Ok(meta) => {
+                    if args.json {
+                        println!("{}", serde_json::to_string_pretty(&meta).unwrap_or_default());
+                    } else {
+                        println!("🧠 {}", "GGUF Model Inspection & Validation Report".cyan().bold());
+                        println!("================================================================================");
+                        println!("  Model Name:         {}", meta.model_name.unwrap_or_else(|| "N/A".to_string()).yellow().bold());
+                        println!("  Architecture:       {}", meta.architecture.green().bold());
+                        println!("  GGUF Version:       v{}", meta.version);
+                        println!("  Tensor Count:       {}", meta.tensor_count);
+                        println!("  Embedding Dim:      {}", meta.embedding_length.unwrap_or(0));
+                        println!("  FeedForward Dim:    {}", meta.feed_forward_length.unwrap_or(0));
+                        println!("  Block Count:        {}", meta.block_count.unwrap_or(0));
+                        println!("  Attention Heads:    {}", meta.head_count.unwrap_or(0));
+                        println!("  Context Length:     {}", meta.context_length.unwrap_or(0));
+                        println!("--------------------------------------------------------------------------------");
+                        println!("  Tensors:            {} parsed successfully", meta.tensor_info.len());
+                        println!("\n{} Valid GGUF model ready for inference.", "✔".green().bold());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Invalid GGUF:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "infer" => {
+            let device = Device::Cpu;
+            let mut model = match LlmModel::load_from_file(model_path, &device) {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("{} {}", "Model Load Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let tokenizer = LlmTokenizer::from_vocab(vec![], Some(1), Some(2));
+            let config = InferenceConfig {
+                max_tokens: args.max_tokens,
+                temperature: args.temperature,
+                seed: args.seed,
+                repeat_penalty: 1.1,
+                repeat_last_n: 64,
+                top_p: None,
+            };
+
+            match execute_inference(&mut model, &tokenizer, &args.prompt, &config) {
+                Ok(res) => {
+                    if args.json {
+                        println!("{}", serde_json::to_string_pretty(&res).unwrap_or_default());
+                    } else {
+                        println!("🧠 {}", "Local AI Inference Output".cyan().bold());
+                        println!("================================================================================");
+                        println!("  Model:              {}", res.model.yellow().bold());
+                        println!("  Architecture:       {}", res.architecture.green().bold());
+                        println!("  Prompt:             {}", res.prompt);
+                        println!("  Generated Tokens:   {} tokens", res.generated_token_ids.len());
+                        println!("  Throughput:         {:.2} tok/sec ({} ms)", res.tokens_per_second, res.duration_ms);
+                        println!("--------------------------------------------------------------------------------");
+                        println!("{}\n", res.output_text);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Inference Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        other => {
+            eprintln!("{} Unknown AI action '{}'. Use 'inspect', 'validate', or 'infer'.", "Error:".red().bold(), other);
+            std::process::exit(1);
+        }
+    }
+}
+

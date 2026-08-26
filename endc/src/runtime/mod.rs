@@ -1,3 +1,5 @@
+pub mod ai;
+
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};

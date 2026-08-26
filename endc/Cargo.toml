@@ -21,6 +21,10 @@ rustls-pki-types = "1.10"
 rustls-pemfile = "2.2"
 webpki-roots = "0.26"
 rcgen = { version = "0.13", features = ["pem", "ring"] }
+candle-core = { version = "0.8", default-features = false }
+candle-transformers = { version = "0.8", default-features = false }
+tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
+byteorder = "1.5"
 
 [profile.release]
 opt-level = 2

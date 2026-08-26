@@ -29,6 +29,26 @@ pub struct GgufHeader {
     pub metadata_kv_count: i64,
     pub is_valid: bool,
     pub architecture: str,
+    pub context_length: i32,
+    pub embedding_length: i32,
+}
+
+pub struct LlmInferenceConfig {
+    pub max_tokens: i32,
+    pub temperature: f64,
+    pub seed: i64,
+    pub repeat_penalty: f64,
+}
+
+pub struct LlmInferenceResult {
+    pub model: str,
+    pub architecture: str,
+    pub prompt: str,
+    pub output_text: str,
+    pub generated_tokens_count: i32,
+    pub duration_ms: i64,
+    pub tokens_per_second: f64,
+    pub status: str,
 }
 
 pub fn gguf_verify_magic(magic_num: i64) bool {
@@ -48,6 +68,8 @@ pub fn gguf_parse_header(magic_num: i64, ver_num: i32, tensor_count: i64, kv_cou
         metadata_kv_count: kv_count,
         is_valid: valid,
         architecture: arch,
+        context_length: 2048,
+        embedding_length: 4096,
     }
 }
 
@@ -58,5 +80,14 @@ pub fn gguf_describe_tensor(name: str, dims: str, t_type: str, offset: i64) Gguf
         dimensions_shape: dims,
         tensor_type: t_type,
         offset_bytes: offset,
+    }
+}
+
+pub fn gguf_default_config() LlmInferenceConfig {
+    ret LlmInferenceConfig {
+        max_tokens: 32,
+        temperature: 0.0,
+        seed: 42,
+        repeat_penalty: 1.1,
     }
 }
