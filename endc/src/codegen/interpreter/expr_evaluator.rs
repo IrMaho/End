@@ -1207,6 +1207,59 @@ impl Interpreter {
                         return Ok(Value::Int(0));
                     }
 
+                    if name == "end_attest_generate" {
+                        let target = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "src/main.end".to_string() };
+                        let mode_str = if let Some(Value::String(m)) = eval_args.get(1) { m.as_str() } else { "auto" };
+                        let mode = match mode_str {
+                            "tpm" | "tpm2" => Some(crate::security::AttestationKind::Tpm2),
+                            "software" => Some(crate::security::AttestationKind::Software),
+                            _ => None,
+                        };
+                        match crate::security::AttestationEngine::attest_target(&target, mode, None, None, None) {
+                            Ok(quote) => {
+                                let json = serde_json::to_string_pretty(&quote).unwrap_or_else(|_| "{}".to_string());
+                                return Ok(Value::String(json));
+                            }
+                            Err(e) => {
+                                return Err(format!("Attestation failed: {}", e));
+                            }
+                        }
+                    }
+
+                    if name == "end_attest_verify" {
+                        let quote_json = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "".to_string() };
+                        let target = if let Some(Value::String(s)) = eval_args.get(1) { s.clone() } else { "".to_string() };
+                        let quote: crate::security::AttestationQuote = match serde_json::from_str(&quote_json) {
+                            Ok(q) => q,
+                            Err(_) => return Ok(Value::Bool(false)),
+                        };
+                        let is_ok = crate::security::AttestationEngine::verify_target(&quote, &target, None, None).is_ok();
+                        return Ok(Value::Bool(is_ok));
+                    }
+
+                    if name == "end_attest_quote_kind" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(quote) = serde_json::from_str::<crate::security::AttestationQuote>(json_str) {
+                                return Ok(Value::String(quote.kind.to_string()));
+                            }
+                        }
+                        return Ok(Value::String("unknown".to_string()));
+                    }
+
+                    if name == "end_attest_quote_digest" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(quote) = serde_json::from_str::<crate::security::AttestationQuote>(json_str) {
+                                return Ok(Value::String(quote.binary_sha256));
+                            }
+                        }
+                        return Ok(Value::String("".to_string()));
+                    }
+
+                    if name == "end_tpm_is_available" {
+                        let status = crate::security::TpmDetector::detect();
+                        return Ok(Value::Bool(status.is_present && status.is_ready));
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

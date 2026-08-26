@@ -13,7 +13,11 @@ pub mod tls_tests;
 pub mod types;
 
 pub use adversarial::{AdversarialCompilationReport, AdversarialSecurityEngine};
-pub use attestation::{AttestationEngine, VerifiedBuildManifest, VerifiedBuildStatus};
+pub use attestation::{
+    AttestationEngine, AttestationKind, AttestationQuote, AttestationResult, AttestationVerifier,
+    SoftwareAttestationSigner, TpmDetector, VerificationError, VerifiedBuildManifest,
+    VerifiedBuildStatus,
+};
 pub use capability_engine::CapabilityAndDomainEngine;
 pub use contract_verifier::SecurityContractVerifier;
 pub use taint_analyzer::TaintAndInformationFlowAnalyzer;

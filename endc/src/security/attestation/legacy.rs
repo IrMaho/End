@@ -1,7 +1,11 @@
-use crate::security::types::*;
 use serde::{Deserialize, Serialize};
 
-/// Cryptographically Verifiable Build Manifest (Feature 40 & 50)
+use crate::security::crypto::sha256_hex;
+use crate::security::types::*;
+
+use super::software::current_timestamp_iso8601;
+
+/// Cryptographically Verifiable Build Manifest (Pillars 4 & 5).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerifiedBuildManifest {
     pub compiler_name: String,
@@ -18,7 +22,7 @@ pub struct VerifiedBuildManifest {
     pub attestation_digest: String,
 }
 
-/// Result of Absolute Verification Pipeline
+/// Result of Absolute Verification Pipeline.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VerifiedBuildStatus {
     Permitted {
@@ -31,18 +35,9 @@ pub enum VerifiedBuildStatus {
     },
 }
 
-pub struct AttestationEngine;
-
-impl AttestationEngine {
-    pub fn generate_deterministic_hash(input: &str) -> String {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut hasher = DefaultHasher::new();
-        input.hash(&mut hasher);
-        format!("{:016x}", hasher.finish())
-    }
-
-    pub fn evaluate_verified_build(
+impl VerifiedBuildManifest {
+    /// Evaluates the verified build manifest using genuine cryptographic SHA-256 digests.
+    pub fn evaluate(
         source: &str,
         filename: &str,
         security_level: SecurityLevel,
@@ -67,22 +62,31 @@ impl AttestationEngine {
             };
         }
 
-        // Generate deterministic hashes for reproducible build
-        let src_hash = Self::generate_deterministic_hash(source);
-        let ast_hash = Self::generate_deterministic_hash(&format!("{}:{}", filename, source.len()));
-        let dep_hash = Self::generate_deterministic_hash("end-stdlib-verified-v2.0");
-        let consensus_sig = Self::generate_deterministic_hash("3/3-multi-agent-unanimous-consensus");
+        // Generate genuine cryptographic SHA-256 hashes for reproducible build
+        let src_hash = sha256_hex(source.as_bytes());
+        let ast_payload = format!("{}:{}", filename, source.len());
+        let ast_hash = sha256_hex(ast_payload.as_bytes());
+        let dep_hash = sha256_hex(b"end-stdlib-verified-v2.0-sha256");
 
-        let proof_hashes = proofs
+        let proof_hashes: Vec<String> = proofs
             .iter()
-            .map(|p| Self::generate_deterministic_hash(p))
-            .collect::<Vec<_>>();
+            .map(|p| sha256_hex(p.as_bytes()))
+            .collect();
+
+        let mut consensus_payload = Vec::new();
+        consensus_payload.extend_from_slice(src_hash.as_bytes());
+        consensus_payload.push(b':');
+        consensus_payload.extend_from_slice(ast_hash.as_bytes());
+        for p in &proof_hashes {
+            consensus_payload.extend_from_slice(p.as_bytes());
+        }
+        let consensus_sig = sha256_hex(&consensus_payload);
 
         let combined = format!(
             "{}:{}:{}:{}:{}:{:?}",
             src_hash, ast_hash, dep_hash, consensus_sig, security_level as u8, capabilities
         );
-        let attestation_digest = Self::generate_deterministic_hash(&combined);
+        let attestation_digest = sha256_hex(combined.as_bytes());
 
         let manifest = VerifiedBuildManifest {
             compiler_name: "End Language Verified Compiler (endc)".to_string(),
@@ -94,7 +98,7 @@ impl AttestationEngine {
             satisfied_proof_hashes: proof_hashes,
             granted_capabilities: capabilities.to_vec(),
             multi_agent_consensus_signature: consensus_sig,
-            build_timestamp: "2026-08-22T15:45:00Z".to_string(),
+            build_timestamp: current_timestamp_iso8601(),
             is_reproducible: true,
             attestation_digest,
         };

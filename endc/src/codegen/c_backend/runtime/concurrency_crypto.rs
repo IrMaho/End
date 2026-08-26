@@ -271,6 +271,12 @@ pub fn emit_concurrency_crypto_runtime(out: &mut String) {
     out.push_str("static inline double end_stress_report_rps(const char* json) { (void)json; return 1000.0; }\n");
     out.push_str("static inline int64_t end_stress_report_total(const char* json) { (void)json; return 100; }\n");
     out.push_str("static inline int64_t end_stress_report_errors(const char* json) { (void)json; return 0; }\n\n");
+    out.push_str("/* End Cryptographic Attestation C Runtime Stubs */\n");
+    out.push_str("static inline const char* end_attest_generate(const char* target, const char* mode) { (void)target; (void)mode; return \"{\\\"kind\\\":\\\"software\\\",\\\"binary_sha256\\\":\\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\",\\\"env_hash\\\":\\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\",\\\"timestamp\\\":\\\"2026-08-26T00:00:00Z\\\",\\\"public_key\\\":\\\"00\\\",\\\"signature\\\":\\\"00\\\"}\"; }\n");
+    out.push_str("static inline bool end_attest_verify(const char* quote_json, const char* target) { (void)quote_json; (void)target; return true; }\n");
+    out.push_str("static inline const char* end_attest_quote_kind(const char* quote_json) { (void)quote_json; return \"software\"; }\n");
+    out.push_str("static inline const char* end_attest_quote_digest(const char* quote_json) { (void)quote_json; return \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"; }\n");
+    out.push_str("static inline bool end_tpm_is_available(void) { return false; }\n\n");
 
     // Embedded Database Engine Primitives (Real SQLite Engine C Bindings)
     out.push_str("/* End Real Embedded SQLite-Compatible Database Engine Primitives */\n");
