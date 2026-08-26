@@ -159,10 +159,7 @@ pub enum Commands {
         /// Scenario or parameter mutation (e.g. friction=0.05)
         /// Format as JSON
     Simulate(SimulateArgs),
-    /// Virtual high-scale stress testing engine (up to 1,000,000 cycles with P99 metrics)
-        /// Path to .end source file
-        /// Number of virtual operations (default: 1,000,000)
-        /// Format as JSON
+    /// Real High-Scale HTTP Load & Stress Engine (with P50, P90, P99, P99.9 HdrHistogram metrics)
     Stress(StressArgs),
     /// Create a new End language project with end.toml manifest and scaffold
         /// Project directory name

@@ -70,17 +70,27 @@ pub struct SimulateArgs {
         pub json: bool,
 }
 
-    /// Virtual high-scale stress testing engine (up to 1,000,000 cycles with P99 metrics)
-        /// Path to .end source file
-        /// Number of virtual operations (default: 1,000,000)
-        /// Format as JSON
+    /// Real High-Scale HTTP Load & Stress Testing Engine (with P50, P90, P99, P99.9 HdrHistogram metrics)
+    /// Target URL or path to .end source file
+    /// Target HTTP URL to stress test
+    /// Number of concurrent workers (default: 10)
+    /// Duration of test (e.g. 5s, 10s)
+    /// Number of operations / requests (default: 1000)
+    /// Format output as JSON
 #[derive(Args, Debug, Clone)]
 pub struct StressArgs {
-        pub file: PathBuf,
-        #[arg(short, long, default_value_t = 1000000)]
-        pub iterations: u64,
-        #[arg(long, default_value_t = false)]
-        pub json: bool,
+    #[arg(default_value = "")]
+    pub file: PathBuf,
+    #[arg(long)]
+    pub url: Option<String>,
+    #[arg(short, long, default_value_t = 10)]
+    pub concurrency: usize,
+    #[arg(short, long)]
+    pub duration: Option<String>,
+    #[arg(short, long, default_value_t = 1000)]
+    pub iterations: u64,
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
 }
 
     /// Format End source code canonically

@@ -3,6 +3,7 @@ pub mod db;
 pub mod gpu;
 pub mod net;
 pub mod raft;
+pub mod stress;
 pub mod sync;
 
 use serde::{Deserialize, Serialize};

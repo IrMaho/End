@@ -1139,6 +1139,74 @@ impl Interpreter {
                         return Ok(Value::String("".to_string()));
                     }
 
+                    if name == "end_stress_run" {
+                        let url = if let Some(Value::String(s)) = eval_args.get(0) { s.clone() } else { "http://127.0.0.1:8080".to_string() };
+                        let concurrency = if let Some(Value::Int(c)) = eval_args.get(1) { *c as usize } else { 10 };
+                        let duration_s = if let Some(Value::Float(d)) = eval_args.get(2) { *d } else if let Some(Value::Int(d)) = eval_args.get(2) { *d as f64 } else { 2.0 };
+                        let runner = crate::runtime::stress::StressRunner::new(&url)
+                            .concurrency(concurrency)
+                            .duration(std::time::Duration::from_secs_f64(duration_s));
+                        match runner.run() {
+                            Ok(report) => {
+                                let json = serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string());
+                                return Ok(Value::String(json));
+                            }
+                            Err(e) => {
+                                return Err(format!("Stress test failed: {}", e));
+                            }
+                        }
+                    }
+
+                    if name == "end_stress_report_p50" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let p50 = val.get("latency").and_then(|l| l.get("p50_ms")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                return Ok(Value::Float(p50));
+                            }
+                        }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "end_stress_report_p99" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let p99 = val.get("latency").and_then(|l| l.get("p99_ms")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                return Ok(Value::Float(p99));
+                            }
+                        }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "end_stress_report_rps" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let rps = val.get("throughput_rps").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                return Ok(Value::Float(rps));
+                            }
+                        }
+                        return Ok(Value::Float(0.0));
+                    }
+
+                    if name == "end_stress_report_total" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let total = val.get("total_requests").and_then(|v| v.as_i64()).unwrap_or(0);
+                                return Ok(Value::Int(total));
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
+                    if name == "end_stress_report_errors" {
+                        if let Some(Value::String(json_str)) = eval_args.get(0) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let errs = val.get("failed_requests").and_then(|v| v.as_i64()).unwrap_or(0);
+                                return Ok(Value::Int(errs));
+                            }
+                        }
+                        return Ok(Value::Int(0));
+                    }
+
                     if let Some(op_val) = self.operations.get(name).cloned() {
                         return self.eval_operation(&op_val, eval_args);
                     }

@@ -1,0 +1,47 @@
+// 👑 End Language: std/stress.end
+// Native High-Precision HTTP Load & Stress Testing Engine (HdrHistogram)
+
+pub st StressLatencyPercentiles {
+    p50_ms: f64,
+    p90_ms: f64,
+    p99_ms: f64,
+    p99_9_ms: f64,
+    min_ms: f64,
+    max_ms: f64,
+    mean_ms: f64,
+}
+
+pub st StressReport {
+    target_url: str,
+    duration_s: f64,
+    concurrency: i64,
+    total_requests: i64,
+    successful_requests: i64,
+    failed_requests: i64,
+    error_rate_percent: f64,
+    throughput_rps: f64,
+}
+
+pub fn stress_test_run(target_url: str, concurrency: i64, duration_secs: f64) str {
+    ret end_stress_run(target_url, concurrency, duration_secs)
+}
+
+pub fn stress_report_p50(report_json: str) f64 {
+    ret end_stress_report_p50(report_json)
+}
+
+pub fn stress_report_p99(report_json: str) f64 {
+    ret end_stress_report_p99(report_json)
+}
+
+pub fn stress_report_rps(report_json: str) f64 {
+    ret end_stress_report_rps(report_json)
+}
+
+pub fn stress_report_total(report_json: str) i64 {
+    ret end_stress_report_total(report_json)
+}
+
+pub fn stress_report_errors(report_json: str) i64 {
+    ret end_stress_report_errors(report_json)
+}

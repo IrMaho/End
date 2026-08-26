@@ -15,16 +15,10 @@ pub st StressMetricsReport {
 }
 
 pub fn stress_report_create(total_ops: i64, elapsed_us: i64, avg_latency_ns: f64) StressMetricsReport {
-    mut rps = 66666666.0
+    mut rps = 0.0
     if elapsed_us > 0 {
-        rps = 1000000.0 * 100.0
+        rps = (total_ops as f64) / ((elapsed_us as f64) / 1000000.0)
     }
-
-    val p50 = avg_latency_ns * 0.95
-    val p90 = avg_latency_ns * 1.15
-    val p99 = avg_latency_ns * 1.45
-    val p999 = avg_latency_ns * 2.10
-    val max_lat = avg_latency_ns * 2.80
 
     ret StressMetricsReport {
         total_operations: total_ops,
@@ -32,10 +26,10 @@ pub fn stress_report_create(total_ops: i64, elapsed_us: i64, avg_latency_ns: f64
         failed_ops: 0,
         elapsed_micros: elapsed_us,
         requests_per_sec: rps,
-        p50_latency_ns: p50,
-        p90_latency_ns: p90,
-        p99_latency_ns: p99,
-        p999_latency_ns: p999,
-        max_latency_ns: max_lat,
+        p50_latency_ns: avg_latency_ns,
+        p90_latency_ns: avg_latency_ns,
+        p99_latency_ns: avg_latency_ns,
+        p999_latency_ns: avg_latency_ns,
+        max_latency_ns: avg_latency_ns,
     }
 }

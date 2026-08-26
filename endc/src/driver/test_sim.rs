@@ -233,59 +233,82 @@ pub fn handle_simulate(args: SimulateArgs) {
 }
 
 pub fn handle_stress(args: StressArgs) {
-    let StressArgs { file, iterations, json } = args;
-            let sample_cap = (iterations as usize).min(100_000);
-            let mut latencies: Vec<f64> = Vec::with_capacity(sample_cap);
-            let mut hash: u64 = 14695981039346656037;
-            let start = std::time::Instant::now();
-            for i in 0..iterations {
-                let op_start = std::time::Instant::now();
-                hash ^= i;
-                hash = hash.wrapping_mul(1099511628211);
-                if latencies.len() < sample_cap {
-                    latencies.push(op_start.elapsed().as_nanos() as f64);
-                }
-            }
-            let elapsed = start.elapsed();
-            let elapsed_us = elapsed.as_micros().max(1);
-            let rps = (iterations as f64) / (elapsed.as_secs_f64().max(0.000001));
+    let StressArgs {
+        file,
+        url,
+        concurrency,
+        duration,
+        iterations,
+        json,
+    } = args;
 
-            latencies.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-            let len = latencies.len().max(1) as f64;
-            let p50_ns = latencies.get((len * 0.50) as usize).cloned().unwrap_or(10.0);
-            let p90_ns = latencies.get((len * 0.90) as usize).cloned().unwrap_or(15.0);
-            let p99_ns = latencies.get((len * 0.99) as usize).cloned().unwrap_or(20.0);
-            let p999_ns = latencies.get((len * 0.999) as usize).cloned().unwrap_or(25.0);
-            let max_ns = latencies.last().cloned().unwrap_or(30.0);
+    let target_url = if let Some(u) = url {
+        u
+    } else {
+        let f_str = file.to_string_lossy();
+        if f_str.starts_with("http://") || f_str.starts_with("https://") {
+            f_str.to_string()
+        } else if !f_str.is_empty() && f_str != "." {
+            // If user passed a file, check if it's a valid path
+            format!("http://{}", f_str)
+        } else {
+            "http://127.0.0.1:8080/".to_string()
+        }
+    };
 
-            if json {
-                println!("{}", serde_json::json!({
-                    "file": file.to_string_lossy(),
-                    "iterations": iterations,
-                    "elapsed_micros": elapsed_us,
-                    "ops_per_sec": rps,
-                    "p50_latency_ns": p50_ns,
-                    "p90_latency_ns": p90_ns,
-                    "p99_latency_ns": p99_ns,
-                    "p999_latency_ns": p999_ns,
-                    "max_latency_ns": max_ns,
-                    "cpu_burn_detected": false
-                }));
-            } else {
-                println!("🧪 {}", "End Virtual High-Scale Stress Benchmark".yellow().bold());
-                println!("================================================================================");
-                println!("  Target:            {:?}", file);
-                println!("  Virtual Load:      {} operations", iterations.to_string().cyan().bold());
-                println!("  Elapsed Time:      {:.2} ms ({} µs)", elapsed.as_secs_f64() * 1000.0, elapsed_us);
-                println!("  Throughput:        {} ops/sec", format!("{:.0}", rps).green().bold());
-                println!("  Latency P50:       {:.1} ns", p50_ns);
-                println!("  Latency P90:       {:.1} ns", p90_ns);
-                println!("  Latency P99:       {:.1} ns", p99_ns);
-                println!("  Latency P99.9:     {:.1} ns", p999_ns);
-                println!("  Max Latency:       {:.1} ns", max_ns);
-                println!("  Hardware Guard:    {}", "✔ 100% Stable (Dynamic Hardware Sampling)".green().bold());
-                println!("================================================================================");
-            }
+    let mut runner = crate::runtime::stress::StressRunner::new(&target_url)
+        .concurrency(concurrency);
+
+    if let Some(dur_str) = &duration {
+        let trimmed = dur_str.trim();
+        let dur = if trimmed.ends_with("ms") {
+            let ms = trimmed.trim_end_matches("ms").parse::<u64>().unwrap_or(5000);
+            std::time::Duration::from_millis(ms)
+        } else if trimmed.ends_with('s') {
+            let s = trimmed.trim_end_matches('s').parse::<f64>().unwrap_or(5.0);
+            std::time::Duration::from_secs_f64(s)
+        } else if let Ok(s) = trimmed.parse::<f64>() {
+            std::time::Duration::from_secs_f64(s)
+        } else {
+            std::time::Duration::from_secs(5)
+        };
+        runner = runner.duration(dur);
+    } else if iterations > 0 {
+        runner = runner.max_requests(iterations as usize);
+    }
+
+    let report = match runner.run() {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("❌ Stress runner execution error: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+    } else {
+        println!("🧪 {}", "End Real HTTP Load & Stress Engine (HdrHistogram)".yellow().bold());
+        println!("================================================================================");
+        println!("  Target URL:        {}", report.target_url.cyan().bold());
+        println!("  Concurrency:       {} workers", report.concurrency.to_string().cyan());
+        println!("  Duration:          {:.2} s", report.duration_s);
+        println!("  Total Requests:    {}", report.total_requests.to_string().yellow().bold());
+        println!("  Successful:        {} ({:.2}%)", report.successful_requests.to_string().green().bold(), 100.0 - report.error_rate_percent);
+        println!("  Failed:            {} ({:.2}%)", report.failed_requests.to_string().red().bold(), report.error_rate_percent);
+        println!("  Throughput:        {} req/sec", format!("{:.1}", report.throughput_rps).green().bold());
+        println!("  --------------------------------------------------");
+        println!("  Latency P50:       {:.2} ms", report.latency.p50_ms);
+        println!("  Latency P90:       {:.2} ms", report.latency.p90_ms);
+        println!("  Latency P99:       {:.2} ms", report.latency.p99_ms);
+        println!("  Latency P99.9:     {:.2} ms", report.latency.p99_9_ms);
+        println!("  Min Latency:       {:.2} ms", report.latency.min_ms);
+        println!("  Max Latency:       {:.2} ms", report.latency.max_ms);
+        println!("  Mean Latency:      {:.2} ms", report.latency.mean_ms);
+        println!("  --------------------------------------------------");
+        println!("  Status Codes:      {:?}", report.status_codes);
+        println!("================================================================================");
+    }
 }
 
 pub fn handle_fuzz(args: FuzzArgs) {

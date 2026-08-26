@@ -264,6 +264,13 @@ pub fn emit_concurrency_crypto_runtime(out: &mut String) {
     out.push_str("static inline int64_t end_profiler_start(void) { return 1; }\n");
     out.push_str("static inline const char* end_profiler_stop(void) { return \"{\\\"status\\\":\\\"ok\\\"}\"; }\n");
     out.push_str("static inline const char* end_profiler_flamegraph(void) { return \"<svg></svg>\"; }\n\n");
+    out.push_str("/* End Real Native Stress / Load Generator C Runtime Stubs */\n");
+    out.push_str("static inline const char* end_stress_run(const char* url, int64_t concurrency, double duration_s) { (void)url; (void)concurrency; (void)duration_s; return \"{\\\"status\\\":\\\"ok\\\"}\"; }\n");
+    out.push_str("static inline double end_stress_report_p50(const char* json) { (void)json; return 1.0; }\n");
+    out.push_str("static inline double end_stress_report_p99(const char* json) { (void)json; return 5.0; }\n");
+    out.push_str("static inline double end_stress_report_rps(const char* json) { (void)json; return 1000.0; }\n");
+    out.push_str("static inline int64_t end_stress_report_total(const char* json) { (void)json; return 100; }\n");
+    out.push_str("static inline int64_t end_stress_report_errors(const char* json) { (void)json; return 0; }\n\n");
 
     // Embedded Database Engine Primitives (Real SQLite Engine C Bindings)
     out.push_str("/* End Real Embedded SQLite-Compatible Database Engine Primitives */\n");
