@@ -29,8 +29,13 @@ wgpu = "24"
 pollster = "0.4"
 bytemuck = { version = "1.19", features = ["derive"] }
 rusqlite = { version = "0.33", features = ["bundled"] }
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util"] }
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+h2 = "0.4"
+hpack = "0.3"
+http = "1"
+http-body-util = "0.1"
 bytes = "1"
 
 [profile.release]

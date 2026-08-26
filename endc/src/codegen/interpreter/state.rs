@@ -33,6 +33,10 @@ pub struct Interpreter {
     pub next_db_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
     pub pg_engines: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::db::PgEngine>>>,
     pub next_pg_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub http2_servers: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::net::Http2Server>>>,
+    pub next_http2_server_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
+    pub http2_clients: std::sync::Arc<std::sync::Mutex<HashMap<i64, crate::runtime::net::Http2Client>>>,
+    pub next_http2_client_handle: std::sync::Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Interpreter {
@@ -67,6 +71,10 @@ impl Interpreter {
             next_db_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(100)),
             pg_engines: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_pg_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(500)),
+            http2_servers: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_http2_server_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(800)),
+            http2_clients: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_http2_client_handle: std::sync::Arc::new(std::sync::atomic::AtomicI64::new(900)),
         }
     }
 
