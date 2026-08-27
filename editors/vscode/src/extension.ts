@@ -62,6 +62,14 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
+  // 6b. Register Definition Provider (Go to Definition F12)
+  context.subscriptions.push(
+    vscode.languages.registerDefinitionProvider(
+      { language: 'end', scheme: 'file' },
+      new EndDefinitionProvider()
+    )
+  );
+
   // 7. Register Tree Views
   const testTreeProvider = new EndTestTreeProvider();
   vscode.window.registerTreeDataProvider('endTestsView', testTreeProvider);
@@ -660,7 +668,56 @@ class EndInlayHintsProvider implements vscode.InlayHintsProvider {
 }
 
 // -----------------------------------------------------------------------------
-// Hover Provider: Semantic Explanation & AI Agent Insights
+// Definition Provider: Jump to Function, Struct, Class, Enum, Variable Definitions
+// -----------------------------------------------------------------------------
+class EndDefinitionProvider implements vscode.DefinitionProvider {
+  provideDefinition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.Definition | vscode.LocationLink[]> {
+    const wordRange = document.getWordRangeAtPosition(position);
+    if (!wordRange) return null;
+    const word = document.getText(wordRange);
+    const docText = document.getText();
+    const lines = docText.split('\n');
+
+    // 1. Check functions
+    const fnRegex = new RegExp(`^\\s*(?:pub\\s+)?(?:fn|def)\\s+(${word})\\s*\\(`, 'm');
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(fnRegex);
+      if (match) {
+        const col = lines[i].indexOf(word);
+        return new vscode.Location(document.uri, new vscode.Position(i, col));
+      }
+    }
+
+    // 2. Check structs, classes, enums, features, agents, tasks
+    const declRegex = new RegExp(`^\\s*(?:pub\\s+)?(?:struct|st|class|enum|trait|feature|agent|task|hub|capability)\\s+(${word})\\b`, 'm');
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(declRegex);
+      if (match) {
+        const col = lines[i].indexOf(word);
+        return new vscode.Location(document.uri, new vscode.Position(i, col));
+      }
+    }
+
+    // 3. Check variable declarations (val, mut, let, var)
+    const varRegex = new RegExp(`\\b(?:val|mut|let|var)\\s+(${word})\\b`);
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(varRegex);
+      if (match) {
+        const col = lines[i].indexOf(word);
+        return new vscode.Location(document.uri, new vscode.Position(i, col));
+      }
+    }
+
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Hover Provider: Semantic Explanation & Symbol Signatures
 // -----------------------------------------------------------------------------
 class EndHoverProvider implements vscode.HoverProvider {
   provideHover(
@@ -668,41 +725,53 @@ class EndHoverProvider implements vscode.HoverProvider {
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.Hover> {
-    const lineText = document.lineAt(position.line).text;
     const wordRange = document.getWordRangeAtPosition(position);
-    const word = wordRange ? document.getText(wordRange) : '';
+    if (!wordRange) return null;
+    const word = document.getText(wordRange);
+    const docText = document.getText();
+    const lines = docText.split('\n');
 
-    if (lineText.includes('refer')) {
-      const md = new vscode.MarkdownString();
-      md.appendMarkdown(`**👑 End Inverted Referrer Architecture**\n\n`);
-      md.appendMarkdown(`- **Model:** Inverted Referral (Push Model)\n`);
-      md.appendMarkdown(`- **Consumer Imports:** 0 (Consumer is 100% decoupled)\n`);
-      md.appendMarkdown(`- **Modularity:** Autonomous self-registration into Target Hub\n`);
-      return new vscode.Hover(md);
+    // 1. Check Function definitions in document
+    const fnRegex = new RegExp(`^\\s*(?:pub\\s+)?(?:fn|def)\\s+${word}\\s*\\(([^)]*)\\)\\s*([a-zA-Z0-9_\\[\\]<>]*)`);
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(fnRegex);
+      if (match) {
+        const params = match[1] || '';
+        const retType = match[2] ? ` -> ${match[2]}` : '';
+        const md = new vscode.MarkdownString();
+        md.appendCodeblock(`fn ${word}(${params})${retType}`, 'end');
+        md.appendMarkdown(`\n*Defined at line ${i + 1}*`);
+        return new vscode.Hover(md);
+      }
     }
 
-    if (lineText.includes('agent')) {
-      const md = new vscode.MarkdownString();
-      md.appendMarkdown(`**🤖 First-Class End AI Agent Contract**\n\n`);
-      md.appendMarkdown(`- **Verification:** SMT Proof Gates & Conservation Audits\n`);
-      md.appendMarkdown(`- **Lease Tier:** Ephemeral Managed Sandbox\n`);
-      return new vscode.Hover(md);
+    // 2. Check Struct definitions in document
+    for (let i = 0; i < lines.length; i++) {
+      if (new RegExp(`^\\s*(?:pub\\s+)?(?:struct|st)\\s+${word}\\b`).test(lines[i])) {
+        const md = new vscode.MarkdownString();
+        md.appendMarkdown(`### 📦 Struct \`${word}\`\n`);
+        md.appendMarkdown(`- **Layout:** 64-Byte Cache Aligned\n`);
+        md.appendMarkdown(`- **Defined at:** Line ${i + 1}\n`);
+        return new vscode.Hover(md);
+      }
     }
 
-    if (lineText.includes('region')) {
-      const md = new vscode.MarkdownString();
-      md.appendMarkdown(`**👑 End Zero-GC Memory Arena**\n\n`);
-      md.appendMarkdown(`- **Lifetime:** Deterministic Region Scope\n`);
-      md.appendMarkdown(`- **Allocation Overhead:** 0 ns (Linear Pointer Bump)\n`);
-      md.appendMarkdown(`- **Hardware Safety:** Cache-Line 64-Byte Aligned\n`);
-      return new vscode.Hover(md);
-    }
+    // 3. Keywords
+    const keywordMap: Record<string, string> = {
+      'fn': '**`fn` Keyword**\nDeclares a statically-typed function with deterministic memory semantics.',
+      'val': '**`val` Keyword**\nDeclares an immutable variable binding in local or module scope.',
+      'mut': '**`mut` Keyword**\nDeclares a mutable variable binding subject to compile-time static borrow exclusivity.',
+      'region': '**`region` Arena**\nAllocates a zero-cost deterministic memory arena with instant 0 ns bulk deallocation on scope exit (`Tier 1 Memory`).',
+      'lease': '**`lease` Ephemeral Scope**\nBinds a memory buffer or hardware resource for the exact duration of the scoped block (`Tier 0 Memory`).',
+      'refer': '**`refer` Binding**\nInverted referral syntax connecting a producer/handler to a consumer Hub with 0 consumer imports.',
+      'agent': '**`agent` Contract**\nFirst-class AI coding agent definition declaring allowed scopes, tasks, and proof-of-work validation.',
+      'task': '**`task` Contract**\nFirst-class engineering task tracking status transitions with machine evidence.',
+      'operation': '**`operation` Algebra**\nFirst-class composable operation value supporting resilience combinators (`>>`, `&`, `.retry()`).',
+      'match': '**`match` Expression**\nAlgebraic pattern matching over enums and structs with exhaustiveness checking.',
+    };
 
-    if (lineText.includes('@widget')) {
-      const md = new vscode.MarkdownString();
-      md.appendMarkdown(`**🎨 End 120 FPS Declarative Widget**\n\n`);
-      md.appendMarkdown(`- **Canvas:** Direct GPU Skia/Metal Pipeline\n`);
-      md.appendMarkdown(`- **Reactivity:** Reactive Topology & Signal Driven\n`);
+    if (keywordMap[word]) {
+      const md = new vscode.MarkdownString(keywordMap[word]);
       return new vscode.Hover(md);
     }
 

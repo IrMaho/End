@@ -78,20 +78,25 @@ To maintain absolute technical clarity:
 
 End is explicitly designed to cover the complete software development spectrum without requiring domain-specific language switches:
 
-| Domain | End Target Goal | Status | Key Architectural Mechanism |
-| :--- | :--- | :---: | :--- |
-| **Backend & APIs** | Native high-performance web services and microservices | 🟢 Stable | `EndHyper`, zero-copy HTTP routing, connection pooling |
-| **Web Full-Stack** | Full-stack services, binary WebSocket streams | 🟢 Stable | `EndForge`, low-latency binary framing, typed DTOs |
-| **Memory-Safe Systems** | OS components, embedded engines, low-level drivers | 🟢 Stable | Deterministic Region Memory, compile-time borrow checking |
-| **Real-Time & Games** | 120 FPS game loops, vector math, physics simulation | 🟢 Stable | `std/ui/canvas.end`, SIMD intrinsics, linear memory arenas |
-| **Graphics & GPU** | Real-time raymarching, shader pipelines, compute | 🟣 Research | Unified CPU + GPU kernel execution & compute borrowing |
-| **AI Infrastructure** | Tensor computing, model inference, agent runtimes | 🟢 Stable | `AI_TENSORS`, GGUF engine integration, tensor primitives |
-| **Developer Tools** | Compilers, linters, analyzers, instant CLIs | 🟢 Stable | Stripped 40 KB native binaries, instant sub-ms startup |
-| **Data Systems & DBs** | In-memory key-value engines, disk storage layers | 🔵 Beta | `EndKV`, 64-byte aligned arena tables, WAL logging |
-| **Distributed Systems** | Raft consensus, message-passing nodes, replication | 🟡 Experimental | `RAFT_DISTRIBUTED_CONSENSUS`, cluster state machines |
-| **Desktop Applications** | Cross-platform native GUI with high-refresh rendering | 🟡 Experimental | Native C canvas bindings, GLFW/DirectX bridges |
-| **Mobile Applications** | Android (NDK) and iOS native binaries | ⚪ Planned | Cross-compilation toolchain targets |
-| **WebAssembly (WASM)** | Browser-side client execution without JS glue | ⚪ Planned | WASM standalone backend target generator |
+| Subsystem | Status | Test / Verification Path | Architectural & Truthfulness Notes |
+| :--- | :---: | :--- | :--- |
+| **Lexer & Parser** | 🟢 Stable | `cargo test --lib -- parser::tests` | Full BNF grammar, 50+ AST nodes, comprehensive span tracking. |
+| **Semantic Analysis & SMT** | 🟢 Stable | `cargo test --lib -- semantic::smt_tests` | Z3 constraint solving, escape analysis, and static borrow checking. |
+| **C11 Code Generator** | 🟢 Stable | `cargo test --test integration_tests` | Direct C11 compilation via GCC/Clang with sub-second execution. |
+| **AST-Walking Interpreter** | 🟢 Stable | `cargo test --lib -- codegen::interpreter` | Embedded VM executing full AST with 0 ns region simulation. |
+| **LLVM Native JIT / AOT** | 🔵 Beta | `cargo test --lib -- codegen::llvm_backend` | Inkwell/LLVM 22.1 JIT & AOT backend with SIMD code generation. |
+| **Language Server (LSP)** | 🟢 Stable | `cargo test --lib -- lsp::tests` | Full LSP 3.17 engine (definition, hover, real-time compiler diagnostics). |
+| **VS Code Extension** | 🟢 Stable | `npm run compile` (`editors/vscode`) | Syntax highlighting, LSP client, Definition provider, CodeLens, Webview Studio. |
+| **Documentation Test Suite** | 🟢 Stable | `cargo test --test docs_examples` | Automated extraction & 100% compilation/execution of all doc examples. |
+| **Webview Studio & Canvas** | 🟢 Stable | `cargo test --lib -- diagnostics::tests` | Standalone bundled `app_template.html` clean compile with 0 asset breakage. |
+| **Security & Attestation** | 🟢 Stable | `cargo test --lib -- security::` | TLS 1.3, TPM hardware measurement, Ed25519 signatures, AST taint audit. |
+| **Runtime & Networking** | 🟢 Stable | `cargo test --lib -- runtime::` | Non-blocking epoll/IOCP event loop, HTTP/1.1, HTTP/2, SQLite embedded engine. |
+| **Agent Contracts (EIP)** | 🟢 Stable | `cargo test --lib -- agent::tests` | SMT proof gates, proof-of-work evidence verification, task state machines. |
+| **In-Memory KV Engine** | 🔵 Beta | `cargo test --lib -- runtime::db::` | 64-byte cache-aligned hash tables, WAL persistence, snapshotting. |
+| **Distributed Raft Consensus** | 🟡 Experimental | `cargo test --lib -- runtime::raft::` | 3-node cluster leader election and log replication engine. |
+| **WASM Standalone Backend** | 🟡 Experimental | `cargo test --lib -- codegen::wasm_backend` | Binary encoder and WAT text generator for browser execution. |
+| **Mobile Compilation (iOS/Android)** | ⚪ Planned | `src/mobile/` (Roadmap) | Cross-compilation toolchain targets planned for future release. |
+
 
 ---
 
@@ -160,8 +165,7 @@ End is explicitly designed to cover the complete software development spectrum w
 
 ### 1. High-Performance Web Endpoint with Region Scoping (`EndHyper`)
 ```end
-import "std/hyper/router.end"
-import "std/hyper/response.end"
+import "std/hyper/hyper.end"
 
 st PaymentDto {
     customer_id: i64,
@@ -183,20 +187,21 @@ pub fn process_payment_handler(req: RequestContext, payment: PaymentDto) HyperRe
 ### 2. First-Class Operation Values with Resilient Algebra
 ```end
 operation validate_order(items: i64) -> i64 {
-    requires: items > 0;
-    guarantee: result == items;
+    requires: "items > 0";
+    guarantees: "items_valid == true";
+    version: 1;
     ret items;
 }
 
 operation charge_card(items: i64) -> i64 {
-    requires: items > 0;
+    requires: "items > 0";
     val price_per_item = 50;
     ret items * price_per_item;
 }
 
 pub fn main() void {
     // Pipeline composition with retry and memoization
-    val checkout_pipeline = (validate_order >> charge_card).retry(3, 50ms).memoize();
+    val checkout_pipeline = (validate_order >> charge_card).retry(3, 50).memoize();
     val result = checkout_pipeline(4);
     
     println("Order total: $" + result.output);
