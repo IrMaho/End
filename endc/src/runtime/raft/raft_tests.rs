@@ -196,7 +196,7 @@ async fn test_07_and_10_node_restart_sqlite_persistence_and_catch_up() {
 
 #[tokio::test]
 async fn test_08_and_09_network_partition_minority_rejection_and_healing() {
-    let mut cluster = RaftCluster::start(3, 22600, ":memory:")
+    let mut cluster = RaftCluster::start(3, 23600, ":memory:")
         .await
         .expect("Failed to start cluster");
 
@@ -274,7 +274,7 @@ async fn test_08_and_09_network_partition_minority_rejection_and_healing() {
 
 #[tokio::test]
 async fn test_11_term_safety_and_monotonicity() {
-    let mut cluster = RaftCluster::start(3, 22700, ":memory:")
+    let mut cluster = RaftCluster::start(3, 23700, ":memory:")
         .await
         .expect("Failed to start cluster");
 

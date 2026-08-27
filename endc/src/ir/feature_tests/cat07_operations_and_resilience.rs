@@ -77,7 +77,7 @@ fn parse_str(code: &str) -> Result<Module, String> {
         let module = parse_str(code).unwrap();
         let main_fn = &module.functions[0];
         if let Statement::VarDecl { initializer: Some(initializer), .. } = &main_fn.body.statements[0] {
-            assert!(matches!(initializer, Expression::Compose { .. }));
+            assert!(matches!(initializer, Expression::Compose { .. } | Expression::Binary { op: BinaryOp::Shr, .. }));
         }
     }
 

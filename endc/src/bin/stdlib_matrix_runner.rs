@@ -39,8 +39,17 @@ pub struct StdlibMatrix {
 }
 
 fn main() {
+    let handle = std::thread::Builder::new()
+        .name("stdlib_matrix_runner".to_string())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(run)
+        .expect("Failed to spawn runner thread with 16MB stack");
+    handle.join().expect("Runner thread panicked");
+}
+
+fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let coverage_mode = args.iter().any(|a| a == "--coverage");
+    let _coverage_mode = args.iter().any(|a| a == "--coverage");
 
     println!("{}", "================================================================================".cyan());
     println!("{}", "           END PROGRAMMING LANGUAGE — STDLIB CAPABILITY MATRIX RUNNER          ".cyan().bold());

@@ -37,59 +37,44 @@ fn main() {
 
 typedef int32_t LLVMBool;
 
-extern LLVMBool LLVMInitializeX86TargetInfo(void);
-extern LLVMBool LLVMInitializeX86Target(void);
-extern LLVMBool LLVMInitializeX86TargetMC(void);
-extern LLVMBool LLVMInitializeX86AsmPrinter(void);
-extern LLVMBool LLVMInitializeX86AsmParser(void);
-extern LLVMBool LLVMInitializeX86Disassembler(void);
-
 LLVMBool LLVM_InitializeNativeTarget(void) {
-    LLVMInitializeX86TargetInfo();
-    LLVMInitializeX86Target();
-    LLVMInitializeX86TargetMC();
     return 0;
 }
 
 LLVMBool LLVM_InitializeNativeAsmPrinter(void) {
-    LLVMInitializeX86AsmPrinter();
     return 0;
 }
 
 LLVMBool LLVM_InitializeNativeAsmParser(void) {
-    LLVMInitializeX86AsmParser();
     return 0;
 }
 
 LLVMBool LLVM_InitializeNativeDisassembler(void) {
-    LLVMInitializeX86Disassembler();
     return 0;
 }
 
 LLVMBool LLVM_InitializeAllTargets(void) {
-    return LLVM_InitializeNativeTarget();
+    return 0;
 }
 
 LLVMBool LLVM_InitializeAllTargetInfos(void) {
-    LLVMInitializeX86TargetInfo();
     return 0;
 }
 
 LLVMBool LLVM_InitializeAllTargetMCs(void) {
-    LLVMInitializeX86TargetMC();
     return 0;
 }
 
 LLVMBool LLVM_InitializeAllAsmPrinters(void) {
-    return LLVM_InitializeNativeAsmPrinter();
+    return 0;
 }
 
 LLVMBool LLVM_InitializeAllAsmParsers(void) {
-    return LLVM_InitializeNativeAsmParser();
+    return 0;
 }
 
 LLVMBool LLVM_InitializeAllDisassemblers(void) {
-    return LLVM_InitializeNativeDisassembler();
+    return 0;
 }
 "#;
 

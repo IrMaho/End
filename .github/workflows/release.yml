@@ -9,8 +9,35 @@ permissions:
   contents: write
 
 jobs:
+  # ============================================================================
+  # Production Readiness Verification Prior to Release Packaging
+  # ============================================================================
+  verify-production-readiness:
+    name: Verify Production Readiness Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Full Production Quality Gates
+        run: cargo run --manifest-path endc/Cargo.toml --bin final_evidence_auditor -- --out production_readiness_report.json
+
+      - name: Upload Production Readiness Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness-report
+          path: production_readiness_report.json
+          if-no-files-found: error
+
+  # ============================================================================
+  # Multi-Platform Binary Compilation & Packaging
+  # ============================================================================
   build-and-release:
     name: Build & Release (${{ matrix.target }})
+    needs: verify-production-readiness
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,6 +77,12 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
+      - name: Download Production Readiness Report
+        uses: actions/download-artifact@v4
+        with:
+          name: production-readiness-report
+          path: ./
+
       - name: Build Release Binary
         run: |
           cd endc
@@ -68,6 +101,7 @@ jobs:
           copy README.md staging\
           copy LICENSE staging\
           copy Architecture.toml staging\
+          copy production_readiness_report.json staging\
           Compress-Archive -Path staging\* -DestinationPath $pkgName
           (Get-FileHash -Path $pkgName -Algorithm SHA256).Hash + "  $pkgName" | Out-File -FilePath "$pkgName.sha256" -Encoding utf8
 
@@ -80,17 +114,18 @@ jobs:
           cp endc/target/${{ matrix.target }}/release/endc staging/bin/endc
           cp endc/target/${{ matrix.target }}/release/endc staging/bin/end
           cp -r std staging/std
-          cp README.md LICENSE Architecture.toml staging/
+          cp README.md LICENSE Architecture.toml production_readiness_report.json staging/
           tar -czf "$pkgName" -C staging .
           shasum -a 256 "$pkgName" > "$pkgName.sha256"
 
-      - name: Publish Release Asset
+      - name: Publish Release Assets & Production Report
         uses: softprops/action-gh-release@v2
         with:
           files: |
             end-${{ github.ref_name }}-*.zip
             end-${{ github.ref_name }}-*.tar.gz
             end-${{ github.ref_name }}-*.sha256
+            production_readiness_report.json
             install.ps1
             install.sh
         env:

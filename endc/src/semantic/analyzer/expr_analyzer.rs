@@ -1327,14 +1327,15 @@ fn is_known_builtin(name: &str) -> bool {
             | "end_crypto_sha256"
             | "end_crypto_hmac_sha256"
             | "end_crypto_hmac_sha256_verify"
+            | "inline_c_expr"
+            | "inline_c_stmt"
+            | "inline_c_header"
             | "end_auth_hash_password"
             | "end_auth_verify_password"
             | "end_time_now_nanos"
             | "end_time_now_micros"
             | "end_time_now_millis"
-            | "end_channel_send"
             | "end_channel_pending"
-            | "end_channel_close"
             | "_"
     )
 }

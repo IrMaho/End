@@ -430,14 +430,14 @@ OPTIONS:
 
 fn find_golden_dir() -> PathBuf {
     let candidates = [
-        PathBuf::from("tests/golden"),
         PathBuf::from("endc/tests/golden"),
+        PathBuf::from("tests/golden"),
         PathBuf::from("../endc/tests/golden"),
         PathBuf::from("../../endc/tests/golden"),
     ];
 
     for c in &candidates {
-        if c.exists() && c.is_dir() {
+        if c.exists() && c.is_dir() && (c.join("_matrix.yaml").exists() || c.join("matrix.yaml").exists()) {
             return c.canonicalize().unwrap_or_else(|_| c.clone());
         }
     }
@@ -803,24 +803,28 @@ pub fn run_tests_parallel(tests: Vec<TestCase>, config: &RunnerConfig) -> Vec<Te
         let keep_artifacts = config.keep_artifacts;
         let backend = config.backend.clone();
 
-        let handle = std::thread::spawn(move || loop {
-            let maybe_test = {
-                let mut lock = tests_clone.lock().unwrap();
-                lock.pop()
-            };
+        let handle = std::thread::Builder::new()
+            .name(format!("golden_worker_{}", thread_idx))
+            .stack_size(16 * 1024 * 1024)
+            .spawn(move || loop {
+                let maybe_test = {
+                    let mut lock = tests_clone.lock().unwrap();
+                    lock.pop()
+                };
 
-            let test = match maybe_test {
-                Some(t) => t,
-                None => break,
-            };
+                let test = match maybe_test {
+                    Some(t) => t,
+                    None => break,
+                };
 
-            let result = execute_single_test(&test, thread_idx, keep_artifacts, &backend);
+                let result = execute_single_test(&test, thread_idx, keep_artifacts, &backend);
 
-            {
-                let mut res_lock = results_clone.lock().unwrap();
-                res_lock.push(result);
-            }
-        });
+                {
+                    let mut res_lock = results_clone.lock().unwrap();
+                    res_lock.push(result);
+                }
+            })
+            .expect("failed to spawn golden worker thread");
 
         handles.push(handle);
     }
