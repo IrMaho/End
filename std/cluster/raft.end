@@ -134,3 +134,58 @@ pub fn raft_is_heartbeat_timed_out(node: RaftNode, timeout_nanos: i64) bool {
     val elapsed = now - node.last_heartbeat_time
     ret elapsed > timeout_nanos
 }
+
+// ============================================================================
+// Real Multi-Node Raft Cluster Orchestration
+// ============================================================================
+
+pub st RaftClusterHandle {
+    handle: i64,
+    node_count: i32,
+    base_port: i32,
+}
+
+pub fn raft_cluster_start(node_count: i32, base_port: i32, db_path: str) RaftClusterHandle {
+    val h = end_raft_cluster_create(node_count, base_port, db_path)
+    ret RaftClusterHandle {
+        handle: h,
+        node_count: node_count,
+        base_port: base_port,
+    }
+}
+
+pub fn raft_cluster_get_leader(cluster: RaftClusterHandle) i64 {
+    ret end_raft_cluster_get_leader(cluster.handle)
+}
+
+pub fn raft_cluster_write(cluster: RaftClusterHandle, key: str, value: str) str {
+    ret end_raft_cluster_write(cluster.handle, key, value)
+}
+
+pub fn raft_cluster_read(cluster: RaftClusterHandle, key: str) str {
+    ret end_raft_cluster_read(cluster.handle, key)
+}
+
+pub fn raft_cluster_read_node(cluster: RaftClusterHandle, node_id: i64, key: str) str {
+    ret end_raft_cluster_read_node(cluster.handle, node_id, key)
+}
+
+pub fn raft_cluster_kill_node(cluster: RaftClusterHandle, node_id: i64) i64 {
+    ret end_raft_cluster_kill_node(cluster.handle, node_id)
+}
+
+pub fn raft_cluster_restart_node(cluster: RaftClusterHandle, node_id: i64) i64 {
+    ret end_raft_cluster_restart_node(cluster.handle, node_id)
+}
+
+pub fn raft_cluster_partition_node(cluster: RaftClusterHandle, node_id: i64) i64 {
+    ret end_raft_cluster_partition_node(cluster.handle, node_id)
+}
+
+pub fn raft_cluster_heal_partition(cluster: RaftClusterHandle) i64 {
+    ret end_raft_cluster_heal_partition(cluster.handle)
+}
+
+pub fn raft_cluster_stop(cluster: RaftClusterHandle) void {
+    end_raft_cluster_stop(cluster.handle)
+}

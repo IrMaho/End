@@ -294,3 +294,307 @@ pub fn handle_precheck(args: PrecheckArgs) {
             }
 }
 
+pub fn handle_ai(args: crate::cli::ai_args::AiArgs) {
+    use crate::runtime::ai::{execute_inference, validate_gguf_file, InferenceConfig, LlmModel, LlmTokenizer};
+    use candle_core::Device;
+    use colored::*;
+    use std::path::Path;
+
+    let model_path = Path::new(&args.model);
+    if !model_path.exists() {
+        eprintln!("{} Model file not found: '{}'", "Error:".red().bold(), args.model);
+        std::process::exit(1);
+    }
+
+    match args.action.as_str() {
+        "inspect" | "validate" => {
+            match validate_gguf_file(model_path) {
+                Ok(meta) => {
+                    if args.json {
+                        println!("{}", serde_json::to_string_pretty(&meta).unwrap_or_default());
+                    } else {
+                        println!("🧠 {}", "GGUF Model Inspection & Validation Report".cyan().bold());
+                        println!("================================================================================");
+                        println!("  Model Name:         {}", meta.model_name.unwrap_or_else(|| "N/A".to_string()).yellow().bold());
+                        println!("  Architecture:       {}", meta.architecture.green().bold());
+                        println!("  GGUF Version:       v{}", meta.version);
+                        println!("  Tensor Count:       {}", meta.tensor_count);
+                        println!("  Embedding Dim:      {}", meta.embedding_length.unwrap_or(0));
+                        println!("  FeedForward Dim:    {}", meta.feed_forward_length.unwrap_or(0));
+                        println!("  Block Count:        {}", meta.block_count.unwrap_or(0));
+                        println!("  Attention Heads:    {}", meta.head_count.unwrap_or(0));
+                        println!("  Context Length:     {}", meta.context_length.unwrap_or(0));
+                        println!("--------------------------------------------------------------------------------");
+                        println!("  Tensors:            {} parsed successfully", meta.tensor_info.len());
+                        println!("\n{} Valid GGUF model ready for inference.", "✔".green().bold());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Invalid GGUF:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "infer" => {
+            let device = Device::Cpu;
+            let mut model = match LlmModel::load_from_file(model_path, &device) {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("{} {}", "Model Load Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let tokenizer = LlmTokenizer::from_vocab(vec![], Some(1), Some(2));
+            let config = InferenceConfig {
+                max_tokens: args.max_tokens,
+                temperature: args.temperature,
+                seed: args.seed,
+                repeat_penalty: 1.1,
+                repeat_last_n: 64,
+                top_p: None,
+            };
+
+            match execute_inference(&mut model, &tokenizer, &args.prompt, &config) {
+                Ok(res) => {
+                    if args.json {
+                        println!("{}", serde_json::to_string_pretty(&res).unwrap_or_default());
+                    } else {
+                        println!("🧠 {}", "Local AI Inference Output".cyan().bold());
+                        println!("================================================================================");
+                        println!("  Model:              {}", res.model.yellow().bold());
+                        println!("  Architecture:       {}", res.architecture.green().bold());
+                        println!("  Prompt:             {}", res.prompt);
+                        println!("  Generated Tokens:   {} tokens", res.generated_token_ids.len());
+                        println!("  Throughput:         {:.2} tok/sec ({} ms)", res.tokens_per_second, res.duration_ms);
+                        println!("--------------------------------------------------------------------------------");
+                        println!("{}\n", res.output_text);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "Inference Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        other => {
+            eprintln!("{} Unknown AI action '{}'. Use 'inspect', 'validate', or 'infer'.", "Error:".red().bold(), other);
+            std::process::exit(1);
+        }
+    }
+}
+
+pub fn handle_gpu(args: crate::cli::gpu_args::GpuArgs) {
+    use crate::cli::gpu_args::GpuAction;
+    use crate::runtime::gpu::{
+        execute_matrix_multiply, execute_vector_add, init_gpu,
+    };
+
+    match args.action {
+        GpuAction::Info { json } => {
+            match init_gpu() {
+                Ok(ctx) => {
+                    let limits = ctx.adapter.limits();
+                    if json {
+                        let report = serde_json::json!({
+                            "adapter_name": ctx.adapter_name(),
+                            "backend": ctx.backend_name(),
+                            "device_type": ctx.device_type_str(),
+                            "driver": ctx.driver_info(),
+                            "limits": {
+                                "max_buffer_size": limits.max_buffer_size,
+                                "max_storage_buffer_binding_size": limits.max_storage_buffer_binding_size,
+                                "max_compute_workgroup_size_x": limits.max_compute_workgroup_size_x,
+                                "max_compute_workgroup_size_y": limits.max_compute_workgroup_size_y,
+                                "max_compute_workgroup_size_z": limits.max_compute_workgroup_size_z,
+                                "max_compute_workgroups_per_dimension": limits.max_compute_workgroups_per_dimension,
+                            }
+                        });
+                        println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+                    } else {
+                        println!("⚡ {}", "End Native GPU Hardware & Compute Engine".cyan().bold());
+                        println!("================================================================================");
+                        println!("  Adapter:            {}", ctx.adapter_name().green().bold());
+                        println!("  Backend:            {}", ctx.backend_name().yellow().bold());
+                        println!("  Device Type:        {}", ctx.device_type_str());
+                        println!("  Driver:             {}", ctx.driver_info());
+                        println!("  Max Buffer Size:    {} MB", limits.max_buffer_size / (1024 * 1024));
+                        println!("  Max Storage Binding:{} MB", limits.max_storage_buffer_binding_size / (1024 * 1024));
+                        println!("  Max Workgroup X:    {}", limits.max_compute_workgroup_size_x);
+                        println!("================================================================================");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "GPU Initialization Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        GpuAction::VecAdd { size, json } => {
+            let ctx = match init_gpu() {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("{} {}", "GPU Initialization Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let mut a = Vec::with_capacity(size);
+            let mut b = Vec::with_capacity(size);
+            for i in 0..size {
+                a.push(((i % 100) as f32) * 0.1);
+                b.push((((i + 7) % 100) as f32) * 0.2);
+            }
+
+            match execute_vector_add(&ctx, &a, &b) {
+                Ok(report) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+                    } else {
+                        println!("🚀 {}", "GPU Vector Addition Complete".green().bold());
+                        println!("================================================================================");
+                        println!("  Adapter:            {}", report.adapter.yellow().bold());
+                        println!("  Backend:            {}", report.backend);
+                        println!("  Elements:           {} f32 elements ({} MB)", report.input_elements, (report.input_elements * 4) / (1024 * 1024));
+                        println!("  Duration:           {} ms", report.duration_ms);
+                        println!("  Output SHA-256:     {}", report.output_sha256.cyan());
+                        println!("  Sample (0..3):      [{:.2}, {:.2}, {:.2}]", report.result[0], report.result[1], report.result[2]);
+                        println!("================================================================================");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "GPU Vector Add Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        GpuAction::Matmul { m, k, n, json } => {
+            let ctx = match init_gpu() {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("{} {}", "GPU Initialization Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+
+            let a_len = (m * k) as usize;
+            let b_len = (k * n) as usize;
+            let mut a = Vec::with_capacity(a_len);
+            let mut b = Vec::with_capacity(b_len);
+
+            for row in 0..m {
+                for col in 0..k {
+                    a.push((((row + col) % 13) as f32) * 0.1 - 0.5);
+                }
+            }
+            for row in 0..k {
+                for col in 0..n {
+                    b.push((((row * 3 + col) % 17) as f32) * 0.1 - 0.5);
+                }
+            }
+
+            match execute_matrix_multiply(&ctx, &a, &b, m, k, n) {
+                Ok(report) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+                    } else {
+                        println!("🚀 {}", "GPU Matrix Multiplication Complete".green().bold());
+                        println!("================================================================================");
+                        println!("  Adapter:            {}", report.adapter.yellow().bold());
+                        println!("  Backend:            {}", report.backend);
+                        println!("  Dimensions:         {} x {} x {}", m, k, n);
+                        println!("  Output Cells:       {} f32 products", (m * n));
+                        println!("  Duration:           {} ms", report.duration_ms);
+                        println!("  Output SHA-256:     {}", report.output_sha256.cyan());
+                        println!("  Sample (C[0, 0]):   {:.4}", report.result[0]);
+                        println!("================================================================================");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "GPU Matmul Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+}
+
+pub fn handle_db(args: crate::cli::db_args::DbArgs) {
+    use crate::cli::db_args::DbAction;
+    use crate::runtime::db::SqliteEngine;
+
+    match args.action {
+        DbAction::Exec { path, sql } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.execute(&sql, &[]) {
+                Ok(affected) => {
+                    println!("✔ {} ({} rows affected)", "SQLite Statement Executed Successfully".green().bold(), affected);
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Execution Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        DbAction::Query { path, sql, json } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.query_json(&sql, &[]) {
+                Ok(val) => {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&val).unwrap_or_default());
+                    } else {
+                        println!("📊 {}", "SQLite Query Results:".green().bold());
+                        println!("{}", serde_json::to_string_pretty(&val).unwrap_or_default());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Query Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        DbAction::Tables { path } => {
+            let mut engine = match SqliteEngine::open(&path) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Open Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            };
+            match engine.query_json("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC;", &[]) {
+                Ok(val) => {
+                    println!("🗄️ {}", format!("Tables in SQLite database '{}':", path).cyan().bold());
+                    if let Some(arr) = val.as_array() {
+                        if arr.is_empty() {
+                            println!("  (No user tables found)");
+                        } else {
+                            for item in arr {
+                                if let Some(tname) = item["name"].as_str() {
+                                    println!("  ├─ {}", tname.yellow());
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} {}", "SQLite Tables Query Error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+}
+
+

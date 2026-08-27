@@ -210,7 +210,15 @@ impl SemanticAnalyzer {
             self.graph.symbols.insert(s.name.clone(), info);
         }
 
-        // 3. Register Function Signatures
+        // 3. Register Function & Operation Signatures
+        for stmt in &module.statements {
+            if let Statement::OperationDecl(op) = stmt {
+                let param_types = op.params.iter().map(|p| p.param_type.clone()).collect();
+                let is_pure = op.effects.iter().any(|e| e == "pure");
+                self.function_signatures.insert(op.name.clone(), (param_types, op.return_type.clone(), is_pure));
+            }
+        }
+
         for f in &module.functions {
             let mut effect_set = HashSet::new();
             let is_pure = f.directives.iter().any(|d| d.name == "@pure");

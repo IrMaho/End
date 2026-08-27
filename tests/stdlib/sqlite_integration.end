@@ -1,0 +1,29 @@
+// Integration Test: std/db/sqlite.end
+import "std/db/sqlite.end"
+
+fn main() i64 {
+    val conn = sqlite_open(":memory:")
+    if !conn.is_connected {
+        ret 1
+    }
+
+    val res_create = sqlite_execute(conn, "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);")
+    if !res_create.success {
+        sqlite_close(conn)
+        ret 2
+    }
+
+    val res_ins = sqlite_execute(conn, "INSERT INTO users (name) VALUES ('Alice');")
+    if !res_ins.success {
+        sqlite_close(conn)
+        ret 3
+    }
+
+    val rows = sqlite_query(conn, "SELECT name FROM users;")
+    sqlite_close(conn)
+
+    if len(rows) > 0 {
+        ret 0
+    }
+    ret 4
+}

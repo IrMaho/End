@@ -1,4 +1,4 @@
-name: End Compiler CI
+name: End Production Quality Gates & CI Pipeline
 
 on:
   push:
@@ -6,58 +6,162 @@ on:
   pull_request:
     branches: [ "main" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUST_MIN_STACK: 8388608
+
 jobs:
-  build_and_test:
-    name: Build & Test Toolchain
+  # ============================================================================
+  # GATE 1: Rust Compiler & Subsystems Unit Test Suite
+  # ============================================================================
+  cargo_test:
+    name: "Gate 1: Rust Test Suite"
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Rust Toolchain
-      uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build End Compiler (Release)
-      run: |
-        cd endc
-        cargo build --release --verbose
+      - name: Execute Cargo Test Suite
+        run: cargo test --manifest-path endc/Cargo.toml --verbose
 
-    - name: Run Cargo Test Suite
-      run: |
-        cd endc
-        cargo test --verbose
+  # ============================================================================
+  # GATE 2: Golden Integration Test Suite
+  # ============================================================================
+  golden_runner:
+    name: "Gate 2: Golden Integration Suite"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Run End Language Enterprise Test Suites (Real Native & FFI Tests)
-      run: |
-        cd endc
-        cargo run --release -- test ../examples/test_enterprise_platform.end
-        cargo run --release -- test ../examples/test_ai_agent_capabilities.end
-        cargo run --release -- test ../examples/test_leak_and_patrol.end
-        cargo run --release -- test ../examples/test_v2_platform.end
-        cargo run --release -- test ../examples/test_blindspots_v2.end
-        cargo run --release -- test ../examples/test_evolutionary_v2.end
-        cargo run --release -- test ../examples/test_patterns_and_arch_v2.end
-        cargo run --release -- test ../examples/test_reflection_and_meta_v2.end
-        cargo run --release -- run ../tests/test_part1_c_family_interop.end
-        cargo run --release -- run ../tests/test_part2_real_collections_and_kv.end
-        cargo run --release -- run ../tests/test_part3_websockets_and_auth.end
-        cargo run --release -- run ../tests/test_part4_hardware_clock_stream_playground.end
-        cargo run --release -- run ../tests/test_part5_ai_tensors_and_gguf.end
-        cargo run --release -- run ../tests/test_part6_raft_cluster.end
-        cargo run --release -- run ../tests/test_part8_ephemeral_memory_leases.end
-        cargo run --release -- run ../tests/test_sqlite3_c_interop.end
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Verify Compiler Pass Suite
-      run: |
-        cd endc
-        cargo run --release -- test ./tests/compile_pass/test_ownership_and_regions.end
+      - name: Execute Golden Test Runner
+        run: cargo run --manifest-path endc/Cargo.toml --bin golden_runner
 
-    - name: Verify AI Protocol & Slicing
-      run: |
-        cd endc
-        cargo run --release -- graph ../examples/server.end
-        cargo run --release -- slice ../examples/server.end
-        cargo run --release -- arch check
+  # ============================================================================
+  # GATE 3: Standard Library Capability Matrix Validator
+  # ============================================================================
+  stdlib_matrix:
+    name: "Gate 3: Stdlib Capability Matrix"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Stdlib Matrix Validator
+        run: cargo run --manifest-path endc/Cargo.toml --bin stdlib_matrix_runner
+
+  # ============================================================================
+  # GATE 4: Benchmark Suite & Anti-Fraud Integrity Verification
+  # ============================================================================
+  bench_integrity:
+    name: "Gate 4: Benchmark Integrity & Anti-Fraud"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Hardened Benchmark Suite
+        run: cargo run --manifest-path endc/Cargo.toml --bin bench_runner -- --all
+
+  # ============================================================================
+  # GATE 5: Differential Execution Testing (Interpreter vs Native C)
+  # ============================================================================
+  differential_tests:
+    name: "Gate 5: Differential Execution Tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Differential Golden Tests
+        run: cargo run --manifest-path endc/Cargo.toml --bin golden_runner -- --differential
+
+  # ============================================================================
+  # GATE 6: Adversarial & Diagnostic Coverage Tests
+  # ============================================================================
+  adversarial_tests:
+    name: "Gate 6: Adversarial & Tamper Proof Gates"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Adversarial Agent Proof Gate Tests
+        run: cargo test --manifest-path endc/Cargo.toml --lib -- agent::tests
+
+      - name: Execute Diagnostic Error Code Coverage Suite
+        run: cargo run --manifest-path endc/Cargo.toml --bin golden_runner -- --diagnostic-coverage
+
+  # ============================================================================
+  # GATE 7: Documentation Examples Test Suite
+  # ============================================================================
+  docs_examples:
+    name: "Gate 7: Documentation Examples Suite"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Documentation Code Example Tests
+        run: cargo test --manifest-path endc/Cargo.toml --test docs_examples
+
+  # ============================================================================
+  # GATE 8: Final Evidence Auditor & Production Readiness Report
+  # ============================================================================
+  final_evidence_audit:
+    name: "Gate 8: Final Evidence Audit & Report"
+    runs-on: ubuntu-latest
+    needs:
+      - cargo_test
+      - golden_runner
+      - stdlib_matrix
+      - bench_integrity
+      - differential_tests
+      - adversarial_tests
+      - docs_examples
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Execute Final Evidence Auditor
+        run: cargo run --manifest-path endc/Cargo.toml --bin final_evidence_auditor -- --out production_readiness_report.json
+
+      - name: Upload Production Readiness Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness-report
+          path: production_readiness_report.json
+          if-no-files-found: error

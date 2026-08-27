@@ -1,0 +1,33 @@
+// 👑 End Language: std/profile.end
+// Native High-Precision Execution Profiler & Flame Graph Generator
+
+pub extern fn end_profiler_start() i64
+pub extern fn end_profiler_stop() str
+pub extern fn end_profiler_flamegraph() str
+
+pub st ProfileSample {
+    function_name: str,
+    call_count: i64,
+    total_duration_us: i64,
+    percent: f64,
+}
+
+pub st ProfilingReport {
+    target: str,
+    total_runtime_ms: f64,
+    total_memory_kb: i64,
+    total_samples: i64,
+    flamegraph_svg: str,
+}
+
+pub fn profiler_start() i64 {
+    ret end_profiler_start()
+}
+
+pub fn profiler_stop() str {
+    ret end_profiler_stop()
+}
+
+pub fn profiler_get_flamegraph() str {
+    ret end_profiler_flamegraph()
+}

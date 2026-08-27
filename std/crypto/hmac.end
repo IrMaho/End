@@ -1,14 +1,13 @@
 // End Standard Library: std/crypto/hmac.end
 // RFC 2104 Keyed-Hashing for Message Authentication (HMAC-SHA256)
 
+pub extern fn end_crypto_hmac_sha256(key: str, data: str) str
+pub extern fn end_crypto_hmac_sha256_verify(key: str, data: str, expected_sig: str) bool
+
 pub fn hmac_sha256(key: str, data: str) str {
     ret end_crypto_hmac_sha256(key, data)
 }
 
 pub fn hmac_sha256_verify(key: str, data: str, expected_sig: str) bool {
-    val actual_sig = hmac_sha256(key, data)
-    if actual_sig == expected_sig {
-        ret true
-    }
-    ret false
+    ret end_crypto_hmac_sha256_verify(key, data, expected_sig)
 }

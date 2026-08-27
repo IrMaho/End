@@ -1,0 +1,14 @@
+// Integration Test: std/stress.end
+import "std/stress.end"
+
+fn main() i64 {
+    val report = stress_test_run("http://127.0.0.1:8080", 2, 0.1)
+    val tot = stress_report_total(report)
+    val p50 = stress_report_p50(report)
+    val rps = stress_report_rps(report)
+
+    if len(report) > 0 {
+        ret 0
+    }
+    ret 1
+}

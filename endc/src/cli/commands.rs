@@ -1,7 +1,10 @@
 use clap::Subcommand;
 use super::agent_args::*;
+use super::ai_args::*;
 use super::build_args::*;
+use super::db_args::*;
 use super::dev_args::*;
+use super::gpu_args::*;
 use super::package_args::*;
 use super::query_args::*;
 use super::security_args::*;
@@ -10,6 +13,8 @@ use super::security_args::*;
 pub enum Commands {
     /// Print End language version and toolchain info
     Version,
+    /// Real Embedded SQLite Database Engine Subcommands (exec, query, tables)
+    Db(DbArgs),
     /// Generate comprehensive OpenAPI 3.1, AI Agent Passport, Struct Memory Layout, and Interactive Swagger Dashboard
     /// Compile and run EndUI reactive declarative applications with AI Agent DevMode Canvas
         /// Path to .end entrypoint file
@@ -154,10 +159,7 @@ pub enum Commands {
         /// Scenario or parameter mutation (e.g. friction=0.05)
         /// Format as JSON
     Simulate(SimulateArgs),
-    /// Virtual high-scale stress testing engine (up to 1,000,000 cycles with P99 metrics)
-        /// Path to .end source file
-        /// Number of virtual operations (default: 1,000,000)
-        /// Format as JSON
+    /// Real High-Scale HTTP Load & Stress Engine (with P50, P90, P99, P99.9 HdrHistogram metrics)
     Stress(StressArgs),
     /// Create a new End language project with end.toml manifest and scaffold
         /// Project directory name
@@ -298,4 +300,8 @@ pub enum Commands {
         /// Architecture template or preset
         /// Format output as JSON
     Feature(FeatureArgs),
+    /// Local AI Runtime & GGUF Quantized Inference Engine
+    Ai(AiArgs),
+    /// Real GPU Compute Engine & Hardware Acceleration
+    Gpu(GpuArgs),
 }

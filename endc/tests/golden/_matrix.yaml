@@ -841,15 +841,45 @@ features:
   - id: "target_wasm"
     name: "WebAssembly Standalone Backend Target"
     category: "compiler_backend"
-    status: "MISSING_FEATURE"
+    status: "IMPLEMENTED"
     doc_ref: "docs/ROADMAP.md"
-    positive: []
-    negative: []
-    edge: []
-    diagnostic: []
-    interpreter: []
-    native: []
-    regression: []
+    positive:
+      - "target_wasm/positive/001_wasm_arithmetic.end"
+      - "target_wasm/positive/002_wasm_control_flow.end"
+      - "target_wasm/positive/003_wasm_while_loops.end"
+      - "target_wasm/positive/004_wasm_functions.end"
+      - "target_wasm/positive/005_wasm_factorial.end"
+      - "target_wasm/positive/006_wasm_strings.end"
+      - "target_wasm/positive/007_wasm_bitwise.end"
+      - "target_wasm/positive/008_wasm_floats.end"
+      - "target_wasm/positive/009_wasm_fibonacci.end"
+      - "target_wasm/positive/010_wasm_summation.end"
+    negative:
+      - "target_wasm/negative/001_wasm_syntax_error.end"
+      - "target_wasm/negative/002_wasm_type_error.end"
+    edge:
+      - "target_wasm/positive/005_wasm_factorial.end"
+      - "target_wasm/positive/009_wasm_fibonacci.end"
+    diagnostic:
+      - "target_wasm/negative/001_wasm_syntax_error.end"
+      - "target_wasm/negative/002_wasm_type_error.end"
+    interpreter:
+      - "target_wasm/positive/001_wasm_arithmetic.end"
+      - "target_wasm/positive/004_wasm_functions.end"
+    native:
+      - "target_wasm/positive/001_wasm_arithmetic.end"
+      - "target_wasm/positive/002_wasm_control_flow.end"
+      - "target_wasm/positive/003_wasm_while_loops.end"
+      - "target_wasm/positive/004_wasm_functions.end"
+      - "target_wasm/positive/005_wasm_factorial.end"
+      - "target_wasm/positive/006_wasm_strings.end"
+      - "target_wasm/positive/007_wasm_bitwise.end"
+      - "target_wasm/positive/008_wasm_floats.end"
+      - "target_wasm/positive/009_wasm_fibonacci.end"
+      - "target_wasm/positive/010_wasm_summation.end"
+    regression:
+      - "target_wasm/positive/001_wasm_arithmetic.end"
+      - "target_wasm/positive/003_wasm_while_loops.end"
 
   - id: "target_mobile"
     name: "Mobile NDK & iOS Target Toolchain"

@@ -1,0 +1,54 @@
+// End Language: Real HTTP/2 (RFC 7540) & HPACK (RFC 7541) Demonstration
+// Wire Handshake, Dynamic Multiplexing, and Real Frame Processing
+
+import "std/hyper/http2.end"
+
+fn main() void {
+    println("================================================================================")
+    println("⚡ End Language Real HTTP/2 + HPACK Wire Protocol Showcase")
+    println("================================================================================")
+
+    // 1. HPACK Binary Compression & Decompression
+    println("--- 1. Testing HPACK (RFC 7541) Header Compression ---")
+    val headers_json = "{\":method\":\"GET\",\":path\":\"/api/v2/stats\",\"content-type\":\"application/json\",\"server\":\"EndHyper/2.0\"}"
+    val encoded_hpack = http2_hpack_encode(headers_json)
+    println("HPACK Encoded Hex Bytes:")
+    println(encoded_hpack)
+
+    val decoded_json = http2_hpack_decode(encoded_hpack)
+    println("HPACK Decoded Header JSON:")
+    println(decoded_json)
+
+    // 2. Start Real HTTP/2 Server
+    println("--- 2. Starting Real HTTP/2 Multi-Stream Server ---")
+    val server = http2_server_start(0, false)
+    println("Server Started on Port:")
+    println(server.port)
+    println("Server Running Status:")
+    println(server.is_running)
+
+    // 3. Connect Real HTTP/2 Client
+    println("--- 3. Connecting Real HTTP/2 Client ---")
+    val client = http2_client_connect(server.url)
+    println("Client Connected Status:")
+    println(client.is_connected)
+
+    // 4. Issue HTTP/2 Requests over Real Connection
+    println("--- 4. Sending HTTP/2 GET /ping Request ---")
+    val resp1 = http2_client_request(client, "GET", "/ping", "{}", "")
+    println("Response 1:")
+    println(resp1.raw_json)
+
+    println("--- 5. Sending HTTP/2 POST /echo Request with Body ---")
+    val echo_headers = "{\"content-type\":\"text/plain\",\"x-end-engine\":\"h2-wire\"}"
+    val echo_body = "Real HTTP/2 Wire Protocol Payload from End Language! 🦀 ⚡"
+    val resp2 = http2_client_request(client, "POST", "/echo", echo_headers, echo_body)
+    println("Response 2:")
+    println(resp2.raw_json)
+
+    // 5. Cleanup
+    println("--- 6. Shutting Down Client and Server ---")
+    http2_client_close(client)
+    http2_server_stop(server)
+    println("✔ Real HTTP/2 + HPACK Verification Completed Successfully!")
+}

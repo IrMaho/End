@@ -1,21 +1,41 @@
 // 🧬 End Language Core: std/core/option.end
-// Algebraic Data Type: Option<T> for Null-Safe Monomorphic Optional Values
+// Algebraic Data Type: Option for Null-Safe Monomorphic Optional Values
 
-pub enum Option<T> {
-    Some(T),
+pub enum OptionKind {
+    Some,
     None,
 }
 
-pub fn option_is_some<T>(opt: Option<T>) bool {
-    match opt {
-        Option::Some(_) => true,
-        Option::None => false,
-    }
+pub st OptionI64 {
+    has_value: bool,
+    value: i64,
 }
 
-pub fn option_is_none<T>(opt: Option<T>) bool {
-    match opt {
-        Option::Some(_) => false,
-        Option::None => true,
-    }
+pub st OptionStr {
+    has_value: bool,
+    value: str,
+}
+
+pub fn option_some_i64(v: i64) OptionI64 {
+    ret OptionI64 { has_value: true, value: v }
+}
+
+pub fn option_none_i64() OptionI64 {
+    ret OptionI64 { has_value: false, value: 0 }
+}
+
+pub fn option_some_str(v: str) OptionStr {
+    ret OptionStr { has_value: true, value: v }
+}
+
+pub fn option_none_str() OptionStr {
+    ret OptionStr { has_value: false, value: "" }
+}
+
+pub fn option_is_some(opt: OptionI64) bool {
+    ret opt.has_value
+}
+
+pub fn option_is_none(opt: OptionI64) bool {
+    ret !opt.has_value
 }

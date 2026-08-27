@@ -1,13 +1,28 @@
 // End Standard Library: std/crypto/tls.end
-// Native High-Performance TLS 1.3 Handshake & Secure Stream Layer
+// Native Cryptographic TLS 1.3 & 1.2 Handshake & Secure Stream Layer
 import "std/net/socket.end"
+
+pub extern fn end_tls_client_handshake(stream_handle: i64, host: str) i64
+pub extern fn end_tls_server_handshake(stream_handle: i64, cert_pem: str, key_pem: str) i64
+pub extern fn end_tls_get_cipher_suite(handle: i64) str
+pub extern fn end_tls_get_alpn(handle: i64) str
+pub extern fn end_tls_get_protocol_version(handle: i64) str
+pub extern fn end_tls_get_peer_cert_fingerprint(handle: i64) str
+pub extern fn end_tls_is_connected(handle: i64) bool
+pub extern fn end_tls_is_verified(handle: i64) bool
+pub extern fn end_tls_write(handle: i64, data: str, timeout_ms: i32) i64
+pub extern fn end_tls_read(handle: i64, max_bytes: i32) str
+pub extern fn end_tls_close(handle: i64) void
 
 pub struct TlsSession {
     pub handle: i64,
     pub host: str,
     pub cipher_suite: str,
     pub alpn: str,
+    pub protocol_version: str,
+    pub peer_cert_fingerprint: str,
     pub is_connected: bool,
+    pub is_verified: bool,
 }
 
 pub fn tls_connect(stream_conn: TcpStream, host: str) TlsSession {
@@ -17,16 +32,34 @@ pub fn tls_connect(stream_conn: TcpStream, host: str) TlsSession {
             host: host,
             cipher_suite: "NONE",
             alpn: "",
+            protocol_version: "NONE",
+            peer_cert_fingerprint: "",
             is_connected: false,
+            is_verified: false,
         }
     }
     val h: i64 = end_tls_client_handshake(stream_conn.handle, host)
+    if h <= 0 {
+        ret TlsSession {
+            handle: -1,
+            host: host,
+            cipher_suite: "NONE",
+            alpn: "",
+            protocol_version: "NONE",
+            peer_cert_fingerprint: "",
+            is_connected: false,
+            is_verified: false,
+        }
+    }
     ret TlsSession {
         handle: h,
         host: host,
-        cipher_suite: "TLS_AES_256_GCM_SHA384",
-        alpn: "http/1.1",
-        is_connected: h > 0,
+        cipher_suite: end_tls_get_cipher_suite(h),
+        alpn: end_tls_get_alpn(h),
+        protocol_version: end_tls_get_protocol_version(h),
+        peer_cert_fingerprint: end_tls_get_peer_cert_fingerprint(h),
+        is_connected: end_tls_is_connected(h),
+        is_verified: end_tls_is_verified(h),
     }
 }
 
@@ -37,16 +70,34 @@ pub fn tls_accept(stream_conn: TcpStream, cert_pem: str, key_pem: str) TlsSessio
             host: "server",
             cipher_suite: "NONE",
             alpn: "",
+            protocol_version: "NONE",
+            peer_cert_fingerprint: "",
             is_connected: false,
+            is_verified: false,
         }
     }
     val h: i64 = end_tls_server_handshake(stream_conn.handle, cert_pem, key_pem)
+    if h <= 0 {
+        ret TlsSession {
+            handle: -1,
+            host: "server",
+            cipher_suite: "NONE",
+            alpn: "",
+            protocol_version: "NONE",
+            peer_cert_fingerprint: "",
+            is_connected: false,
+            is_verified: false,
+        }
+    }
     ret TlsSession {
         handle: h,
         host: "server",
-        cipher_suite: "TLS_AES_256_GCM_SHA384",
-        alpn: "http/1.1",
-        is_connected: h > 0,
+        cipher_suite: end_tls_get_cipher_suite(h),
+        alpn: end_tls_get_alpn(h),
+        protocol_version: end_tls_get_protocol_version(h),
+        peer_cert_fingerprint: end_tls_get_peer_cert_fingerprint(h),
+        is_connected: end_tls_is_connected(h),
+        is_verified: true,
     }
 }
 

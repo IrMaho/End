@@ -1,0 +1,459 @@
+{
+  "release": "2.0.0",
+  "pipeline": "green",
+  "timestamp_utc": "2026-08-27T00:00:00Z",
+  "subsystems": [
+    {
+      "name": "std/agent.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/attest.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/math.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/mem.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/profile.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/raft.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/stress.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/ai/client.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ai/gguf.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ai/intent.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ai/tensor.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/async/fiber.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/auth/argon2.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/auth/oauth2.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/auth/passkey.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/cluster/raft.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/collections/list.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/collections/map.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/collections/ring_buffer.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/core/option.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/core/result.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/cpu/burst.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/crypto/acme.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/crypto/base64.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/crypto/hmac.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/crypto/jwt.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/crypto/sha256.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/crypto/tls.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/db/orm.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/db/postgres.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/db/redis.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/db/sqlite.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/db/sql_builder.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/event/lifecycle.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/forge/forge.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/gpu/webgpu.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/hyper/http2.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/hyper/hyper.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/json/json.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/kv/kv.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/loop/budget.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/mem/leak_detector.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/mem/lease.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/meta/i18n.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/meta/introspection.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/meta/json.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/meta/reflection.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/net/http.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/net/rpc.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/net/socket.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/net/async/driver.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/nexus/circuit_breaker.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/nexus/hot_reload.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/nexus/socket_guard.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/nexus/stress.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/package/registry.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/patterns/di.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/patterns/ecs.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/patterns/pipeline.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/patterns/repository.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/patterns/state_machine.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/runtime/panic.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/simulation/what_if.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/stream/stream.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/sync/atomic.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/sync/channel.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/sync/mutex.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/sync/rwlock.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/telemetry/ring_buffer.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/telemetry/trace.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/test/assert.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/test/patrol.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/time/time.end",
+      "status": "REAL",
+      "gate_pass": true
+    },
+    {
+      "name": "std/ui/canvas.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ui/color.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ui/geometry.end",
+      "status": "PARTIAL",
+      "gate_pass": false
+    },
+    {
+      "name": "std/ui/widget.end",
+      "status": "EXPERIMENTAL",
+      "gate_pass": false
+    }
+  ],
+  "tests": {
+    "total": 1098,
+    "passing": 1098,
+    "failing": 0,
+    "ignored": 0
+  },
+  "adversarial_tests_passing": 37,
+  "differential_tests_passing": 185,
+  "evidence_audit_passing": true,
+  "gate_results": [
+    {
+      "gate_id": "G1_CARGO_TEST",
+      "name": "Rust Compiler Test Suite",
+      "command": "cargo test --manifest-path endc/Cargo.toml --lib",
+      "passed": true,
+      "duration_ms": 36274,
+      "details": "799 passed, 0 failed, 0 ignored"
+    },
+    {
+      "gate_id": "G2_GOLDEN_RUNNER",
+      "name": "Golden Integration Test Suite",
+      "command": "cargo run --bin golden_runner",
+      "passed": true,
+      "duration_ms": 34021,
+      "details": "297 passed, 0 failed, 185 differential matches"
+    },
+    {
+      "gate_id": "G3_STDLIB_MATRIX",
+      "name": "Standard Library Capability Matrix",
+      "command": "cargo run --bin stdlib_matrix_runner",
+      "passed": true,
+      "duration_ms": 17119,
+      "details": "77 modules catalogued, 26 REAL integration tests verified"
+    },
+    {
+      "gate_id": "G4_BENCH_INTEGRITY",
+      "name": "Benchmark Suite & Integrity Verification",
+      "command": "cargo run --bin bench_runner -- --all",
+      "passed": true,
+      "duration_ms": 302304,
+      "details": "15 benchmarks verified, fraud detection gate verified"
+    },
+    {
+      "gate_id": "G5_DIFFERENTIAL_TESTS",
+      "name": "Differential Execution Testing",
+      "command": "cargo run --bin golden_runner -- --differential",
+      "passed": true,
+      "duration_ms": 18289,
+      "details": "Interpreter vs Native execution parity verified"
+    },
+    {
+      "gate_id": "G6_ADVERSARIAL_TESTS",
+      "name": "Adversarial & Tamper Proof Gate Tests",
+      "command": "cargo test --lib -- agent::tests & golden_runner --diagnostic-coverage",
+      "passed": true,
+      "duration_ms": 1877,
+      "details": "37 adversarial tests passed, all E001-E0937 diagnostic codes covered"
+    },
+    {
+      "gate_id": "G7_DOCS_EXAMPLES",
+      "name": "Documentation Examples Execution Suite",
+      "command": "cargo test --test docs_examples",
+      "passed": true,
+      "duration_ms": 53,
+      "details": "README.md and all docs/ code examples verified (2/2 suites passed)"
+    }
+  ]
+}

@@ -68,6 +68,7 @@ pub fn handle_build(args: BuildArgs) {
             backend: backend_choice,
             tree_shake,
             sanitize,
+            tsan,
             release, } = args;
 
     // Contract Build Gate: Check for .agents/contract.toml
@@ -302,21 +303,18 @@ pub fn handle_build(args: BuildArgs) {
             }
 
             if emit_wasm || backend_choice == "wasm" {
+                let wasm_file_path = output.clone().unwrap_or_else(|| file.with_extension("wasm"));
                 let mut wasm_be = WasmBackend::new(target.as_deref());
-                match wasm_be.generate_wat(&module) {
-                    Ok(wat_content) => {
-                        let wat_file_path = file.with_extension("wat");
-                        if let Err(e) = fs::write(&wat_file_path, &wat_content) {
-                            eprintln!("{} Failed to write WebAssembly WAT: {}", "Error:".red().bold(), e);
-                            std::process::exit(1);
-                        }
-                        println!("{} Generated WebAssembly WAT at {:?}", "✔".green().bold(), wat_file_path);
-                        if emit_wasm {
-                            return;
-                        }
+                match wasm_be.compile_to_wasm_file(&module, &wasm_file_path) {
+                    Ok(rep) => {
+                        println!("{} Generated WebAssembly binary at {:?}", "✔".green().bold(), wasm_file_path);
+                        println!("  ├─ Target: {}", rep.target);
+                        println!("  ├─ WAT: {:?} ({} bytes)", wasm_file_path.with_extension("wat"), rep.wat_size_bytes);
+                        println!("  └─ Binary: ({} bytes, sha256: {})", rep.wasm_size_bytes, rep.wasm_sha256);
+                        return;
                     }
                     Err(e) => {
-                        eprintln!("{} WebAssembly Codegen Error: {:?}", "Error:".red().bold(), e);
+                        eprintln!("{} WebAssembly compilation failed: {:?}", "Error:".red().bold(), e);
                         std::process::exit(1);
                     }
                 }
@@ -418,10 +416,6 @@ pub fn handle_build(args: BuildArgs) {
                     "-flto".to_string(),
                     "-funroll-loops".to_string(),
                     "-fomit-frame-pointer".to_string(),
-                    "-ffast-math".to_string(),
-                    "-fno-math-errno".to_string(),
-                    "-ffp-contract=fast".to_string(),
-                    "-freciprocal-math".to_string(),
                     "-fwrapv".to_string(),
                 ]
             } else {
@@ -491,8 +485,6 @@ pub fn handle_build(args: BuildArgs) {
                         "-fomit-frame-pointer".to_string(),
                         "-finline-functions".to_string(),
                         "-Wno-incompatible-pointer-types".to_string(),
-                        "-fno-math-errno".to_string(),
-                        "-ffast-math".to_string(),
                         c_file_path.to_str().unwrap().to_string(),
                     ]
                 } else {
@@ -507,14 +499,31 @@ pub fn handle_build(args: BuildArgs) {
                     gcc_args.push("-shared".to_string());
                     gcc_args.push("-fPIC".to_string());
                 }
-                if strip && release {
+                if tsan {
+                    gcc_args.push("-fsanitize=thread".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                } else if sanitize {
+                    gcc_args.push("-fsanitize=address,undefined".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                }
+                if strip && release && !tsan && !sanitize {
                     gcc_args.push("-s".to_string());
                 }
+                gcc_args.push("-pthread".to_string());
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-lsecur32".to_string());
+                    gcc_args.push("-lcrypt32".to_string());
                     gcc_args.push("-lgdi32".to_string());
                     gcc_args.push("-luser32".to_string());
+                }
+                #[cfg(not(windows))]
+                {
+                    gcc_args.push("-lssl".to_string());
+                    gcc_args.push("-lcrypto".to_string());
                 }
                 gcc_args.push("-o".to_string());
                 gcc_args.push(bin_path.to_str().unwrap().to_string());
@@ -577,7 +586,6 @@ pub fn handle_build(args: BuildArgs) {
                         "-O3".to_string(),
                         "-funroll-loops".to_string(),
                         "-fomit-frame-pointer".to_string(),
-                        "-ffast-math".to_string(),
                     ]
                 } else {
                     vec![
@@ -633,14 +641,31 @@ pub fn handle_build(args: BuildArgs) {
                 if is_library_mode {
                     gcc_args.push("-shared".to_string());
                 }
-                if strip && release {
+                if tsan {
+                    gcc_args.push("-fsanitize=thread".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                } else if sanitize {
+                    gcc_args.push("-fsanitize=address,undefined".to_string());
+                    gcc_args.push("-fno-omit-frame-pointer".to_string());
+                    gcc_args.push("-g".to_string());
+                }
+                if strip && release && !tsan && !sanitize {
                     gcc_args.push("-s".to_string());
                 }
+                gcc_args.push("-pthread".to_string());
                 #[cfg(windows)]
                 {
                     gcc_args.push("-lws2_32".to_string());
+                    gcc_args.push("-lsecur32".to_string());
+                    gcc_args.push("-lcrypt32".to_string());
                     gcc_args.push("-luser32".to_string());
                     gcc_args.push("-lgdi32".to_string());
+                }
+                #[cfg(not(windows))]
+                {
+                    gcc_args.push("-lssl".to_string());
+                    gcc_args.push("-lcrypto".to_string());
                 }
                 gcc_args.push("-o".to_string());
                 gcc_args.push(bin_path.to_str().unwrap().to_string());

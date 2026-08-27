@@ -1,19 +1,32 @@
 // End Standard Library: std/net/http.end
-// Ultra-High-Throughput Native Web Server & HTTP Routing Engine
+// Ultra-High-Throughput Native Web Server & HTTP Routing Engine (RFC 7230/7231/7232/7233)
 
-st HttpRequest {
-    method: str,
-    path: str,
-    body: str,
+pub extern fn end_http1_server_start(port: i64) i64
+pub extern fn end_http1_server_port(handle: i64) i64
+pub extern fn end_http1_server_is_running(handle: i64) bool
+pub extern fn end_http1_server_add_route(handle: i64, method: str, path: str, response_body: str) i64
+pub extern fn end_http1_server_stop(handle: i64) void
+pub extern fn end_http1_request_sync(url: str, method: str, body: str) str
+
+pub struct HttpRequest {
+    pub method: str,
+    pub path: str,
+    pub body: str,
 }
 
-st HttpResponse {
-    status_code: i32,
-    content_type: str,
-    body: str,
+pub struct HttpResponse {
+    pub status_code: i32,
+    pub content_type: str,
+    pub body: str,
 }
 
-fn http_ok_json(json_body: str) HttpResponse {
+pub struct HttpServer {
+    pub handle: i64,
+    pub port: i64,
+    pub is_running: bool,
+}
+
+pub fn http_ok_json(json_body: str) HttpResponse {
     ret HttpResponse {
         status_code: 200,
         content_type: "application/json",
@@ -21,7 +34,7 @@ fn http_ok_json(json_body: str) HttpResponse {
     }
 }
 
-fn http_not_found() HttpResponse {
+pub fn http_not_found() HttpResponse {
     ret HttpResponse {
         status_code: 404,
         content_type: "application/json",
@@ -29,6 +42,29 @@ fn http_not_found() HttpResponse {
     }
 }
 
-fn http_build_response_string(res: HttpResponse) str {
+pub fn http_build_response_string(res: HttpResponse) str {
     ret res.body
+}
+
+pub fn http_server_start(port: i64) HttpServer {
+    val h = end_http1_server_start(port)
+    val p = end_http1_server_port(h)
+    val running = end_http1_server_is_running(h)
+    ret HttpServer {
+        handle: h,
+        port: p,
+        is_running: running,
+    }
+}
+
+pub fn http_server_add_route(server: HttpServer, method: str, path: str, response_body: str) i64 {
+    ret end_http1_server_add_route(server.handle, method, path, response_body)
+}
+
+pub fn http_server_stop(server: HttpServer) void {
+    end_http1_server_stop(server.handle)
+}
+
+pub fn http_request(url: str, method: str, body: str) str {
+    ret end_http1_request_sync(url, method, body)
 }

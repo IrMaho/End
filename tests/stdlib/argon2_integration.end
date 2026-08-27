@@ -1,0 +1,16 @@
+// Integration Test: std/auth/argon2.end
+import "std/auth/argon2.end"
+
+fn main() i64 {
+    val password = "SuperSecretPassword123"
+    val salt = "random_salt_1234"
+    val cfg = argon2_default_config()
+
+    val hashed = argon2_hash_password(password, salt, cfg)
+    val verified = argon2_verify(password, hashed)
+
+    if verified && len(hashed.encoded) > 20 {
+        ret 0
+    }
+    ret 1
+}

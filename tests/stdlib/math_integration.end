@@ -1,0 +1,18 @@
+// Integration Test: std/math.end
+import "std/math.end"
+
+fn main() i64 {
+    val s = math_sin(0.0)
+    val c = math_cos(0.0)
+    val sq = math_sqrt(16.0)
+    val p = math_pow(2.0, 4.0)
+
+    val v1 = Vec2 { x: 1.0, y: 2.0 }
+    val v2 = Vec2 { x: 3.0, y: 4.0 }
+    val v3 = vec2_add(v1, v2)
+
+    if s == 0.0 && c == 1.0 && sq == 4.0 && p == 16.0 && v3.x == 4.0 {
+        ret 0
+    }
+    ret 1
+}

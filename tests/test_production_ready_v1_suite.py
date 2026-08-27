@@ -15,6 +15,10 @@ END_BINARY = os.path.abspath("bin/end.exe") if os.name == "nt" else os.path.absp
 if not os.path.exists(END_BINARY):
     END_BINARY = os.path.abspath("endc/target/release/endc.exe") if os.name == "nt" else os.path.abspath("endc/target/release/endc")
 
+# Ensure required native libraries (LLVM, Z3, Postgres) are present on PATH
+WORKSPACE_ROOT = os.path.abspath(".")
+os.environ["PATH"] = f"C:\\Program Files\\LLVM\\bin;{os.path.join(WORKSPACE_ROOT, 'endc', 'z3', 'bin')};{os.path.join(WORKSPACE_ROOT, 'pgsql', 'bin')};{os.path.join(WORKSPACE_ROOT, 'bin')};" + os.environ.get("PATH", "")
+
 passed_tests = 0
 total_tests = 0
 
@@ -34,7 +38,7 @@ def run_test(phase_num, test_idx, name, fn):
         print(f"  ❌ EXCEPTION: {test_id} — {e}")
 
 def run_cmd(args):
-    res = subprocess.run([END_BINARY] + args, capture_output=True, encoding='utf-8', errors='replace')
+    res = subprocess.run([END_BINARY] + args, capture_output=True, encoding='utf-8', errors='replace', env=os.environ)
     return res.returncode, res.stdout or "", res.stderr or ""
 
 # ==============================================================================

@@ -1,0 +1,14 @@
+// Integration Test: std/attest.end
+import "std/attest.end"
+
+fn main() i64 {
+    val q = attest_software("std/attest.end")
+    val kind = quote_kind(q)
+    val digest = quote_digest(q)
+    val verified = verify(q, "std/attest.end")
+
+    if kind == "software" && len(digest) == 64 && verified {
+        ret 0
+    }
+    ret 1
+}

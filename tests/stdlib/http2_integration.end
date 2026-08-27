@@ -1,0 +1,17 @@
+// Integration Test: std/hyper/http2.end
+import "std/hyper/http2.end"
+
+fn main() i64 {
+    val mux = http2_mux_create(100)
+    val res = http2_mux_open_stream(mux, 1)
+
+    val srv = http2_server_start(0, false)
+    val p = srv.port
+    val running = srv.is_running
+    http2_server_stop(srv)
+
+    if res.stream.stream_id == 1 && res.stream.state_open {
+        ret 0
+    }
+    ret 1
+}

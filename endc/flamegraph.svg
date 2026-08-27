@@ -1,0 +1,91 @@
+<svg viewBox="0 0 1200 508" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <rect width="100%" height="100%" fill="#1e1e2e" />
+  <text x="20" y="30" fill="#cdd6f4" font-size="18" font-weight="bold">🔥 End Flame Graph: ..\examples\profiler_demo.end</text>
+  <text x="20" y="50" fill="#a6adc8" font-size="12">Total Samples: 2446 | Runtime: 65.13 ms | Sampling Rate: 1000 Hz</text>
+  <g class="func-frame" cursor="pointer">
+    <title>main: 2446 samples (100.00%)</title>
+    <rect x="0.0" y="444.0" width="1200.0" height="22.0" fill="#e67e22" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="458.0" fill="#ffffff" font-size="11" font-weight="500">main</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>process_pipeline: 2444 samples (99.92%)</title>
+    <rect x="0.0" y="420.0" width="1199.0" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="434.0" fill="#ffffff" font-size="11" font-weight="500">process_pipeline</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2438 samples (99.67%)</title>
+    <rect x="0.0" y="396.0" width="1196.1" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="410.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2436 samples (99.59%)</title>
+    <rect x="0.0" y="372.0" width="1195.1" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="386.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2432 samples (99.43%)</title>
+    <rect x="0.0" y="348.0" width="1193.1" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="362.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2424 samples (99.10%)</title>
+    <rect x="0.0" y="324.0" width="1189.2" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="338.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2408 samples (98.45%)</title>
+    <rect x="0.0" y="300.0" width="1181.4" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="314.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2376 samples (97.14%)</title>
+    <rect x="0.0" y="276.0" width="1165.7" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="290.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2312 samples (94.52%)</title>
+    <rect x="0.0" y="252.0" width="1134.3" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="266.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 2184 samples (89.29%)</title>
+    <rect x="0.0" y="228.0" width="1071.5" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="242.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 1928 samples (78.82%)</title>
+    <rect x="0.0" y="204.0" width="945.9" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="218.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 1448 samples (59.20%)</title>
+    <rect x="0.0" y="180.0" width="710.4" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="194.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 796 samples (32.54%)</title>
+    <rect x="0.0" y="156.0" width="390.5" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="170.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibonacci</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 276 samples (11.28%)</title>
+    <rect x="0.0" y="132.0" width="135.4" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+    <text x="4.0" y="146.0" fill="#ffffff" font-size="11" font-weight="500">compute_fibon...</text>
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 52 samples (2.13%)</title>
+    <rect x="0.0" y="108.0" width="25.5" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>compute_fibonacci: 4 samples (0.16%)</title>
+    <rect x="0.0" y="84.0" width="2.0" height="22.0" fill="#f39c12" stroke="#11111b" stroke-width="0.5" rx="2" />
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>simulate_network_io: 4 samples (0.16%)</title>
+    <rect x="1196.1" y="396.0" width="2.0" height="22.0" fill="#8e44ad" stroke="#11111b" stroke-width="0.5" rx="2" />
+  </g>
+  <g class="func-frame" cursor="pointer">
+    <title>cpu_sleep_ms: 2 samples (0.08%)</title>
+    <rect x="1196.1" y="372.0" width="1.0" height="22.0" fill="#f1c40f" stroke="#11111b" stroke-width="0.5" rx="2" />
+  </g>
+</svg>

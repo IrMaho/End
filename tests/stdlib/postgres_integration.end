@@ -1,0 +1,17 @@
+// Integration Test: std/db/postgres.end
+import "std/db/postgres.end"
+
+fn main() i64 {
+    val cfg = PgConnectionConfig {
+        host: "127.0.0.1",
+        port: 5432,
+        database: "postgres",
+        user: "postgres",
+        ssl_mode: false,
+    }
+    val client = pg_connect(cfg)
+    if client.config.port == 5432 {
+        ret 0
+    }
+    ret 1
+}

@@ -1,0 +1,13 @@
+// @test: positive
+// @expect-stdout:
+// 42
+
+fn add(a: i64, b: i64) -> i64 {
+    return a + b
+}
+
+fn main() -> i32 {
+    val res: i64 = add(20, 22)
+    println(res)
+    return 0
+}

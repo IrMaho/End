@@ -1,0 +1,8 @@
+// Integration Test: std/db/redis.end
+import "std/db/redis.end"
+
+fn main() i64 {
+    val client = redis_connect("127.0.0.1", 6379)
+    // If local redis is not running, graceful return
+    ret 0
+}

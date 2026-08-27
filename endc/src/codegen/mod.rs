@@ -12,4 +12,4 @@ pub use cranelift_backend::{CraneliftBackend, CraneliftJitReport};
 pub use interpreter::Interpreter;
 pub use llvm_backend::LlvmBackend;
 pub use type_mapper::{CTypeMapper, CraneliftTypeMapper, LlvmTypeMapper, TypeMapper};
-pub use wasm_backend::{WasmBackend, WasmBuildReport};
+pub use wasm_backend::{WasmBackend, WasmBuildReport, WasmExecutionResult};

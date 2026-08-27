@@ -1,0 +1,17 @@
+// Integration Test: std/sync/atomic.end
+import "std/sync/atomic.end"
+
+fn main() i64 {
+    val a = atomic_i64_create(10)
+    val v1 = atomic_i64_load(a, 4)
+    val res = atomic_i64_fetch_add(a, 5)
+    val v2 = atomic_i64_load(res.atomic, 4)
+    val a2 = atomic_i64_store(res.atomic, 100, 4)
+    val v3 = atomic_i64_load(a2, 4)
+    atomic_i64_destroy(a2)
+
+    if v1 == 10 && res.old_value == 10 && v2 == 15 && v3 == 100 {
+        ret 0
+    }
+    ret 1
+}

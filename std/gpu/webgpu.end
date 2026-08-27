@@ -13,6 +13,12 @@ pub struct ComputePipeline {
     pub is_compiled: bool,
 }
 
+pub struct GpuDeviceInfo {
+    pub name: str,
+    pub backend: str,
+    pub is_available: bool,
+}
+
 pub fn gpu_create_buffer(size_bytes: i64) GpuBuffer {
     val h = end_gpu_create_buffer(size_bytes)
     ret GpuBuffer {

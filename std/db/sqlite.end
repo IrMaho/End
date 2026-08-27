@@ -6,6 +6,14 @@ pub extern fn end_db_execute(db_handle: i64, key: str, val: str) i64
 pub extern fn end_db_query(db_handle: i64, key: str) str
 pub extern fn end_db_close(db_handle: i64) void
 
+pub extern fn end_sqlite_open(path: str) i64
+pub extern fn end_sqlite_execute(handle: i64, sql: str) i64
+pub extern fn end_sqlite_query(handle: i64, sql: str) str
+pub extern fn end_sqlite_begin(handle: i64) i64
+pub extern fn end_sqlite_commit(handle: i64) i64
+pub extern fn end_sqlite_rollback(handle: i64) i64
+pub extern fn end_sqlite_close(handle: i64) void
+
 pub st DbConnection {
     handle: i64,
     path: str,
@@ -53,5 +61,67 @@ pub fn db_get(conn: DbConnection, key: str) str {
 pub fn db_close(conn: DbConnection) void {
     if conn.handle != 0 {
         end_db_close(conn.handle)
+    }
+}
+
+pub fn sqlite_open(path: str) DbConnection {
+    val h: i64 = end_sqlite_open(path)
+    ret DbConnection {
+        handle: h,
+        path: path,
+        is_connected: h != 0,
+    }
+}
+
+pub fn sqlite_execute(conn: DbConnection, sql: str) QueryResult {
+    if !conn.is_connected || conn.handle == 0 {
+        ret QueryResult {
+            rows_affected: 0,
+            success: false,
+            value: "",
+        }
+    }
+    val res: i64 = end_sqlite_execute(conn.handle, sql)
+    ret QueryResult {
+        rows_affected: res,
+        success: res >= 0,
+        value: "",
+    }
+}
+
+pub fn sqlite_query(conn: DbConnection, sql: str) str {
+    if !conn.is_connected || conn.handle == 0 {
+        ret "[]"
+    }
+    ret end_sqlite_query(conn.handle, sql)
+}
+
+pub fn sqlite_begin(conn: DbConnection) bool {
+    if !conn.is_connected || conn.handle == 0 {
+        ret false
+    }
+    val res: i64 = end_sqlite_begin(conn.handle)
+    ret res > 0
+}
+
+pub fn sqlite_commit(conn: DbConnection) bool {
+    if !conn.is_connected || conn.handle == 0 {
+        ret false
+    }
+    val res: i64 = end_sqlite_commit(conn.handle)
+    ret res > 0
+}
+
+pub fn sqlite_rollback(conn: DbConnection) bool {
+    if !conn.is_connected || conn.handle == 0 {
+        ret false
+    }
+    val res: i64 = end_sqlite_rollback(conn.handle)
+    ret res > 0
+}
+
+pub fn sqlite_close(conn: DbConnection) void {
+    if conn.handle != 0 {
+        end_sqlite_close(conn.handle)
     }
 }

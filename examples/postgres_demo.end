@@ -1,0 +1,75 @@
+// End Language: Real Native PostgreSQL 16 Wire Protocol Integration Demonstration
+import "std/db/postgres.end"
+
+pub fn main() void {
+    println("================================================================================")
+    println("🐘 End Language Real PostgreSQL 16 Wire Protocol & Engine Showcase")
+    println("================================================================================")
+
+    // 1. Establish Real PostgreSQL 16 Wire Protocol Connection
+    println("--- 1. Connecting to PostgreSQL 16 Server ---")
+    val cfg = PgConnectionConfig {
+        host: "127.0.0.1",
+        port: 5432,
+        database: "postgres",
+        user: "postgres",
+        ssl_mode: false,
+    }
+    val client = pg_connect(cfg)
+    println("Connected to PostgreSQL:")
+    println(client.is_connected)
+
+    // 2. Schema Creation (DDL)
+    println("--- 2. Creating Database Table (DDL) ---")
+    pg_execute(client, "DROP TABLE IF EXISTS demo_users CASCADE;")
+    val create_sql = "CREATE TABLE demo_users (id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL, email VARCHAR(100) UNIQUE, role VARCHAR(100) NOT NULL, age INT);"
+    val res_create = pg_execute(client, create_sql)
+    println("Create Table Result:")
+    println(res_create >= 0)
+
+    // 3. Inserting Real Records (DML)
+    println("--- 3. Inserting Records (DML) ---")
+    pg_execute(client, "INSERT INTO demo_users (name, email, role, age) VALUES ('Sina Maho', 'maho@end-lang.org', 'Lead Platform Architect', 29);")
+    pg_execute(client, "INSERT INTO demo_users (name, email, role, age) VALUES ('Grace Hopper', 'hopper@navy.mil', 'Rear Admiral / Compilers', 85);")
+    pg_execute(client, "INSERT INTO demo_users (name, email, role, age) VALUES ('Claude Shannon', 'shannon@bell-labs.com', 'Information Theorist', 45);")
+    println("✔ 3 Real Records Inserted Successfully into PostgreSQL!")
+
+    // 4. Executing SELECT Queries
+    println("--- 4. Querying All Users (SELECT * FROM demo_users) ---")
+    val all_res = pg_query(client, "SELECT id, name, email, role, age FROM demo_users ORDER BY id ASC;")
+    println(all_res.raw_response)
+
+    // 5. Querying with Filter
+    println("--- 5. Querying Filtered Users (SELECT WHERE age >= 40) ---")
+    val filtered_res = pg_query(client, "SELECT name, role, age FROM demo_users WHERE age >= 40 ORDER BY age ASC;")
+    println(filtered_res.raw_response)
+
+    // 5b. Parameterized Query Execution (Preventing SQL Injection)
+    println("--- 5b. Executing Parameterized Query ($1, $2) ---")
+    val param_query_res = pg_query_params(client, "SELECT name, role FROM demo_users WHERE age < $1 AND role LIKE $2;", "[30, \"%Architect%\"]")
+    println(param_query_res.raw_response)
+
+    // 6. Real Atomic Transactions & ROLLBACK
+    println("--- 6. Testing Atomic Transaction ROLLBACK ---")
+    val tx_client = pg_begin(client)
+    println("Transaction Active:")
+    println(tx_client.active_transaction)
+
+    pg_execute(tx_client, "INSERT INTO demo_users (name, email, role, age) VALUES ('Ghost User', 'ghost@shadow.org', 'Phantom', 99);")
+    val during_tx = pg_query(tx_client, "SELECT name FROM demo_users WHERE email = 'ghost@shadow.org';")
+    println("During Transaction (Row must exist):")
+    println(during_tx.raw_response)
+
+    val rolled_client = pg_rollback(tx_client)
+    println("Transaction Rolled Back. Active:")
+    println(rolled_client.active_transaction)
+
+    val after_tx = pg_query(rolled_client, "SELECT name FROM demo_users WHERE email = 'ghost@shadow.org';")
+    println("After ROLLBACK (Must be empty array []):")
+    println(after_tx.raw_response)
+
+    // 7. Cleanup & Close Connection
+    pg_close(rolled_client)
+    println("✔ PostgreSQL Client Connection Cleanly Terminated!")
+    println("================================================================================")
+}

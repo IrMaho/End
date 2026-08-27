@@ -1,0 +1,11 @@
+// Integration Test: std/crypto/sha256.end
+import "std/crypto/sha256.end"
+
+fn main() i64 {
+    val digest = sha256("hello world")
+    // SHA-256("hello world") = b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+    if digest == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9" {
+        ret 0
+    }
+    ret 1
+}

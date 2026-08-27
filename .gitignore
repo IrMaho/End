@@ -23,6 +23,7 @@ node_modules/
 *.tar.gz
 endc/z3/
 z3/
+pgsql/
 /app_*
 !endc/src/ui/app_template.html
 examples/app_*

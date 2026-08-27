@@ -1,0 +1,17 @@
+// Integration Test: std/sync/mutex.end
+import "std/sync/mutex.end"
+
+fn main() i64 {
+    val m = mutex_create()
+    val locked1 = mutex_try_lock(m, 1)
+    val is_l = mutex_is_locked(m)
+    val res = mutex_lock(m, 1)
+    val unlocked = mutex_unlock(res.mutex, res.guard)
+    val is_l2 = mutex_is_locked(unlocked)
+    mutex_destroy(unlocked)
+
+    if locked1 && is_l && !is_l2 {
+        ret 0
+    }
+    ret 1
+}

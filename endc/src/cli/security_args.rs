@@ -34,14 +34,29 @@ pub struct SecurityArgs {
         pub json: bool,
 }
 
-    /// Cryptographic Verified Build Attestation Generator
-        /// Path to .end source file
-        /// Format as JSON
+/// Cryptographic Verified Build & Runtime Attestation Generator and Verifier
 #[derive(Args, Debug, Clone)]
 pub struct AttestArgs {
-        pub file: PathBuf,
-        #[arg(long, default_value_t = true)]
-        pub json: bool,
+    /// Path to .end source file or target binary
+    pub file: Option<PathBuf>,
+    /// Path to target binary file to attest
+    #[arg(long)]
+    pub binary: Option<PathBuf>,
+    /// Path to quote JSON file to verify against target binary
+    #[arg(long)]
+    pub verify: Option<PathBuf>,
+    /// Force hardware TPM 2.0 attestation mode
+    #[arg(long)]
+    pub tpm: bool,
+    /// Force software Ed25519 attestation mode
+    #[arg(long)]
+    pub software: bool,
+    /// Path to write output quote or verification result JSON
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
+    /// Output result formatted as JSON
+    #[arg(long, default_value_t = true)]
+    pub json: bool,
 }
 
     /// Manage API stability, snapshots, SemVer diffs, and migration paths

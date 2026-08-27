@@ -1,0 +1,20 @@
+// Integration Test: std/net/http.end
+import "std/net/http.end"
+
+fn main() i64 {
+    val srv = http_server_start(8999)
+    if !srv.is_running {
+        ret 1
+    }
+
+    http_server_add_route(srv, "GET", "/api/greet", "Hello from End HTTP/1.1 Engine!")
+    val res = http_request("http://127.0.0.1:8999/api/greet", "GET", "")
+    http_server_stop(srv)
+
+    val ok_res = http_ok_json("{\"status\":\"ok\"}")
+
+    if srv.port == 8999 && len(res) > 0 && ok_res.status_code == 200 {
+        ret 0
+    }
+    ret 2
+}

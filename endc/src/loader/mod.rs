@@ -58,6 +58,16 @@ pub fn resolve_import_file(base_dir: &std::path::Path, path_str: &str) -> Option
         return Some(root_with_ext);
     }
 
+    // Parent directory check (e.g. when run from endc/)
+    let parent_direct = std::path::Path::new("..").join(path_str);
+    if parent_direct.exists() && parent_direct.is_file() {
+        return Some(parent_direct);
+    }
+    let parent_with_ext = std::path::Path::new("..").join(format!("{}.end", path_str.trim_end_matches(".end")));
+    if parent_with_ext.exists() && parent_with_ext.is_file() {
+        return Some(parent_with_ext);
+    }
+
     // 3. Dot notation: modules.hardware -> modules/hardware.end
     let stripped = path_str.trim_end_matches(".end");
     let dot_path = stripped.replace('.', "/").replace("::", "/");
@@ -71,6 +81,25 @@ pub fn resolve_import_file(base_dir: &std::path::Path, path_str: &str) -> Option
     if std_candidate.exists() && std_candidate.is_file() {
         return Some(std_candidate);
     }
+    let parent_std_candidate = std::path::Path::new("../std").join(format!("{}.end", dot_path.trim_start_matches("std/")));
+    if parent_std_candidate.exists() && parent_std_candidate.is_file() {
+        return Some(parent_std_candidate);
+    }
+
+    // 5. Traverse base_dir ancestors
+    let mut curr = base_dir;
+    while let Some(parent) = curr.parent() {
+        let candidate = parent.join(path_str);
+        if candidate.exists() && candidate.is_file() {
+            return Some(candidate);
+        }
+        let std_in_ancestor = parent.join("std").join(format!("{}.end", dot_path.trim_start_matches("std/")));
+        if std_in_ancestor.exists() && std_in_ancestor.is_file() {
+            return Some(std_in_ancestor);
+        }
+        curr = parent;
+    }
+
     None
 }
 

@@ -1,0 +1,449 @@
+# End Language Standard Library Capability Matrix (Source of Truth)
+# Every std/*.end file MUST be catalogued with an honest, evidence-backed status.
+# Allowed Statuses: REAL | PARTIAL | FAKE | EXPERIMENTAL
+
+version: "2.0.0"
+modules:
+  - name: std/agent.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/attest.end
+    status: REAL
+    depends_on:
+      - ed25519-dalek
+      - sha2
+    integration_test:
+      - tests/stdlib/attest_integration.end
+
+  - name: std/math.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/math_integration.end
+
+  - name: std/mem.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/profile.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/profile_integration.end
+
+  - name: std/raft.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/raft_integration.end
+
+  - name: std/stress.end
+    status: REAL
+    depends_on:
+      - reqwest
+      - hdrhistogram
+    integration_test:
+      - tests/stdlib/stress_integration.end
+
+  - name: std/ai/client.end
+    status: EXPERIMENTAL
+    depends_on:
+      - candle-core
+      - tokenizers
+    integration_test: null
+
+  - name: std/ai/gguf.end
+    status: EXPERIMENTAL
+    depends_on:
+      - candle-core
+    integration_test: null
+
+  - name: std/ai/intent.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/ai/tensor.end
+    status: EXPERIMENTAL
+    depends_on:
+      - candle-core
+    integration_test: null
+
+  - name: std/async/fiber.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/auth/argon2.end
+    status: REAL
+    depends_on:
+      - argon2
+    integration_test:
+      - tests/stdlib/argon2_integration.end
+
+  - name: std/auth/oauth2.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/auth/passkey.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/cluster/raft.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/raft_integration.end
+
+  - name: std/collections/list.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/collections/map.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/collections/ring_buffer.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/core/option.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/option_result_integration.end
+
+  - name: std/core/result.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/option_result_integration.end
+
+  - name: std/cpu/burst.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/crypto/acme.end
+    status: EXPERIMENTAL
+    depends_on:
+      - rcgen
+    integration_test: null
+
+  - name: std/crypto/base64.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/crypto/hmac.end
+    status: REAL
+    depends_on:
+      - hmac
+      - sha2
+    integration_test:
+      - tests/stdlib/hmac_integration.end
+
+  - name: std/crypto/jwt.end
+    status: PARTIAL
+    depends_on:
+      - hmac
+      - sha2
+    integration_test: null
+
+  - name: std/crypto/sha256.end
+    status: REAL
+    depends_on:
+      - sha2
+    integration_test:
+      - tests/stdlib/sha256_integration.end
+
+  - name: std/crypto/tls.end
+    status: REAL
+    depends_on:
+      - rustls
+      - rcgen
+    integration_test:
+      - tests/stdlib/tls_integration.end
+
+  - name: std/db/orm.end
+    status: PARTIAL
+    depends_on:
+      - rusqlite
+    integration_test: null
+
+  - name: std/db/postgres.end
+    status: REAL
+    depends_on:
+      - tokio-postgres
+    integration_test:
+      - tests/stdlib/postgres_integration.end
+
+  - name: std/db/redis.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/redis_integration.end
+
+  - name: std/db/sqlite.end
+    status: REAL
+    depends_on:
+      - rusqlite
+    integration_test:
+      - tests/stdlib/sqlite_integration.end
+
+  - name: std/db/sql_builder.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/event/lifecycle.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/forge/forge.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/gpu/webgpu.end
+    status: EXPERIMENTAL
+    depends_on:
+      - wgpu
+    integration_test: null
+
+  - name: std/hyper/http2.end
+    status: REAL
+    depends_on:
+      - h2
+      - hpack
+    integration_test:
+      - tests/stdlib/http2_integration.end
+
+  - name: std/hyper/hyper.end
+    status: EXPERIMENTAL
+    depends_on:
+      - h2
+    integration_test: null
+
+  - name: std/json/json.end
+    status: PARTIAL
+    depends_on:
+      - serde_json
+    integration_test: null
+
+  - name: std/kv/kv.end
+    status: PARTIAL
+    depends_on:
+      - rusqlite
+    integration_test: null
+
+  - name: std/loop/budget.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/mem/leak_detector.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/mem/lease.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/meta/i18n.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/meta/introspection.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/meta/json.end
+    status: PARTIAL
+    depends_on:
+      - serde_json
+    integration_test: null
+
+  - name: std/meta/reflection.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/net/http.end
+    status: REAL
+    depends_on:
+      - tokio
+      - reqwest
+    integration_test:
+      - tests/stdlib/http1_integration.end
+
+  - name: std/net/rpc.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/net/socket.end
+    status: REAL
+    depends_on:
+      - tokio
+    integration_test:
+      - tests/stdlib/tls_integration.end
+
+  - name: std/net/async/driver.end
+    status: EXPERIMENTAL
+    depends_on:
+      - tokio
+    integration_test: null
+
+  - name: std/nexus/circuit_breaker.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/nexus/hot_reload.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/nexus/socket_guard.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/nexus/stress.end
+    status: REAL
+    depends_on:
+      - reqwest
+      - hdrhistogram
+    integration_test:
+      - tests/stdlib/stress_integration.end
+
+  - name: std/package/registry.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/patterns/di.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/patterns/ecs.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/patterns/pipeline.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/patterns/repository.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/patterns/state_machine.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/runtime/panic.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/panic_integration.end
+
+  - name: std/simulation/what_if.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/stream/stream.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/sync/atomic.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/atomic_integration.end
+
+  - name: std/sync/channel.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/channel_integration.end
+
+  - name: std/sync/mutex.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/mutex_integration.end
+
+  - name: std/sync/rwlock.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/rwlock_integration.end
+
+  - name: std/telemetry/ring_buffer.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/telemetry/trace.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/test/assert.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/assert_integration.end
+
+  - name: std/test/patrol.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/time/time.end
+    status: REAL
+    depends_on: []
+    integration_test:
+      - tests/stdlib/time_integration.end
+
+  - name: std/ui/canvas.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/ui/color.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/ui/geometry.end
+    status: PARTIAL
+    depends_on: []
+    integration_test: null
+
+  - name: std/ui/widget.end
+    status: EXPERIMENTAL
+    depends_on: []
+    integration_test: null

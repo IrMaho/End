@@ -1,0 +1,14 @@
+// Integration Test: std/sync/channel.end
+import "std/sync/channel.end"
+
+fn main() i64 {
+    val ch = mpsc_create(10)
+    val ok1 = mpsc_send(ch, "channel_test_msg")
+    val msg = mpsc_recv(ch)
+    mpsc_close(ch)
+
+    if ok1 && msg == "channel_test_msg" {
+        ret 0
+    }
+    ret 1
+}

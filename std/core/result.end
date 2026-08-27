@@ -1,21 +1,29 @@
 // 🧬 End Language Core: std/core/result.end
-// Algebraic Data Type: Result<T, E> for Zero-Cost Monomorphic Error Handling
+// Algebraic Data Type: Result for Zero-Cost Error Handling
 
-pub enum Result<T, E> {
-    Ok(T),
-    Err(E),
+pub enum ResultKind {
+    Ok,
+    Err,
 }
 
-pub fn result_is_ok<T, E>(res: Result<T, E>) bool {
-    match res {
-        Result::Ok(_) => true,
-        Result::Err(_) => false,
-    }
+pub st ResultI64 {
+    is_ok: bool,
+    value: i64,
+    error: str,
 }
 
-pub fn result_is_err<T, E>(res: Result<T, E>) bool {
-    match res {
-        Result::Ok(_) => false,
-        Result::Err(_) => true,
-    }
+pub fn result_ok_i64(v: i64) ResultI64 {
+    ret ResultI64 { is_ok: true, value: v, error: "" }
+}
+
+pub fn result_err_i64(err: str) ResultI64 {
+    ret ResultI64 { is_ok: false, value: 0, error: err }
+}
+
+pub fn result_is_ok(res: ResultI64) bool {
+    ret res.is_ok
+}
+
+pub fn result_is_err(res: ResultI64) bool {
+    ret !res.is_ok
 }

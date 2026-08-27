@@ -22,6 +22,7 @@ impl Parser {
             TokenKind::As => Ok("as".to_string()),
             TokenKind::Alloc => Ok("alloc".to_string()),
             TokenKind::Catch => Ok("catch".to_string()),
+            TokenKind::Null => Ok("None".to_string()),
             TokenKind::Skip => Ok("skip".to_string()),
             TokenKind::Trait => Ok("trait".to_string()),
             TokenKind::Impl => Ok("impl".to_string()),

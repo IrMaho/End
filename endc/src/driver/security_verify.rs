@@ -163,31 +163,148 @@ pub fn handle_security(args: SecurityArgs) {
 }
 
 pub fn handle_attest(args: AttestArgs) {
-    let AttestArgs { file, json: _ } = args;
-            let (module, _) = match load_and_analyze(&file) {
-                Ok(res) => res,
-                Err(e) => {
-                    eprintln!("{} {}", "Error:".red().bold(), e);
-                    std::process::exit(1);
+    let AttestArgs {
+        file,
+        binary,
+        verify,
+        tpm,
+        software,
+        output,
+        json,
+    } = args;
+
+    // Determine target path (from --binary or positional file)
+    let target_path = binary.or(file);
+
+    // If verification mode is requested: endc attest --verify <quote.json> [--binary] <target>
+    if let Some(quote_file) = verify {
+        let target = match target_path {
+            Some(p) => p,
+            None => {
+                eprintln!(
+                    "{} Please specify target binary to verify against quote (e.g. `endc attest --verify quote.json --binary ./app`)",
+                    "Error:".red().bold()
+                );
+                std::process::exit(1);
+            }
+        };
+
+        let quote_json = match fs::read_to_string(&quote_file) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!(
+                    "{} Failed to read quote file '{}': {}",
+                    "Error:".red().bold(),
+                    quote_file.display(),
+                    e
+                );
+                std::process::exit(1);
+            }
+        };
+
+        let quote: security::AttestationQuote = match serde_json::from_str(&quote_json) {
+            Ok(q) => q,
+            Err(e) => {
+                eprintln!(
+                    "{} Failed to parse attestation quote JSON: {}",
+                    "Error:".red().bold(),
+                    e
+                );
+                std::process::exit(1);
+            }
+        };
+
+        match security::AttestationEngine::verify_target(&quote, &target, None, None) {
+            Ok(result) => {
+                let serialized = serde_json::to_string_pretty(&result).unwrap();
+                if let Some(out_path) = output {
+                    let _ = fs::write(&out_path, &serialized);
                 }
-            };
-            let source = fs::read_to_string(&file).unwrap_or_default();
-            let file_str = file.to_string_lossy().to_string();
-            let (_, build_status) = security::SecurityByConstructionEngine::audit_module_and_source(
-                &file_str,
-                &source,
-                &module,
-                security::SecurityLevel::Absolute,
+                if json {
+                    println!("{}", serialized);
+                } else {
+                    println!(
+                        "\n{} {}\n  Target: {}\n  Kind:   {}\n  Digest: {}\n  Time:   {}\n",
+                        "✔ [ATTESTATION VERIFIED]".green().bold(),
+                        result.summary.green(),
+                        target.display(),
+                        result.kind,
+                        &result.quote.binary_sha256[..16],
+                        result.verified_at
+                    );
+                }
+            }
+            Err(e) => {
+                eprintln!("\n{} {}\n", "✖ [ATTESTATION VERIFICATION FAILED]".red().bold(), e);
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
+    // Quote generation mode
+    let target = match target_path {
+        Some(p) => p,
+        None => {
+            eprintln!(
+                "{} Please specify a source or binary file to attest (e.g. `endc attest src/main.end` or `endc attest --binary ./app`)",
+                "Error:".red().bold()
             );
-            match build_status {
-                security::VerifiedBuildStatus::Permitted { manifest, .. } => {
-                    println!("{}", serde_json::to_string_pretty(&manifest).unwrap());
-                }
-                security::VerifiedBuildStatus::Rejected { blocking_reason, .. } => {
-                    eprintln!("{} {}", "Attestation Failed:".red().bold(), blocking_reason);
+            std::process::exit(1);
+        }
+    };
+
+    if !target.exists() {
+        eprintln!(
+            "{} Target file '{}' not found.",
+            "Error:".red().bold(),
+            target.display()
+        );
+        std::process::exit(1);
+    }
+
+    let mode = if tpm {
+        Some(security::AttestationKind::Tpm2)
+    } else if software {
+        Some(security::AttestationKind::Software)
+    } else {
+        None
+    };
+
+    match security::AttestationEngine::attest_target(&target, mode, None, None, None) {
+        Ok(quote) => {
+            let serialized = serde_json::to_string_pretty(&quote).unwrap();
+            if let Some(out_path) = output {
+                if let Err(e) = fs::write(&out_path, &serialized) {
+                    eprintln!(
+                        "{} Failed to write quote to '{}': {}",
+                        "Error:".red().bold(),
+                        out_path.display(),
+                        e
+                    );
                     std::process::exit(1);
                 }
             }
+            if json {
+                println!("{}", serialized);
+            } else {
+                println!(
+                    "\n{} {}\n  Target:    {}\n  Kind:      {}\n  SHA-256:   {}\n  Signature: {}\n  Timestamp: {}\n",
+                    "✔ [ATTESTATION QUOTE GENERATED]".green().bold(),
+                    format!("Signed with {}", quote.kind),
+                    target.display(),
+                    quote.kind,
+                    quote.binary_sha256,
+                    &quote.signature[..24],
+                    quote.timestamp
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("\n{} {}\n", "✖ [ATTESTATION GENERATION FAILED]".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
 }
 
 pub fn handle_api(args: ApiArgs) {

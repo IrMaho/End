@@ -323,22 +323,19 @@ impl Parser {
         let mut left = self.parse_addition()?;
         while self.check(&TokenKind::Shl) || self.check(&TokenKind::Shr) {
             let span = self.current_span();
-            if self.match_token(&TokenKind::Shl) {
-                let right = self.parse_addition()?;
-                left = Expression::Binary {
-                    left: Box::new(left),
-                    op: BinaryOp::Shl,
-                    right: Box::new(right),
-                    span,
-                };
+            let op = if self.match_token(&TokenKind::Shl) {
+                BinaryOp::Shl
             } else {
                 self.advance();
-                let right = self.parse_addition()?;
-                left = Expression::Compose {
-                    ops: vec![left, right],
-                    span,
-                };
-            }
+                BinaryOp::Shr
+            };
+            let right = self.parse_addition()?;
+            left = Expression::Binary {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
+                span,
+            };
         }
         Ok(left)
     }

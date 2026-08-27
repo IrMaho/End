@@ -10,6 +10,11 @@ impl Parser {
             return Ok(Type::Result(Box::new(inner), None));
         }
 
+        if self.match_token(&TokenKind::StarStar) {
+            let inner = self.parse_type()?;
+            return Ok(Type::Pointer(Box::new(Type::Pointer(Box::new(inner)))));
+        }
+
         if self.match_token(&TokenKind::Star) {
             let inner = self.parse_type()?;
             return Ok(Type::Pointer(Box::new(inner)));

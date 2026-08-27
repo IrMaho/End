@@ -1,0 +1,17 @@
+// Integration Test: std/profile.end
+import "std/profile.end"
+
+fn main() i64 {
+    profiler_start()
+    var i = 0
+    while i < 1000 {
+        i = i + 1
+    }
+    val flame = profiler_get_flamegraph()
+    val rep = profiler_stop()
+
+    if len(rep) > 0 {
+        ret 0
+    }
+    ret 1
+}

@@ -1,0 +1,13 @@
+// Integration Test: std/time/time.end
+import "std/time/time.end"
+
+fn main() i64 {
+    val t1 = time_now_millis()
+    time_sleep(5)
+    val t2 = time_now_millis()
+
+    if t2 >= t1 {
+        ret 0
+    }
+    ret 1
+}

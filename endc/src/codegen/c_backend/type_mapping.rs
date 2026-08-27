@@ -132,7 +132,11 @@ impl CBackend {
             | Expression::ConditionalOp { .. }
             | Expression::Memoize { .. } => true,
             Expression::Ident(name, _) => {
-                name.contains("op") || name.contains("step") || name.contains("flow") || name.contains("pipeline")
+                if let Some(ty) = self.var_types.get(name) {
+                    matches!(ty, Type::Operation(..))
+                } else {
+                    name.starts_with("op_") || name.ends_with("_op") || name == "op"
+                }
             }
             _ => false,
         }

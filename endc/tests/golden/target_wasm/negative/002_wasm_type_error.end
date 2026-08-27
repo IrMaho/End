@@ -1,0 +1,7 @@
+// @test: negative
+// @expect-error: E001
+
+fn main() -> i32 {
+    val x: i64 = undefined_var_123
+    return 0
+}

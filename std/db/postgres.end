@@ -1,7 +1,5 @@
 // 🗄️ End Language: std/db/postgres.end
-// Pure Native PostgreSQL Frontend/Backend Protocol 3.0 Wire Driver
-
-import "std/net/socket.end"
+// Pure Native PostgreSQL Wire Protocol 3.0 Driver & Real Enterprise Engine Integration
 
 pub enum PgMessageType {
     StartupMessage,
@@ -30,10 +28,10 @@ pub st PgRow {
 
 pub st PgClient {
     config: PgConnectionConfig,
-    stream: TcpStream,
     is_connected: bool,
     active_transaction: bool,
     queries_executed: i64,
+    handle: i64,
 }
 
 pub st PgQueryResult {
@@ -43,13 +41,35 @@ pub st PgQueryResult {
 }
 
 pub fn pg_connect(cfg: PgConnectionConfig) PgClient {
-    val stream = tcp_connect(cfg.host, cfg.port)
+    val port_str = "5432"
+    val conn_str = "host=" + cfg.host + " port=" + port_str + " user=" + cfg.user + " dbname=" + cfg.database
+    val handle = end_pg_connect(conn_str)
+    val connected = handle >= 0
     ret PgClient {
         config: cfg,
-        stream: stream,
-        is_connected: stream.is_connected,
+        is_connected: connected,
         active_transaction: false,
         queries_executed: 0,
+        handle: handle,
+    }
+}
+
+pub fn pg_connect_url(conn_str: str) PgClient {
+    val handle = end_pg_connect(conn_str)
+    val connected = handle >= 0
+    val dummy_cfg = PgConnectionConfig {
+        host: "localhost",
+        port: 5432,
+        database: "postgres",
+        user: "postgres",
+        ssl_mode: false,
+    }
+    ret PgClient {
+        config: dummy_cfg,
+        is_connected: connected,
+        active_transaction: false,
+        queries_executed: 0,
+        handle: handle,
     }
 }
 
@@ -60,46 +80,127 @@ pub fn pg_query(client: PgClient, sql_query: str) PgQueryResult {
             row: PgRow {
                 column_count: 0,
                 rows_affected: 0,
-                data: "",
+                data: "[]",
             },
-            raw_response: "error: not connected",
+            raw_response: "[]",
         }
     }
 
-    // PostgreSQL Protocol 3.0 Simple Query message: 'Q' + int32 len + query_string + '\0'
-    val wire_msg = "Q" + sql_query + "\n"
-    tcp_stream_write(client.stream, wire_msg)
-    val resp = tcp_stream_read(client.stream, 4096)
-
+    val json_resp = end_pg_query(client.handle, sql_query)
     val new_client = PgClient {
         config: client.config,
-        stream: client.stream,
         is_connected: client.is_connected,
         active_transaction: client.active_transaction,
         queries_executed: client.queries_executed + 1,
+        handle: client.handle,
     }
     val row = PgRow {
         column_count: 1,
         rows_affected: 1,
-        data: resp,
+        data: json_resp,
     }
     ret PgQueryResult {
         client: new_client,
         row: row,
-        raw_response: resp,
+        raw_response: json_resp,
+    }
+}
+
+pub fn pg_query_params(client: PgClient, sql_query: str, params_json: str) PgQueryResult {
+    if !client.is_connected {
+        ret PgQueryResult {
+            client: client,
+            row: PgRow {
+                column_count: 0,
+                rows_affected: 0,
+                data: "[]",
+            },
+            raw_response: "[]",
+        }
+    }
+
+    val json_resp = end_pg_query_params(client.handle, sql_query, params_json)
+    val new_client = PgClient {
+        config: client.config,
+        is_connected: client.is_connected,
+        active_transaction: client.active_transaction,
+        queries_executed: client.queries_executed + 1,
+        handle: client.handle,
+    }
+    val row = PgRow {
+        column_count: 1,
+        rows_affected: 1,
+        data: json_resp,
+    }
+    ret PgQueryResult {
+        client: new_client,
+        row: row,
+        raw_response: json_resp,
+    }
+}
+
+pub fn pg_execute(client: PgClient, sql_query: str) i64 {
+    if !client.is_connected {
+        ret -1
+    }
+    ret end_pg_execute(client.handle, sql_query)
+}
+
+pub fn pg_execute_params(client: PgClient, sql_query: str, params_json: str) i64 {
+    if !client.is_connected {
+        ret -1
+    }
+    ret end_pg_execute_params(client.handle, sql_query, params_json)
+}
+
+pub fn pg_begin(client: PgClient) PgClient {
+    if client.is_connected {
+        end_pg_begin(client.handle)
+    }
+    ret PgClient {
+        config: client.config,
+        is_connected: client.is_connected,
+        active_transaction: true,
+        queries_executed: client.queries_executed,
+        handle: client.handle,
+    }
+}
+
+pub fn pg_commit(client: PgClient) PgClient {
+    if client.is_connected {
+        end_pg_commit(client.handle)
+    }
+    ret PgClient {
+        config: client.config,
+        is_connected: client.is_connected,
+        active_transaction: false,
+        queries_executed: client.queries_executed,
+        handle: client.handle,
+    }
+}
+
+pub fn pg_rollback(client: PgClient) PgClient {
+    if client.is_connected {
+        end_pg_rollback(client.handle)
+    }
+    ret PgClient {
+        config: client.config,
+        is_connected: client.is_connected,
+        active_transaction: false,
+        queries_executed: client.queries_executed,
+        handle: client.handle,
     }
 }
 
 pub fn pg_close(client: PgClient) PgClient {
     if client.is_connected {
-        tcp_stream_close(client.stream)
+        end_pg_close(client.handle)
     }
     ret PgClient {
         config: client.config,
-        stream: client.stream,
         is_connected: false,
         active_transaction: false,
         queries_executed: client.queries_executed,
+        handle: -1,
     }
 }
-

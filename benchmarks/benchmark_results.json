@@ -1,0 +1,1231 @@
+{
+  "timestamp_utc": "2026-08-27T00:00:00Z",
+  "compiler_version": "endc 2.0.0",
+  "specification": "Prompt 27 - Benchmark Methodology & Integrity (F-35)",
+  "flag_symmetry": {
+    "end_flags": [
+      "-O3",
+      "-march=native",
+      "-flto"
+    ],
+    "c_flags": [
+      "-O3",
+      "-march=native",
+      "-flto"
+    ],
+    "zig_flags": [
+      "-O",
+      "ReleaseFast",
+      "-lc"
+    ],
+    "forbidden_flags": [
+      "-ffast-math",
+      "-Ofast"
+    ]
+  },
+  "reproducibility_runs": 1,
+  "adversarial_mode": false,
+  "results": [
+    {
+      "id": "fib",
+      "name": "Fibonacci Deep Recursion",
+      "category": "Recursion / Branching",
+      "expected_checksum": "267914296",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 642.3756000000001,
+          "p90_ms": 659.0840000000001,
+          "p99_ms": 659.0840000000001,
+          "mean_ms": 632.93954,
+          "min_ms": 599.9946,
+          "max_ms": 659.0840000000001,
+          "std_dev_ms": 21.800244389464996,
+          "variance_ms": 475.2506554404,
+          "throughput_ops_sec": 1579929.7354688887
+        },
+        "raw_samples_ms": [
+          599.9946,
+          656.5819,
+          656.6925,
+          659.0840000000001,
+          632.3906000000001,
+          647.6121999999999,
+          617.6002000000001,
+          600.4991,
+          616.5647,
+          642.3756000000001
+        ],
+        "captured_checksum": "267914296",
+        "sha256_output_digest": "d60956062f761a821fc7311fe5db97eb24e56e8b7731dbbd8ef5085e16f97129",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 654.8972,
+          "p90_ms": 708.6468,
+          "p99_ms": 708.6468,
+          "mean_ms": 646.60627,
+          "min_ms": 603.7809,
+          "max_ms": 708.6468,
+          "std_dev_ms": 33.43674837241355,
+          "variance_ms": 1118.0161417201,
+          "throughput_ops_sec": 1546536.194274763
+        },
+        "raw_samples_ms": [
+          656.0901,
+          624.7603,
+          684.8388,
+          643.2660999999999,
+          670.7952,
+          603.7809,
+          654.8972,
+          708.6468,
+          604.5686000000001,
+          614.4187
+        ],
+        "captured_checksum": "267914296",
+        "sha256_output_digest": "d24c92ff6623c44dbe9eb3b633c55e9b06cbff8069b6c37a107a2f339b7bf6f9",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 1.01949264573561,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "compute",
+      "name": "LCG / Bitwise Integer Compute",
+      "category": "Bitwise / ALU",
+      "expected_checksum": "9472133285655895587",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 641.7529,
+          "p90_ms": 665.6911,
+          "p99_ms": 703.85,
+          "mean_ms": 636.4681733333332,
+          "min_ms": 596.8801,
+          "max_ms": 703.85,
+          "std_dev_ms": 32.135699811341,
+          "variance_ms": 1032.703202364622,
+          "throughput_ops_sec": 157117047.1514334
+        },
+        "raw_samples_ms": [
+          661.8770000000001,
+          596.8801,
+          606.441,
+          600.3977,
+          597.5631999999999,
+          657.1975,
+          598.7660000000001,
+          610.7936000000001,
+          641.7529,
+          665.6911,
+          703.85,
+          646.8303,
+          664.1572,
+          663.4630999999999,
+          631.3619
+        ],
+        "captured_checksum": "9472133285655895587",
+        "sha256_output_digest": "acb53334b998511d003a592aa3333a7d740333a40fcc3e638974a3414e1e1c61",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 602.8158999999999,
+          "p90_ms": 654.12,
+          "p99_ms": 660.7661,
+          "mean_ms": 611.5634800000001,
+          "min_ms": 566.0358,
+          "max_ms": 660.7661,
+          "std_dev_ms": 23.91343616622812,
+          "variance_ms": 571.8524292762671,
+          "throughput_ops_sec": 163515323.0536264
+        },
+        "raw_samples_ms": [
+          600.7316999999999,
+          609.9456,
+          602.4038,
+          654.12,
+          626.8567,
+          631.635,
+          660.7661,
+          601.4041,
+          566.0358,
+          598.8748,
+          605.0121,
+          627.8979,
+          587.311,
+          602.8158999999999,
+          597.6417
+        ],
+        "captured_checksum": "9472133285655895587",
+        "sha256_output_digest": "290a48f2d55b568af083f42ca8efe06727234b85bd4b970c01832ce5c7371a5b",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.9393271148443583,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "memory_churn",
+      "name": "Memory Churn & Linear Allocation (100M items)",
+      "category": "Memory / Heap Allocations",
+      "expected_checksum": "24747600564740",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 645.1758,
+          "p90_ms": 690.4605,
+          "p99_ms": 710.9454,
+          "mean_ms": 646.2550133333333,
+          "min_ms": 565.8864,
+          "max_ms": 710.9454,
+          "std_dev_ms": 39.77399699701413,
+          "variance_ms": 1581.9708371184888,
+          "throughput_ops_sec": 1547376.7775387573
+        },
+        "raw_samples_ms": [
+          605.2516,
+          574.5446,
+          674.1695,
+          640.4159000000001,
+          710.9454,
+          645.1758,
+          631.6123,
+          565.8864,
+          661.0572999999999,
+          685.6102,
+          690.4605,
+          638.155,
+          681.6796,
+          654.0175,
+          634.8435999999999
+        ],
+        "captured_checksum": "24747600564740",
+        "sha256_output_digest": "dfdb93ccd4d04e6ef5d27d69d4cf0753344fc3444d7e53e645d3f49594160618",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 637.7897,
+          "p90_ms": 695.5195,
+          "p99_ms": 697.7521,
+          "mean_ms": 642.8428466666667,
+          "min_ms": 571.7367,
+          "max_ms": 697.7521,
+          "std_dev_ms": 36.45384774198497,
+          "variance_ms": 1328.883015195823,
+          "throughput_ops_sec": 1555590.149575904
+        },
+        "raw_samples_ms": [
+          581.3045999999999,
+          628.9183,
+          571.7367,
+          652.7522,
+          671.2040999999999,
+          695.5195,
+          635.1513,
+          637.6904,
+          637.7897,
+          653.2253000000001,
+          692.6162,
+          653.6674999999999,
+          613.5794,
+          697.7521,
+          619.7354
+        ],
+        "captured_checksum": "24747600564740",
+        "sha256_output_digest": "1ee8537e6011aa33ef3bc43c8a9cadb34812579d6772e9a578fdd5d0b9a5de2e",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.9885518024699625,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "sdf_raymarcher",
+      "name": "3D Raymarcher & Sphere Tracing",
+      "category": "Floating Point / Math",
+      "expected_checksum": "14694889",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 51.243,
+          "p90_ms": 58.445,
+          "p99_ms": 58.445,
+          "mean_ms": 52.563700000000004,
+          "min_ms": 48.986,
+          "max_ms": 58.445,
+          "std_dev_ms": 3.384388129337413,
+          "variance_ms": 11.454083009999994,
+          "throughput_ops_sec": 4756133.986001746
+        },
+        "raw_samples_ms": [
+          50.655,
+          49.341,
+          48.986,
+          49.466,
+          50.343,
+          56.428,
+          51.243,
+          58.445,
+          57.129,
+          53.601
+        ],
+        "captured_checksum": "14694889",
+        "sha256_output_digest": "30b28b4c9a0291cd3338ac2f2b78c905655c82f19d8adef07e273504b70ee8eb",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 51.111,
+          "p90_ms": 62.19,
+          "p99_ms": 62.19,
+          "mean_ms": 52.0194,
+          "min_ms": 47.966,
+          "max_ms": 62.19,
+          "std_dev_ms": 3.9927166741455618,
+          "variance_ms": 15.941786439999996,
+          "throughput_ops_sec": 4805899.337554836
+        },
+        "raw_samples_ms": [
+          47.966,
+          62.19,
+          55.322,
+          49.847,
+          51.111,
+          50.907,
+          49.49,
+          48.173,
+          52.642,
+          52.546
+        ],
+        "captured_checksum": "17840942",
+        "sha256_output_digest": "1ce103b7e586e589331847ab3779478248c9cabebea3cb986d2b9583615a2254",
+        "checksum_match": false
+      },
+      "speedup_vs_c": 0.9974240384052455,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "dynamic_binary_trees",
+      "name": "Binary Trees Arena Allocation & Traversal",
+      "category": "Memory / Arena Allocation",
+      "expected_checksum": "407713",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 39.903,
+          "p90_ms": 42.696,
+          "p99_ms": 42.696,
+          "mean_ms": 39.110800000000005,
+          "min_ms": 34.342,
+          "max_ms": 42.696,
+          "std_dev_ms": 2.794344352437617,
+          "variance_ms": 7.808360360000006,
+          "throughput_ops_sec": 25568385.20306411
+        },
+        "raw_samples_ms": [
+          42.34,
+          37.697,
+          35.157,
+          37.708,
+          38.617,
+          40.377,
+          42.696,
+          34.342,
+          42.271,
+          39.903
+        ],
+        "captured_checksum": "407713",
+        "sha256_output_digest": "bda6031a0d38b549e417ffd7da96c73a9098241ecb8070278b0fac0da9183109",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 528.798,
+          "p90_ms": 586.868,
+          "p99_ms": 586.868,
+          "mean_ms": 531.4207,
+          "min_ms": 489.322,
+          "max_ms": 586.868,
+          "std_dev_ms": 31.209486887964072,
+          "variance_ms": 974.0320718100013,
+          "throughput_ops_sec": 1881748.302239638
+        },
+        "raw_samples_ms": [
+          517.703,
+          528.798,
+          563.556,
+          541.388,
+          567.099,
+          586.868,
+          522.286,
+          503.833,
+          489.322,
+          493.354
+        ],
+        "captured_checksum": "407713",
+        "sha256_output_digest": "c6d83b586332479d5029783f0b97564a0adb2a0ffb27313dce432e211e34d535",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 13.252086309300052,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "hft_order_engine",
+      "name": "HFT Limit Order Book & Matching Engine",
+      "category": "Data Structures / Low Latency",
+      "expected_checksum": "552829538",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 27.183,
+          "p90_ms": 27.886,
+          "p99_ms": 35.867,
+          "mean_ms": 27.723733333333332,
+          "min_ms": 26.642,
+          "max_ms": 35.867,
+          "std_dev_ms": 2.2054469982799905,
+          "variance_ms": 4.86399646222222,
+          "throughput_ops_sec": 36070178.13858644
+        },
+        "raw_samples_ms": [
+          27.323,
+          27.204,
+          27.313,
+          27.886,
+          27.847,
+          26.642,
+          26.91,
+          27.072,
+          26.701,
+          27.089,
+          27.224,
+          26.943,
+          27.183,
+          26.652,
+          35.867
+        ],
+        "captured_checksum": "552829538",
+        "sha256_output_digest": "4364a527207db2ec7514942704ee832f87ee9ee5b8386ee692baf1bcc9b6b43c",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 23.82,
+          "p90_ms": 25.195,
+          "p99_ms": 26.34,
+          "mean_ms": 24.066866666666666,
+          "min_ms": 23.315,
+          "max_ms": 26.34,
+          "std_dev_ms": 0.7807363077391896,
+          "variance_ms": 0.6095491822222224,
+          "throughput_ops_sec": 41550901.23904788
+        },
+        "raw_samples_ms": [
+          24.015,
+          24.809,
+          23.551,
+          26.34,
+          23.862,
+          23.596,
+          23.651,
+          23.59,
+          23.348,
+          23.981,
+          23.809,
+          25.195,
+          23.315,
+          23.82,
+          24.121
+        ],
+        "captured_checksum": "552829538",
+        "sha256_output_digest": "019f400f41bbaeb41044367b0c3b2a56701610714f47cb6b292c4cac040e1699",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.8762829709745061,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "sha256",
+      "name": "SHA-256 Cryptographic Block Hashing",
+      "category": "Cryptography / SIMD ALU",
+      "expected_checksum": "-4721506799343634759",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 97.683,
+          "p90_ms": 107.197,
+          "p99_ms": 107.197,
+          "mean_ms": 98.3894,
+          "min_ms": 95.376,
+          "max_ms": 107.197,
+          "std_dev_ms": 3.5333744551066184,
+          "variance_ms": 12.484735039999991,
+          "throughput_ops_sec": 5081848.247880362
+        },
+        "raw_samples_ms": [
+          95.693,
+          95.483,
+          97.683,
+          102.195,
+          99.134,
+          95.376,
+          97.964,
+          96.236,
+          96.933,
+          107.197
+        ],
+        "captured_checksum": "-4721506799343634759",
+        "sha256_output_digest": "adff6198820857e472247e7aeb17f975eab0612c84ac91a8b5e29e8a1f7255cd",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 97.156,
+          "p90_ms": 103.462,
+          "p99_ms": 103.462,
+          "mean_ms": 96.4004,
+          "min_ms": 91.596,
+          "max_ms": 103.462,
+          "std_dev_ms": 3.7132681616064307,
+          "variance_ms": 13.788360440000002,
+          "throughput_ops_sec": 5186700.47012253
+        },
+        "raw_samples_ms": [
+          97.156,
+          95.538,
+          96.493,
+          92.058,
+          97.357,
+          98.022,
+          91.596,
+          103.462,
+          100.694,
+          91.628
+        ],
+        "captured_checksum": "-4721506799343634759",
+        "sha256_output_digest": "1115630a12bbfd482f3abd0cac1d2dc49f9fb26127c826cfd1ae6513ec97f268",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.9946049977990029,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "nbody_gravity",
+      "name": "N-Body Gravitational Physics Simulation",
+      "category": "Physics / Vectorized FP",
+      "expected_checksum": "1656141296",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 1879.382,
+          "p90_ms": 1936.149,
+          "p99_ms": 1936.149,
+          "mean_ms": 1879.25,
+          "min_ms": 1835.176,
+          "max_ms": 1936.149,
+          "std_dev_ms": 32.77993766314997,
+          "variance_ms": 1074.5243131999982,
+          "throughput_ops_sec": 532127.1783956365
+        },
+        "raw_samples_ms": [
+          1865.401,
+          1835.176,
+          1880.142,
+          1936.149,
+          1879.382
+        ],
+        "captured_checksum": "1656141296",
+        "sha256_output_digest": "4e27291e963baaed63f7e905ece6206552e96f4e2e9e8cd91b8358308a57310c",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 1861.34,
+          "p90_ms": 1967.804,
+          "p99_ms": 1967.804,
+          "mean_ms": 1868.7097999999999,
+          "min_ms": 1762.216,
+          "max_ms": 1967.804,
+          "std_dev_ms": 83.98011066056064,
+          "variance_ms": 7052.658986560011,
+          "throughput_ops_sec": 535128.5683844545
+        },
+        "raw_samples_ms": [
+          1792.61,
+          1762.216,
+          1861.34,
+          1959.579,
+          1967.804
+        ],
+        "captured_checksum": "1656141297",
+        "sha256_output_digest": "55fd9d758cc62691ffb3ae621fd90d16b73a2ff57353f1a73115f670e785d261",
+        "checksum_match": false
+      },
+      "speedup_vs_c": 0.9904000357564348,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "spsc_ring_buffer",
+      "name": "SPSC Lock-Free Ring Buffer Throughput",
+      "category": "Concurrency / Cache Lines",
+      "expected_checksum": "1550000015000000",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 4.27,
+          "p90_ms": 5.126,
+          "p99_ms": 5.604,
+          "mean_ms": 4.2156666666666665,
+          "min_ms": 3.262,
+          "max_ms": 5.604,
+          "std_dev_ms": 0.5788285487852934,
+          "variance_ms": 0.3350424888888889,
+          "throughput_ops_sec": 2372104056.2979364
+        },
+        "raw_samples_ms": [
+          5.604,
+          4.186,
+          4.35,
+          4.128,
+          3.681,
+          4.508,
+          3.678,
+          3.732,
+          3.262,
+          4.27,
+          3.623,
+          5.126,
+          4.274,
+          4.472,
+          4.341
+        ],
+        "captured_checksum": "1550000015000000",
+        "sha256_output_digest": "de3768d277c260d8ed23eaadb1ab6c2d2a25012435aa14660008fa66815e72ba",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 0.002,
+          "p90_ms": 0.003,
+          "p99_ms": 0.003,
+          "mean_ms": 0.0020666666666666667,
+          "min_ms": 0.001,
+          "max_ms": 0.003,
+          "std_dev_ms": 0.0005734883511361751,
+          "variance_ms": 3.2888888888888883e-7,
+          "throughput_ops_sec": 4838709677419.3545
+        },
+        "raw_samples_ms": [
+          0.002,
+          0.002,
+          0.001,
+          0.002,
+          0.003,
+          0.002,
+          0.002,
+          0.001,
+          0.002,
+          0.003,
+          0.002,
+          0.002,
+          0.002,
+          0.003,
+          0.002
+        ],
+        "captured_checksum": "150000155000000",
+        "sha256_output_digest": "9211a792314c8e4b043c46790de6ec71b236da02d17efce734a7d038f29d190d",
+        "checksum_match": false
+      },
+      "speedup_vs_c": 0.00046838407494145204,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "dna_levenshtein",
+      "name": "DNA Sequence Alignment & Levenshtein DP",
+      "category": "Dynamic Programming / Genomics",
+      "expected_checksum": "525912",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 1109.464,
+          "p90_ms": 1147.789,
+          "p99_ms": 1147.789,
+          "mean_ms": 1108.4932,
+          "min_ms": 1080.331,
+          "max_ms": 1147.789,
+          "std_dev_ms": 22.787062982315238,
+          "variance_ms": 519.2502393600014,
+          "throughput_ops_sec": 902125.515970689
+        },
+        "raw_samples_ms": [
+          1112.053,
+          1092.829,
+          1080.331,
+          1109.464,
+          1147.789
+        ],
+        "captured_checksum": "525912",
+        "sha256_output_digest": "6d820acb36a07f137194b417381f3f4872b70f3249916adb56b9e80982e8cd3e",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 1312.412,
+          "p90_ms": 1456.944,
+          "p99_ms": 1456.944,
+          "mean_ms": 1345.4644,
+          "min_ms": 1270.956,
+          "max_ms": 1456.944,
+          "std_dev_ms": 73.39229437917851,
+          "variance_ms": 5386.428874239998,
+          "throughput_ops_sec": 743237.7995285494
+        },
+        "raw_samples_ms": [
+          1312.412,
+          1280.844,
+          1270.956,
+          1456.944,
+          1406.166
+        ],
+        "captured_checksum": "525912",
+        "sha256_output_digest": "cd507038e94d38b4ccd2a82be0e99b85c279b5b5f670cac3396f1def0746873f",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 1.1829243670817622,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "json_serializer",
+      "name": "High-Throughput JSON Serializer",
+      "category": "String Processing / Parsing",
+      "expected_checksum": "5588438541400559045",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 3.993,
+          "p90_ms": 4.066,
+          "p99_ms": 4.302,
+          "mean_ms": 3.4264666666666668,
+          "min_ms": 2.095,
+          "max_ms": 4.302,
+          "std_dev_ms": 0.7459672795922232,
+          "variance_ms": 0.5564671822222221,
+          "throughput_ops_sec": 291845827.5774851
+        },
+        "raw_samples_ms": [
+          4.004,
+          4.302,
+          3.454,
+          2.465,
+          4.028,
+          2.894,
+          3.161,
+          4.002,
+          4.052,
+          2.095,
+          4.009,
+          2.237,
+          3.993,
+          2.635,
+          4.066
+        ],
+        "captured_checksum": "5588438541400559045",
+        "sha256_output_digest": "fd129a578470b26f427dc9f3a5ff91980e2b2221c0029ffa0ce603e557f7e92e",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 67.562,
+          "p90_ms": 83.46,
+          "p99_ms": 85.829,
+          "mean_ms": 68.02766666666666,
+          "min_ms": 58.065,
+          "max_ms": 85.829,
+          "std_dev_ms": 8.232212846832589,
+          "variance_ms": 67.76932835555552,
+          "throughput_ops_sec": 14699901.51065988
+        },
+        "raw_samples_ms": [
+          61.649,
+          65.275,
+          83.46,
+          67.87,
+          72.528,
+          76.413,
+          67.752,
+          58.065,
+          58.1,
+          67.562,
+          65.989,
+          63.071,
+          85.829,
+          68.596,
+          58.256
+        ],
+        "captured_checksum": "5588438541400559045",
+        "sha256_output_digest": "73a85e15f7efd9817ff43d632513c67f29f8f443b304b48836cd9fa9ac2a917f",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 16.920110192837466,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "fsm_lexer",
+      "name": "Finite State Machine Tokenizer / Lexer",
+      "category": "Compilers / State Machines",
+      "expected_checksum": "-6471218147204355511",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 11.252,
+          "p90_ms": 16.576,
+          "p99_ms": 16.798,
+          "mean_ms": 12.382066666666667,
+          "min_ms": 9.7,
+          "max_ms": 16.798,
+          "std_dev_ms": 2.4527213584551797,
+          "variance_ms": 6.015842062222221,
+          "throughput_ops_sec": 80761962.19263344
+        },
+        "raw_samples_ms": [
+          10.223,
+          10.722,
+          13.834,
+          16.576,
+          15.799,
+          10.664,
+          9.7,
+          12.766,
+          11.386,
+          16.798,
+          10.828,
+          14.955,
+          11.252,
+          9.938,
+          10.29
+        ],
+        "captured_checksum": "-6471218147204355511",
+        "sha256_output_digest": "e923a46e47881999359fda7a9c82e7ffbe5fc35d0349183f3959cc27c968e73a",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 12.178,
+          "p90_ms": 14.73,
+          "p99_ms": 14.847,
+          "mean_ms": 12.1018,
+          "min_ms": 8.354,
+          "max_ms": 14.847,
+          "std_dev_ms": 2.369073861237762,
+          "variance_ms": 5.61251096,
+          "throughput_ops_sec": 82632335.68560047
+        },
+        "raw_samples_ms": [
+          8.354,
+          9.611,
+          8.629,
+          14.73,
+          14.633,
+          13.577,
+          11.615,
+          13.288,
+          9.74,
+          11.879,
+          12.178,
+          14.727,
+          9.161,
+          14.558,
+          14.847
+        ],
+        "captured_checksum": "-103069600432064540",
+        "sha256_output_digest": "6c5cf0b96a38813e3b00757a8d81240ef932aa305fec25a9400429ed498d3730",
+        "checksum_match": false
+      },
+      "speedup_vs_c": 1.0822964806256665,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "gemm_matrix",
+      "name": "Cache-Blocked Matrix Multiplication (GEMM)",
+      "category": "Linear Algebra / Cache Blocking",
+      "expected_checksum": "6422836",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 19.198,
+          "p90_ms": 24.8,
+          "p99_ms": 24.8,
+          "mean_ms": 17.071900000000003,
+          "min_ms": 9.63,
+          "max_ms": 24.8,
+          "std_dev_ms": 5.86720119733421,
+          "variance_ms": 34.42404988999999,
+          "throughput_ops_sec": 58575788.28367081
+        },
+        "raw_samples_ms": [
+          10.916,
+          14.401,
+          11.973,
+          9.63,
+          10.724,
+          19.198,
+          24.8,
+          23.352,
+          24.705,
+          21.02
+        ],
+        "captured_checksum": "6422836",
+        "sha256_output_digest": "4053923b0a4e4ceebd03759bbc492ff92dcd3374fdfd9e7e8c1d95f179306995",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 19.701,
+          "p90_ms": 30.275,
+          "p99_ms": 30.275,
+          "mean_ms": 18.305799999999998,
+          "min_ms": 10.812,
+          "max_ms": 30.275,
+          "std_dev_ms": 7.318962860952363,
+          "variance_ms": 53.567217359999994,
+          "throughput_ops_sec": 54627495.110839196
+        },
+        "raw_samples_ms": [
+          19.701,
+          10.812,
+          11.126,
+          30.275,
+          21.223,
+          12.636,
+          27.345,
+          26.717,
+          11.517,
+          11.706
+        ],
+        "captured_checksum": "6422836",
+        "sha256_output_digest": "988c9bdee32168920d8afbe1a7731637f60893db0c827602d8a3879ee44fe26b",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 1.0262006459006145,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "monte_carlo_pricing",
+      "name": "Monte Carlo Black-Scholes Option Pricing",
+      "category": "Financial Engineering / RNG",
+      "expected_checksum": "10440246",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 50.193,
+          "p90_ms": 59.632,
+          "p99_ms": 59.632,
+          "mean_ms": 51.44129999999999,
+          "min_ms": 46.45,
+          "max_ms": 59.632,
+          "std_dev_ms": 4.206392279614445,
+          "variance_ms": 17.693736010000002,
+          "throughput_ops_sec": 38879266.27048695
+        },
+        "raw_samples_ms": [
+          56.02,
+          55.164,
+          59.632,
+          49.169,
+          53.671,
+          50.193,
+          49.6,
+          46.45,
+          47.175,
+          47.339
+        ],
+        "captured_checksum": "10440246",
+        "sha256_output_digest": "6573d1aca99fc867ee61410799c8b558d0ef76df076c0a8ed39c1f809e0dd443",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 49.472,
+          "p90_ms": 52.608,
+          "p99_ms": 52.608,
+          "mean_ms": 48.73350000000001,
+          "min_ms": 45.849,
+          "max_ms": 52.608,
+          "std_dev_ms": 2.0695460009383697,
+          "variance_ms": 4.283020649999999,
+          "throughput_ops_sec": 41039531.328552224
+        },
+        "raw_samples_ms": [
+          45.989,
+          45.849,
+          49.479,
+          50.872,
+          47.461,
+          52.608,
+          47.133,
+          50.132,
+          49.472,
+          48.34
+        ],
+        "captured_checksum": "10440246",
+        "sha256_output_digest": "212d37dda8dcaf02c56871ce0e29f60c1114990a29fa77e4cb92795369bc7220",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.9856354471739088,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    },
+    {
+      "id": "alu_reduction",
+      "name": "Super-Scalar ALU Arithmetic Reduction",
+      "category": "CPU Pipeline / ILP",
+      "expected_checksum": "3370198876750320971",
+      "end_result": {
+        "language": "End Language",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 705.644,
+          "p90_ms": 738.06,
+          "p99_ms": 738.06,
+          "mean_ms": 708.061,
+          "min_ms": 682.857,
+          "max_ms": 738.06,
+          "std_dev_ms": 16.646810523340488,
+          "variance_ms": 277.1163005999996,
+          "throughput_ops_sec": 14123076.966532543
+        },
+        "raw_samples_ms": [
+          682.857,
+          698.481,
+          691.546,
+          724.956,
+          738.06,
+          696.633,
+          705.644,
+          713.372,
+          701.537,
+          727.524
+        ],
+        "captured_checksum": "3370198876750320971",
+        "sha256_output_digest": "a17efef28b3e8d56ef59f8d0400d97ed819ddfa28002e58508a74cc3e421fecd",
+        "checksum_match": true
+      },
+      "c_result": {
+        "language": "C (GCC Native)",
+        "compiler_flags": [
+          "-O3",
+          "-march=native",
+          "-flto"
+        ],
+        "stats": {
+          "p50_ms": 697.734,
+          "p90_ms": 743.312,
+          "p99_ms": 743.312,
+          "mean_ms": 703.5281000000001,
+          "min_ms": 684.855,
+          "max_ms": 743.312,
+          "std_dev_ms": 18.70523444627198,
+          "variance_ms": 349.8857956899998,
+          "throughput_ops_sec": 14214073.3255715
+        },
+        "raw_samples_ms": [
+          699.742,
+          719.748,
+          697.734,
+          688.955,
+          691.623,
+          684.855,
+          685.481,
+          697.152,
+          726.679,
+          743.312
+        ],
+        "captured_checksum": "3370198876750320971",
+        "sha256_output_digest": "7b00aa1989e0c3f7b3aacaf25e8d19cea4d2a2385935ed16e3bd00fd7ba37074",
+        "checksum_match": true
+      },
+      "speedup_vs_c": 0.9887903815521708,
+      "integrity_verified": true,
+      "adversarial_test_triggered": false
+    }
+  ],
+  "summary": {
+    "total_benchmarks": 15,
+    "passed_integrity": 15,
+    "failed_integrity": 0,
+    "average_speedup_vs_c": 2.8163063876354477
+  }
+}
