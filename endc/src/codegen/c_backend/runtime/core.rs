@@ -23,8 +23,7 @@ pub fn emit_core_runtime(out: &mut String) {
     out.push_str("    memcpy(res + la, b, lb);\n");
     out.push_str("    res[la + lb] = '\\0';\n");
     out.push_str("    return res;\n");
-    out.push_str("}\n");
-    out.push_str("#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)\n    #include <immintrin.h>\n#elif defined(__aarch64__) || defined(_M_ARM64)\n    #include <arm_neon.h>\n#endif\n\n");
+    out.push_str("}\n\n");
 
     // Hardware Watchdog & CPU Throttling Hooks
     out.push_str("/* End Hardware Watchdog & CPU Throttling Safety Hooks */\n");

@@ -3,24 +3,20 @@
 @import_c("<math.h>")
 @import_c("<stdint.h>")
 @import_c("<string.h>")
-@import_c("<windows.h>")
+@import_c("<time.h>")
 
 // ==============================================================================
 // 👑 End Language — 12-Challenge Grandmaster Benchmark Suite (Apex Grandmaster)
 // ==============================================================================
 
 pub fn get_time_ns() u64 {
-    mut freq: i64 = 0
-    mut counter: i64 = 0
-    QueryPerformanceFrequency((&freq) as *void)
-    QueryPerformanceCounter((&counter) as *void)
-    ret ((counter as u64) * 1000000000) / (freq as u64)
+    ret high_res_time_ns()
 }
 
 @inline
-pub fn splitmix64(state: *u64) u64 {
-    *state = *state + 0x9E3779B97F4A7C15
-    mut z: u64 = *state
+pub fn splitmix64(rng_state: *u64) u64 {
+    *rng_state = *rng_state + 0x9E3779B97F4A7C15
+    mut z: u64 = *rng_state
     z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9
     z = (z ^ (z >> 27)) * 0x94D049BB133111EB
     ret z ^ (z >> 31)
@@ -239,27 +235,81 @@ pub fn bench_3_hft_engine() i64 {
 pub fn rotr(x: u32, n: u32) u32 { ret (x >> n) | (x << (32 - n)) }
 
 pub fn bench_4_sha256() i64 {
-    val state: *u32 = malloc(32) as *u32
-    state[0] = 0x6a09e667; state[1] = 0xbb67ae85; state[2] = 0x3c6ef372; state[3] = 0xa54ff53a
-    state[4] = 0x510e527f; state[5] = 0x9b05688c; state[6] = 0x1f83d9ab; state[7] = 0x5be0cd19
+    val h_state: *u32 = malloc(32) as *u32
+    h_state[0] = 0x6a09e667
+    h_state[1] = 0xbb67ae85
+    h_state[2] = 0x3c6ef372
+    h_state[3] = 0xa54ff53a
+    h_state[4] = 0x510e527f
+    h_state[5] = 0x9b05688c
+    h_state[6] = 0x1f83d9ab
+    h_state[7] = 0x5be0cd19
 
     val k_table: *u32 = malloc(256) as *u32
-    k_table[0] = 0x428a2f98; k_table[1] = 0x71374491; k_table[2] = 0xb5c0fbcf; k_table[3] = 0xe9b5dba5
-    k_table[4] = 0x3956c25b; k_table[5] = 0x59f111f1; k_table[6] = 0x923f82a4; k_table[7] = 0xab1c5ed5
-    k_table[8] = 0xd807aa98; k_table[9] = 0x12835b01; k_table[10] = 0x243185be; k_table[11] = 0x550c7dc3
-    k_table[12] = 0x72be5d74; k_table[13] = 0x80deb1fe; k_table[14] = 0x9bdc06a7; k_table[15] = 0xc19bf174
-    k_table[16] = 0xe49b69c1; k_table[17] = 0xefbe4786; k_table[18] = 0x0fc19dc6; k_table[19] = 0x240ca1cc
-    k_table[20] = 0x2de92c6f; k_table[21] = 0x4a7484aa; k_table[22] = 0x5cb0a9dc; k_table[23] = 0x76f988da
-    k_table[24] = 0x983e5152; k_table[25] = 0xa831c66d; k_table[26] = 0xb00327c8; k_table[27] = 0xbf597fc7
-    k_table[28] = 0xc6e00bf3; k_table[29] = 0xd5a79147; k_table[30] = 0x06ca6351; k_table[31] = 0x14292967
-    k_table[32] = 0x27b70a85; k_table[33] = 0x2e1b2138; k_table[34] = 0x4d2c6dfc; k_table[35] = 0x53380d13
-    k_table[36] = 0x650a7354; k_table[37] = 0x766a0abb; k_table[38] = 0x81c2c92e; k_table[39] = 0x92722c85
-    k_table[40] = 0xa2bfe8a1; k_table[41] = 0xa81a664b; k_table[42] = 0xc24b8b70; k_table[43] = 0xc76c51a3
-    k_table[44] = 0xd192e819; k_table[45] = 0xd6990624; k_table[46] = 0xf40e3585; k_table[47] = 0x106aa070
-    k_table[48] = 0x19a4c116; k_table[49] = 0x1e376c08; k_table[50] = 0x2748774c; k_table[51] = 0x34b0bcb5
-    k_table[52] = 0x391c0cb3; k_table[53] = 0x4ed8aa4a; k_table[54] = 0x5b9cca4f; k_table[55] = 0x682e6ff3
-    k_table[56] = 0x748f82ee; k_table[57] = 0x78a5636f; k_table[58] = 0x84c87814; k_table[59] = 0x8cc70208
-    k_table[60] = 0x90befffa; k_table[61] = 0xa4506ceb; k_table[62] = 0x0bef9a3f; k_table[63] = 0xc67178f2
+    k_table[0] = 0x428a2f98
+    k_table[1] = 0x71374491
+    k_table[2] = 0xb5c0fbcf
+    k_table[3] = 0xe9b5dba5
+    k_table[4] = 0x3956c25b
+    k_table[5] = 0x59f111f1
+    k_table[6] = 0x923f82a4
+    k_table[7] = 0xab1c5ed5
+    k_table[8] = 0xd807aa98
+    k_table[9] = 0x12835b01
+    k_table[10] = 0x243185be
+    k_table[11] = 0x550c7dc3
+    k_table[12] = 0x72be5d74
+    k_table[13] = 0x80deb1fe
+    k_table[14] = 0x9bdc06a7
+    k_table[15] = 0xc19bf174
+    k_table[16] = 0xe49b69c1
+    k_table[17] = 0xefbe4786
+    k_table[18] = 0x0fc19dc6
+    k_table[19] = 0x240ca1cc
+    k_table[20] = 0x2de92c6f
+    k_table[21] = 0x4a7484aa
+    k_table[22] = 0x5cb0a9dc
+    k_table[23] = 0x76f988da
+    k_table[24] = 0x983e5152
+    k_table[25] = 0xa831c66d
+    k_table[26] = 0xb00327c8
+    k_table[27] = 0xbf597fc7
+    k_table[28] = 0xc6e00bf3
+    k_table[29] = 0xd5a79147
+    k_table[30] = 0x06ca6351
+    k_table[31] = 0x14292967
+    k_table[32] = 0x27b70a85
+    k_table[33] = 0x2e1b2138
+    k_table[34] = 0x4d2c6dfc
+    k_table[35] = 0x53380d13
+    k_table[36] = 0x650a7354
+    k_table[37] = 0x766a0abb
+    k_table[38] = 0x81c2c92e
+    k_table[39] = 0x92722c85
+    k_table[40] = 0xa2bfe8a1
+    k_table[41] = 0xa81a664b
+    k_table[42] = 0xc24b8b70
+    k_table[43] = 0xc76c51a3
+    k_table[44] = 0xd192e819
+    k_table[45] = 0xd6990624
+    k_table[46] = 0xf40e3585
+    k_table[47] = 0x106aa070
+    k_table[48] = 0x19a4c116
+    k_table[49] = 0x1e376c08
+    k_table[50] = 0x2748774c
+    k_table[51] = 0x34b0bcb5
+    k_table[52] = 0x391c0cb3
+    k_table[53] = 0x4ed8aa4a
+    k_table[54] = 0x5b9cca4f
+    k_table[55] = 0x682e6ff3
+    k_table[56] = 0x748f82ee
+    k_table[57] = 0x78a5636f
+    k_table[58] = 0x84c87814
+    k_table[59] = 0x8cc70208
+    k_table[60] = 0x90befffa
+    k_table[61] = 0xa4506ceb
+    k_table[62] = 0x0bef9a3f
+    k_table[63] = 0xc67178f2
 
     val w: *u32 = malloc(256) as *u32
     mut prng: u64 = 0xCAFEBABE12345678
@@ -272,8 +322,14 @@ pub fn bench_4_sha256() i64 {
             val s1: u32 = rotr(w[idx - 2], 17) ^ rotr(w[idx - 2], 19) ^ (w[idx - 2] >> 10)
             w[idx] = w[idx - 16] + s0 + w[idx - 7] + s1
         }
-        mut a: u32 = state[0]; mut b: u32 = state[1]; mut c: u32 = state[2]; mut d: u32 = state[3]
-        mut e: u32 = state[4]; mut f: u32 = state[5]; mut g: u32 = state[6]; mut h: u32 = state[7]
+        mut a: u32 = h_state[0]
+        mut b: u32 = h_state[1]
+        mut c: u32 = h_state[2]
+        mut d: u32 = h_state[3]
+        mut e: u32 = h_state[4]
+        mut f: u32 = h_state[5]
+        mut g: u32 = h_state[6]
+        mut h: u32 = h_state[7]
 
         for i in 64 {
             val s1_rot: u32 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
@@ -283,16 +339,26 @@ pub fn bench_4_sha256() i64 {
             val maj: u32 = (a & b) | (c & (a ^ b))
             val temp2: u32 = s0_rot + maj
 
-            h = g; g = f; f = e; e = d + temp1
-            d = c; c = b; b = a; a = temp1 + temp2
+            h = g
+            g = f
+            f = e
+            e = d + temp1
+            d = c
+            c = b
+            b = a
+            a = temp1 + temp2
         }
-        state[0] = state[0] + a; state[1] = state[1] + b
-        state[2] = state[2] + c; state[3] = state[3] + d
-        state[4] = state[4] + e; state[5] = state[5] + f
-        state[6] = state[6] + g; state[7] = state[7] + h
+        h_state[0] = h_state[0] + a
+        h_state[1] = h_state[1] + b
+        h_state[2] = h_state[2] + c
+        h_state[3] = h_state[3] + d
+        h_state[4] = h_state[4] + e
+        h_state[5] = h_state[5] + f
+        h_state[6] = h_state[6] + g
+        h_state[7] = h_state[7] + h
     }
-    val res: u64 = ((state[0] as u64) << 32) | (state[7] as u64)
-    free(state as *u8)
+    val res: u64 = ((h_state[0] as u64) << 32) | (h_state[7] as u64)
+    free(h_state as *u8)
     free(k_table as *u8)
     free(w as *u8)
     ret res as i64
@@ -653,7 +719,10 @@ pub fn process_req12(id: u64, size: i32) Req12 {
 }
 
 pub fn bench_12_reduction() i64 {
-    mut sum0: i64 = 0; mut sum1: i64 = 0; mut sum2: i64 = 0; mut sum3: i64 = 0
+    mut sum0: i64 = 0
+    mut sum1: i64 = 0
+    mut sum2: i64 = 0
+    mut sum3: i64 = 0
 
     for i_idx in 2500000 {
         val i: u64 = (i_idx as u64) * 4

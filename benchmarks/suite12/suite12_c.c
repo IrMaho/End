@@ -5,13 +5,15 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <windows.h>
 
 static uint64_t get_time_ns(void) {
-    LARGE_INTEGER freq, counter;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&counter);
-    return (uint64_t)((counter.QuadPart * 1000000000ULL) / freq.QuadPart);
+#if defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+#else
+    return (uint64_t)(((double)clock() / CLOCKS_PER_SEC) * 1000000000.0);
+#endif
 }
 
 // PRNG SplitMix64

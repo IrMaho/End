@@ -2,10 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#if defined(_WIN32)
 #include <winsock2.h>
-#include <windows.h>
-
 #pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#endif
 
 static uint64_t xorshift_compute(uint64_t iterations) {
     uint64_t state = 0x853c49e6748fea9bULL;

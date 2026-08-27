@@ -1,20 +1,24 @@
 @import_c("<stdio.h>")
 @import_c("<stdlib.h>")
 @import_c("<stdint.h>")
-@import_c("<windows.h>")
+@import_c("<time.h>")
+
+pub fn get_time_ns() u64 {
+    ret high_res_time_ns()
+}
 
 // 1. Ultra-fast bitwise compute with register hints
 pub fn bench_compute(iterations: u64) u64 {
-    mut state: u64 = 0x853c49e6748fea9b
+    mut h_state: u64 = 0x853c49e6748fea9b
     mut i: u64 = 0
     while i < iterations {
-        state = state ^ (state << 13)
-        state = state ^ (state >> 7)
-        state = state ^ (state << 17)
-        state = state * 6364136223846793005 + 1442695040888963407
+        h_state = h_state ^ (h_state << 13)
+        h_state = h_state ^ (h_state >> 7)
+        h_state = h_state ^ (h_state << 17)
+        h_state = h_state * 6364136223846793005 + 1442695040888963407
         i = i + 1
     }
-    ret state
+    ret h_state
 }
 
 // 2. Hardware-Accelerated Zero-Syscall Region Memory Allocation (100M items)
@@ -22,24 +26,21 @@ pub fn bench_compute(iterations: u64) u64 {
 pub fn bench_memory(batches: i32, elements_per_batch: i32) i64 {
     mut grand_total: i64 = 0
     // Pre-allocated Hardware L1/L2 Cache Scratchpad Buffer
-    val region_scratchpad: *i64 = alloc [20000]i64
+    val region_scratchpad: *i64 = malloc(160000) as *i64
     mut b: i32 = 0
     while b < batches {
-        region batch_scope {
-            // Zero-overhead Region pointer reuse (1 CPU cycle reset)
-            val arr: *i64 = region_scratchpad
-            mut batch_sum: i64 = 0
-            mut i: i32 = 0
-            while i < elements_per_batch {
-                val v = (b * 31) + (i * 17)
-                arr[i] = v
-                batch_sum = batch_sum + v
-                i = i + 1
-            }
-            grand_total = grand_total + (batch_sum ^ arr[0])
+        mut batch_sum: i64 = 0
+        mut i: i32 = 0
+        while i < elements_per_batch {
+            val v: i64 = ((b * 31) + (i * 17)) as i64
+            region_scratchpad[i] = v
+            batch_sum = batch_sum + v
+            i = i + 1
         }
+        grand_total = grand_total + (batch_sum ^ region_scratchpad[0])
         b = b + 1
     }
+    free(region_scratchpad as *u8)
     ret grand_total
 }
 
@@ -54,29 +55,24 @@ pub fn fib(n: i64) i64 {
 pub fn main() void {
     printf("=== End Language Ultra-Optimized Benchmark ===\n")
 
-    val freq: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    val t_start: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    val t_end: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    QueryPerformanceFrequency(freq)
-
     // 1. Compute (100M)
-    QueryPerformanceCounter(t_start)
+    val t0_1 = get_time_ns()
     val res1 = bench_compute(100000000)
-    QueryPerformanceCounter(t_end)
-    val dt1 = ((t_end[0].QuadPart - t_start[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_1 = get_time_ns()
+    val dt1: f64 = ((t1_1 - t0_1) as f64) / 1000000.0
     printf("1. Compute (100M iter): %.2f ms (Hash: %llu)\n", dt1, res1)
 
     // 2. Memory Churn (100M items)
-    QueryPerformanceCounter(t_start)
+    val t0_2 = get_time_ns()
     val res2 = bench_memory(5000, 20000)
-    QueryPerformanceCounter(t_end)
-    val dt2 = ((t_end[0].QuadPart - t_start[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_2 = get_time_ns()
+    val dt2: f64 = ((t1_2 - t0_2) as f64) / 1000000.0
     printf("2. Memory Churn (100M items): %.2f ms (Sum: %lld)\n", dt2, res2)
 
     // 3. Recursion (fib 42)
-    QueryPerformanceCounter(t_start)
+    val t0_3 = get_time_ns()
     val res3 = fib(42)
-    QueryPerformanceCounter(t_end)
-    val dt3 = ((t_end[0].QuadPart - t_start[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_3 = get_time_ns()
+    val dt3: f64 = ((t1_3 - t0_3) as f64) / 1000000.0
     printf("3. Recursion (fib 42): %.2f ms (Val: %lld)\n", dt3, res3)
 }

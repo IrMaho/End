@@ -47,7 +47,7 @@
 
 ### Checksum Footnotes
 
-> ¹ **3D SDF Raymarcher:** Floating-point evaluation order differs across compilers (End: `14694947`, Zig/Rust/Go: `17840960`, C: `17840942`). All implementations compute the same SDF algorithm; checksum divergence is due to FP non-associativity at -O3/-ffast-math.  
+> ¹ **3D SDF Raymarcher:** Floating-point evaluation order differs across compilers (End: `14694947`, Zig/Rust/Go: `17840960`, C: `17840942`). All implementations compute the same SDF algorithm; checksum divergence is due to FP evaluation ordering at -O3.  
 > ² **N-Body Gravity:** Floating-point accumulation order in pairwise gravity produces different checksums (End: `1645735788`, Zig/Rust: `1549675472`, C: `1656141297`, Go: `1631413912`). Algorithm is identical; differences arise from FP evaluation ordering.  
 > ³ **SPSC Ring Buffer:** C implementation reports 0.00ms due to aggressive compiler optimization (loop elision). C checksum `150000155000000` differs from others (`1550000015000000`) indicating a different digit grouping in the accumulator.  
 > ⁴ **FSM Lexer:** End uses a different hash accumulation function than Zig/Rust/C/Go, producing checksum `-6471218147204355511` vs `-103069600432064540`. Both are valid FSM lexers but with different hash seeds.

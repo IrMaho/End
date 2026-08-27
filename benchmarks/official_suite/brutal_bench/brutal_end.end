@@ -2,7 +2,11 @@
 @import_c("<stdlib.h>")
 @import_c("<math.h>")
 @import_c("<stdint.h>")
-@import_c("<windows.h>")
+@import_c("<time.h>")
+
+pub fn get_time_ns() u64 {
+    ret high_res_time_ns()
+}
 
 // ============================================================================
 // 1. Raymarcher 3D (250K Rays)
@@ -153,11 +157,11 @@ pub fn bench_binary_trees(max_depth: i32) i64 {
     region long_lived_scope {
         val long_lived = create_tree(0, max_depth)
 
-        mut depth = min_depth
+        mut depth: i32 = min_depth
         while depth <= max_depth {
-            val iterations = 1 << (max_depth - depth + min_depth)
+            val iterations: i32 = 1 << (max_depth - depth + min_depth)
             mut check: i64 = 0
-            mut i = 1
+            mut i: i32 = 1
             while i <= iterations {
                 region batch_tree_scope {
                     val t1 = create_tree(i, depth)
@@ -263,29 +267,24 @@ pub fn bench_hft_engine(num_orders: i32) i64 {
 pub fn main() void {
     printf("=== BRUTAL BENCHMARK: End Language (Ultra-Optimized) ===\n")
 
-    val freq: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    val t0: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    val t1: *LARGE_INTEGER = alloc [1]LARGE_INTEGER
-    QueryPerformanceFrequency(freq)
-
     // 1. Raymarcher
-    QueryPerformanceCounter(t0)
+    val t0_1 = get_time_ns()
     val res1 = bench_raymarch(500, 500)
-    QueryPerformanceCounter(t1)
-    val dt1 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_1 = get_time_ns()
+    val dt1: f64 = ((t1_1 - t0_1) as f64) / 1000000.0
     printf("1. Raymarcher 3D (250K rays): %.2f ms | Checksum: %llu\n", dt1, res1)
 
     // 2. Binary Trees
-    QueryPerformanceCounter(t0)
+    val t0_2 = get_time_ns()
     val res2 = bench_binary_trees(16)
-    QueryPerformanceCounter(t1)
-    val dt2 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_2 = get_time_ns()
+    val dt2: f64 = ((t1_2 - t0_2) as f64) / 1000000.0
     printf("2. Binary Trees (Depth 16):   %.2f ms | Checksum: %lld\n", dt2, res2)
 
     // 3. HFT Engine
-    QueryPerformanceCounter(t0)
+    val t0_3 = get_time_ns()
     val res3 = bench_hft_engine(1000000)
-    QueryPerformanceCounter(t1)
-    val dt3 = ((t1[0].QuadPart - t0[0].QuadPart) * 1000.0) / freq[0].QuadPart
+    val t1_3 = get_time_ns()
+    val dt3: f64 = ((t1_3 - t0_3) as f64) / 1000000.0
     printf("3. HFT Order Matching (1M):   %.2f ms | Vol: %lld\n", dt3, res3)
 }

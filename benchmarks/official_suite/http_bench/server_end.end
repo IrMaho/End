@@ -2,21 +2,19 @@
 @import_c("<stdlib.h>")
 @import_c("<string.h>")
 @import_c("<stdint.h>")
-@import_c("<winsock2.h>")
-@import_c("<windows.h>")
 
 // Fast XorShift128+ LCG Compute
 pub fn xorshift_compute(iterations: u64) u64 {
-    mut state: u64 = 0x853c49e6748fea9b
+    mut h_state: u64 = 0x853c49e6748fea9b
     mut i: u64 = 0
     while i < iterations {
-        state = state ^ (state << 13)
-        state = state ^ (state >> 7)
-        state = state ^ (state << 17)
-        state = state * 6364136223846793005 + 1442695040888963407
+        h_state = h_state ^ (h_state << 13)
+        h_state = h_state ^ (h_state >> 7)
+        h_state = h_state ^ (h_state << 17)
+        h_state = h_state * 6364136223846793005 + 1442695040888963407
         i = i + 1
     }
-    ret state
+    ret h_state
 }
 
 pub fn main() void {

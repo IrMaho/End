@@ -416,10 +416,6 @@ pub fn handle_build(args: BuildArgs) {
                     "-flto".to_string(),
                     "-funroll-loops".to_string(),
                     "-fomit-frame-pointer".to_string(),
-                    "-ffast-math".to_string(),
-                    "-fno-math-errno".to_string(),
-                    "-ffp-contract=fast".to_string(),
-                    "-freciprocal-math".to_string(),
                     "-fwrapv".to_string(),
                 ]
             } else {
@@ -489,8 +485,6 @@ pub fn handle_build(args: BuildArgs) {
                         "-fomit-frame-pointer".to_string(),
                         "-finline-functions".to_string(),
                         "-Wno-incompatible-pointer-types".to_string(),
-                        "-fno-math-errno".to_string(),
-                        "-ffast-math".to_string(),
                         c_file_path.to_str().unwrap().to_string(),
                     ]
                 } else {
@@ -592,7 +586,6 @@ pub fn handle_build(args: BuildArgs) {
                         "-O3".to_string(),
                         "-funroll-loops".to_string(),
                         "-fomit-frame-pointer".to_string(),
-                        "-ffast-math".to_string(),
                     ]
                 } else {
                     vec![

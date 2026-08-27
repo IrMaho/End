@@ -3,13 +3,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include <windows.h>
+#include <time.h>
 
 static double get_time_ms(void) {
-    LARGE_INTEGER freq, counter;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&counter);
-    return ((double)counter.QuadPart * 1000.0) / (double)freq.QuadPart;
+#if defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ((double)ts.tv_sec * 1000.0) + ((double)ts.tv_nsec / 1e6);
+#else
+    return ((double)clock() / (double)CLOCKS_PER_SEC) * 1000.0;
+#endif
 }
 
 // ============================================================================

@@ -1,15 +1,8 @@
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("windows.h");
-});
-
 fn getTimeSec() f64 {
-    var freq: c.LARGE_INTEGER = undefined;
-    var count: c.LARGE_INTEGER = undefined;
-    _ = c.QueryPerformanceFrequency(&freq);
-    _ = c.QueryPerformanceCounter(&count);
-    return @as(f64, @floatFromInt(count.QuadPart)) / @as(f64, @floatFromInt(freq.QuadPart));
+    const ns = std.time.nanoTimestamp();
+    return @as(f64, @floatFromInt(ns)) / 1e9;
 }
 
 fn bench_compute(iterations: u64) u64 {

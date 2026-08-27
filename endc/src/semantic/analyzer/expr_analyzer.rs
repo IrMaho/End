@@ -162,6 +162,12 @@ impl SemanticAnalyzer {
                                 );
                                 Type::Str
                             }
+                        } else if matches!(l_ty, Type::Pointer(_)) && r_ty.is_numeric() && (*op == BinaryOp::Add || *op == BinaryOp::Sub) {
+                            l_ty.clone()
+                        } else if matches!(r_ty, Type::Pointer(_)) && l_ty.is_numeric() && *op == BinaryOp::Add {
+                            r_ty.clone()
+                        } else if matches!(l_ty, Type::Pointer(_)) && matches!(r_ty, Type::Pointer(_)) && *op == BinaryOp::Sub {
+                            Type::I64
                         } else if !l_ty.is_unknown()
                             && !r_ty.is_unknown()
                             && (!l_ty.is_numeric() || !r_ty.is_numeric())
@@ -1141,9 +1147,15 @@ fn is_known_builtin(name: &str) -> bool {
             | "sin"
             | "cos"
             | "sqrt"
+            | "sqrtf"
             | "tan"
             | "fabs"
             | "pow"
+            | "exp"
+            | "log"
+            | "atoi"
+            | "printf"
+            | "high_res_time_ns"
             | "exit"
             | "time"
             | "clock"
@@ -1330,7 +1342,10 @@ fn is_known_builtin(name: &str) -> bool {
 fn get_builtin_return_type(name: &str) -> Type {
     match name {
         "len" | "strlen" | "calculate" | "get_tuple" | "getNode" | "get_optional_list" | "inline_c_expr" | "end_channel_create" | "end_channel_send" | "end_channel_pending" | "end_time_now_nanos" | "end_time_now_micros" | "end_time_now_millis" | "end_gpu_create_buffer" | "end_gpu_dispatch" | "end_ui_canvas_create" | "end_ui_canvas_get_pixel" | "end_sqlite_open" | "end_sqlite_execute" | "end_sqlite_begin" | "end_sqlite_commit" | "end_sqlite_rollback" | "end_pg_connect" | "end_pg_execute" | "end_pg_execute_params" | "end_pg_begin" | "end_pg_commit" | "end_pg_rollback" | "end_net_tcp_listen" | "end_net_tcp_accept" | "end_net_set_nonblocking" | "end_net_tcp_connect" | "end_net_tcp_send" | "end_http1_server_start" | "end_http1_server_port" | "end_http1_server_add_route" | "end_http2_server_start" | "end_http2_server_port" | "end_http2_server_is_running" | "end_http2_client_connect" | "end_http2_client_close" | "end_http2_mux_create" | "end_atomic_create" | "end_atomic_load" | "end_atomic_fetch_add" | "end_atomic_fetch_sub" | "end_atomic_fetch_and" | "end_atomic_fetch_or" | "end_atomic_fetch_xor" | "end_atomic_exchange" | "end_atomic_cas" | "end_mutex_create" | "end_mutex_lock" | "end_mutex_try_lock" | "end_mutex_is_locked" | "end_rwlock_create" | "end_thread_create" | "end_raft_cluster_create" | "end_raft_cluster_start" | "end_raft_cluster_get_leader" | "end_raft_cluster_kill_node" | "end_raft_cluster_restart_node" | "end_raft_cluster_partition_node" | "end_raft_cluster_heal_partition" | "end_profiler_start" | "end_stress_report_total" | "end_stress_report_errors" => Type::I64,
-        "sin" | "cos" | "sqrt" | "tan" | "fabs" | "pow" | "end_stress_report_p50" | "end_stress_report_p99" | "end_stress_report_rps" => Type::F64,
+        "sin" | "cos" | "sqrt" | "tan" | "fabs" | "pow" | "exp" | "log" | "end_stress_report_p50" | "end_stress_report_p99" | "end_stress_report_rps" => Type::F64,
+        "sqrtf" => Type::F32,
+        "atoi" | "printf" => Type::I32,
+        "high_res_time_ns" => Type::U64,
         "end_attest_verify" | "end_tpm_is_available" | "end_http1_server_is_running" | "end_crypto_hmac_sha256_verify" | "end_auth_verify_password" => Type::Bool,
         "malloc" => Type::Pointer(Box::new(Type::Void)),
         "atomic_add" | "atomic_sub" | "atomic_load" => Type::I64,

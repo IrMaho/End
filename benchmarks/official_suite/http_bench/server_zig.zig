@@ -5,7 +5,6 @@ const c = @cImport({
     @cInclude("stdlib.h");
     @cInclude("string.h");
     @cInclude("winsock2.h");
-    @cInclude("windows.h");
 });
 
 fn xorshiftCompute(iterations: u64) u64 {
